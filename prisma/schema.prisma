@@ -1,0 +1,243 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+//  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
+}
+
+model User {
+  idUser          String       @id @default(uuid())
+  nameUser        String?
+  email       String    @unique
+  password    String
+  phoneNumber String?
+  address     String?
+  accountType accountType @default(LOCAL)
+  role       Role   @default(USER)
+  avatar     String?   
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  userTestResults UserTestResult[]
+  tuVungs TuVung[]
+  des De[]
+  userAnswers UserAnswer[]
+  userWritingSubmissions UserWritingSubmission[]
+}
+
+enum accountType {
+  LOCAL
+  GOOGLE
+}
+
+enum Role {
+  USER
+  ADMIN
+  GIAOVIEN
+}
+
+model UserTestResult {
+  idTestResult String       @id @default(uuid())
+  idUser     String  
+  idDe       String            
+  score      Float
+  total_correct Int
+  total_questions Int
+  raw_score Int  // điểm ví dụ như 32/40
+  band_score Float // điểm theo thang band 1-9
+  duration   Int  // thời gian làm bài (tính theo phút)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User           @relation(fields: [idUser], references: [idUser])
+  de          De             @relation(fields: [idDe], references: [idDe])
+}
+
+model LoaiTuVung {
+  idLoaiTuVung String       @id @default(uuid())
+  nameLoaiTuVung String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tuVungs TuVung[]
+}
+
+model TuVung{
+  idTuVung    String       @id @default(uuid())
+  idLoaiTuVung String
+  idUser String?
+  word       String
+  phonetic   String?
+  meaning    String
+  example    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+ loaiTuVung LoaiTuVung @relation(fields: [idLoaiTuVung], references: [idLoaiTuVung])
+  user User? @relation(fields: [idUser], references: [idUser])
+}
+
+model LoaiDe {
+  idLoaiDe    String       @id @default(uuid())
+  nameLoaiDe  String   //Reading, Listening, Writing, Speaking
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  des De[]
+}
+
+model De {
+  idDe        String       @id @default(uuid())
+  idUser      String
+  idLoaiDe    String
+  title       String
+  desciption  String
+  duration    Int
+  numerQuestion Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userTestResults UserTestResult[]
+  parts Part[]
+  writingTasks WritingTask[]
+  nhomCauHois NhomCauHoi[]
+  user        User      @relation(fields: [idUser], references: [idUser])
+  loaiDe      LoaiDe    @relation(fields: [idLoaiDe], references: [idLoaiDe])
+}
+
+model Option{
+  idOption   String       @id @default(uuid())
+  idCauHoi String
+  option_label     String
+  option_content   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cauHoi CauHoi @relation(fields: [idCauHoi], references: [idCauHoi])
+  answers Answer[]
+  userAnswers UserAnswer[]
+}
+
+model Answer{
+  idAnswer   String       @id @default(uuid())
+  idCauHoi String
+  idOption String?
+  answer_text     String? // dùng cho câu hỏi text-based, TFNG
+  matching_key String? //dùng cho câu hỏi Matching
+  matching_value String? //dùng cho câu hỏi Matching
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cauHoi CauHoi @relation(fields: [idCauHoi], references: [idCauHoi])
+  option Option? @relation(fields: [idOption], references: [idOption])
+}
+
+model UserAnswer {
+  idBaiLam    String       @id @default(uuid())
+  idCauHoi      String
+  idUser    String
+  idOption   String?     //dùng cho câu hỏi MCQ
+  answerText String?  
+  submitted_at   DateTime 
+  isCorrect  Boolean @default(false)
+
+  cauHoi CauHoi @relation(fields: [idCauHoi], references: [idCauHoi])
+  user  User   @relation(fields: [idUser], references: [idUser])
+  option Option? @relation(fields: [idOption], references: [idOption])
+}
+
+model Part {
+  idPart     String       @id @default(uuid())
+  idDe       String
+  namePart   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  de        De       @relation(fields: [idDe], references: [idDe])
+  doanVans   DoanVan?
+  nhomCauHois NhomCauHoi[]
+  cauHois    CauHoi[]
+}
+
+model DoanVan{
+  idDoanVan   String       @id @default(uuid())
+  idPart      String       @unique
+  title       String
+  content     String
+  image       String?
+  description String?
+  numberParagraph Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  part        Part      @relation(fields: [idPart], references: [idPart])
+}
+
+model NhomCauHoi {
+  idNhomCauHoi String       @id @default(uuid())
+  idDe         String
+  idPart       String
+  typeQuestion String
+  title        String
+  startingOrder Int
+  endingOrder   Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  de           De      @relation(fields: [idDe], references: [idDe])
+  part         Part    @relation(fields: [idPart], references: [idPart])
+  cauHois      CauHoi[]
+}
+
+model CauHoi {
+  idCauHoi        String       @id @default(uuid())
+  idNhomCauHoi    String
+  idPart          String
+  numberQuestion  Int
+  content         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  nhomCauHoi      NhomCauHoi @relation(fields: [idNhomCauHoi], references: [idNhomCauHoi])
+  part            Part       @relation(fields: [idPart], references: [idPart])
+  options         Option[]
+  answers         Answer[]
+  userAnswers     UserAnswer[]
+}
+
+model WritingTask{
+  idWritingTask String       @id @default(uuid())
+  idDe        String
+  task_type  String
+  prompt     String
+  time_limit Int
+  word_limit Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  de        De       @relation(fields: [idDe], references: [idDe])
+  userWritingSubmissions UserWritingSubmission[]
+}
+
+model UserWritingSubmission{
+  idWritingSubmission String       @id @default(uuid())
+  idUser     String
+  idWritingTask String
+  submission_text String
+  submitted_at DateTime @default(now())
+  score      Float?
+  feedback   String?
+
+  user        User           @relation(fields: [idUser], references: [idUser])
+  writingTask WritingTask   @relation(fields: [idWritingTask], references: [idWritingTask])
+
+}
