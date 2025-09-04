@@ -24,6 +24,9 @@ model User {
   accountType accountType @default(LOCAL)
   role       Role   @default(USER)
   avatar     String?   
+  isActive   Boolean  @default(false) 
+  code_id     String?    //dùng cho việc reset password
+  code_expiration DateTime? //dùng cho việc reset password
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

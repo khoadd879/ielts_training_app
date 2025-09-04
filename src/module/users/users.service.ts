@@ -4,6 +4,9 @@ import { DatabaseService } from 'src/database/database.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { hashPasswordHelper } from 'src/helpers/utils';
+import { CreateAuthDto } from 'src/auth/dto/create-auth.dto';
+import { v4 as uuidv4 } from 'uuid';
+import dayjs from 'dayjs';
 @Injectable()
 export class UsersService {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -74,5 +77,30 @@ export class UsersService {
     return this.databaseService.user.delete({
       where: { idUser: id },
     });
+  }
+
+  async handleRegister(registerDto: CreateAuthDto) {
+    const { email, password } = registerDto;
+    // Check if email already exists
+    const existingUser = await this.findByEmail(registerDto.email);
+    if (existingUser) {
+      throw new Error('Email already in use');
+    }
+
+    //hash password
+    const hashedPassword = await hashPasswordHelper(registerDto.password);
+
+    const user = await this.databaseService.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        isActive: false,
+        code_id: uuidv4(),
+        code_expiration: dayjs().add(1, 'minutes').toDate(),
+      },
+    });
+    return {
+      idUser: user.idUser,
+    };
   }
 }

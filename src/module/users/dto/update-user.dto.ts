@@ -1,11 +1,5 @@
 import { accountType, Role } from '@prisma/client';
-import {
-  IsEmail,
-  IsEmpty,
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-} from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class UpdateUserDto {
   nameUser: string;
