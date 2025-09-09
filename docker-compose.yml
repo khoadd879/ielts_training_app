@@ -1,0 +1,16 @@
+services:
+  ielts_training_app:
+    image: ielts_training_app
+    environment:
+      PORT: ${PORT}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TOKEN_EXPIRED: ${JWT_ACCESS_TOKEN_EXPIRED}
+      MAILER_USER: ${MAILER_USER}
+      MAILER_PASSWORD: ${MAILER_PASSWORD}
+      NODE_ENV: development
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./src:/src
+      - ./prisma:/prisma
