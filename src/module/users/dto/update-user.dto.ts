@@ -22,4 +22,7 @@ export class UpdateUserDto {
 
   @IsEnum(accountType)
   accountType: accountType;
+
+  @IsNotEmpty()
+  password: string;
 }

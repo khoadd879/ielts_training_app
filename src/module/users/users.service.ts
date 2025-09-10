@@ -4,8 +4,6 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { hashPasswordHelper } from 'src/helpers/utils';
 import { CreateAuthDto } from 'src/auth/dto/create-auth.dto';
-import { v4 as uuidv4 } from 'uuid';
-import dayjs from 'dayjs';
 import { VerificationService } from 'src/auth/verification/verification.service';
 import { OTPType } from '@prisma/client';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -80,29 +78,33 @@ export class UsersService {
   }
 
   async remove(id: string) {
+    await this.verificationService.deleteAllOtp(id);
+
     return this.databaseService.user.delete({
       where: { idUser: id },
     });
   }
 
   async handleRegister(registerDto: CreateAuthDto) {
-    const { email, password } = registerDto;
+    const { email, password, confirmPassword } = registerDto;
     // Check if email already exists
-    const existingUser = await this.findByEmail(registerDto.email);
+    const existingUser = await this.findByEmail(email);
     if (existingUser) {
       throw new BadRequestException('Email already in use');
     }
 
+    if (password !== confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
     //hash password
-    const hashedPassword = await hashPasswordHelper(registerDto.password);
+    const hashedPassword = await hashPasswordHelper(password);
 
     const user = await this.databaseService.user.create({
       data: {
         email,
         password: hashedPassword,
         isActive: false,
-        code_id: uuidv4(),
-        code_expiration: dayjs().add(1, 'minutes').toDate(),
       },
     });
     const otpGenerate = await this.verificationService.generateOtp(
@@ -132,5 +134,44 @@ export class UsersService {
     });
 
     return { email, otpGenerate };
+  }
+
+  async activateUser(idUser: string) {
+    return this.databaseService.user.update({
+      where: { idUser },
+      data: { isActive: true },
+    });
+  }
+
+  async sendResetPasswordMail(email: string, otp: string) {
+    await this.mailerService.sendMail({
+      to: `${email}`,
+      subject: 'Đặt lại mật khẩu',
+      html: `
+        <div style="background:#f5f5f5;padding:24px 0;">
+          <div style="max-width:420px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;">
+            <div style="background:#e5e5e5;padding:24px 0;text-align:center;">
+              <h2 style="margin:0;font-size:28px;font-weight:600;">Đặt lại mật khẩu</h2>
+            </div>
+            <div style="padding:32px 24px;text-align:center;">
+              <p style="font-size:16px;">Mã xác thực đặt lại mật khẩu của bạn:</p>
+              <div style="font-size:36px;letter-spacing:12px;font-weight:bold;margin:16px 0 8px 0;">
+                ${otp}
+              </div>
+              <p style="color:#888;font-size:14px;">Mã này sẽ sớm hết hạn.</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+
+    return { email, otp };
+  }
+
+  async updatePassword(idUser: string, hashedPassword: string) {
+    return this.databaseService.user.update({
+      where: { idUser },
+      data: { password: hashedPassword },
+    });
   }
 }

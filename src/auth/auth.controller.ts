@@ -10,14 +10,10 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './passport/local-auth.guard';
 import { Public } from 'src/decorator/customize';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { MailerService } from '@nestjs-modules/mailer';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly mailerService: MailerService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
@@ -32,16 +28,40 @@ export class AuthController {
     return this.authService.handleRegister(registerDto);
   }
 
-  @Get('mail')
+  @Post('verify-otp')
   @Public()
-  testMail() {
-    this.mailerService.sendMail({
-      to: 'khoadd879@gmail.com', // list of receivers
-      subject: 'Testing Nest MailerModule ✔', // Subject line
-      text: 'welcome', // plaintext body
-      html: '<b>hello world</b>', // HTML body content
-    });
+  async verifyOtp(@Body() body: { email: string; otp: string }) {
+    return this.authService.verifyOtp(body.email, body.otp);
+  }
 
-    return 'ok';
+  @Post('resend-otp')
+  @Public()
+  async resendOtp(@Body() body: { email: string }) {
+    return this.authService.resendOtp(body.email);
+  }
+
+  @Post('forgot-password')
+  @Public()
+  async forgotPassword(@Body() body: { email: string }) {
+    return this.authService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @Public()
+  async resetPassword(
+    @Body()
+    body: {
+      email: string;
+      otp: string;
+      newPassword: string;
+      confirmPassword: string;
+    },
+  ) {
+    return this.authService.resetPassword(
+      body.email,
+      body.otp,
+      body.newPassword,
+      body.confirmPassword,
+    );
   }
 }

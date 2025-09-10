@@ -23,4 +23,28 @@ export class VerificationService {
     });
     return otp;
   }
+
+  async getLatestOtp(userId: string) {
+    return this.databaseService.verificationCode.findFirst({
+      where: { idUser: userId, type: OTPType.OTP },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getLatestOtpResetPassword(userId: string) {
+    return this.databaseService.verificationCode.findFirst({
+      where: { idUser: userId, type: OTPType.RESET_LINK },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async compareOtp(otp: string, hashedOtp: string) {
+    return bcrypt.compare(otp, hashedOtp);
+  }
+
+  async deleteAllOtp(id: string) {
+    return this.databaseService.verificationCode.deleteMany({
+      where: { idUser: id },
+    });
+  }
 }
