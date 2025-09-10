@@ -1,5 +1,8 @@
 services:
   ielts_training_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: ielts_training_app
     environment:
       PORT: ${PORT}
