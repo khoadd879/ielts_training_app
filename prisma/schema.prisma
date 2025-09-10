@@ -35,6 +35,22 @@ model User {
   des De[]
   userAnswers UserAnswer[]
   userWritingSubmissions UserWritingSubmission[]
+  verificationCodes VerificationCode[]
+}
+
+model VerificationCode {
+  idCode      String   @id @default(uuid())
+  idUser    String
+  token        String
+  type       OTPType
+  expiration   DateTime
+  createdAt   DateTime @default(now())
+  user      User     @relation(fields: [idUser], references: [idUser])
+}
+
+enum OTPType{
+  OTP 
+  RESET_LINK 
 }
 
 enum accountType {
