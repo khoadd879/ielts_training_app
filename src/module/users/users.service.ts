@@ -62,7 +62,7 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     file?: Express.Multer.File,
   ) {
-    const { nameUser, email, phoneNumber, address, accountType } =
+    const { nameUser, email, phoneNumber, address, accountType, role } =
       updateUserDto;
     let avatar = updateUserDto.avatar;
 
@@ -80,6 +80,7 @@ export class UsersService {
         phoneNumber,
         accountType,
         address,
+        role,
         avatar,
       },
     });
@@ -88,7 +89,9 @@ export class UsersService {
       nameUser: user.nameUser,
       email: user.email,
       phoneNumber: user.phoneNumber,
+      accountType: user.accountType,
       address: user.address,
+      role: user.role,
       avatar: user.avatar,
     };
   }
