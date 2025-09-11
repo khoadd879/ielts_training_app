@@ -1,34 +1,48 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { VocabularyService } from './vocabulary.service';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('vocabulary')
 export class VocabularyController {
   constructor(private readonly vocabularyService: VocabularyService) {}
 
-  @Post()
+  @Post('create-vocabulary')
   create(@Body() createVocabularyDto: CreateVocabularyDto) {
-    return this.vocabularyService.create(createVocabularyDto);
+    return this.vocabularyService.createVocabulary(createVocabularyDto);
   }
 
-  @Get()
-  findAll() {
-    return this.vocabularyService.findAll();
+  @Get('get-all-vocabulary-by-id-user/:idUser')
+  findAll(@Param('idUser') idUser: string) {
+    return this.vocabularyService.findAllByIdUser(idUser);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.vocabularyService.findOne(+id);
+  @Get('get-by-name/:idUser')
+  findByName(@Query('word') word: string, @Param('idUser') idUser: string) {
+    return this.vocabularyService.findByWord(word, idUser);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateVocabularyDto: UpdateVocabularyDto) {
-    return this.vocabularyService.update(+id, updateVocabularyDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateVocabularyDto: UpdateVocabularyDto,
+  ) {
+    return this.vocabularyService.update(id, updateVocabularyDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.vocabularyService.remove(+id);
+  @Delete(':id/:idUser')
+  remove(@Param('id') id: string, @Param('idUser') idUser: string) {
+    return this.vocabularyService.remove(id, idUser);
   }
 }

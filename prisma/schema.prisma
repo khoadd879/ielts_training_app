@@ -91,16 +91,16 @@ model LoaiTuVung {
 model TuVung{
   idTuVung    String       @id @default(uuid())
   idLoaiTuVung String
-  idUser String?
+  idUser String
   word       String
-  phonetic   String?
+  phonetic   String?  // phiên âm
   meaning    String
   example    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
  loaiTuVung LoaiTuVung @relation(fields: [idLoaiTuVung], references: [idLoaiTuVung])
-  user User? @relation(fields: [idUser], references: [idUser])
+  user User @relation(fields: [idUser], references: [idUser])
 }
 
 model LoaiDe {

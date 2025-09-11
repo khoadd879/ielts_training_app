@@ -1,26 +1,119 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
-
+import { DatabaseService } from 'src/database/database.service';
 @Injectable()
 export class VocabularyService {
-  create(createVocabularyDto: CreateVocabularyDto) {
-    return 'This action adds a new vocabulary';
+  constructor(private readonly databaseService: DatabaseService) {}
+
+  //Vocabulary
+  async createVocabulary(createVocabularyDto: CreateVocabularyDto) {
+    const { idUser, word, meaning, phonetic, example, idLoaiTuVung } =
+      createVocabularyDto;
+
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+
+    const typeVocabulary = await this.databaseService.loaiTuVung.findUnique({
+      where: { idLoaiTuVung },
+    });
+
+    if (!existingUser) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!typeVocabulary) {
+      throw new BadRequestException('Type vocabulary not found');
+    }
+
+    return this.databaseService.tuVung.create({
+      data: {
+        idUser,
+        word,
+        meaning,
+        phonetic,
+        example,
+        idLoaiTuVung,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all vocabulary`;
+  //Tim kiem tat ca tu vung theo idUser
+  async findAllByIdUser(idUser: string) {
+    return this.databaseService.tuVung.findMany({ where: { idUser } });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} vocabulary`;
+  //Cap nhat tu vung
+  update(id: string, updateVocabularyDto: UpdateVocabularyDto) {
+    const { idUser, word, meaning, phonetic, example, idLoaiTuVung } =
+      updateVocabularyDto;
+
+    const existingVocabulary = this.databaseService.tuVung.findUnique({
+      where: { idTuVung: id },
+    });
+
+    if (!existingVocabulary) {
+      throw new BadRequestException('Vocabulary not found');
+    }
+
+    const existingUser = this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+
+    if (!existingUser) {
+      throw new BadRequestException('User not found');
+    }
+    return this.databaseService.tuVung.update({
+      where: { idTuVung: id },
+      data: {
+        word,
+        meaning,
+        phonetic,
+        example,
+        idLoaiTuVung,
+      },
+    });
   }
 
-  update(id: number, updateVocabularyDto: UpdateVocabularyDto) {
-    return `This action updates a #${id} vocabulary`;
+  //Xoa tu vung
+  remove(id: string, idUser: string) {
+    const existingVocabulary = this.databaseService.tuVung.findUnique({
+      where: { idTuVung: id },
+    });
+
+    if (!existingVocabulary) {
+      throw new BadRequestException('Vocabulary not found');
+    }
+
+    const existingUser = this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+
+    if (!existingUser) {
+      throw new BadRequestException('User not found');
+    }
+    return this.databaseService.tuVung.delete({ where: { idTuVung: id } });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} vocabulary`;
+  //Tim kiem tu vung theo tu khoa
+  async findByWord(word: string, idUser: string) {
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+
+    if (!existingUser) {
+      throw new BadRequestException('User not found');
+    }
+
+    return this.databaseService.tuVung.findMany({
+      where: {
+        word: {
+          equals: word,
+          mode: 'insensitive', // không phân biệt hoa thường
+        },
+      },
+      include: { loaiTuVung: true },
+    });
   }
 }

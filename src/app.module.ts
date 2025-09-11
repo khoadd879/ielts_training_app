@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { VocabularyModule } from './module/vocabulary/vocabulary.module';
+import { TypeVocabularyModule } from './module/type_vocabulary/type_vocabulary.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { MailerModule } from '@nestjs-modules/mailer';
     DatabaseModule,
     ConfigModule.forRoot(),
     AuthModule,
+    VocabularyModule,
+    TypeVocabularyModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

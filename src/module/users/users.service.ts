@@ -20,7 +20,7 @@ export class UsersService {
       createUserDto;
 
     // Hash the password before storing it
-    const hashedPassword = await hashPasswordHelper(createUserDto.password);
+    const hashedPassword = await hashPasswordHelper(password);
 
     const user = await this.databaseService.user.create({
       data: {
