@@ -1,15 +1,14 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './passport/local-auth.guard';
 import { Public } from 'src/decorator/customize';
 import { CreateAuthDto } from './dto/create-auth.dto';
+import { LoginDto } from './dto/login.dto';
+import { ApiBody } from '@nestjs/swagger';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResendOtpDTO } from './dto/resend-otp.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -17,6 +16,7 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
+  @ApiBody({ type: LoginDto })
   @Public()
   login(@Request() req) {
     return this.authService.login(req.user);
@@ -29,24 +29,28 @@ export class AuthController {
   }
 
   @Post('verify-otp')
+  @ApiBody({ type: VerifyOtpDto })
   @Public()
   async verifyOtp(@Body() body: { email: string; otp: string }) {
     return this.authService.verifyOtp(body.email, body.otp);
   }
 
   @Post('resend-otp')
+  @ApiBody({ type: ResendOtpDTO })
   @Public()
   async resendOtp(@Body() body: { email: string }) {
     return this.authService.resendOtp(body.email);
   }
 
   @Post('forgot-password')
+  @ApiBody({ type: ForgotPasswordDto })
   @Public()
   async forgotPassword(@Body() body: { email: string }) {
     return this.authService.forgotPassword(body.email);
   }
 
   @Post('reset-password')
+  @ApiBody({ type: ResetPasswordDto })
   @Public()
   async resetPassword(
     @Body()
