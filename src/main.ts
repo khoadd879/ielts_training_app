@@ -18,6 +18,7 @@ async function bootstrap() {
     .setTitle('Ielts Training App')
     .setDescription('The ielts training app API description')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
