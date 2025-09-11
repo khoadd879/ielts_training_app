@@ -30,9 +30,10 @@ export class UpdateUserDto {
   address: string;
 
   @ApiProperty({ example: 'USER', enum: accountType })
+  @IsOptional()
   @IsEnum(accountType)
   accountType: accountType;
 
-  @IsNotEmpty()
+  @IsOptional()
   password: string;
 }

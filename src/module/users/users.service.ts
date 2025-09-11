@@ -7,12 +7,15 @@ import { CreateAuthDto } from 'src/auth/dto/create-auth.dto';
 import { VerificationService } from 'src/auth/verification/verification.service';
 import { OTPType } from '@prisma/client';
 import { MailerService } from '@nestjs-modules/mailer';
+import { CloudinaryService } from '../../cloudinary/cloudinary.service';
+
 @Injectable()
 export class UsersService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly verificationService: VerificationService,
     private readonly mailerService: MailerService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -54,8 +57,20 @@ export class UsersService {
     return await this.databaseService.user.findUnique({ where: { email } });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
-    const { nameUser, email, phoneNumber, address, avatar } = updateUserDto;
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    file?: Express.Multer.File,
+  ) {
+    const { nameUser, email, phoneNumber, address, accountType } =
+      updateUserDto;
+    let avatar = updateUserDto.avatar;
+
+    // Nếu có file upload, upload lên Cloudinary và lấy link
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      avatar = uploadResult.secure_url;
+    }
 
     const user = await this.databaseService.user.update({
       where: { idUser: id },
@@ -63,6 +78,7 @@ export class UsersService {
         nameUser,
         email,
         phoneNumber,
+        accountType,
         address,
         avatar,
       },
