@@ -108,12 +108,21 @@ export class UsersService {
     const { email, password, confirmPassword } = registerDto;
     // Check if email already exists
     const existingUser = await this.findByEmail(email);
-    if (existingUser) {
+
+    if (existingUser && existingUser.isActive === true) {
       throw new BadRequestException('Email already in use');
     }
 
     if (password !== confirmPassword) {
       throw new BadRequestException('Passwords do not match');
+    }
+
+    // Nếu user đã tồn tại nhưng chưa kích hoạt, xóa user cũ và các OTP liên quan
+    if (existingUser && existingUser.isActive === false) {
+      await this.verificationService.deleteAllOtp(existingUser.idUser);
+      await this.databaseService.user.delete({
+        where: { idUser: existingUser.idUser },
+      });
     }
 
     //hash password
@@ -192,5 +201,17 @@ export class UsersService {
       where: { idUser },
       data: { password: hashedPassword },
     });
+  }
+
+  // Xoá user không hoạt động trong một khoảng thời gian (theo ngày)
+  async deleteInactiveUsersOlderThan(days: number) {
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const { count } = await this.databaseService.user.deleteMany({
+      where: {
+        isActive: false,
+        createdAt: { lt: cutoff },
+      },
+    });
+    return count;
   }
 }
