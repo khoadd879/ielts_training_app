@@ -13,7 +13,7 @@ export class VerificationService {
     const otp = crypto.randomInt(100000, 999999).toString();
     const hashedOTP = await bcrypt.hash(otp, 10);
     const expiry = new Date(Date.now() + 2 * 60 * 1000); // OTP valid for 2 minutes
-    const otpRecord = await this.databaseService.verificationCode.create({
+    await this.databaseService.verificationCode.create({
       data: {
         idUser: userId,
         token: hashedOTP,

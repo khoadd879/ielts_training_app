@@ -77,17 +77,31 @@ export class AuthService {
     return { message: 'Account activated successfully' };
   }
 
-  async resendOtp(email: string) {
+  async resendOtp(email: string, type: OTPType) {
     const user = await this.usersService.findByEmail(email);
     if (!user) throw new BadRequestException('User not found');
-    if (user.isActive)
-      throw new BadRequestException('Account is already activated');
+
+    let otpRecord;
+
     await this.verificationService.deleteAllOtp(user.idUser);
-    const otp = await this.verificationService.generateOtp(
-      user.idUser,
-      OTPType.OTP,
-    );
-    return { message: 'OTP resent successfully', otp };
+
+    if (type === OTPType.OTP && user.isActive) {
+      throw new BadRequestException('Account is already activated');
+    }
+
+    if (type === OTPType.OTP && !user.isActive) {
+      await this.verificationService.deleteAllOtp(user.idUser);
+      otpRecord = await this.verificationService.generateOtp(user.idUser, type);
+    }
+
+    if (type === OTPType.RESET_LINK && user.isActive) {
+      // Gửi mail cho user
+      otpRecord = await this.verificationService.generateOtp(
+        user.idUser,
+        OTPType.RESET_LINK,
+      );
+    }
+    return { message: 'OTP resent successfully', otpRecord };
   }
 
   async forgotPassword(email: string) {

@@ -38,8 +38,8 @@ export class AuthController {
   @Post('resend-otp')
   @ApiBody({ type: ResendOtpDTO })
   @Public()
-  async resendOtp(@Body() body: { email: string }) {
-    return this.authService.resendOtp(body.email);
+  async resendOtp(@Body() body: { email: string; type: 'OTP' | 'RESET_LINK' }) {
+    return this.authService.resendOtp(body.email, body.type);
   }
 
   @Post('forgot-password')
