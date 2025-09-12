@@ -14,7 +14,7 @@ export class ResetPasswordDto {
 
   @ApiProperty({ example: '123456' })
   @IsNotEmpty({ message: 'Password is required' })
-  password: string;
+  newPassword: string;
 
   @ApiProperty({ example: '123456' })
   @IsNotEmpty({ message: 'Confirm Password is required' })
