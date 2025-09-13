@@ -2,14 +2,15 @@ import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from '../module/users/users.service';
 import { comparePasswordHelper, hashPasswordHelper } from 'src/helpers/utils';
 import { JwtService } from '@nestjs/jwt';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { VerificationService } from './verification/verification.service';
-import { AnyARecord } from 'node:dns';
 import { OTPType } from '@prisma/client';
+import { JwtAuthGuard } from './passport/jwt-auth.guard';
 
 @Injectable()
 export class AuthService {
@@ -42,6 +43,7 @@ export class AuthService {
       user: {
         idUser: user.idUser,
         email: user.email,
+        role: user.role,
       },
       access_token: this.jwtService.sign(payload),
     };
@@ -152,7 +154,7 @@ export class AuthService {
   async introspectToken(token: string) {
     try {
       const decoded = this.jwtService.verify(token);
-      return { active: true, decoded };
+      return { active: true };
     } catch (e) {
       return { active: false };
     }
