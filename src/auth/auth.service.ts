@@ -101,7 +101,7 @@ export class AuthService {
         OTPType.RESET_LINK,
       );
     }
-    return { message: 'OTP resent successfully', otpRecord };
+    return { message: 'OTP resent successfully', otp: otpRecord };
   }
 
   async forgotPassword(email: string) {
@@ -146,5 +146,15 @@ export class AuthService {
     // Xoá OTP sau khi dùng
     await this.verificationService.deleteAllOtp(user.idUser);
     return { message: 'Password reset successfully' };
+  }
+
+  //introspect token
+  async introspectToken(token: string) {
+    try {
+      const decoded = this.jwtService.verify(token);
+      return { active: true, decoded };
+    } catch (e) {
+      return { active: false };
+    }
   }
 }

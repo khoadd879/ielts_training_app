@@ -68,4 +68,14 @@ export class AuthController {
       body.confirmPassword,
     );
   }
+
+  // introspect token
+  @Post('introspect')
+  @ApiBody({
+    schema: { type: 'object', properties: { token: { type: 'string' } } },
+  })
+  @Public()
+  async introspectToken(@Body() body: { token: string }) {
+    return this.authService.introspectToken(body.token);
+  }
 }

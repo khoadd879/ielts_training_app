@@ -103,19 +103,17 @@ model TuVung{
   user User @relation(fields: [idUser], references: [idUser])
 }
 
-model LoaiDe {
-  idLoaiDe    String       @id @default(uuid())
-  nameLoaiDe  String   //Reading, Listening, Writing, Speaking
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  des De[]
+enum loaiDe {
+  LISTENING
+  READING
+  WRITING
+  SPEAKING
 }
 
 model De {
   idDe        String       @id @default(uuid())
   idUser      String
-  idLoaiDe    String
+  loaiDe  loaiDe
   title       String
   desciption  String
   duration    Int
@@ -128,7 +126,7 @@ model De {
   writingTasks WritingTask[]
   nhomCauHois NhomCauHoi[]
   user        User      @relation(fields: [idUser], references: [idUser])
-  loaiDe      LoaiDe    @relation(fields: [idLoaiDe], references: [idLoaiDe])
+  
 }
 
 model Option{
