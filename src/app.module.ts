@@ -11,7 +11,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { VocabularyModule } from './module/vocabulary/vocabulary.module';
 import { TypeVocabularyModule } from './module/type_vocabulary/type_vocabulary.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
-import { TestingModule } from '@nestjs/testing';
+import { TestModule } from './module/test/test.module';
 
 @Module({
   imports: [
@@ -22,7 +22,7 @@ import { TestingModule } from '@nestjs/testing';
     VocabularyModule,
     TypeVocabularyModule,
     CloudinaryModule,
-    TestingModule,
+    TestModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
