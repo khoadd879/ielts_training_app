@@ -119,9 +119,25 @@ export class AuthService {
     return { message: 'OTP sent to email', otp };
   }
 
+  async checkOTP(email: string, otp: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) throw new BadRequestException('User not found');
+    const otpRecord = await this.verificationService.getLatestOtpResetPassword(
+      user.idUser,
+    );
+    if (!otpRecord) throw new BadRequestException('OTP not found');
+    if (otpRecord.expiration < new Date())
+      throw new BadRequestException('OTP expired');
+    const isMatch = await this.verificationService.compareOtp(
+      otp,
+      otpRecord.token,
+    );
+    if (!isMatch) throw new BadRequestException('OTP incorrect');
+    return { message: 'OTP is valid' };
+  }
+
   async resetPassword(
     email: string,
-    otp: string,
     newPassword: string,
     confirmPassword: string,
   ) {
@@ -130,18 +146,6 @@ export class AuthService {
     if (newPassword !== confirmPassword) {
       throw new BadRequestException('Passwords do not match');
     }
-    const otpRecord = await this.verificationService.getLatestOtpResetPassword(
-      user.idUser,
-    );
-    if (!otpRecord || otpRecord.type !== OTPType.RESET_LINK)
-      throw new BadRequestException('OTP not found');
-    if (otpRecord.expiration < new Date())
-      throw new BadRequestException('OTP expired');
-    const isMatch = await this.verificationService.compareOtp(
-      otp,
-      otpRecord.token,
-    );
-    if (!isMatch) throw new BadRequestException('OTP incorrect');
     // Chỉ update password
     const hashedPassword = await hashPasswordHelper(newPassword);
     await this.usersService.updatePassword(user.idUser, hashedPassword);

@@ -28,7 +28,7 @@ export class AuthController {
     return this.authService.handleRegister(registerDto);
   }
 
-  @Post('verify-otp')
+  @Post('verify-otp-register')
   @ApiBody({ type: VerifyOtpDto })
   @Public()
   async verifyOtp(@Body() body: { email: string; otp: string }) {
@@ -49,6 +49,19 @@ export class AuthController {
     return this.authService.forgotPassword(body.email);
   }
 
+  @Post('checkotp-reset-password')
+  @ApiBody({ type: VerifyOtpDto })
+  @Public()
+  async check_otp(
+    @Body()
+    body: {
+      email: string;
+      otp: string;
+    },
+  ) {
+    return this.authService.checkOTP(body.email, body.otp);
+  }
+
   @Post('reset-password')
   @ApiBody({ type: ResetPasswordDto })
   @Public()
@@ -63,7 +76,6 @@ export class AuthController {
   ) {
     return this.authService.resetPassword(
       body.email,
-      body.otp,
       body.newPassword,
       body.confirmPassword,
     );
