@@ -8,6 +8,7 @@ import { PassportModule } from '@nestjs/passport';
 import { LocalStrategy } from './passport/local.strategy';
 import { JwtStrategy } from './passport/jwt.strategy';
 import { VerificationModule } from './verification/verification.module';
+import googleOauthConfig from './config/google-oauth.config';
 @Module({
   imports: [
     UsersModule,
@@ -25,6 +26,7 @@ import { VerificationModule } from './verification/verification.module';
       inject: [ConfigService],
     }),
     VerificationModule,
+    ConfigModule.forFeature(googleOauthConfig),
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy],
