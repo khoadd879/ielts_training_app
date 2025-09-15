@@ -16,10 +16,6 @@ export class CreateUserDto {
   @IsNotEmpty()
   password: string;
 
-  @ApiProperty({ example: '123456' })
-  @IsNotEmpty()
-  confirmPassword: string;
-
   @ApiProperty({ example: 'USER', enum: Role })
   @IsEnum(Role)
   role: Role;
@@ -36,7 +32,7 @@ export class CreateUserDto {
   @IsOptional()
   address: string;
 
-  @ApiProperty({ example: 'USER', enum: accountType })
+  @ApiProperty({ example: 'LOCAL', enum: accountType })
   @IsEnum(accountType)
   accountType: accountType;
 }

@@ -9,6 +9,7 @@ import { LocalStrategy } from './passport/local.strategy';
 import { JwtStrategy } from './passport/jwt.strategy';
 import { VerificationModule } from './verification/verification.module';
 import googleOauthConfig from './config/google-oauth.config';
+import { GoogleStrategy } from './passport/google.stategy';
 @Module({
   imports: [
     UsersModule,
@@ -29,6 +30,6 @@ import googleOauthConfig from './config/google-oauth.config';
     ConfigModule.forFeature(googleOauthConfig),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, GoogleStrategy],
 })
 export class AuthModule {}

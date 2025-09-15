@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from '../module/users/users.service';
 import { comparePasswordHelper, hashPasswordHelper } from 'src/helpers/utils';
@@ -10,7 +9,9 @@ import { JwtService } from '@nestjs/jwt';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { VerificationService } from './verification/verification.service';
 import { OTPType } from '@prisma/client';
-import { JwtAuthGuard } from './passport/jwt-auth.guard';
+import { stat } from 'fs';
+import { CreateUserDto } from 'src/module/users/dto/create-user.dto';
+import { CreateUserGoogleDto } from 'src/module/users/dto/create-user-google.dto';
 
 @Injectable()
 export class AuthService {
@@ -40,12 +41,15 @@ export class AuthService {
     }
 
     return {
-      user: {
-        idUser: user.idUser,
-        email: user.email,
-        role: user.role,
+      message: 'Login successful',
+      data: {
+        user: {
+          idUser: user.idUser,
+          role: user.role,
+        },
+        access_token: this.jwtService.sign(payload),
       },
-      access_token: this.jwtService.sign(payload),
+      status: 200,
     };
   }
 
@@ -76,7 +80,7 @@ export class AuthService {
     // Kích hoạt tài khoản
     await this.usersService.activateUser(user.idUser);
 
-    return { message: 'Account activated successfully' };
+    return { message: 'Account activated successfully', status: 200 };
   }
 
   async resendOtp(email: string, type: OTPType) {
@@ -103,7 +107,11 @@ export class AuthService {
         OTPType.RESET_LINK,
       );
     }
-    return { message: 'OTP resent successfully', otp: otpRecord };
+    return {
+      message: 'OTP resent successfully',
+      data: { otp: otpRecord },
+      status: 200,
+    };
   }
 
   async forgotPassword(email: string) {
@@ -116,7 +124,7 @@ export class AuthService {
     );
     // Gửi mail cho user
     await this.usersService.sendResetPasswordMail(user.email, otp);
-    return { message: 'OTP sent to email', otp };
+    return { message: 'OTP sent to email', data: otp, status: 200 };
   }
 
   async checkOTP(email: string, otp: string) {
@@ -133,7 +141,7 @@ export class AuthService {
       otpRecord.token,
     );
     if (!isMatch) throw new BadRequestException('OTP incorrect');
-    return { message: 'OTP is valid' };
+    return { message: 'OTP is valid', status: 200 };
   }
 
   async resetPassword(
@@ -151,16 +159,31 @@ export class AuthService {
     await this.usersService.updatePassword(user.idUser, hashedPassword);
     // Xoá OTP sau khi dùng
     await this.verificationService.deleteAllOtp(user.idUser);
-    return { message: 'Password reset successfully' };
+    return { message: 'Password reset successfully', status: 200 };
   }
 
   //introspect token
   async introspectToken(token: string) {
     try {
       const decoded = this.jwtService.verify(token);
-      return { active: true };
+      return {
+        message: 'Token is active',
+        data: { active: true },
+        status: 200,
+      };
     } catch (e) {
-      return { active: false };
+      return {
+        message: 'Token is unactive',
+        data: { active: false },
+        status: 200,
+      };
     }
+  }
+
+  //validate google user
+  async validateGoogleUser(googleUser: CreateUserGoogleDto) {
+    const user = await this.usersService.findByEmail(googleUser.email);
+    if (user) return user;
+    return await this.usersService.createGoogleAccount(googleUser);
   }
 }

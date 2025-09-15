@@ -8,6 +8,7 @@ import { VerificationService } from 'src/auth/verification/verification.service'
 import { OTPType } from '@prisma/client';
 import { MailerService } from '@nestjs-modules/mailer';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
+import { CreateUserGoogleDto } from './dto/create-user-google.dto';
 
 @Injectable()
 export class UsersService {
@@ -19,8 +20,24 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { nameUser, email, password, phoneNumber, address, avatar } =
-      createUserDto;
+    const {
+      nameUser,
+      email,
+      password,
+      phoneNumber,
+      address,
+      avatar,
+      role,
+      accountType,
+    } = createUserDto;
+
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('Email already in use');
+    }
 
     // Hash the password before storing it
     const hashedPassword = await hashPasswordHelper(password);
@@ -33,24 +50,96 @@ export class UsersService {
         phoneNumber,
         address,
         avatar,
+        role,
+        accountType,
       },
     });
     return {
-      idUser: user.idUser,
-      nameUser: user.nameUser,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      address: user.address,
-      avatar: user.avatar,
+      message: 'User created successfully',
+      data: {
+        idUser: user.idUser,
+        nameUser: user.nameUser,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
+        role: user.role,
+        accountType: user.accountType,
+        avatar: user.avatar,
+      },
+      status: 200,
+    };
+  }
+
+  async createGoogleAccount(createUserDto: CreateUserGoogleDto) {
+    const {
+      nameUser,
+      email,
+      password,
+      phoneNumber,
+      address,
+      avatar,
+      role,
+      accountType,
+      isActive,
+    } = createUserDto;
+
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('Email already in use');
+    }
+
+    // Hash the password before storing it
+    const hashedPassword = await hashPasswordHelper(password);
+
+    const user = await this.databaseService.user.create({
+      data: {
+        nameUser,
+        email,
+        password: hashedPassword,
+        phoneNumber,
+        address,
+        avatar,
+        role,
+        accountType,
+        isActive,
+      },
+    });
+    return {
+      message: 'User created successfully',
+      data: {
+        idUser: user.idUser,
+        nameUser: user.nameUser,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
+        role: user.role,
+        accountType: user.accountType,
+        avatar: user.avatar,
+      },
+      status: 200,
     };
   }
 
   async findAll() {
-    return this.databaseService.user.findMany();
+    const users = await this.databaseService.user.findMany();
+    // Loại bỏ password khỏi từng user
+    const data = users.map(({ password, ...rest }) => rest);
+    return { message: 'Users retrieved successfully', data, status: 200 };
   }
 
   async findOne(id: string) {
-    return this.databaseService.user.findUnique({ where: { idUser: id } });
+    const user = await this.databaseService.user.findUnique({
+      where: { idUser: id },
+    });
+    if (!user) {
+      return { message: 'User not found', data: null, status: 404 };
+    }
+    // Loại bỏ password
+    const { password, ...data } = user;
+    return { message: 'User retrieved successfully', data, status: 200 };
   }
 
   async findByEmail(email: string) {
@@ -85,23 +174,29 @@ export class UsersService {
       },
     });
     return {
-      idUser: user.idUser,
-      nameUser: user.nameUser,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      accountType: user.accountType,
-      address: user.address,
-      role: user.role,
-      avatar: user.avatar,
+      message: 'User updated successfully',
+      data: {
+        idUser: user.idUser,
+        nameUser: user.nameUser,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        accountType: user.accountType,
+        address: user.address,
+        role: user.role,
+        avatar: user.avatar,
+      },
+      status: 200,
     };
   }
 
   async remove(id: string) {
     await this.verificationService.deleteAllOtp(id);
 
-    return this.databaseService.user.delete({
+    const data = await this.databaseService.user.delete({
       where: { idUser: id },
     });
+
+    return { message: 'User deleted successfully', data, status: 200 };
   }
 
   async handleRegister(registerDto: CreateAuthDto) {
@@ -161,14 +256,23 @@ export class UsersService {
       `,
     });
 
-    return { email, otpGenerate };
+    return {
+      message: 'User registered successfully',
+      data: {
+        idUser: user.idUser,
+        otp: otpGenerate,
+      },
+      status: 200,
+    };
   }
 
   async activateUser(idUser: string) {
-    return this.databaseService.user.update({
+    const data = await this.databaseService.user.update({
       where: { idUser },
       data: { isActive: true },
     });
+
+    return { message: 'User activated successfully', data, status: 200 };
   }
 
   async sendResetPasswordMail(email: string, otp: string) {
@@ -193,14 +297,22 @@ export class UsersService {
       `,
     });
 
-    return { email, otp };
+    return {
+      message: 'Reset password email sent',
+      data: {
+        email: email,
+        otp: otp,
+      },
+      status: 200,
+    };
   }
 
   async updatePassword(idUser: string, hashedPassword: string) {
-    return this.databaseService.user.update({
+    const data = await this.databaseService.user.update({
       where: { idUser },
       data: { password: hashedPassword },
     });
+    return { message: 'Password updated successfully', data, status: 200 };
   }
 
   // Xoá user không hoạt động trong một khoảng thời gian (theo ngày)

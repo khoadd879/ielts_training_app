@@ -1,4 +1,13 @@
-import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Request,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './passport/local-auth.guard';
 import { Public } from 'src/decorator/customize';
@@ -9,6 +18,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDTO } from './dto/resend-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { GoogleAuthGuard } from './passport/google-auth/google-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -89,5 +99,24 @@ export class AuthController {
   @Public()
   async introspectToken(@Body() body: { token: string }) {
     return this.authService.introspectToken(body.token);
+  }
+
+  //login with google
+  @Get('google/login')
+  @Public()
+  @UseGuards(GoogleAuthGuard)
+  async googleLogin() {}
+
+  //google callback
+  @Get('google/callback')
+  @Public()
+  @UseGuards(GoogleAuthGuard)
+  async googleCallBack(@Req() req) {
+    const data = await this.authService.login(req.user.email);
+    return {
+      message: 'Login with Google successfully',
+      data,
+      status: 200,
+    };
   }
 }
