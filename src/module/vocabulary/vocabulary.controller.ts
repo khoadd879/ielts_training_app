@@ -7,11 +7,14 @@ import {
   Param,
   Delete,
   Query,
+  ValidationPipe,
+  UsePipes,
 } from '@nestjs/common';
 import { VocabularyService } from './vocabulary.service';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { AddVocabularyToTopicDto } from './dto/add-vocabulary-to-topic.dto';
 
 @ApiBearerAuth()
 @Controller('vocabulary')
@@ -44,5 +47,15 @@ export class VocabularyController {
   @Delete(':id/:idUser')
   remove(@Param('id') id: string, @Param('idUser') idUser: string) {
     return this.vocabularyService.remove(id, idUser);
+  }
+
+  @Post('add-vocabulary-to-topic')
+  @ApiBody({ type: AddVocabularyToTopicDto })
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  addVocabularyToTopic(@Body() body: AddVocabularyToTopicDto) {
+    return this.vocabularyService.addVocabularyToTopic(
+      body.idTuVung,
+      body.idTopic,
+    );
   }
 }

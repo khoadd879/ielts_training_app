@@ -9,9 +9,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { VocabularyModule } from './module/vocabulary/vocabulary.module';
-import { TypeVocabularyModule } from './module/type_vocabulary/type_vocabulary.module';
+
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { TestModule } from './module/test/test.module';
+import { TopicModule } from './module/topic/topic.module';
 
 @Module({
   imports: [
@@ -20,9 +21,9 @@ import { TestModule } from './module/test/test.module';
     ConfigModule.forRoot(),
     AuthModule,
     VocabularyModule,
-    TypeVocabularyModule,
     CloudinaryModule,
     TestModule,
+    TopicModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

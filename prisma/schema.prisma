@@ -34,6 +34,7 @@ model User {
   userAnswers UserAnswer[]
   userWritingSubmissions UserWritingSubmission[]
   verificationCodes VerificationCode[]
+  Topic Topic[]
 }
 
 model VerificationCode {
@@ -79,18 +80,19 @@ model UserTestResult {
   de          De             @relation(fields: [idDe], references: [idDe])
 }
 
-model LoaiTuVung {
-  idLoaiTuVung String       @id @default(uuid())
-  nameLoaiTuVung String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// model LoaiTuVung {
+//   idLoaiTuVung String       @id @default(uuid())
+//   nameLoaiTuVung String
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
 
-  tuVungs TuVung[]
-}
+//   tuVungs TuVung[]
+// }
 
 model TuVung{
   idTuVung    String       @id @default(uuid())
-  idLoaiTuVung String
+  loaiTuVung loaiTuVung
+  idTopic    String?
   idUser String
   word       String
   phonetic   String?  // phiên âm
@@ -99,8 +101,32 @@ model TuVung{
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
- loaiTuVung LoaiTuVung @relation(fields: [idLoaiTuVung], references: [idLoaiTuVung])
+//  loaiTuVung LoaiTuVung @relation(fields: [idLoaiTuVung], references: [idLoaiTuVung])
+  topic Topic? @relation(fields: [idTopic], references: [idTopic])
   user User @relation(fields: [idUser], references: [idUser])
+}
+
+model Topic{
+  idTopic    String       @id @default(uuid())
+  idUser String
+  nameTopic  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [idUser], references: [idUser])
+  tuVungs TuVung[]
+}// Topic có thể là chủ đề từ vựng như: Education, Health, Technology, Environment, Culture, Science, Business, Travel, Sports, Art
+
+enum loaiTuVung{
+  NOUN
+  VERB
+  ADJECTIVE
+  ADVERB
+  PHRASE
+  IDIOM
+  PREPOSITION //Giới từ, ex: in, on, at
+  CONJUNCTION //Liên từ, ex: and, but, or
+  INTERJECTION //Thán từ, ex: Oh!, Wow!
 }
 
 enum loaiDe {

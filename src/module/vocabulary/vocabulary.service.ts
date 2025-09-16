@@ -8,35 +8,33 @@ export class VocabularyService {
 
   //Vocabulary
   async createVocabulary(createVocabularyDto: CreateVocabularyDto) {
-    const { idUser, word, meaning, phonetic, example, idLoaiTuVung } =
+    const { idUser, word, meaning, phonetic, example, loaiTuVung } =
       createVocabularyDto;
 
     const existingUser = await this.databaseService.user.findUnique({
       where: { idUser },
     });
 
-    const typeVocabulary = await this.databaseService.loaiTuVung.findUnique({
-      where: { idLoaiTuVung },
-    });
-
     if (!existingUser) {
       throw new BadRequestException('User not found');
     }
 
-    if (!typeVocabulary) {
-      throw new BadRequestException('Type vocabulary not found');
-    }
-
-    return this.databaseService.tuVung.create({
+    const data = await this.databaseService.tuVung.create({
       data: {
         idUser,
+        loaiTuVung,
         word,
         meaning,
         phonetic,
         example,
-        idLoaiTuVung,
       },
     });
+
+    return {
+      message: 'Vocabulary created successfully',
+      data: data,
+      status: 200,
+    };
   }
 
   //Tim kiem tat ca tu vung theo idUser
@@ -45,8 +43,8 @@ export class VocabularyService {
   }
 
   //Cap nhat tu vung
-  update(id: string, updateVocabularyDto: UpdateVocabularyDto) {
-    const { idUser, word, meaning, phonetic, example, idLoaiTuVung } =
+  async update(id: string, updateVocabularyDto: UpdateVocabularyDto) {
+    const { idUser, word, meaning, phonetic, example, loaiTuVung } =
       updateVocabularyDto;
 
     const existingVocabulary = this.databaseService.tuVung.findUnique({
@@ -64,20 +62,25 @@ export class VocabularyService {
     if (!existingUser) {
       throw new BadRequestException('User not found');
     }
-    return this.databaseService.tuVung.update({
+    const data = await this.databaseService.tuVung.update({
       where: { idTuVung: id },
       data: {
         word,
         meaning,
         phonetic,
         example,
-        idLoaiTuVung,
+        loaiTuVung,
       },
     });
+    return {
+      message: 'Vocabulary updated successfully',
+      data: data,
+      status: 200,
+    };
   }
 
   //Xoa tu vung
-  remove(id: string, idUser: string) {
+  async remove(id: string, idUser: string) {
     const existingVocabulary = this.databaseService.tuVung.findUnique({
       where: { idTuVung: id },
     });
@@ -93,7 +96,15 @@ export class VocabularyService {
     if (!existingUser) {
       throw new BadRequestException('User not found');
     }
-    return this.databaseService.tuVung.delete({ where: { idTuVung: id } });
+    const data = await this.databaseService.tuVung.delete({
+      where: { idTuVung: id },
+    });
+
+    return {
+      message: 'Vocabulary deleted successfully',
+      data: data,
+      status: 200,
+    };
   }
 
   //Tim kiem tu vung theo tu khoa
@@ -106,14 +117,45 @@ export class VocabularyService {
       throw new BadRequestException('User not found');
     }
 
-    return this.databaseService.tuVung.findMany({
+    const data = await this.databaseService.tuVung.findMany({
       where: {
         word: {
-          equals: word,
+          contains: word,
           mode: 'insensitive', // không phân biệt hoa thường
         },
       },
-      include: { loaiTuVung: true },
     });
+
+    return {
+      message: 'Vocabularies retrieved successfully',
+      data: data,
+      status: 200,
+    };
+  }
+
+  //Dua tu vung vao topic
+  async addVocabularyToTopic(idTuVung: string, idTopic: string) {
+    const existingVocabulary = await this.databaseService.tuVung.findUnique({
+      where: { idTuVung },
+    });
+    if (!existingVocabulary) {
+      throw new BadRequestException('Vocabulary not found');
+    }
+    const existingTopic = await this.databaseService.topic.findUnique({
+      where: { idTopic },
+    });
+    if (!existingTopic) {
+      throw new BadRequestException('Topic not found');
+    }
+    const data = await this.databaseService.tuVung.update({
+      where: { idTuVung },
+      data: { idTopic },
+    });
+
+    return {
+      message: 'Vocabulary added to topic successfully',
+      data: data,
+      status: 200,
+    };
   }
 }
