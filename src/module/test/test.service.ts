@@ -97,6 +97,8 @@ export class TestService {
 
     const existingUser = await this.userService.findOne(idUser);
 
+    if (!existingUser) throw new BadRequestException('User not found');
+
     let imageUrl = img;
     if (file) {
       const uploadResult = await this.cloudinaryService.uploadFile(file);
@@ -131,7 +133,33 @@ export class TestService {
       throw new BadRequestException('Test not found');
     }
 
-    await this.databaseService.de.delete({ where: { idDe } });
+    await this.databaseService.$transaction([
+      this.databaseService.part.deleteMany({
+        where: {
+          idDe,
+        },
+      }),
+      this.databaseService.de.delete({ where: { idDe } }),
+    ]);
+
     return { message: 'Test deleted successfully', status: 200 };
+  }
+
+  async getVocabulariesInTopic(idDe: string) {
+    const existingTest = this.databaseService.de.findUnique({
+      where: { idDe },
+    });
+    if (!existingTest) {
+      throw new BadRequestException('Test not found');
+    }
+    const data = await this.databaseService.de.findMany({
+      where: { idDe },
+      include: { parts: true },
+    });
+    return {
+      message: 'Part retrieved successfully',
+      data: data,
+      status: 200,
+    };
   }
 }

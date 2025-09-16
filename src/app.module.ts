@@ -13,6 +13,7 @@ import { VocabularyModule } from './module/vocabulary/vocabulary.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { TestModule } from './module/test/test.module';
 import { TopicModule } from './module/topic/topic.module';
+import { PartModule } from './module/part/part.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { TopicModule } from './module/topic/topic.module';
     CloudinaryModule,
     TestModule,
     TopicModule,
+    PartModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -51,6 +53,7 @@ import { TopicModule } from './module/topic/topic.module';
       }),
       inject: [ConfigService],
     }),
+    PartModule,
   ],
   controllers: [AppController],
   providers: [

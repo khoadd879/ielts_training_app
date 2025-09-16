@@ -2,13 +2,13 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class AddVocabularyToTopicDto {
-  @ApiProperty({ description: 'ID của từ vựng', example: 'tuVung123' })
+  @ApiProperty({ example: 'tuVung123' })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'idTuVung must not be empty' })
   idTuVung: string;
 
-  @ApiProperty({ description: 'ID của topic', example: 'topic456' })
+  @ApiProperty({ example: 'topic456' })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'idTopic must not be empty' })
   idTopic: string;
 }

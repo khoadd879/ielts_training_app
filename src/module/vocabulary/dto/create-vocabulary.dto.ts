@@ -7,6 +7,10 @@ export class CreateVocabularyDto {
   @IsNotEmpty({ message: 'User ID should not be empty' })
   idUser: string;
 
+  @ApiProperty({ example: '123' })
+  @IsOptional()
+  idTopic: string;
+
   @ApiProperty({ example: 'example' })
   @IsNotEmpty({ message: 'Vocabulary word should not be empty' })
   word: string;

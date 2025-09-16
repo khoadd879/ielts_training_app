@@ -83,4 +83,9 @@ export class TestController {
   remove(@Param('id') id: string) {
     return this.testService.remove(id);
   }
+
+  @Get('get-part-in-test/:idDe')
+  getVocabulariesInTopic(@Param('idDe') idDe: string) {
+    return this.testService.getVocabulariesInTopic(idDe);
+  }
 }
