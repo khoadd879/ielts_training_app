@@ -196,7 +196,7 @@ export class UsersService {
       where: { idUser: id },
     });
 
-    return { message: 'User deleted successfully', data, status: 200 };
+    return { message: 'User deleted successfully', status: 200 };
   }
 
   async handleRegister(registerDto: CreateAuthDto) {
