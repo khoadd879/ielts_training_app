@@ -11,11 +11,12 @@ services:
       JWT_ACCESS_TOKEN_EXPIRED: ${JWT_ACCESS_TOKEN_EXPIRED}
       MAILER_USER: ${MAILER_USER}
       MAILER_PASSWORD: ${MAILER_PASSWORD}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALL_BACK_URL: ${GOOGLE_CALL_BACK_URL}
       NODE_ENV: development
     ports:
       - '3000:3000'
     volumes:
       - ./src:/src
       - ./prisma:/prisma
-
-      
