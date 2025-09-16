@@ -15,17 +15,18 @@ export class PartService {
     private readonly userService: UsersService,
   ) {}
   async create(createPartDto: CreatePartDto) {
-    const { idDe, idUser, namePart } = createPartDto;
+    const { idDe, namePart } = createPartDto;
 
-    const existingUser = await this.userService.findOne(idUser);
+    const existingTest = await this.databaseService.de.findUnique({
+      where: { idDe },
+    });
 
-    if (!existingUser) {
-      return new BadRequestException('User not found');
+    if (!existingTest) {
+      return new BadRequestException('Test not found');
     }
     const data = await this.databaseService.part.create({
       data: {
         idDe,
-        idUser,
         namePart,
       },
     });
@@ -37,16 +38,18 @@ export class PartService {
     };
   }
 
-  async findAll(idUser: string) {
-    const existingUser = await this.userService.findOne(idUser);
+  async findAll(idDe: string) {
+    const existingTest = await this.databaseService.de.findUnique({
+      where: { idDe },
+    });
 
-    if (!existingUser) {
-      return new BadRequestException('User not found');
+    if (!existingTest) {
+      return new BadRequestException('Test not found');
     }
 
     const data = await this.databaseService.part.findMany({
       where: {
-        idUser,
+        idDe,
       },
     });
 
@@ -76,17 +79,22 @@ export class PartService {
   }
 
   async update(idPart: string, updatePartDto: UpdatePartDto) {
-    const { idDe, idUser, namePart } = updatePartDto;
+    const { idDe, namePart } = updatePartDto;
 
-    const existingUser = await this.userService.findOne(idUser);
+    const existingTest = await this.databaseService.de.findUnique({
+      where: { idDe },
+    });
 
-    if (!existingUser) {
-      return new BadRequestException('User not found');
+    if (!existingTest) {
+      return new BadRequestException('Test not found');
     }
 
     const existingPart = await this.databaseService.part.findUnique({
       where: {
         idPart,
+      },
+      include: {
+        doanVans: true,
       },
     });
 
@@ -97,7 +105,6 @@ export class PartService {
       },
       data: {
         idDe,
-        idUser,
         namePart,
       },
     });

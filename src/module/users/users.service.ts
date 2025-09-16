@@ -42,7 +42,7 @@ export class UsersService {
     // Hash the password before storing it
     const hashedPassword = await hashPasswordHelper(password);
 
-    const user = await this.databaseService.user.create({
+    const data = await this.databaseService.user.create({
       data: {
         nameUser,
         email,
@@ -56,16 +56,7 @@ export class UsersService {
     });
     return {
       message: 'User created successfully',
-      data: {
-        idUser: user.idUser,
-        nameUser: user.nameUser,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        address: user.address,
-        role: user.role,
-        accountType: user.accountType,
-        avatar: user.avatar,
-      },
+      data,
       status: 200,
     };
   }

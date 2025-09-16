@@ -145,7 +145,7 @@ export class TestService {
     return { message: 'Test deleted successfully', status: 200 };
   }
 
-  async getVocabulariesInTopic(idDe: string) {
+  async getPartInTest(idDe: string) {
     const existingTest = this.databaseService.de.findUnique({
       where: { idDe },
     });

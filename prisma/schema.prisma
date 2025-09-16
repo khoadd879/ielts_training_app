@@ -35,7 +35,6 @@ model User {
   userWritingSubmissions UserWritingSubmission[]
   verificationCodes VerificationCode[]
   Topic Topic[]
-  part Part[]
 }
 
 model VerificationCode {
@@ -207,7 +206,7 @@ model UserAnswer {
 model Part {
   idPart     String       @id @default(uuid())
   idDe       String
-  idUser String
+ 
   namePart   String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -216,7 +215,6 @@ model Part {
   doanVans   DoanVan?
   nhomCauHois NhomCauHoi[]
   cauHois    CauHoi[]
-  user User @relation(fields: [idUser], references: [idUser])
 }
 
 model DoanVan{

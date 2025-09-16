@@ -86,6 +86,6 @@ export class TestController {
 
   @Get('get-part-in-test/:idDe')
   getVocabulariesInTopic(@Param('idDe') idDe: string) {
-    return this.testService.getVocabulariesInTopic(idDe);
+    return this.testService.getPartInTest(idDe);
   }
 }

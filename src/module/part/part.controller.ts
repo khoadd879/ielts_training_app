@@ -6,14 +6,11 @@ import {
   Patch,
   Param,
   Delete,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { PartService } from './part.service';
 import { CreatePartDto } from './dto/create-part.dto';
 import { UpdatePartDto } from './dto/update-part.dto';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-import { AddPartToTest } from './dto/add-part-to-test.dto';
 
 @ApiBearerAuth()
 @Controller('part')
@@ -25,9 +22,9 @@ export class PartController {
     return this.partService.create(createPartDto);
   }
 
-  @Get('get-all-part-by-idUser/:idUser')
-  findAll(@Param('idUser') idUser: string) {
-    return this.partService.findAll(idUser);
+  @Get('get-all-part-by-idTest/:idTest')
+  findAll(@Param('idTest') id: string) {
+    return this.partService.findAll(id);
   }
 
   @Get('get-one/:idPart')
