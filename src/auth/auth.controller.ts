@@ -121,6 +121,7 @@ export class AuthController {
   }
 
   @Get('health')
+  @Public()
   healthCheck() {
     return { status: 'ok' };
   }
