@@ -11,7 +11,7 @@ import { AuthService } from '../auth.service';
 import { accountType } from '@prisma/client';
 
 @Injectable()
-export class GoogleStrategy extends PassportStrategy(Strategy) {
+export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(
     @Inject(googleOauthConfig.KEY)
     private googleConfiguration: ConfigType<typeof googleOauthConfig>,
@@ -26,20 +26,31 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(
-    access_token: string,
+    accessToken: string,
     refreshToken: string,
     profile: any,
     done: VerifyCallback,
   ) {
-    const user = this.authService.validateGoogleUser({
-      email: profile.emails[0].value,
-      nameUser: profile.displayName,
-      avatar: profile.photos[0].value,
-      password: '',
-      role: 'USER',
-      accountType: accountType.GOOGLE,
-      isActive: true,
-    } as any);
-    done(null, user);
+    try {
+      const user = await this.authService.validateGoogleUser({
+        email: profile.emails?.[0]?.value,
+        nameUser: profile.displayName,
+        avatar: profile.photos?.[0]?.value,
+        password: '',
+        role: 'USER',
+        accountType: accountType.GOOGLE,
+        isActive: true,
+        phoneNumber: '', // fix thêm field
+        address: '', // fix thêm field
+      });
+
+      if (!user) {
+        return done(new Error('Google user validation failed'), false);
+      }
+
+      done(null, user);
+    } catch (err) {
+      done(err, false);
+    }
   }
 }

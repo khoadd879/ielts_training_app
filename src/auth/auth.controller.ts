@@ -111,12 +111,17 @@ export class AuthController {
   @Get('google/callback')
   @Public()
   @UseGuards(GoogleAuthGuard)
-  async googleCallBack(@Req() req) {
-    const data = await this.authService.login(req.user.email);
-    return {
-      message: 'Login with Google successfully',
-      data,
-      status: 200,
-    };
+  async googleCallback(@Req() req, @Res() res) {
+    const data = await this.authService.login(req.user);
+
+    // redirect về frontend + truyền token qua query param
+    return res.redirect(
+      `http://localhost:3000/auth/success?token=${data.data.access_token}`,
+    );
+  }
+
+  @Get('health')
+  healthCheck() {
+    return { status: 'ok' };
   }
 }

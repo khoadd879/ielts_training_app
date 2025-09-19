@@ -98,20 +98,7 @@ export class UsersService {
         isActive,
       },
     });
-    return {
-      message: 'User created successfully',
-      data: {
-        idUser: user.idUser,
-        nameUser: user.nameUser,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        address: user.address,
-        role: user.role,
-        accountType: user.accountType,
-        avatar: user.avatar,
-      },
-      status: 200,
-    };
+    return user;
   }
 
   async findAll() {
