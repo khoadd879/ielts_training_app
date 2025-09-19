@@ -31,7 +31,7 @@ import { PassageModule } from './module/passage/passage.module';
       useFactory: async (configService: ConfigService) => ({
         transport: {
           host: 'smtp.gmail.com',
-          port: 465,
+          port: 587,
           // ignoreTLS: true,
           secure: true,
           auth: {
