@@ -15,6 +15,8 @@ import { TestModule } from './module/test/test.module';
 import { TopicModule } from './module/topic/topic.module';
 import { PartModule } from './module/part/part.module';
 import { PassageModule } from './module/passage/passage.module';
+import { GroupOfQuestionsModule } from './module/group-of-questions/group-of-questions.module';
+import { QuestionModule } from './module/question/question.module';
 
 @Module({
   imports: [
@@ -55,6 +57,8 @@ import { PassageModule } from './module/passage/passage.module';
     }),
     PartModule,
     PassageModule,
+    GroupOfQuestionsModule,
+    QuestionModule,
   ],
   controllers: [AppController],
   providers: [

@@ -22,7 +22,7 @@ export class VocabularyService {
     const data = await this.databaseService.tuVung.create({
       data: {
         idUser,
-        idTopic,
+        idTopic: idTopic ? idTopic : null,
         loaiTuVung,
         word,
         meaning,

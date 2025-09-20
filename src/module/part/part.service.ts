@@ -63,9 +63,13 @@ export class PartService {
   }
 
   async findOne(idPart: string) {
-    const data = await this.databaseService.part.findUnique({
+    const data = await this.databaseService.part.findMany({
       where: {
         idPart,
+      },
+      include: {
+        doanVans: true,
+        nhomCauHois: true,
       },
     });
 
@@ -117,12 +121,19 @@ export class PartService {
   }
 
   async remove(idPart: string) {
-    await this.databaseService.part.delete({
-      where: {
-        idPart,
-      },
+    const existingPart = await this.databaseService.part.findUnique({
+      where: { idPart },
     });
 
+    if (!existingPart) throw new BadRequestException('Part not found');
+    await this.databaseService.$transaction([
+      this.databaseService.doanVan.deleteMany({
+        where: {
+          idPart,
+        },
+      }),
+      this.databaseService.part.delete({ where: { idPart } }),
+    ]);
     return {
       message: 'Delete part successfully',
       status: 200,

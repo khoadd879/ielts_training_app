@@ -235,7 +235,7 @@ model NhomCauHoi {
   idNhomCauHoi String       @id @default(uuid())
   idDe         String
   idPart       String
-  typeQuestion String
+  typeQuestion QuestionType
   title        String
   startingOrder Int
   endingOrder   Int
@@ -246,6 +246,19 @@ model NhomCauHoi {
   part         Part    @relation(fields: [idPart], references: [idPart])
   cauHois      CauHoi[]
 }
+
+enum QuestionType {
+  MCQ              // Multiple Choice
+  TFNG             // True/False/Not Given
+  YES_NO_NOTGIVEN  // Yes/No/Not Given
+  MATCHING         // Matching Information / Headings / Features
+  FILL_BLANK       // Điền từ vào chỗ trống
+  LABELING         // Map / Plan / Diagram Labeling
+  SHORT_ANSWER     // Trả lời ngắn (1–3 từ)
+
+  OTHER            // Loại khác (phòng trường hợp mở rộng)
+}
+
 
 model CauHoi {
   idCauHoi        String       @id @default(uuid())

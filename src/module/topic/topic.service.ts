@@ -63,6 +63,9 @@ export class TopicService {
         nameTopic: { contains: nameTopic, mode: 'insensitive' },
         idUser: idUser,
       },
+      include: {
+        tuVungs: true,
+      },
     });
 
     return {
@@ -125,7 +128,6 @@ export class TopicService {
     }
     const data = await this.databaseService.tuVung.findMany({
       where: { idTopic },
-      include: { topic: true },
     });
     return {
       message: 'Vocabularies retrieved successfully',
