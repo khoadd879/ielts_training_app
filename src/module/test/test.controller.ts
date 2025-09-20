@@ -79,7 +79,7 @@ export class TestController {
     return this.testService.update(id, updateTestDto, file);
   }
 
-  @Delete(':id')
+  @Delete('delete-test/:id')
   remove(@Param('id') id: string) {
     return this.testService.remove(id);
   }
