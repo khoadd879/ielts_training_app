@@ -26,15 +26,15 @@ export class GroupOfQuestionsController {
     );
   }
 
-  @Get()
-  findByIdpart(idPart: string) {
+  @Get('get-by-id-part/:idPart')
+  findByIdpart(@Param('idPart') idPart: string) {
     return this.groupOfQuestionsService.findByIdPart(idPart);
   }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.groupOfQuestionsService.findById(+id);
-  // }
+  @Get('get-by-id/:idGroupOfQuestions')
+  findById(@Param('idGroupOfQuestions') id: string) {
+    return this.groupOfQuestionsService.findById(id);
+  }
 
   @Patch('update-group-of-questions/:idGroupOfQuestions')
   update(

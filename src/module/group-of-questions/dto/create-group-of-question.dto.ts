@@ -1,22 +1,29 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { QuestionType } from '@prisma/client';
 import { IsNotEmpty } from 'class-validator';
 
 export class CreateGroupOfQuestionDto {
-  @IsNotEmpty({ message: 'idDe must not be empty' })
+  @IsNotEmpty()
+  @ApiProperty({ example: '123' })
   idDe: string;
 
-  @IsNotEmpty({ message: 'idPart must not be empty' })
+  @ApiProperty({ example: '123' })
+  @IsNotEmpty()
   idPart: string;
 
-  @IsNotEmpty({ message: 'type of question must not be empty' })
+  @IsNotEmpty()
+  @ApiProperty({ example: 'MCQ' })
   typeQuestion: QuestionType;
 
-  @IsNotEmpty({ message: 'title must not be empty' })
+  @IsNotEmpty()
+  @ApiProperty({ example: 'title' })
   title: string;
 
-  @IsNotEmpty({ message: 'starting order must not be empty' })
+  @IsNotEmpty()
+  @ApiProperty({ example: '1' })
   startingOrder: number;
 
-  @IsNotEmpty({ message: 'ending order must not be empty' })
+  @IsNotEmpty()
+  @ApiProperty({ example: '3' })
   endingOrder: number;
 }

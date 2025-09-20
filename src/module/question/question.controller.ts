@@ -23,7 +23,9 @@ export class QuestionController {
   }
 
   @Get('find-by-id-group-of-questions/:idGroupOfQuestions')
-  findByIdGroupOfQuestion(@Param() idGroupOfQuestions: string) {
+  findByIdGroupOfQuestion(
+    @Param('idGroupOfQuestions') idGroupOfQuestions: string,
+  ) {
     return this.questionService.findByIdGroupOfQuestion(idGroupOfQuestions);
   }
 
