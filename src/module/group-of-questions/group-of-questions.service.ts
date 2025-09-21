@@ -136,11 +136,14 @@ export class GroupOfQuestionsService {
     if (!existingGroupOfQuestions)
       throw new BadGatewayException('Group of question not found');
 
-    await this.databaseService.nhomCauHoi.delete({
-      where: {
-        idNhomCauHoi: id,
-      },
-    });
+    await this.databaseService.$transaction([
+      this.databaseService.cauHoi.deleteMany({
+        where: {
+          idNhomCauHoi: id,
+        },
+      }),
+      this.databaseService.nhomCauHoi.delete({ where: { idNhomCauHoi: id } }),
+    ]);
 
     return {
       message: 'Group of question deleted successfully',
