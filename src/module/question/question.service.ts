@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { AnswerService } from '../answer/answer.service';
 
 @Injectable()
 export class QuestionService {
@@ -136,11 +137,14 @@ export class QuestionService {
     if (!existingQuestion) {
       throw new BadRequestException('Question not found');
     } else {
-      await this.databaseService.cauHoi.delete({
-        where: {
-          idCauHoi: idQuestion,
-        },
-      });
+      await this.databaseService.$transaction([
+        this.databaseService.option.deleteMany({
+          where: {
+            idCauHoi: idQuestion,
+          },
+        }),
+        this.databaseService.cauHoi.delete({ where: { idCauHoi: idQuestion } }),
+      ]);
     }
     return {
       message: 'Question deleted successfully',

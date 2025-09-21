@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { QuestionService } from './question.service';
 import { QuestionController } from './question.controller';
 import { DatabaseModule } from 'src/database/database.module';
+import { AnswerModule } from '../answer/answer.module';
 
 @Module({
   imports: [DatabaseModule],

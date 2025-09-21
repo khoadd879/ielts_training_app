@@ -48,7 +48,7 @@ export class VocabularyService {
     const { idUser, idTopic, word, meaning, phonetic, example, loaiTuVung } =
       updateVocabularyDto;
 
-    const existingVocabulary = this.databaseService.tuVung.findUnique({
+    const existingVocabulary = await this.databaseService.tuVung.findUnique({
       where: { idTuVung: id },
     });
 
@@ -56,7 +56,7 @@ export class VocabularyService {
       throw new BadRequestException('Vocabulary not found');
     }
 
-    const existingUser = this.databaseService.user.findUnique({
+    const existingUser = await this.databaseService.user.findUnique({
       where: { idUser },
     });
 
@@ -83,7 +83,7 @@ export class VocabularyService {
 
   //Xoa tu vung
   async remove(id: string, idUser: string) {
-    const existingVocabulary = this.databaseService.tuVung.findUnique({
+    const existingVocabulary = await this.databaseService.tuVung.findUnique({
       where: { idTuVung: id },
     });
 
@@ -119,7 +119,7 @@ export class VocabularyService {
       throw new BadRequestException('User not found');
     }
 
-    const data = await this.databaseService.tuVung.findMany({
+    await this.databaseService.tuVung.findMany({
       where: {
         word: {
           contains: word,
@@ -130,7 +130,6 @@ export class VocabularyService {
 
     return {
       message: 'Vocabularies retrieved successfully',
-      data: data,
       status: 200,
     };
   }

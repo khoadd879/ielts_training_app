@@ -18,6 +18,9 @@ import { PassageModule } from './module/passage/passage.module';
 import { GroupOfQuestionsModule } from './module/group-of-questions/group-of-questions.module';
 import { QuestionModule } from './module/question/question.module';
 import { OptionModule } from './module/option/option.module';
+import { AnswerModule } from './modult/answer/answer.module';
+import { AnswerModule } from './module/answer/answer.module';
+import { UserAnswerModule } from './module/user-answer/user-answer.module';
 
 @Module({
   imports: [
@@ -61,6 +64,8 @@ import { OptionModule } from './module/option/option.module';
     GroupOfQuestionsModule,
     QuestionModule,
     OptionModule,
+    AnswerModule,
+    UserAnswerModule,
   ],
   controllers: [AppController],
   providers: [
