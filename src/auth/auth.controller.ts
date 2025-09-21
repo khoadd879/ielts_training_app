@@ -115,8 +115,11 @@ export class AuthController {
   async googleCallback(@Req() req, @Res() res) {
     const data = await this.authService.login(req.user);
 
+    const token = data.data.access_token;
+    const user = encodeURIComponent(JSON.stringify(data.data.user)); // 👈 encode
+
     return res.redirect(
-      `http://localhost:3001?token=${data.data.access_token}?user=${data.data.user}`,
+      `http://localhost:3001/login?token=${token}&user=${user}`, // 👈 dùng & chứ không phải ?
     );
   }
 
