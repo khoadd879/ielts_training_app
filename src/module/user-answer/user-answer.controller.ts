@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { UserAnswerService } from './user-answer.service';
 import { CreateUserAnswerDto } from './dto/create-user-answer.dto';
 import { UpdateUserAnswerDto } from './dto/update-user-answer.dto';
@@ -9,7 +17,7 @@ export class UserAnswerController {
 
   @Post()
   create(@Body() createUserAnswerDto: CreateUserAnswerDto) {
-    return this.userAnswerService.create(createUserAnswerDto);
+    return this.userAnswerService.createUserAnswer(createUserAnswerDto);
   }
 
   @Get()
@@ -23,7 +31,10 @@ export class UserAnswerController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserAnswerDto: UpdateUserAnswerDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateUserAnswerDto: UpdateUserAnswerDto,
+  ) {
     return this.userAnswerService.update(+id, updateUserAnswerDto);
   }
 
