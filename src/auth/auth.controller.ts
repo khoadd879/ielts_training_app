@@ -108,15 +108,14 @@ export class AuthController {
   async googleLogin() {}
 
   //google callback
-
   @Get('google/callback')
   @Public()
   @UseGuards(GoogleAuthGuard)
   async googleCallback(@Req() req, @Res() res) {
     const data = await this.authService.login(req.user);
 
-    // Nếu FE truyền redirectUri khi gọi login
-    const redirectUri = req.query.redirect_uri || 'http://localhost:3001';
+    // Lấy redirectUri từ state chứ không phải redirect_uri
+    const redirectUri = req.query.state || 'http://localhost:3001';
 
     return res.redirect(
       `${redirectUri}/oauth/callback?token=${data.data.access_token}&user=${encodeURIComponent(
