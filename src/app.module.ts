@@ -17,6 +17,7 @@ import { PartModule } from './module/part/part.module';
 import { PassageModule } from './module/passage/passage.module';
 import { GroupOfQuestionsModule } from './module/group-of-questions/group-of-questions.module';
 import { QuestionModule } from './module/question/question.module';
+import { OptionModule } from './module/option/option.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { QuestionModule } from './module/question/question.module';
     PassageModule,
     GroupOfQuestionsModule,
     QuestionModule,
+    OptionModule,
   ],
   controllers: [AppController],
   providers: [

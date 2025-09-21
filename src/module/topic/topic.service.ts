@@ -30,7 +30,7 @@ export class TopicService {
   }
 
   async findAllByIdUser(idUser: string) {
-    const existingUser = this.databaseService.user.findUnique({
+    const existingUser = await this.databaseService.user.findUnique({
       where: { idUser },
     });
 
