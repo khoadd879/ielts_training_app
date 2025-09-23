@@ -67,12 +67,17 @@ model UserTestResult {
   idTestResult String       @id @default(uuid())
   idUser     String  
   idDe       String            
-  score      Float
-  total_correct Int
-  total_questions Int
-  raw_score Int  // điểm ví dụ như 32/40
-  band_score Float // điểm theo thang band 1-9
-  duration   Int  // thời gian làm bài (tính theo phút)
+  score           Int?     @default(0)
+total_correct   Int?     @default(0)
+total_questions Int?     @default(0)
+raw_score       Int?     @default(0)
+  // điểm ví dụ như 32/40
+  band_score Float @default(0)// điểm theo thang band 1-9
+  duration   Int  @default(0)// thời gian làm bài (tính theo phút)
+  status TestStatus @default(IN_PROGRESS)
+  startedAt   DateTime @default(now())
+finishedAt  DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -80,6 +85,14 @@ model UserTestResult {
   de          De             @relation(fields: [idDe], references: [idDe])
   userAnswer UserAnswer[]
 }
+
+enum TestStatus {
+  IN_PROGRESS
+  FINISHED
+  EXPIRED
+  CANCELLED
+}
+
 
 // model LoaiTuVung {
 //   idLoaiTuVung String       @id @default(uuid())
@@ -190,11 +203,14 @@ model UserAnswer {
   idUser    String
   idOption   String?     //dùng cho câu hỏi MCQ
   answerText String?  
+  userAnswerType QuestionType
   matching_key   String?
   matching_value String?
-  submitted_at   DateTime? 
+  submitted_at DateTime @default(now())
   isCorrect  Boolean @default(false)
-  idTestResult String?
+  idTestResult String
+
+  @@unique([idCauHoi, idUser, idTestResult])
 
   cauHoi CauHoi @relation(fields: [idCauHoi], references: [idCauHoi])
   user  User   @relation(fields: [idUser], references: [idUser])

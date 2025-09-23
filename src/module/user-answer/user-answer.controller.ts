@@ -9,37 +9,20 @@ import {
 } from '@nestjs/common';
 import { UserAnswerService } from './user-answer.service';
 import { CreateUserAnswerDto } from './dto/create-user-answer.dto';
-import { UpdateUserAnswerDto } from './dto/update-user-answer.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('user-answer')
 export class UserAnswerController {
   constructor(private readonly userAnswerService: UserAnswerService) {}
 
-  @Post()
-  create(@Body() createUserAnswerDto: CreateUserAnswerDto) {
-    return this.userAnswerService.createUserAnswer(createUserAnswerDto);
+  @Post('upsert-user-answer')
+  UpsertCreateUserAnswer(@Body() createUserAnswerDto: CreateUserAnswerDto) {
+    return this.userAnswerService.UpsertCreateUserAnswer(createUserAnswerDto);
   }
 
-  @Get()
-  findAll() {
-    return this.userAnswerService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userAnswerService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateUserAnswerDto: UpdateUserAnswerDto,
-  ) {
-    return this.userAnswerService.update(+id, updateUserAnswerDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userAnswerService.remove(+id);
+  @Get('get-answer/:idTestResult')
+  getAnswers(@Param('idTestResult') idTestResult: string) {
+    return this.userAnswerService.getAnswers(idTestResult);
   }
 }

@@ -1,17 +1,18 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserAnswerDto } from './dto/create-user-answer.dto';
-import { UpdateUserAnswerDto } from './dto/update-user-answer.dto';
 import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
 export class UserAnswerService {
   constructor(private readonly databaseService: DatabaseService) {}
-  async createUserAnswer(createUserAnswerDto: CreateUserAnswerDto) {
+
+  async UpsertCreateUserAnswer(createUserAnswerDto: CreateUserAnswerDto) {
     const {
       idCauHoi,
       idUser,
       idOption,
       answerText,
+      userAnswerType,
       matching_key,
       matching_value,
       idTestResult,
@@ -32,32 +33,65 @@ export class UserAnswerService {
 
     if (!existingUser) throw new BadRequestException('User not found');
 
-    const data = await this.databaseService.userAnswer.create({
-      data: {
-        idCauHoi,
-        idUser,
-        idOption: idOption ? idOption : null,
-        answerText: answerText ? answerText : null,
-        matching_key: matching_key ? matching_key : null,
-        matching_value: matching_value ? matching_value : null,
-        idTestResult: idTestResult ? idTestResult : null,
+    const existingTestResult =
+      await this.databaseService.userTestResult.findUnique({
+        where: { idTestResult },
+      });
+    if (!existingTestResult)
+      throw new BadRequestException('Test result not found');
+
+    const data = await this.databaseService.userAnswer.upsert({
+      where: {
+        idCauHoi_idUser_idTestResult: {
+          idCauHoi,
+          idUser,
+          idTestResult: idTestResult,
+        },
+      },
+      update: {
+        idOption: idOption ?? null,
+        answerText: answerText ?? null,
+        userAnswerType,
+        matching_key: matching_key ?? null,
+        matching_value: matching_value ?? null,
+        submitted_at: new Date(),
+      },
+      create: {
+        ...createUserAnswerDto,
+        submitted_at: new Date(),
       },
     });
+
+    return {
+      message: 'User answer upserted successfully',
+      status: 200,
+      data: {
+        idCauHoi: data.idCauHoi,
+        idUser: data.idUser,
+        idTestResult: data.idTestResult,
+        answerText: data.answerText,
+        idOption: data.idOption,
+        matching_key: data.matching_key,
+        matching_value: data.matching_value,
+        submitted_at: data.submitted_at,
+      },
+    };
   }
 
-  findAll() {
-    return `This action returns all userAnswer`;
-  }
+  async getAnswers(idTestResult: string) {
+    const testResult = await this.databaseService.userTestResult.findUnique({
+      where: { idTestResult },
+      include: {
+        userAnswer: true, // lấy tất cả UserAnswer liên kết
+      },
+    });
 
-  findOne(id: number) {
-    return `This action returns a #${id} userAnswer`;
-  }
+    if (!testResult) throw new BadRequestException('Test result not found');
 
-  update(id: number, updateUserAnswerDto: UpdateUserAnswerDto) {
-    return `This action updates a #${id} userAnswer`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} userAnswer`;
+    return {
+      message: 'Fetched answers successfully',
+      status: 200,
+      data: testResult.userAnswer,
+    };
   }
 }

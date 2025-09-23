@@ -21,6 +21,7 @@ import { OptionModule } from './module/option/option.module';
 
 import { AnswerModule } from './module/answer/answer.module';
 import { UserAnswerModule } from './module/user-answer/user-answer.module';
+import { UserTestResultModule } from './module/user-test-result/user-test-result.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { UserAnswerModule } from './module/user-answer/user-answer.module';
     OptionModule,
     AnswerModule,
     UserAnswerModule,
+    UserTestResultModule,
   ],
   controllers: [AppController],
   providers: [
