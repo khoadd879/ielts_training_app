@@ -32,17 +32,17 @@ export class UserAnswerService {
 
     if (!existingUser) throw new BadRequestException('User not found');
 
-    // const data = await this.databaseService.userAnswer.create({
-    //   data: {
-    //     idCauHoi,
-    //     idUser,
-    //     idOption: idOption ? idOption : null,
-    //     answerText: answerText ? answerText : null,
-    //     matching_key: matching_key ? matching_key : null,
-    //     matching_value: matching_value ? matching_value : null,
-    //     idTestResult: idTestResult ? idTestResult : null,
-    //   },
-    // });
+    const data = await this.databaseService.userAnswer.create({
+      data: {
+        idCauHoi,
+        idUser,
+        idOption: idOption ? idOption : null,
+        answerText: answerText ? answerText : null,
+        matching_key: matching_key ? matching_key : null,
+        matching_value: matching_value ? matching_value : null,
+        idTestResult: idTestResult ? idTestResult : null,
+      },
+    });
   }
 
   findAll() {

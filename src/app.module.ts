@@ -39,7 +39,7 @@ import { UserAnswerModule } from './module/user-answer/user-answer.module';
           host: 'smtp.gmail.com',
           port: 587,
           // ignoreTLS: true,
-          secure: true,
+          //secure: true,
           auth: {
             user: configService.get<string>('MAILER_USER'), // generated ethereal user
             pass: configService.get<string>('MAILER_PASSWORD'), // generated ethereal password

@@ -190,9 +190,9 @@ model UserAnswer {
   idUser    String
   idOption   String?     //dùng cho câu hỏi MCQ
   answerText String?  
-   matching_key   String?
+  matching_key   String?
   matching_value String?
-  submitted_at   DateTime 
+  submitted_at   DateTime? 
   isCorrect  Boolean @default(false)
   idTestResult String?
 
