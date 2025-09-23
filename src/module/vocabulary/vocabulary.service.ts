@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
 import { DatabaseService } from 'src/database/database.service';
+import axios from 'axios';
 @Injectable()
 export class VocabularyService {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -157,6 +158,33 @@ export class VocabularyService {
       message: 'Vocabulary added to topic successfully',
       data: data,
       status: 200,
+    };
+  }
+
+  //Goi y vocab
+  async suggest(word: string) {
+    const apiUrl = `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`;
+    let phonetic = null;
+    let meaning = null;
+    let example = null;
+
+    try {
+      const { data } = await axios.get(apiUrl);
+      const entry = data[0];
+
+      phonetic = (entry.phonetic || entry.phonetics?.[0]?.text) ?? null;
+      meaning =
+        entry.meanings?.[0]?.definitions?.[0]?.definition ?? 'No definition';
+      example = entry.meanings?.[0]?.definitions?.[0]?.example ?? null;
+    } catch (err) {
+      console.warn('Không tìm được dữ liệu từ API ngoài:', err.message);
+    }
+
+    return {
+      word,
+      phonetic,
+      meaning,
+      example,
     };
   }
 }

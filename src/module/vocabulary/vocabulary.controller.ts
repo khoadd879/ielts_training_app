@@ -58,4 +58,9 @@ export class VocabularyController {
       body.idTopic,
     );
   }
+
+  @Get('suggest/:word')
+  suggest(@Param('word') word: string) {
+    return this.vocabularyService.suggest(word);
+  }
 }
