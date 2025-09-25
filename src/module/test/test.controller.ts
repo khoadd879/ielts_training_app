@@ -86,7 +86,12 @@ export class TestController {
   }
 
   @Get('get-part-in-test/:idDe')
-  getVocabulariesInTopic(@Param('idDe') idDe: string) {
+  getPartInTest(@Param('idDe') idDe: string) {
     return this.testService.getPartInTest(idDe);
+  }
+
+  @Get('get-all-test')
+  getAllTest() {
+    return this.testService.findAll();
   }
 }

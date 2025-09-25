@@ -121,6 +121,27 @@ export class TestService {
     };
   }
 
+  async findAll() {
+    const cacheKey = 'tests_all';
+    const cached = await this.cache.get(cacheKey);
+    if (cached) {
+      return {
+        message: 'Tests retrieved successfully',
+        data: cached,
+        status: 200,
+      };
+    }
+
+    const data = await this.databaseService.de.findMany();
+
+    await this.cache.set(cacheKey, data, 300); // cache 5 phút
+    return {
+      message: 'Tests retrieved successfully',
+      data,
+      status: 200,
+    };
+  }
+
   async update(
     idDe: string,
     updateTestDto: UpdateTestDto,
