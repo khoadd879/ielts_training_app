@@ -27,7 +27,11 @@ export class TestService {
       img,
     } = createTestDto;
 
-    const existingUser = await this.userService.findOne(idUser);
+    const existingUser = await this.databaseService.user.findUnique({
+      where: {
+        idUser,
+      },
+    });
     if (!existingUser) {
       throw new BadRequestException('User not found');
     }
@@ -62,9 +66,14 @@ export class TestService {
   }
 
   async findAllTestCreatedByIdUser(idUser: string) {
-    const user = await this.userService.findOne(idUser);
-    if (!user) throw new BadRequestException('User not found');
-
+    const existingUser = await this.databaseService.user.findUnique({
+      where: {
+        idUser,
+      },
+    });
+    if (!existingUser) {
+      throw new BadRequestException('User not found');
+    }
     const cacheKey = `tests_user_${idUser}`;
     const cached = await this.cache.get(cacheKey);
     if (cached) {
@@ -127,9 +136,14 @@ export class TestService {
       img,
     } = updateTestDto;
 
-    const existingUser = await this.userService.findOne(idUser);
-    if (!existingUser) throw new BadRequestException('User not found');
-
+    const existingUser = await this.databaseService.user.findUnique({
+      where: {
+        idUser,
+      },
+    });
+    if (!existingUser) {
+      throw new BadRequestException('User not found');
+    }
     let imageUrl = img;
     if (file) {
       const uploadResult = await this.cloudinaryService.uploadFile(file);

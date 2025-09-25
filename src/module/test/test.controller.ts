@@ -12,7 +12,7 @@ import {
 import { TestService } from './test.service';
 import { CreateTestDto } from './dto/create-test.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
-import { ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('test')
@@ -50,7 +50,8 @@ export class TestController {
   }
 
   @Get('get-by-name')
-  findByName(@Body() tieuDe: string) {
+  @ApiQuery({ name: 'tieuDe', required: true, description: 'Tên đề cần tìm' })
+  findByName(@Body('tieuDe') tieuDe: string) {
     return this.testService.findByName(tieuDe);
   }
 
