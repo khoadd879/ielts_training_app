@@ -16,7 +16,11 @@ export class TestService {
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {}
 
-  async createTest(createTestDto: CreateTestDto, file?: Express.Multer.File) {
+  async createTest(
+    createTestDto: CreateTestDto,
+    file?: Express.Multer.File,
+    audioFile?: Express.Multer.File,
+  ) {
     const {
       idUser,
       loaiDe,
@@ -25,6 +29,7 @@ export class TestService {
       duration,
       numberQuestion,
       img,
+      audioUrl,
     } = createTestDto;
 
     const existingUser = await this.databaseService.user.findUnique({
@@ -37,9 +42,21 @@ export class TestService {
     }
 
     let imageUrl = img;
+    let audio = audioUrl;
     if (file) {
-      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      const uploadResult = await this.cloudinaryService.uploadFile(
+        file,
+        'test-images',
+      );
       imageUrl = uploadResult.secure_url;
+    }
+
+    if (audioFile && loaiDe === 'LISTENING') {
+      const uploadResult = await this.cloudinaryService.uploadFile(
+        audioFile,
+        'test-audio',
+      );
+      audio = uploadResult.secure_url;
     }
 
     const data = await this.databaseService.de.create({
@@ -51,6 +68,7 @@ export class TestService {
         duration: Number(duration),
         numberQuestion: Number(numberQuestion),
         img: imageUrl,
+        audioUrl: audio,
       },
     });
 
@@ -146,6 +164,7 @@ export class TestService {
     idDe: string,
     updateTestDto: UpdateTestDto,
     file?: Express.Multer.File,
+    audioFile?: Express.Multer.File,
   ) {
     const {
       idUser,
@@ -155,6 +174,7 @@ export class TestService {
       duration,
       numberQuestion,
       img,
+      audioUrl,
     } = updateTestDto;
 
     const existingUser = await this.databaseService.user.findUnique({
@@ -165,10 +185,24 @@ export class TestService {
     if (!existingUser) {
       throw new BadRequestException('User not found');
     }
+
     let imageUrl = img;
+    let audio = audioUrl;
+
     if (file) {
-      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      const uploadResult = await this.cloudinaryService.uploadFile(
+        file,
+        'test-images',
+      );
       imageUrl = uploadResult.secure_url;
+    }
+
+    if (audioFile && loaiDe === 'LISTENING') {
+      const uploadResult = await this.cloudinaryService.uploadFile(
+        audioFile,
+        'test-audio',
+      );
+      audio = uploadResult.secure_url;
     }
 
     const data = await this.databaseService.de.update({
@@ -181,6 +215,7 @@ export class TestService {
         duration: Number(duration),
         numberQuestion: Number(numberQuestion),
         img: imageUrl,
+        audioUrl: audio,
       },
     });
 

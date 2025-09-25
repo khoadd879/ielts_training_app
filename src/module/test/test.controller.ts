@@ -8,12 +8,16 @@ import {
   Delete,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
 } from '@nestjs/common';
 import { TestService } from './test.service';
 import { CreateTestDto } from './dto/create-test.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
 import { ApiBearerAuth, ApiConsumes, ApiBody, ApiQuery } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
 
 @Controller('test')
 @ApiBearerAuth()
@@ -21,7 +25,12 @@ export class TestController {
   constructor(private readonly testService: TestService) {}
 
   @Post('create-test')
-  @UseInterceptors(FileInterceptor('img'))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'img', maxCount: 1 }, // ảnh
+      { name: 'audioUrl', maxCount: 1 }, // âm thanh
+    ]),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -33,15 +42,21 @@ export class TestController {
         description: { type: 'string', example: 'This is a test description' },
         duration: { type: 'number', example: 60 },
         numberQuestion: { type: 'number', example: 10 },
-        img: { type: 'string', format: 'binary' },
+        file: { type: 'string', format: 'binary' }, // ảnh upload
+        audioFile: { type: 'string', format: 'binary' }, // file âm thanh upload
       },
     },
   })
   async create(
     @Body() createTestDto: CreateTestDto,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFiles()
+    files: { img?: Express.Multer.File[]; audioUrl?: Express.Multer.File[] },
   ) {
-    return this.testService.createTest(createTestDto, file);
+    return this.testService.createTest(
+      createTestDto,
+      files?.img?.[0],
+      files?.audioUrl?.[0],
+    );
   }
 
   @Get('get-all-by-id-user/:idUser')
@@ -56,7 +71,12 @@ export class TestController {
   }
 
   @Patch('update-test/:idDe')
-  @UseInterceptors(FileInterceptor('img'))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'img', maxCount: 1 }, // ảnh
+      { name: 'audioUrl', maxCount: 1 }, // âm thanh
+    ]),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -68,16 +88,23 @@ export class TestController {
         description: { type: 'string', example: 'This is a test description' },
         duration: { type: 'number', example: 60 },
         numberQuestion: { type: 'number', example: 10 },
-        img: { type: 'string', format: 'binary' },
+        img: { type: 'string', format: 'binary' }, // ảnh upload
+        audioUrl: { type: 'string', format: 'binary' }, // file âm thanh upload
       },
     },
   })
   update(
     @Param('idDe') id: string,
     @Body() updateTestDto: UpdateTestDto,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFiles()
+    files: { img?: Express.Multer.File[]; audioUrl?: Express.Multer.File[] },
   ) {
-    return this.testService.update(id, updateTestDto, file);
+    return this.testService.update(
+      id,
+      updateTestDto,
+      files?.img?.[0],
+      files?.audioUrl?.[0],
+    );
   }
 
   @Delete('delete-test/:id')

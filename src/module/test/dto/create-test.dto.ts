@@ -31,4 +31,7 @@ export class CreateTestDto {
   @ApiProperty({ example: 'http://example.com/image.png' })
   @IsOptional()
   img: string;
+
+  @ApiProperty({ example: 'http://example.com/audio.mp4' })
+  audioUrl: string;
 }

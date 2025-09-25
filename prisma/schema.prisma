@@ -159,6 +159,7 @@ model De {
   duration    Int
   numberQuestion Int
   img String?
+  audioUrl   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
