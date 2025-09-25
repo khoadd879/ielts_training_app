@@ -32,10 +32,9 @@ export class TestService {
       audioUrl,
     } = createTestDto;
 
+    // Kiểm tra user
     const existingUser = await this.databaseService.user.findUnique({
-      where: {
-        idUser,
-      },
+      where: { idUser },
     });
     if (!existingUser) {
       throw new BadRequestException('User not found');
@@ -43,22 +42,36 @@ export class TestService {
 
     let imageUrl = img;
     let audio = audioUrl;
+
+    // Tạo danh sách tác vụ upload song song
+    const uploadTasks: Promise<void>[] = [];
+
     if (file) {
-      const uploadResult = await this.cloudinaryService.uploadFile(
-        file,
-        'test-images',
+      uploadTasks.push(
+        this.cloudinaryService
+          .uploadFile(file, 'test-images', 'image')
+          .then((res) => {
+            imageUrl = res.secure_url;
+          }),
       );
-      imageUrl = uploadResult.secure_url;
     }
 
     if (audioFile && loaiDe === 'LISTENING') {
-      const uploadResult = await this.cloudinaryService.uploadFile(
-        audioFile,
-        'test-audio',
+      uploadTasks.push(
+        this.cloudinaryService
+          .uploadFile(audioFile, 'test-audio', 'audio')
+          .then((res) => {
+            audio = res.secure_url;
+          }),
       );
-      audio = uploadResult.secure_url;
     }
 
+    // Upload song song
+    if (uploadTasks.length > 0) {
+      await Promise.all(uploadTasks);
+    }
+
+    // Tạo test trong DB
     const data = await this.databaseService.de.create({
       data: {
         idUser,
@@ -72,9 +85,10 @@ export class TestService {
       },
     });
 
-    // Xóa cache list test để lần sau lấy DB mới
-    await this.cache.del(`tests_user_${idUser}`);
-    await this.cache.del('tests_all');
+    await Promise.all([
+      this.cache.del(`tests_user_${idUser}`),
+      this.cache.del('tests_all'),
+    ]);
 
     return {
       message: 'Test created successfully',

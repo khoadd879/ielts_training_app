@@ -4,18 +4,20 @@ import {
   UploadApiResponse,
   UploadApiErrorResponse,
 } from 'cloudinary';
-const streamifier = require('streamifier');
+import * as streamifier from 'streamifier';
 
 @Injectable()
 export class CloudinaryService {
   uploadFile(
     file: Express.Multer.File,
-    folder: string = 'tests', // optional: lưu theo folder
+    folder: string = 'tests',
+    type: 'image' | 'audio' | 'auto' = 'auto',
   ): Promise<UploadApiResponse> {
     return new Promise<UploadApiResponse>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          resource_type: 'auto', // quan trọng: cho phép upload ảnh, audio, video
+          resource_type: type === 'audio' ? 'video' : type,
+          // Lưu ý: Cloudinary không có "audio", phải dùng "video" để hỗ trợ audio
           folder,
         },
         (error: UploadApiErrorResponse, result: UploadApiResponse) => {
