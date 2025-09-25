@@ -23,6 +23,7 @@ import { AnswerModule } from './module/answer/answer.module';
 import { UserAnswerModule } from './module/user-answer/user-answer.module';
 import { UserTestResultModule } from './module/user-test-result/user-test-result.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { WritingTaskModule } from './module/writing-task/writing-task.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     UserAnswerModule,
     UserTestResultModule,
     CacheModule.register(),
+    WritingTaskModule,
   ],
   controllers: [AppController],
   providers: [

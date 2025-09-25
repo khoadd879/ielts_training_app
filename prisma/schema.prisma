@@ -296,7 +296,7 @@ model CauHoi {
 model WritingTask{
   idWritingTask String       @id @default(uuid())
   idDe        String
-  task_type  String
+  task_type  WritingTaskType
   prompt     String
   time_limit Int
   word_limit Int
@@ -307,7 +307,7 @@ model WritingTask{
   userWritingSubmissions UserWritingSubmission[]
 }
 
-model UserWritingSubmission{
+model UserWritingSubmission {
   idWritingSubmission String       @id @default(uuid())
   idUser     String
   idWritingTask String
@@ -315,8 +315,19 @@ model UserWritingSubmission{
   submitted_at DateTime @default(now())
   score      Float?
   feedback   String?
+  status WritingStatus @default(SUBMITTED)
 
   user        User           @relation(fields: [idUser], references: [idUser])
   writingTask WritingTask   @relation(fields: [idWritingTask], references: [idWritingTask])
+}
 
+
+enum WritingTaskType {
+  TASK1
+  TASK2
+}
+
+enum WritingStatus {
+  SUBMITTED
+  GRADED
 }
