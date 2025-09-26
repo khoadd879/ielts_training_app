@@ -24,6 +24,7 @@ import { UserAnswerModule } from './module/user-answer/user-answer.module';
 import { UserTestResultModule } from './module/user-test-result/user-test-result.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { WritingTaskModule } from './module/writing-task/writing-task.module';
+import { UserWritingSubmissionModule } from './module/user-writing-submission/user-writing-submission.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { WritingTaskModule } from './module/writing-task/writing-task.module';
     UserTestResultModule,
     CacheModule.register(),
     WritingTaskModule,
+    UserWritingSubmissionModule,
   ],
   controllers: [AppController],
   providers: [

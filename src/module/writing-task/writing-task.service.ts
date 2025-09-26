@@ -104,11 +104,18 @@ export class WritingTaskService {
 
     if (!existingWritingTask)
       throw new BadRequestException('Writing task not found');
-    await this.databaseService.writingTask.delete({
-      where: {
-        idWritingTask,
-      },
-    });
+    await this.databaseService.$transaction([
+      this.databaseService.userWritingSubmission.deleteMany({
+        where: {
+          idWritingTask,
+        },
+      }),
+      this.databaseService.writingTask.delete({
+        where: {
+          idWritingTask,
+        },
+      }),
+    ]);
     return {
       message: 'Writing task deleted successfully',
       status: 200,
