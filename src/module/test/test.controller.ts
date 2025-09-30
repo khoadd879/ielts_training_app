@@ -18,6 +18,7 @@ import {
   FileFieldsInterceptor,
   FileInterceptor,
 } from '@nestjs/platform-express';
+import { Public } from 'src/decorator/customize';
 
 @Controller('test')
 @ApiBearerAuth()
@@ -118,6 +119,7 @@ export class TestController {
   }
 
   @Get('get-all-test')
+  @Public()
   getAllTest() {
     return this.testService.findAll();
   }
