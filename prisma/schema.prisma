@@ -147,7 +147,6 @@ enum loaiDe {
   LISTENING
   READING
   WRITING
-  SPEAKING
 }
 
 model De {
