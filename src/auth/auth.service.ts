@@ -40,6 +40,16 @@ export class AuthService {
       throw new UnauthorizedException('Account is not activated');
     }
 
+    const accessToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_SECRET,
+      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRED,
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRED,
+    });
+
     return {
       message: 'Login successful',
       data: {
@@ -47,7 +57,8 @@ export class AuthService {
           idUser: user.idUser,
           role: user.role,
         },
-        access_token: this.jwtService.sign(payload),
+        access_token: accessToken,
+        refresh_token: refreshToken,
       },
       status: 200,
     };
@@ -164,19 +175,50 @@ export class AuthService {
 
   //introspect token
   async introspectToken(token: string) {
+    const secrets = [process.env.JWT_SECRET, process.env.JWT_REFRESH_SECRET];
+
+    for (const secret of secrets) {
+      try {
+        const decoded = this.jwtService.verify(token, { secret });
+        return {
+          message: 'Token is active',
+          data: {
+            active: true,
+          },
+          status: 200,
+        };
+      } catch (e) {
+        // thử secret tiếp theo
+      }
+    }
+
+    return {
+      message: 'Token is inactive',
+      data: { active: false },
+      status: 200,
+    };
+  }
+
+  async refreshTokens(refreshToken: string) {
     try {
-      const decoded = this.jwtService.verify(token);
+      const decoded = this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+
+      const payload = { email: decoded.email, sub: decoded.sub };
+
+      const newAccessToken = this.jwtService.sign(payload, {
+        secret: process.env.JWT_SECRET,
+        expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRED,
+      });
+
       return {
-        message: 'Token is active',
-        data: { active: true },
+        message: 'Token refreshed',
+        data: { access_token: newAccessToken },
         status: 200,
       };
     } catch (e) {
-      return {
-        message: 'Token is unactive',
-        data: { active: false },
-        status: 200,
-      };
+      throw new UnauthorizedException('Refresh token is invalid or expired');
     }
   }
 

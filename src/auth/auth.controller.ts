@@ -123,6 +123,15 @@ export class AuthController {
     );
   }
 
+  @Post('reset-token')
+  @Public()
+  @ApiBody({
+    schema: { type: 'object', properties: { token: { type: 'string' } } },
+  })
+  async refreshToken(@Body() body: { token: string }) {
+    return this.authService.refreshTokens(body.token);
+  }
+
   @Get('health')
   @Public()
   healthCheck() {
