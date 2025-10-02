@@ -23,7 +23,9 @@ model User {
   address     String?
   accountType accountType @default(LOCAL)
   role       Role   @default(USER)
-  avatar     String?   
+  avatar     String? 
+  gender       Gender?
+  level     Level?
   isActive   Boolean  @default(false) 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -35,6 +37,22 @@ model User {
   userWritingSubmissions UserWritingSubmission[]
   verificationCodes VerificationCode[]
   Topic Topic[]
+  forumThreads ForumThreads[]
+  forumPosts ForumPost[]
+  forumComment ForumComment[]
+  forumCommentLikes ForumCommentLikes[]
+  forumPostLikes ForumPostLikes[]
+}
+
+enum Level{
+  Low
+  Mid
+  High
+}
+
+enum Gender{
+  Male
+  Female
 }
 
 model VerificationCode {
@@ -93,16 +111,6 @@ enum TestStatus {
   CANCELLED
 }
 
-
-// model LoaiTuVung {
-//   idLoaiTuVung String       @id @default(uuid())
-//   nameLoaiTuVung String
-//   createdAt   DateTime @default(now())
-//   updatedAt   DateTime @updatedAt
-
-//   tuVungs TuVung[]
-// }
-
 model TuVung{
   idTuVung    String       @id @default(uuid())
   loaiTuVung loaiTuVung
@@ -112,6 +120,7 @@ model TuVung{
   phonetic   String?  // phiên âm
   meaning    String
   example    String?
+  level Level?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -158,6 +167,7 @@ model De {
   duration    Int
   numberQuestion Int
   img String?
+  level Level @default(Low)
   audioUrl   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -329,4 +339,78 @@ enum WritingTaskType {
 enum WritingStatus {
   SUBMITTED
   GRADED
+}
+
+//Forum
+model ForumCategories{
+  idForumCategories String @id @default(uuid())
+  Name String
+  description String?
+  created_at DateTime @default(now())
+  updated_at DateTime
+
+  forumThreads ForumThreads[]
+}
+
+model ForumThreads{
+  idForumThreads String @id @default(uuid())
+  idForumCategories String
+  idUser String
+  title String
+  content String
+  views_count Int
+  created_at DateTime @default(now())
+  updated_at DateTime
+
+  forumCategories ForumCategories @relation(fields: [idForumCategories], references: [idForumCategories])
+  user User @relation(fields: [idUser], references: [idUser])
+  forumPost ForumPost[]
+}
+
+model ForumPost{
+  idForumPost String @id @default(uuid())
+  idForumThreads String
+  idUser String
+  content String
+    created_at DateTime @default(now())
+  updated_at DateTime
+
+  forumThreads ForumThreads @relation(fields: [idForumThreads], references: [idForumThreads])
+   user User @relation(fields: [idUser], references: [idUser]) 
+
+   forumComment ForumComment[]
+   forumPostLikes ForumPostLikes[]
+}
+
+model ForumComment{
+  idForumComment String @id @default(uuid())
+  idForumPost String
+  idUser String
+  content String
+    created_at DateTime @default(now())
+  updated_at DateTime
+
+   user User @relation(fields: [idUser], references: [idUser])
+   forumPost ForumPost @relation(fields: [idForumPost], references: [idForumPost])
+   forumCommentLikes ForumCommentLikes[]
+}
+
+model ForumPostLikes{
+  idForumPostLikes String @id @default(uuid())
+  idForumPost String
+  idUser String
+    created_at DateTime @default(now())
+
+    user User @relation(fields: [idUser], references: [idUser])
+     forumPost ForumPost @relation(fields: [idForumPost], references: [idForumPost])
+}
+
+model ForumCommentLikes{
+  idForumCommentLikes String @id @default(uuid())
+  idForumComment String
+  idUser String
+    created_at DateTime @default(now())
+
+    user User @relation(fields: [idUser], references: [idUser])
+     forumComment ForumComment @relation(fields: [idForumComment], references: [idForumComment])
 }
