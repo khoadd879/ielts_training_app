@@ -25,6 +25,7 @@ import { UserTestResultModule } from './module/user-test-result/user-test-result
 import { CacheModule } from '@nestjs/cache-manager';
 import { WritingTaskModule } from './module/writing-task/writing-task.module';
 import { UserWritingSubmissionModule } from './module/user-writing-submission/user-writing-submission.module';
+import { GeminiModule } from './gemini/gemini.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { UserWritingSubmissionModule } from './module/user-writing-submission/us
     CacheModule.register(),
     WritingTaskModule,
     UserWritingSubmissionModule,
+    GeminiModule,
   ],
   controllers: [AppController],
   providers: [

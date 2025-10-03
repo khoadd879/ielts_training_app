@@ -20,8 +20,7 @@ export class CreateVocabularyDto {
   phonetic: string;
 
   @ApiProperty({
-    example:
-      'a thing characteristic of its kind or illustrating a general rule',
+    example: 'Mid',
   })
   @ApiProperty({ example: 'Mid', enum: Level })
   @IsEnum(Level)
