@@ -31,7 +31,7 @@ import { GeminiModule } from './gemini/gemini.module';
   imports: [
     UsersModule,
     DatabaseModule,
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     VocabularyModule,
     CloudinaryModule,

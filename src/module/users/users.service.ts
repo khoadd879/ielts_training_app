@@ -182,13 +182,59 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    await this.verificationService.deleteAllOtp(id);
+    try {
+      await this.databaseService.$transaction(async (tx) => {
+        // 1️⃣ Xóa dữ liệu liên quan đến De
+        await tx.option.deleteMany({
+          where: { cauHoi: { nhomCauHoi: { part: { de: { idUser: id } } } } },
+        });
+        await tx.answer.deleteMany({
+          where: { cauHoi: { nhomCauHoi: { part: { de: { idUser: id } } } } },
+        });
+        await tx.cauHoi.deleteMany({
+          where: { part: { de: { idUser: id } } },
+        });
+        await tx.nhomCauHoi.deleteMany({
+          where: { part: { de: { idUser: id } } },
+        });
+        await tx.part.deleteMany({
+          where: { de: { idUser: id } },
+        });
+        await tx.writingTask.deleteMany({
+          where: { de: { idUser: id } },
+        });
+        await tx.userTestResult.deleteMany({
+          where: { de: { idUser: id } },
+        });
+        await tx.de.deleteMany({
+          where: { idUser: id },
+        });
 
-    const data = await this.databaseService.user.delete({
-      where: { idUser: id },
-    });
+        // 2️⃣ Xóa các bảng không liên quan đến De
+        await tx.verificationCode.deleteMany({ where: { idUser: id } });
+        await tx.userAnswer.deleteMany({ where: { idUser: id } });
+        await tx.userWritingSubmission.deleteMany({ where: { idUser: id } });
+        await tx.tuVung.deleteMany({ where: { idUser: id } });
+        await tx.topic.deleteMany({ where: { idUser: id } });
 
-    return { message: 'User deleted successfully', status: 200 };
+        await tx.forumCommentLikes.deleteMany({ where: { idUser: id } });
+        await tx.forumPostLikes.deleteMany({ where: { idUser: id } });
+        await tx.forumComment.deleteMany({ where: { idUser: id } });
+        await tx.forumPost.deleteMany({ where: { idUser: id } });
+        await tx.forumThreads.deleteMany({ where: { idUser: id } });
+
+        // 3️⃣ Cuối cùng xóa user
+        await tx.user.delete({ where: { idUser: id } });
+      });
+
+      return {
+        message: 'User and all related data deleted successfully',
+        status: 200,
+      };
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new BadRequestException(error.message);
+    }
   }
 
   async handleRegister(registerDto: CreateAuthDto) {
