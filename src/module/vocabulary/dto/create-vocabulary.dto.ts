@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { loaiTuVung } from '@prisma/client';
+import { Level, loaiTuVung } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateVocabularyDto {
@@ -23,6 +23,10 @@ export class CreateVocabularyDto {
     example:
       'a thing characteristic of its kind or illustrating a general rule',
   })
+  @ApiProperty({ example: 'Mid', enum: Level })
+  @IsEnum(Level)
+  level: Level;
+
   @IsNotEmpty({ message: 'Meaning should not be empty' })
   meaning: string;
 

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { accountType, Role } from '@prisma/client';
+import { accountType, Gender, Level, Role } from '@prisma/client';
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class UpdateUserDto {
@@ -24,6 +24,14 @@ export class UpdateUserDto {
   @ApiProperty({ example: '1234567890' })
   @IsOptional()
   phoneNumber: string;
+
+  @ApiProperty({ example: 'Male', enum: Gender })
+  @IsEnum(Gender)
+  gender: Gender;
+
+  @ApiProperty({ example: 'Mid', enum: Level })
+  @IsEnum(Level)
+  level: Level;
 
   @ApiProperty({ example: '123 Main St, City, Country' })
   @IsOptional()

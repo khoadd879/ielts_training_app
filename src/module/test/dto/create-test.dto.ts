@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { loaiDe } from '@prisma/client';
+import { Level, loaiDe } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateTestDto {
@@ -23,6 +23,10 @@ export class CreateTestDto {
   @ApiProperty({ example: 60 })
   @IsNotEmpty({ message: 'Duration is required' })
   duration: number;
+
+  @ApiProperty({ example: 'Mid', enum: Level })
+  @IsEnum(Level)
+  level: Level;
 
   @ApiProperty({ example: 10 })
   @IsNotEmpty({ message: 'Number of questions is required' })

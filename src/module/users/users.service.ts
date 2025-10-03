@@ -28,6 +28,7 @@ export class UsersService {
       address,
       avatar,
       role,
+      gender,
       accountType,
     } = createUserDto;
 
@@ -51,6 +52,7 @@ export class UsersService {
         address,
         avatar,
         role,
+        gender,
         accountType,
       },
     });
@@ -129,8 +131,16 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     file?: Express.Multer.File,
   ) {
-    const { nameUser, email, phoneNumber, address, accountType, role } =
-      updateUserDto;
+    const {
+      nameUser,
+      email,
+      phoneNumber,
+      address,
+      accountType,
+      role,
+      gender,
+      level,
+    } = updateUserDto;
     let avatar = updateUserDto.avatar;
 
     // Nếu có file upload, upload lên Cloudinary và lấy link
@@ -149,6 +159,8 @@ export class UsersService {
         address,
         role,
         avatar,
+        gender,
+        level,
       },
     });
     return {
@@ -162,6 +174,8 @@ export class UsersService {
         address: user.address,
         role: user.role,
         avatar: user.avatar,
+        gender: user.gender,
+        level: user.level,
       },
       status: 200,
     };

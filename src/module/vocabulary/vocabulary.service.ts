@@ -9,8 +9,16 @@ export class VocabularyService {
 
   //Vocabulary
   async createVocabulary(createVocabularyDto: CreateVocabularyDto) {
-    const { idUser, idTopic, word, meaning, phonetic, example, loaiTuVung } =
-      createVocabularyDto;
+    const {
+      idUser,
+      idTopic,
+      word,
+      meaning,
+      phonetic,
+      example,
+      loaiTuVung,
+      level,
+    } = createVocabularyDto;
 
     const existingUser = await this.databaseService.user.findUnique({
       where: { idUser },
@@ -29,6 +37,7 @@ export class VocabularyService {
         meaning,
         phonetic,
         example,
+        level,
       },
     });
 
@@ -46,8 +55,16 @@ export class VocabularyService {
 
   //Cap nhat tu vung
   async update(id: string, updateVocabularyDto: UpdateVocabularyDto) {
-    const { idUser, idTopic, word, meaning, phonetic, example, loaiTuVung } =
-      updateVocabularyDto;
+    const {
+      idUser,
+      idTopic,
+      word,
+      meaning,
+      phonetic,
+      example,
+      loaiTuVung,
+      level,
+    } = updateVocabularyDto;
 
     const existingVocabulary = await this.databaseService.tuVung.findUnique({
       where: { idTuVung: id },
@@ -73,6 +90,7 @@ export class VocabularyService {
         phonetic,
         example,
         loaiTuVung,
+        level,
       },
     });
     return {

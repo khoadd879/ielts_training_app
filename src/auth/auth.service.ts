@@ -9,8 +9,6 @@ import { JwtService } from '@nestjs/jwt';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { VerificationService } from './verification/verification.service';
 import { OTPType } from '@prisma/client';
-import { stat } from 'fs';
-import { CreateUserDto } from 'src/module/users/dto/create-user.dto';
 import { CreateUserGoogleDto } from 'src/module/users/dto/create-user-google.dto';
 
 @Injectable()
