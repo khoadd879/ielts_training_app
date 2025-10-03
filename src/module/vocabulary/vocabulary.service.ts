@@ -3,6 +3,9 @@ import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
 import { DatabaseService } from 'src/database/database.service';
 import axios from 'axios';
+import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 @Injectable()
 export class VocabularyService {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -180,29 +183,73 @@ export class VocabularyService {
   }
 
   //Goi y vocab
-  async suggest(word: string) {
-    const apiUrl = `https://api.dictionaryapi.dev/api/v2/entries/en/${word}`;
-    let phonetic = null;
-    let meaning = null;
-    let example = null;
-
+  async suggest(word: string): Promise<{
+    word: string;
+    phonetic: string | null;
+    meaning: string | null;
+    example: string | null;
+  }> {
     try {
-      const { data } = await axios.get(apiUrl);
-      const entry = data[0];
+      const prompt = `
+Bạn là một từ điển Anh - Việt.
+Trả về thông tin cho từ "${word}" ở dạng JSON hợp lệ, KHÔNG kèm bất kỳ văn bản nào bên ngoài.
+Cấu trúc bắt buộc:
+{
+  "word": "từ tiếng Anh",
+  "phonetic": "phiên âm IPA hoặc null",
+  "meaning": "nghĩa tiếng Việt ngắn gọn",
+  "example": "một câu ví dụ ngắn trong tiếng Anh"
+}
+`;
 
-      phonetic = (entry.phonetic || entry.phonetics?.[0]?.text) ?? null;
-      meaning =
-        entry.meanings?.[0]?.definitions?.[0]?.definition ?? 'No definition';
-      example = entry.meanings?.[0]?.definitions?.[0]?.example ?? null;
+      const response: GenerateContentResponse = await ai.models.generateContent(
+        {
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+        },
+      );
+
+      const rawText = response.text?.trim() ?? '';
+
+      // ✅ Loại bỏ khối markdown nếu có
+      const cleanedText = rawText
+        .replace(/```json/i, '')
+        .replace(/```/g, '')
+        .trim();
+
+      let parsed: {
+        word: string;
+        phonetic: string | null;
+        meaning: string | null;
+        example: string | null;
+      };
+
+      try {
+        parsed = JSON.parse(cleanedText);
+      } catch (parseErr) {
+        console.warn('Phản hồi Gemini không đúng JSON, fallback:', parseErr);
+        parsed = {
+          word,
+          phonetic: null,
+          meaning: null,
+          example: null,
+        };
+      }
+
+      return {
+        word: parsed.word ?? word,
+        phonetic: parsed.phonetic ?? null,
+        meaning: parsed.meaning ?? null,
+        example: parsed.example ?? null,
+      };
     } catch (err) {
-      console.warn('Không tìm được dữ liệu từ API ngoài:', err.message);
+      console.error('Lỗi khi gọi Gemini:', err);
+      return {
+        word,
+        phonetic: null,
+        meaning: null,
+        example: null,
+      };
     }
-
-    return {
-      word,
-      phonetic,
-      meaning,
-      example,
-    };
   }
 }
