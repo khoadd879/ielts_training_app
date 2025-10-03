@@ -6,6 +6,17 @@ import axios from 'axios';
 import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+const vocabCache = new Map<
+  string,
+  {
+    word: string;
+    phonetic: string | null;
+    meaning: string | null;
+    example: string | null;
+  }
+>();
+
 @Injectable()
 export class VocabularyService {
   constructor(private readonly databaseService: DatabaseService) {}
@@ -189,17 +200,41 @@ export class VocabularyService {
     meaning: string | null;
     example: string | null;
   }> {
+    const lowerWord = word.toLowerCase().trim();
+
+    // 🟡 0. Kiểm tra cache trước
+    if (vocabCache.has(lowerWord)) {
+      // console.log(`⚡ Cache hit cho "${lowerWord}"`);
+      return vocabCache.get(lowerWord)!;
+    }
+
+    let phonetic: string | null = null;
+    let example: string | null = null;
+    let meaning: string | null = null;
+
+    // 🟡 1. Gọi dictionaryapi.dev trước (chỉ lấy phonetic + example)
+    try {
+      const dictRes = await axios.get(
+        `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(lowerWord)}`,
+      );
+      const entry = dictRes.data[0];
+
+      phonetic = entry.phonetic || entry.phonetics?.[0]?.text || null;
+      example = entry.meanings?.[0]?.definitions?.[0]?.example || null;
+    } catch (dictErr) {
+      console.warn(
+        `DictionaryAPI không có dữ liệu cho "${lowerWord}":`,
+        dictErr.message,
+      );
+    }
+
+    // 🧠 2. Gọi Gemini để lấy nghĩa tiếng Việt & bổ sung nếu thiếu
     try {
       const prompt = `
 Bạn là một từ điển Anh - Việt.
-Trả về thông tin cho từ "${word}" ở dạng JSON hợp lệ, KHÔNG kèm bất kỳ văn bản nào bên ngoài.
-Cấu trúc bắt buộc:
-{
-  "word": "từ tiếng Anh",
-  "phonetic": "phiên âm IPA hoặc null",
-  "meaning": "nghĩa tiếng Việt ngắn gọn",
-  "example": "một câu ví dụ ngắn trong tiếng Anh"
-}
+Chỉ trả về JSON hợp lệ (không markdown, không giải thích), cấu trúc:
+{"word":"","phonetic":null,"meaning":"","example":""}
+Từ: "${lowerWord}"
 `;
 
       const response: GenerateContentResponse = await ai.models.generateContent(
@@ -210,46 +245,40 @@ Cấu trúc bắt buộc:
       );
 
       const rawText = response.text?.trim() ?? '';
-
-      // ✅ Loại bỏ khối markdown nếu có
       const cleanedText = rawText
         .replace(/```json/i, '')
         .replace(/```/g, '')
         .trim();
 
-      let parsed: {
-        word: string;
-        phonetic: string | null;
-        meaning: string | null;
-        example: string | null;
-      };
-
       try {
-        parsed = JSON.parse(cleanedText);
-      } catch (parseErr) {
-        console.warn('Phản hồi Gemini không đúng JSON, fallback:', parseErr);
-        parsed = {
-          word,
-          phonetic: null,
-          meaning: null,
-          example: null,
-        };
-      }
+        const parsed = JSON.parse(cleanedText);
 
-      return {
-        word: parsed.word ?? word,
-        phonetic: parsed.phonetic ?? null,
-        meaning: parsed.meaning ?? null,
-        example: parsed.example ?? null,
-      };
+        // Nếu phonetic hoặc example chưa có → dùng từ Gemini
+        if (!phonetic && parsed.phonetic) {
+          phonetic = parsed.phonetic;
+        }
+        if (!example && parsed.example) {
+          example = parsed.example;
+        }
+
+        meaning = parsed.meaning ?? null;
+      } catch (parseErr) {
+        console.warn('Gemini trả về không phải JSON hợp lệ:', parseErr);
+      }
     } catch (err) {
       console.error('Lỗi khi gọi Gemini:', err);
-      return {
-        word,
-        phonetic: null,
-        meaning: null,
-        example: null,
-      };
     }
+
+    const result = {
+      word: lowerWord,
+      phonetic,
+      meaning,
+      example,
+    };
+
+    // 🧠 3. Lưu vào cache để tái sử dụng
+    vocabCache.set(lowerWord, result);
+
+    return result;
   }
 }
