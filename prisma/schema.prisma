@@ -348,7 +348,7 @@ enum WritingStatus {
 //Forum
 model ForumCategories{
   idForumCategories String @id @default(uuid())
-  Name String
+  nameForum String
   description String?
   created_at DateTime @default(now())
   updated_at DateTime

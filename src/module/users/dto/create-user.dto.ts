@@ -26,7 +26,7 @@ export class CreateUserDto {
 
   @ApiProperty({ example: 'Mid', enum: Level })
   @IsEnum(Level)
-  level: Level;
+  level?: Level;
 
   @ApiProperty({ example: 'http://example.com/avatar.jpg' })
   @IsOptional()

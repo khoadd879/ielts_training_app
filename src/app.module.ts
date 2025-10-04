@@ -26,6 +26,12 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { WritingTaskModule } from './module/writing-task/writing-task.module';
 import { UserWritingSubmissionModule } from './module/user-writing-submission/user-writing-submission.module';
 import { ForumModule } from './module/forum/forum.module';
+import { ForumCategoriesModule } from './module/forum-categories/forum-categories.module';
+import { ForumThreadsModule } from './module/forum-threads/forum-threads.module';
+import { ForumPostModule } from './module/forum-post/forum-post.module';
+import { ForumCommentModule } from './module/forum-comment/forum-comment.module';
+import { ForumPostLikesModule } from './module/forum-post-likes/forum-post-likes.module';
+import { ForumCommentLikesModule } from './module/forum-comment-likes/forum-comment-likes.module';
 
 @Module({
   imports: [
@@ -76,6 +82,12 @@ import { ForumModule } from './module/forum/forum.module';
     WritingTaskModule,
     UserWritingSubmissionModule,
     ForumModule,
+    ForumCategoriesModule,
+    ForumThreadsModule,
+    ForumPostModule,
+    ForumCommentModule,
+    ForumPostLikesModule,
+    ForumCommentLikesModule,
   ],
   controllers: [AppController],
   providers: [
