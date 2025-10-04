@@ -346,7 +346,8 @@ enum WritingStatus {
 }
 
 //Forum
-model ForumCategories{
+// chuyên mục
+model ForumCategories {
   idForumCategories String @id @default(uuid())
   nameForum String
   description String?
@@ -356,65 +357,76 @@ model ForumCategories{
   forumThreads ForumThreads[]
 }
 
-model ForumThreads{
+// Chủ đề
+model ForumThreads {
   idForumThreads String @id @default(uuid())
   idForumCategories String
   idUser String
   title String
   content String
-  views_count Int
+  views_count Int @default(0)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  forumCategories ForumCategories @relation(fields: [idForumCategories], references: [idForumCategories])
+  forumCategories ForumCategories @relation(fields: [idForumCategories], references: [idForumCategories], onDelete: Cascade)
+
   user User @relation(fields: [idUser], references: [idUser])
   forumPost ForumPost[]
 }
 
-model ForumPost{
+// bài viết trong chủ đề
+model ForumPost {
   idForumPost String @id @default(uuid())
   idForumThreads String
   idUser String
   content String
-    created_at DateTime @default(now())
+  created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  forumThreads ForumThreads @relation(fields: [idForumThreads], references: [idForumThreads])
-   user User @relation(fields: [idUser], references: [idUser]) 
+  forumThreads ForumThreads @relation(fields: [idForumThreads], references: [idForumThreads], onDelete: Cascade)
 
-   forumComment ForumComment[]
-   forumPostLikes ForumPostLikes[]
+  user User @relation(fields: [idUser], references: [idUser])
+
+  forumComment ForumComment[]
+  forumPostLikes ForumPostLikes[]
 }
 
-model ForumComment{
+// bình luận trong bài viết
+model ForumComment {
   idForumComment String @id @default(uuid())
   idForumPost String
   idUser String
   content String
-    created_at DateTime @default(now())
+  created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-   user User @relation(fields: [idUser], references: [idUser])
-   forumPost ForumPost @relation(fields: [idForumPost], references: [idForumPost])
-   forumCommentLikes ForumCommentLikes[]
+  forumPost ForumPost @relation(fields: [idForumPost], references: [idForumPost], onDelete: Cascade)
+
+  user User @relation(fields: [idUser], references: [idUser])
+
+  forumCommentLikes ForumCommentLikes[]
 }
 
-model ForumPostLikes{
+// thích bài viết
+model ForumPostLikes {
   idForumPostLikes String @id @default(uuid())
   idForumPost String
   idUser String
-    created_at DateTime @default(now())
+  created_at DateTime @default(now())
 
-    user User @relation(fields: [idUser], references: [idUser])
-     forumPost ForumPost @relation(fields: [idForumPost], references: [idForumPost])
+  forumPost ForumPost @relation(fields: [idForumPost], references: [idForumPost], onDelete: Cascade)
+
+  user User @relation(fields: [idUser], references: [idUser])
 }
 
-model ForumCommentLikes{
+// thích bình luận
+model ForumCommentLikes {
   idForumCommentLikes String @id @default(uuid())
   idForumComment String
   idUser String
-    created_at DateTime @default(now())
+  created_at DateTime @default(now())
 
-    user User @relation(fields: [idUser], references: [idUser])
-     forumComment ForumComment @relation(fields: [idForumComment], references: [idForumComment])
+  forumComment ForumComment @relation(fields: [idForumComment], references: [idForumComment], onDelete: Cascade)
+
+  user User @relation(fields: [idUser], references: [idUser])
 }

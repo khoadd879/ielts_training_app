@@ -1,34 +1,52 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ForumThreadsService } from './forum-threads.service';
 import { CreateForumThreadDto } from './dto/create-forum-thread.dto';
 import { UpdateForumThreadDto } from './dto/update-forum-thread.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('forum-threads')
 export class ForumThreadsController {
   constructor(private readonly forumThreadsService: ForumThreadsService) {}
 
-  @Post()
+  @Post('create-forum-threads')
   create(@Body() createForumThreadDto: CreateForumThreadDto) {
-    return this.forumThreadsService.create(createForumThreadDto);
+    return this.forumThreadsService.createForumThread(createForumThreadDto);
   }
 
-  @Get()
-  findAll() {
-    return this.forumThreadsService.findAll();
+  @Get('get-forum-threads-by-idForumCategories/:idForumCategories')
+  findAll(@Param('idForumCategories') idForumCategories: string) {
+    return this.forumThreadsService.findAllByIdForumCategories(
+      idForumCategories,
+    );
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.forumThreadsService.findOne(+id);
+  @Get('get-forum-thread/:idForumCategories')
+  findOne(@Param('idForumCategories') idForumCategories: string) {
+    return this.forumThreadsService.findForumThread(idForumCategories);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateForumThreadDto: UpdateForumThreadDto) {
-    return this.forumThreadsService.update(+id, updateForumThreadDto);
+  @Patch('update-forum-thread/:idForumCategories')
+  update(
+    @Param('idForumCategories') idForumCategories: string,
+    @Body() updateForumThreadDto: UpdateForumThreadDto,
+  ) {
+    return this.forumThreadsService.updateForumThread(
+      idForumCategories,
+      updateForumThreadDto,
+    );
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.forumThreadsService.remove(+id);
+  @Delete('delete-forum-thread/:idForumCategories')
+  remove(@Param('idForumCategories') idForumCategories: string) {
+    return this.forumThreadsService.removeForumThread(idForumCategories);
   }
 }

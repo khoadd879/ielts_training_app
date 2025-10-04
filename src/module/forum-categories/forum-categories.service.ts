@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateForumCategoryDto } from './dto/create-forum-category.dto';
 import { UpdateForumCategoryDto } from './dto/update-forum-category.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -10,27 +10,78 @@ export class ForumCategoriesService {
   async createForumCategories(createForumCategoryDto: CreateForumCategoryDto) {
     const { nameForum, description } = createForumCategoryDto;
 
-    // const data = await this.databaseService.forumCategories.create({
-    //   data: {
-    //     nameForum,
-    //     description: description ?? null,
-    //   },
-    // });
+    const data = await this.databaseService.forumCategories.create({
+      data: {
+        nameForum,
+        description: description ?? null,
+      },
+    });
+
+    return {
+      message: 'Forum categories created successfully',
+      data,
+      status: 200,
+    };
   }
 
-  findAll() {
-    return `This action returns all forumCategories`;
+  async findAllForumCategories() {
+    const data = await this.databaseService.forumCategories.findMany();
+
+    return {
+      message: 'Forum categories retrieved successfully',
+      data,
+      status: 200,
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} forumCategory`;
+  async findOneForumCategory(idForumCategories: string) {
+    const data = await this.databaseService.forumCategories.findUnique({
+      where: {
+        idForumCategories,
+      },
+    });
+
+    if (!data) throw new BadRequestException('Forum Category not found');
+
+    return {
+      message: 'Forum categories retrieved successfully',
+      data,
+      status: 200,
+    };
   }
 
-  update(id: number, updateForumCategoryDto: UpdateForumCategoryDto) {
-    return `This action updates a #${id} forumCategory`;
+  async updateForumCategories(
+    idForumCategories: string,
+    updateForumCategoryDto: UpdateForumCategoryDto,
+  ) {
+    const { nameForum, description } = updateForumCategoryDto;
+
+    const data = await this.databaseService.forumCategories.update({
+      where: {
+        idForumCategories,
+      },
+      data: {
+        nameForum,
+        description: description ?? null,
+      },
+    });
+
+    return {
+      message: 'Forum categories updated successfully',
+      data,
+      status: 200,
+    };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} forumCategory`;
+  async removeForumCategory(idForumCategories: string) {
+    const data = await this.databaseService.forumCategories.delete({
+      where: { idForumCategories },
+    });
+
+    if (!data) throw new BadRequestException('Forum Category not found');
+    return {
+      message: 'Forum categories deleted successfully',
+      status: 200,
+    };
   }
 }
