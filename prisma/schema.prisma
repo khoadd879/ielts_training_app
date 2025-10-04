@@ -89,6 +89,7 @@ model UserTestResult {
 total_correct   Int?     @default(0)
 total_questions Int?     @default(0)
 raw_score       Int?     @default(0)
+level Level @default(Low)
   // điểm ví dụ như 32/40
   band_score Float @default(0)// điểm theo thang band 1-9
   duration   Int  @default(0)// thời gian làm bài (tính theo phút)
