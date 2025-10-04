@@ -1,15 +1,27 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ForumCategoriesService } from './forum-categories.service';
 import { CreateForumCategoryDto } from './dto/create-forum-category.dto';
 import { UpdateForumCategoryDto } from './dto/update-forum-category.dto';
 
 @Controller('forum-categories')
 export class ForumCategoriesController {
-  constructor(private readonly forumCategoriesService: ForumCategoriesService) {}
+  constructor(
+    private readonly forumCategoriesService: ForumCategoriesService,
+  ) {}
 
   @Post()
   create(@Body() createForumCategoryDto: CreateForumCategoryDto) {
-    return this.forumCategoriesService.create(createForumCategoryDto);
+    return this.forumCategoriesService.createForumCategories(
+      createForumCategoryDto,
+    );
   }
 
   @Get()
@@ -23,7 +35,10 @@ export class ForumCategoriesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateForumCategoryDto: UpdateForumCategoryDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateForumCategoryDto: UpdateForumCategoryDto,
+  ) {
     return this.forumCategoriesService.update(+id, updateForumCategoryDto);
   }
 

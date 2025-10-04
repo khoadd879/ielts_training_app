@@ -6,6 +6,6 @@ export class CreateForumCategoryDto {
   @ApiProperty({ example: 'name' })
   nameForum: string;
 
-  @ApiProperty({ example: 'description' })
-  desciption?: string;
+  @ApiProperty({ example: 'description', nullable: true })
+  description?: string;
 }

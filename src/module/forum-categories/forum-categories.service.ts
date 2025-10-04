@@ -5,8 +5,18 @@ import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
 export class ForumCategoriesService {
-  constructor(databaseService: DatabaseService) {}
-  create(createForumCategoryDto: CreateForumCategoryDto) {}
+  constructor(private readonly databaseService: DatabaseService) {}
+
+  async createForumCategories(createForumCategoryDto: CreateForumCategoryDto) {
+    const { nameForum, description } = createForumCategoryDto;
+
+    // const data = await this.databaseService.forumCategories.create({
+    //   data: {
+    //     nameForum,
+    //     description: description ?? null,
+    //   },
+    // });
+  }
 
   findAll() {
     return `This action returns all forumCategories`;
