@@ -351,7 +351,7 @@ model ForumCategories{
   nameForum String
   description String?
   created_at DateTime @default(now())
-  updated_at DateTime
+  updated_at DateTime @updatedAt
 
   forumThreads ForumThreads[]
 }
@@ -364,7 +364,7 @@ model ForumThreads{
   content String
   views_count Int
   created_at DateTime @default(now())
-  updated_at DateTime
+  updated_at DateTime @updatedAt
 
   forumCategories ForumCategories @relation(fields: [idForumCategories], references: [idForumCategories])
   user User @relation(fields: [idUser], references: [idUser])
@@ -377,7 +377,7 @@ model ForumPost{
   idUser String
   content String
     created_at DateTime @default(now())
-  updated_at DateTime
+  updated_at DateTime @updatedAt
 
   forumThreads ForumThreads @relation(fields: [idForumThreads], references: [idForumThreads])
    user User @relation(fields: [idUser], references: [idUser]) 
@@ -392,7 +392,7 @@ model ForumComment{
   idUser String
   content String
     created_at DateTime @default(now())
-  updated_at DateTime
+  updated_at DateTime @updatedAt
 
    user User @relation(fields: [idUser], references: [idUser])
    forumPost ForumPost @relation(fields: [idForumPost], references: [idForumPost])
