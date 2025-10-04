@@ -1,11 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateForumCategoryDto {
   @IsNotEmpty()
   @ApiProperty({ example: 'name' })
   nameForum: string;
 
-  @ApiProperty({ example: 'description', nullable: true })
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ example: 'description', required: false })
   description?: string;
 }

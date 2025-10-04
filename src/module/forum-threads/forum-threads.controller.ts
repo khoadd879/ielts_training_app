@@ -34,19 +34,19 @@ export class ForumThreadsController {
     return this.forumThreadsService.findForumThread(idForumCategories);
   }
 
-  @Patch('update-forum-thread/:idForumCategories')
+  @Patch('update-forum-thread/:idForumThreads')
   update(
-    @Param('idForumCategories') idForumCategories: string,
+    @Param('idForumThreads') idForumThreads: string,
     @Body() updateForumThreadDto: UpdateForumThreadDto,
   ) {
     return this.forumThreadsService.updateForumThread(
-      idForumCategories,
+      idForumThreads,
       updateForumThreadDto,
     );
   }
 
-  @Delete('delete-forum-thread/:idForumCategories')
-  remove(@Param('idForumCategories') idForumCategories: string) {
-    return this.forumThreadsService.removeForumThread(idForumCategories);
+  @Delete('delete-forum-thread/:idForumThreads')
+  remove(@Param('idForumThreads') idForumThreads: string) {
+    return this.forumThreadsService.removeForumThread(idForumThreads);
   }
 }

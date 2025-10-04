@@ -417,6 +417,7 @@ model ForumPostLikes {
   forumPost ForumPost @relation(fields: [idForumPost], references: [idForumPost], onDelete: Cascade)
 
   user User @relation(fields: [idUser], references: [idUser])
+  @@unique([idForumPost, idUser])
 }
 
 // thích bình luận
@@ -429,4 +430,5 @@ model ForumCommentLikes {
   forumComment ForumComment @relation(fields: [idForumComment], references: [idForumComment], onDelete: Cascade)
 
   user User @relation(fields: [idUser], references: [idUser])
+  @@unique([idForumComment, idUser])
 }

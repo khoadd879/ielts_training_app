@@ -1,34 +1,50 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ForumCommentService } from './forum-comment.service';
 import { CreateForumCommentDto } from './dto/create-forum-comment.dto';
 import { UpdateForumCommentDto } from './dto/update-forum-comment.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('forum-comment')
 export class ForumCommentController {
   constructor(private readonly forumCommentService: ForumCommentService) {}
 
-  @Post()
+  @Post('create-forum-comment')
   create(@Body() createForumCommentDto: CreateForumCommentDto) {
-    return this.forumCommentService.create(createForumCommentDto);
+    return this.forumCommentService.createForumComment(createForumCommentDto);
   }
 
-  @Get()
-  findAll() {
-    return this.forumCommentService.findAll();
+  @Get('get-all-by-idForumPost/:idForumPost')
+  findAll(@Param('idForumPost') idForumPost: string) {
+    return this.forumCommentService.findAllByIdPost(idForumPost);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.forumCommentService.findOne(+id);
+  @Get('get-forum-comment/:idForumComment')
+  findOne(@Param('idForumComment') idForumComment: string) {
+    return this.forumCommentService.findForumComment(idForumComment);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateForumCommentDto: UpdateForumCommentDto) {
-    return this.forumCommentService.update(+id, updateForumCommentDto);
+  @Patch('update-forum-comment/:idForumComment')
+  update(
+    @Param('idForumComment') idForumComment: string,
+    @Body() updateForumCommentDto: UpdateForumCommentDto,
+  ) {
+    return this.forumCommentService.updateForumcomment(
+      idForumComment,
+      updateForumCommentDto,
+    );
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.forumCommentService.remove(+id);
+  @Delete('delete-forum-comment/:idForumComment')
+  remove(@Param('idForumComment') idForumComment: string) {
+    return this.forumCommentService.removeForumComment(idForumComment);
   }
 }

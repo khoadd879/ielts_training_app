@@ -31,8 +31,8 @@ export class ForumThreadsService {
 
   async createForumThread(createForumThreadDto: CreateForumThreadDto) {
     const { idForumCategories, idUser, title, content } = createForumThreadDto;
-    this.existingUser(idUser);
-    this.existingForumCategories(idForumCategories);
+    await this.existingUser(idUser);
+    await this.existingForumCategories(idForumCategories);
 
     const data = await this.databaseService.forumThreads.create({
       data: {
@@ -87,8 +87,16 @@ export class ForumThreadsService {
     updateForumThreadDto: UpdateForumThreadDto,
   ) {
     const { idForumCategories, idUser, title, content } = updateForumThreadDto;
-    this.existingUser(idUser);
-    this.existingForumCategories(idForumCategories);
+    await this.existingUser(idUser);
+    const existingForumThread =
+      await this.databaseService.forumThreads.findUnique({
+        where: {
+          idForumThreads,
+        },
+      });
+
+    if (!existingForumThread)
+      throw new BadRequestException('Forum thread not found');
 
     const data = await this.databaseService.forumThreads.update({
       where: {

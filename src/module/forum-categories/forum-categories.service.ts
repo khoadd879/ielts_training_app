@@ -13,7 +13,7 @@ export class ForumCategoriesService {
     const data = await this.databaseService.forumCategories.create({
       data: {
         nameForum,
-        description: description ?? null,
+        description,
       },
     });
 
