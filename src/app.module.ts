@@ -25,7 +25,6 @@ import { UserTestResultModule } from './module/user-test-result/user-test-result
 import { CacheModule } from '@nestjs/cache-manager';
 import { WritingTaskModule } from './module/writing-task/writing-task.module';
 import { UserWritingSubmissionModule } from './module/user-writing-submission/user-writing-submission.module';
-import { ForumModule } from './module/forum/forum.module';
 import { ForumCategoriesModule } from './module/forum-categories/forum-categories.module';
 import { ForumThreadsModule } from './module/forum-threads/forum-threads.module';
 import { ForumPostModule } from './module/forum-post/forum-post.module';
@@ -81,7 +80,6 @@ import { ForumCommentLikesModule } from './module/forum-comment-likes/forum-comm
     CacheModule.register(),
     WritingTaskModule,
     UserWritingSubmissionModule,
-    ForumModule,
     ForumCategoriesModule,
     ForumThreadsModule,
     ForumPostModule,
