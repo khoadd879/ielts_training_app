@@ -121,6 +121,9 @@ model TuVung{
   meaning    String
   example    String?
   level Level?
+   lastReviewed  DateTime?      // ngày cuối cùng học từ
+  correctStreak Int      @default(0)  // số ngày liên tiếp học đúng
+  xp            Int      @default(0) //tăng điểm cho mỗi lần đúng
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
