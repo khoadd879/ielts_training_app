@@ -364,7 +364,6 @@ model ForumThreads {
   idUser String
   title String
   content String
-  views_count Int @default(0)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
