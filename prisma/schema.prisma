@@ -24,7 +24,7 @@ model User {
   accountType accountType @default(LOCAL)
   role       Role   @default(USER)
   avatar     String? 
-  gender       Gender?
+  gender       Gender @default(Male)
   level     Level?
   isActive   Boolean  @default(false) 
   createdAt   DateTime  @default(now())
