@@ -10,6 +10,8 @@ export class CreateForumPostDto {
   @ApiProperty({ example: '123' })
   idUser: string;
 
+  file: string;
+
   @IsNotEmpty()
   @ApiProperty({ example: 'content' })
   content: string;

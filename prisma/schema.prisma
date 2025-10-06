@@ -379,6 +379,7 @@ model ForumPost {
   idForumThreads String
   idUser String
   content String
+  file String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
