@@ -211,6 +211,8 @@ export class VocabularyService {
     let phonetic: string | null = null;
     let example: string | null = null;
     let meaning: string | null = null;
+    let loaiTuVung: string | null = null;
+    let level: string | null = null;
 
     // 🟡 1. Gọi dictionaryapi.dev trước (chỉ lấy phonetic + example)
     try {
@@ -221,6 +223,7 @@ export class VocabularyService {
 
       phonetic = entry.phonetic || entry.phonetics?.[0]?.text || null;
       example = entry.meanings?.[0]?.definitions?.[0]?.example || null;
+      loaiTuVung = entry.meanings?.[0]?.partOfSpeech?.toUpperCase() ?? null;
     } catch (dictErr) {
       console.warn(
         `DictionaryAPI không có dữ liệu cho "${lowerWord}":`,
@@ -231,10 +234,24 @@ export class VocabularyService {
     // 🧠 2. Gọi Gemini để lấy nghĩa tiếng Việt & bổ sung nếu thiếu
     try {
       const prompt = `
-Bạn là một từ điển Anh - Việt.
-Chỉ trả về JSON hợp lệ (không markdown, không giải thích), cấu trúc:
-{"word":"","phonetic":null,"meaning":"","example":""}
-Từ: "${lowerWord}"
+Bạn là một hệ thống từ điển Anh - Việt chuyên nghiệp.
+Hãy trả về kết quả phân tích từ "${lowerWord}" theo đúng định dạng JSON sau (không có markdown, không có giải thích):
+
+{
+  "word": "",
+  "phonetic": null,
+  "meaning": "",
+  "example": "",
+  "loaiTuVung": "NOUN | VERB | ADJECTIVE | ADVERB | PHRASE | IDIOM | PREPOSITION | CONJUNCTION | INTERJECTION",
+  "level": "Low | Mid | High"
+}
+
+Yêu cầu:
+- "meaning": giải thích nghĩa tiếng Việt ngắn gọn, dễ hiểu.
+- "example": 1 câu ví dụ đơn giản minh họa.
+- "phonetic": phiên âm theo chuẩn IPA nếu có.
+- "loaiTuVung": xác định chính xác loại từ tiếng Anh.
+- "level": đánh giá độ khó của từ (Low: cơ bản, Mid: trung bình, High: nâng cao).
 `;
 
       const response: GenerateContentResponse = await ai.models.generateContent(
@@ -249,19 +266,15 @@ Từ: "${lowerWord}"
         .replace(/```json/i, '')
         .replace(/```/g, '')
         .trim();
-
       try {
         const parsed = JSON.parse(cleanedText);
 
-        // Nếu phonetic hoặc example chưa có → dùng từ Gemini
-        if (!phonetic && parsed.phonetic) {
-          phonetic = parsed.phonetic;
-        }
-        if (!example && parsed.example) {
-          example = parsed.example;
-        }
-
+        // Bổ sung dữ liệu còn thiếu
+        phonetic = phonetic ?? parsed.phonetic ?? null;
+        example = example ?? parsed.example ?? null;
         meaning = parsed.meaning ?? null;
+        loaiTuVung = parsed.loaiTuVung?.toUpperCase() ?? loaiTuVung;
+        level = parsed.level ?? null;
       } catch (parseErr) {
         console.warn('Gemini trả về không phải JSON hợp lệ:', parseErr);
       }
@@ -274,6 +287,8 @@ Từ: "${lowerWord}"
       phonetic,
       meaning,
       example,
+      loaiTuVung,
+      level,
     };
 
     // 🧠 3. Lưu vào cache để tái sử dụng
