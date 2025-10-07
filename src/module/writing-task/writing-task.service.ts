@@ -2,11 +2,18 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateWritingTaskDto } from './dto/create-writing-task.dto';
 import { UpdateWritingTaskDto } from './dto/update-writing-task.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class WritingTaskService {
-  constructor(private readonly databaseService: DatabaseService) {}
-  async createWritingTask(createWritingTaskDto: CreateWritingTaskDto) {
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
+  async createWritingTask(
+    createWritingTaskDto: CreateWritingTaskDto,
+    file?: Express.Multer.File,
+  ) {
     const { idDe, task_type, prompt, time_limit, word_limit } =
       createWritingTaskDto;
 
@@ -18,13 +25,21 @@ export class WritingTaskService {
 
     if (!existingTest) throw new BadRequestException('Test not found');
 
+    let image = createWritingTaskDto.image;
+
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      image = uploadResult.secure_url;
+    }
+
     const data = await this.databaseService.writingTask.create({
       data: {
         idDe,
         task_type,
         prompt,
-        time_limit,
-        word_limit,
+        image: image ?? null,
+        time_limit: Number(time_limit),
+        word_limit: Number(word_limit),
       },
     });
 
@@ -62,6 +77,7 @@ export class WritingTaskService {
   async updateWritingTask(
     idWritingTask: string,
     updateWritingTaskDto: UpdateWritingTaskDto,
+    file?: Express.Multer.File,
   ) {
     const { idDe, task_type, prompt, time_limit, word_limit } =
       updateWritingTaskDto;
@@ -74,6 +90,13 @@ export class WritingTaskService {
 
     if (!existingTest) throw new BadRequestException('Test not found');
 
+    let image = updateWritingTaskDto.image;
+
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      image = uploadResult.secure_url;
+    }
+
     const data = await this.databaseService.writingTask.update({
       where: {
         idWritingTask,
@@ -82,8 +105,9 @@ export class WritingTaskService {
         idDe,
         task_type,
         prompt,
-        time_limit,
-        word_limit,
+        image: image ?? null,
+        time_limit: Number(time_limit),
+        word_limit: Number(word_limit),
       },
     });
 

@@ -55,7 +55,7 @@ export class UsersService {
         role,
         gender,
         accountType,
-        level: role === 'USER' ? 'Low' : null,
+        level,
       },
     });
     return {
@@ -162,7 +162,7 @@ export class UsersService {
         role,
         avatar,
         gender,
-        level: role === 'USER' ? 'Low' : null,
+        level,
       },
     });
     return {

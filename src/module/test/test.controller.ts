@@ -43,6 +43,7 @@ export class TestController {
         description: { type: 'string', example: 'This is a test description' },
         duration: { type: 'number', example: 60 },
         numberQuestion: { type: 'number', example: 10 },
+        level: { type: 'string', example: 'Low' },
         img: { type: 'string', format: 'binary' }, // ảnh upload
         audioUrl: { type: 'string', format: 'binary' }, // file âm thanh upload
       },
@@ -89,6 +90,7 @@ export class TestController {
         description: { type: 'string', example: 'This is a test description' },
         duration: { type: 'number', example: 60 },
         numberQuestion: { type: 'number', example: 10 },
+        level: { type: 'string', example: 'Low' },
         img: { type: 'string', format: 'binary' }, // ảnh upload
         audioUrl: { type: 'string', format: 'binary' }, // file âm thanh upload
       },

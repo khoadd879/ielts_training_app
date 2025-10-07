@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { WritingTaskType } from '@prisma/client';
-import { IsEnum, IsNotEmpty } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateWritingTaskDto {
   @IsNotEmpty()
@@ -27,4 +27,8 @@ export class CreateWritingTaskDto {
   @IsNotEmpty()
   @ApiProperty({ example: '150' })
   word_limit: number;
+
+  @IsOptional()
+  @ApiProperty({ example: 'img', nullable: true })
+  image: string;
 }
