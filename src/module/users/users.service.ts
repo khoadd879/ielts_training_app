@@ -30,6 +30,7 @@ export class UsersService {
       role,
       gender,
       accountType,
+      level,
     } = createUserDto;
 
     const existingUser = await this.databaseService.user.findUnique({
@@ -54,6 +55,7 @@ export class UsersService {
         role,
         gender,
         accountType,
+        level: role === 'USER' ? 'Low' : null,
       },
     });
     return {
@@ -160,7 +162,7 @@ export class UsersService {
         role,
         avatar,
         gender,
-        level,
+        level: role === 'USER' ? 'Low' : null,
       },
     });
     return {

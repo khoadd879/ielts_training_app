@@ -29,9 +29,9 @@ export class UpdateUserDto {
   @IsEnum(Gender)
   gender: Gender;
 
-  @ApiProperty({ example: 'Mid', enum: Level })
-  @IsEnum(Level)
-  level: Level;
+  @IsOptional()
+  @ApiProperty({ example: 'Mid', enum: Level, nullable: true })
+  level?: Level | null;
 
   @ApiProperty({ example: '123 Main St, City, Country' })
   @IsOptional()
