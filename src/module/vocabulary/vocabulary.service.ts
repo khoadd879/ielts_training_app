@@ -234,7 +234,7 @@ export class VocabularyService {
     // 🧠 2. Gọi Gemini để lấy nghĩa tiếng Việt & bổ sung nếu thiếu
     try {
       const prompt = `
-Bạn là một hệ thống từ điển Anh - Việt chuyên nghiệp.
+Bạn là một hệ thống từ điển Anh - Việt chuyên nghiệp. Không dịch ngược Việt - Anh và không trả về gì khi mà từ không hợp lệ hoặc là không đúng và cả những từ chửi thề nữa.
 Hãy trả về kết quả phân tích từ "${lowerWord}" theo đúng định dạng JSON sau (không có markdown, không có giải thích):
 
 {
