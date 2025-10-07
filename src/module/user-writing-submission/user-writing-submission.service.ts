@@ -38,7 +38,10 @@ export class UserWritingSubmissionService {
     if (!existingTask) throw new BadRequestException('Writing task not found');
 
     // 🧠 1. Gọi AI chấm điểm
-    const aiResult = await this.evaluateWriting(submission_text);
+    const aiResult = await this.evaluateWriting(
+      submission_text,
+      existingTask.prompt, // gửi đề viết vào AI
+    );
 
     // 🧠 2. Lưu vào database
     const data = await this.databaseService.userWritingSubmission.create({
@@ -46,8 +49,8 @@ export class UserWritingSubmissionService {
         idUser,
         idWritingTask,
         submission_text,
-        score: null,
-        feedback: Prisma.JsonNull,
+        score: aiResult.score,
+        feedback: aiResult.feedback as Prisma.InputJsonValue,
         status: 'SUBMITTED',
       },
     });
@@ -62,6 +65,7 @@ export class UserWritingSubmissionService {
   // 🧠 HÀM CHẤM BÀI BẰNG GEMINI
   async evaluateWriting(
     submission_text: string,
+    writing_prompt?: string,
   ): Promise<{ score: number; feedback: Record<string, any> }> {
     const cacheKey = submission_text.trim();
 
@@ -72,13 +76,28 @@ export class UserWritingSubmissionService {
 
     // ⚙️ 1. Tạo prompt chuẩn
     const prompt = `
-You are an experienced IELTS Writing examiner.
-Please grade the following IELTS Writing Task 1 and 2 essay according to IELTS band descriptors.
+You are a certified IELTS Writing examiner with deep knowledge of the official IELTS Writing Band Descriptors (public version).
 
-Return your result in **pure JSON format only** (no markdown, no explanations):
+Your task is to **objectively evaluate** the candidate’s essay below **as an IELTS examiner would**.  
+Please assess the writing according to **the four official IELTS Writing criteria**:
+
+1. **Task Response (TR)** – How fully and appropriately the task is answered.  
+2. **Coherence and Cohesion (CC)** – The logical organization, paragraphing, and flow of ideas.  
+3. **Lexical Resource (LR)** – The range, accuracy, and appropriacy of vocabulary.  
+4. **Grammatical Range and Accuracy (GRA)** – The range and correctness of grammar and sentence structures.
+
+### Rules for evaluation:
+- Be **strict but fair**, following IELTS public band descriptors (0–9), can follow descriptors on https://takeielts.britishcouncil.org/sites/default/files/ielts_writing_band_descriptors.pdf  .
+- Avoid subjective praise. Focus on measurable weaknesses and strengths.
+- Give **specific, concise feedback** for each criterion (2–4 sentences max).
+- Calculate the **overall band score** as the average of the four criteria, rounded to the nearest 0.5.
+- Do **NOT** include markdown, commentary, or explanations outside the JSON.
+
+### Output format:
+Return your entire response in **pure JSON only** — no markdown fences, no extra text.
 
 {
-  "overall_score": number (0–9),
+  "score": number (0–9, rounded to nearest 0.5),
   "task_response": string,
   "coherence_and_cohesion": string,
   "lexical_resource": string,
@@ -86,7 +105,10 @@ Return your result in **pure JSON format only** (no markdown, no explanations):
   "general_feedback": string
 }
 
-Essay:
+### Writing Prompt:
+${writing_prompt ?? '(No prompt provided)'}
+
+### Essay to evaluate:
 ${submission_text}
 `;
 
@@ -112,7 +134,7 @@ ${submission_text}
       // 🧩 4. Parse JSON
       try {
         const parsed = JSON.parse(cleanedText);
-        score = parsed.overall_score ?? 0;
+        score = parsed.score ?? 0;
         feedback = parsed;
       } catch (parseErr) {
         console.warn('⚠️ Gemini trả về không phải JSON hợp lệ:', parseErr);
