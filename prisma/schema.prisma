@@ -22,6 +22,8 @@ model User {
   isActive               Boolean                 @default(false)
   gender                 Gender                  @default(Male)
   level                  Level?
+   xp          Int      @default(0)
+    xpToNext Int     @default(100) // ngưỡng để lên level tiếp theo
   des                    De[]
   forumComment           ForumComment[]
   forumCommentLikes      ForumCommentLikes[]

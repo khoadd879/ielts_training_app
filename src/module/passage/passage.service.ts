@@ -2,12 +2,19 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreatePassageDto } from './dto/create-passage.dto';
 import { UpdatePassageDto } from './dto/update-passage.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class PassageService {
-  constructor(private readonly databaseService: DatabaseService) {}
-  async createPassage(createPassageDto: CreatePassageDto) {
-    const { idPart, title, content, image, description, numberParagraph } =
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
+  async createPassage(
+    createPassageDto: CreatePassageDto,
+    file?: Express.Multer.File,
+  ) {
+    const { idPart, title, content, description, numberParagraph } =
       createPassageDto;
 
     const existingPart = await this.databaseService.part.findUnique({
@@ -15,6 +22,13 @@ export class PassageService {
     });
 
     if (!existingPart) throw new BadRequestException('Part not found');
+
+    let image = createPassageDto.image;
+
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      image = uploadResult.secure_url;
+    }
 
     const data = await this.databaseService.doanVan.create({
       data: {
@@ -68,8 +82,12 @@ export class PassageService {
     };
   }
 
-  async updatePassage(idPassage: string, updatePassageDto: UpdatePassageDto) {
-    const { idPart, title, content, image, description, numberParagraph } =
+  async updatePassage(
+    idPassage: string,
+    updatePassageDto: UpdatePassageDto,
+    file?: Express.Multer.File,
+  ) {
+    const { idPart, title, content, description, numberParagraph } =
       updatePassageDto;
 
     const existingPart = await this.databaseService.part.findUnique({
@@ -83,6 +101,13 @@ export class PassageService {
     });
 
     if (!existingPassage) throw new BadRequestException('Passage not found');
+
+    let image = updatePassageDto.image;
+
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      image = uploadResult.secure_url;
+    }
 
     const data = await this.databaseService.doanVan.update({
       where: {

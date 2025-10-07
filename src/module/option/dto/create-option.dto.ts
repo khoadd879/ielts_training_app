@@ -1,16 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateOptionDto {
   @IsNotEmpty()
-  @ApiProperty({ example: '123' })
+  @IsString()
+  @ApiProperty({ example: 'uuid-cau-hoi', description: 'ID câu hỏi' })
   idCauHoi: string;
 
-  @IsOptional()
-  @ApiProperty({ example: 'A' })
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ example: 'A', description: 'Nhãn option' })
   option_label: string;
 
-  @ApiProperty({ example: 'content' })
-  @IsOptional()
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ example: 'Paris', description: 'Nội dung option' })
   option_content: string;
 }

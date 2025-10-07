@@ -8,9 +8,10 @@ import {
   Delete,
 } from '@nestjs/common';
 import { OptionService } from './option.service';
-import { CreateOptionDto } from './dto/create-option.dto';
+
 import { UpdateOptionDto } from './dto/update-option.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { CreateManyOptionsDto } from './dto/create-many-options.dto';
 
 @ApiBearerAuth()
 @Controller('option')
@@ -18,8 +19,9 @@ export class OptionController {
   constructor(private readonly optionService: OptionService) {}
 
   @Post('create-many-option')
-  createManyOptions(@Body() createOptionDto: CreateOptionDto[]) {
-    return this.optionService.createManyOptions(createOptionDto);
+  @ApiBody({ type: CreateManyOptionsDto })
+  createManyOptions(@Body() body: CreateManyOptionsDto) {
+    return this.optionService.createManyOptions(body.options);
   }
 
   @Get('get-all-by-id-question/:idQuestion')
