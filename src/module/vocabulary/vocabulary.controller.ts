@@ -31,10 +31,10 @@ export class VocabularyController {
     return this.vocabularyService.findAllByIdUser(idUser);
   }
 
-  @Get('get-by-name/:idUser')
-  findByName(@Query('word') word: string, @Param('idUser') idUser: string) {
-    return this.vocabularyService.findByWord(word, idUser);
-  }
+  // @Get('get-by-name/:idUser')
+  // findByName(@Query('word') word: string, @Param('idUser') idUser: string) {
+  //   return this.vocabularyService.findByWord(word, idUser);
+  // }
 
   @Patch(':id')
   update(

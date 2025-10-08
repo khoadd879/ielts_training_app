@@ -142,30 +142,30 @@ export class VocabularyService {
     };
   }
 
-  //Tim kiem tu vung theo tu khoa
-  async findByWord(word: string, idUser: string) {
-    const existingUser = await this.databaseService.user.findUnique({
-      where: { idUser },
-    });
+  // //Tim kiem tu vung theo tu khoa
+  // async findByWord(word: string, idUser: string) {
+  //   const existingUser = await this.databaseService.user.findUnique({
+  //     where: { idUser },
+  //   });
 
-    if (!existingUser) {
-      throw new BadRequestException('User not found');
-    }
+  //   if (!existingUser) {
+  //     throw new BadRequestException('User not found');
+  //   }
 
-    await this.databaseService.tuVung.findMany({
-      where: {
-        word: {
-          contains: word,
-          mode: 'insensitive', // không phân biệt hoa thường
-        },
-      },
-    });
+  //   await this.databaseService.tuVung.findMany({
+  //     where: {
+  //       word: {
+  //         contains: word,
+  //         mode: 'insensitive', // không phân biệt hoa thường
+  //       },
+  //     },
+  //   });
 
-    return {
-      message: 'Vocabularies retrieved successfully',
-      status: 200,
-    };
-  }
+  //   return {
+  //     message: 'Vocabularies retrieved successfully',
+  //     status: 200,
+  //   };
+  // }
 
   //Dua tu vung vao topic
   async addVocabularyToTopic(idTuVung: string, idTopic: string) {

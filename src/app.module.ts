@@ -31,6 +31,11 @@ import { ForumPostModule } from './module/forum-post/forum-post.module';
 import { ForumCommentModule } from './module/forum-comment/forum-comment.module';
 import { ForumPostLikesModule } from './module/forum-post-likes/forum-post-likes.module';
 import { ForumCommentLikesModule } from './module/forum-comment-likes/forum-comment-likes.module';
+import { GrammarModule } from './module/grammar/grammar.module';
+import { GrammarCategoriesModule } from './module/grammar-categories/grammar-categories.module';
+
+import { ReviewStreakModule } from './module/review-streak/review-streak.module';
+import { StreakServiceModule } from './module/streak-service/streak-service.module';
 
 @Module({
   imports: [
@@ -86,6 +91,12 @@ import { ForumCommentLikesModule } from './module/forum-comment-likes/forum-comm
     ForumCommentModule,
     ForumPostLikesModule,
     ForumCommentLikesModule,
+    GrammarModule,
+    GrammarCategoriesModule,
+
+    ReviewStreakModule,
+
+    StreakServiceModule,
   ],
   controllers: [AppController],
   providers: [

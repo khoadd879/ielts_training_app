@@ -1,9 +1,17 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
+import { StreakService } from '../streak-service/streak-service.service';
 
 @Injectable()
 export class UserTestResultService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly streakService: StreakService,
+  ) {}
 
   async findAllTestResultByIdUser(idUser: string) {
     const existingUser = await this.databaseService.user.findUnique({
@@ -109,23 +117,86 @@ export class UserTestResultService {
     };
   }
 
-  async finishTest(testResultId: string) {
-    const result = await this.databaseService.userTestResult.update({
-      where: { idTestResult: testResultId },
-      data: { status: 'FINISHED', finishedAt: new Date() },
-      include: { user: true, de: true },
+  async finishTest(idTestResult: string, idUser: string) {
+    // 1. Lấy thông tin bài làm và kiểm tra quyền sở hữu
+    const testResult = await this.databaseService.userTestResult.findFirst({
+      where: {
+        idTestResult: idTestResult,
+        idUser: idUser, // Đảm bảo bài làm này là của đúng user
+      },
+      include: {
+        userAnswer: true, // Lấy kèm các câu trả lời để chấm điểm
+        de: true, // Lấy kèm thông tin đề thi để biết level
+      },
     });
 
-    // 🧮 Tính XP nhận được — xử lý trường hợp level null
-    const xpGained = this.calculateXp(
-      result.de?.level ?? 'Low',
-      result.band_score,
-    );
+    // Nếu không tìm thấy hoặc không đúng chủ sở hữu
+    if (!testResult) {
+      throw new NotFoundException(
+        'Test result not found or you do not have permission.',
+      );
+    }
 
-    // 🧠 Cập nhật XP + kiểm tra lên level
-    await this.updateUserXpAndLevel(result.idUser, xpGained);
+    // Nếu bài thi đã được hoàn thành trước đó
+    if (testResult.status !== 'IN_PROGRESS') {
+      throw new BadRequestException('This test has already been finished.');
+    }
 
-    return { message: 'Test finished', xpGained };
+    // 2. Chấm điểm và tính toán kết quả
+    const total_questions = testResult.de.numberQuestion; // Lấy tổng số câu hỏi từ đề
+    const total_correct = testResult.userAnswer.filter(
+      (answer) => answer.isCorrect,
+    ).length;
+
+    // Hàm tính band score ví dụ, bạn có thể thay đổi công thức
+    const band_score = this.calculateBandScore(total_correct, total_questions);
+
+    // 3. Cập nhật kết quả cuối cùng vào database
+    await this.databaseService.userTestResult.update({
+      where: { idTestResult: idTestResult },
+      data: {
+        status: 'FINISHED',
+        finishedAt: new Date(),
+        total_correct: total_correct,
+        total_questions: total_questions,
+        band_score: band_score, // Lưu lại band score đã tính
+      },
+    });
+
+    // 4. Tính toán và cập nhật XP (Sử dụng các hàm có sẵn của bạn)
+    const xpGained = this.calculateXp(testResult.de.level, band_score);
+    await this.updateUserXpAndLevel(idUser, xpGained);
+
+    // 5. Cập nhật chuỗi học
+    try {
+      await this.streakService.updateStreak(idUser);
+    } catch (error) {
+      console.error(
+        `Failed to update streak for user ${idUser} after finishing test`,
+        error,
+      );
+    }
+
+    // 6. Trả về kết quả
+    return {
+      message: 'Test finished successfully!',
+      xpGained: xpGained,
+      band_score: band_score,
+      status: 200,
+    };
+  }
+
+  //Hàm tính band score
+  private calculateBandScore(
+    correctAnswers: number,
+    totalQuestions: number,
+  ): number {
+    if (totalQuestions === 0) return 0;
+    // Đây là công thức ví dụ, bạn nên thay bằng thang điểm thật của IELTS Reading/Listening
+    // Ví dụ: 39-40 câu đúng -> 9.0, 37-38 -> 8.5, v.v.
+    const ratio = correctAnswers / totalQuestions;
+    // Làm tròn đến 0.5 (ví dụ: 7.2 -> 7.0, 7.3 -> 7.5, 7.8 -> 8.0)
+    return Math.round(ratio * 9 * 2) / 2;
   }
 
   /**
