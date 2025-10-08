@@ -1,34 +1,67 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { GrammarCategoriesService } from './grammar-categories.service';
 import { CreateGrammarCategoryDto } from './dto/create-grammar-category.dto';
 import { UpdateGrammarCategoryDto } from './dto/update-grammar-category.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @Controller('grammar-categories')
 export class GrammarCategoriesController {
-  constructor(private readonly grammarCategoriesService: GrammarCategoriesService) {}
+  constructor(
+    private readonly grammarCategoriesService: GrammarCategoriesService,
+  ) {}
 
-  @Post()
-  create(@Body() createGrammarCategoryDto: CreateGrammarCategoryDto) {
-    return this.grammarCategoriesService.create(createGrammarCategoryDto);
+  @Post('create-grammar-categories')
+  create(
+    @Body() createGrammarCategoryDto: CreateGrammarCategoryDto,
+    @Req() req,
+  ) {
+    const idUser = req.user.id;
+    return this.grammarCategoriesService.create(
+      createGrammarCategoryDto,
+      idUser,
+    );
   }
 
-  @Get()
-  findAll() {
-    return this.grammarCategoriesService.findAll();
+  @Get('get-user-grammar-categories')
+  findAll(@Req() req) {
+    const idUser = req.user.id;
+    return this.grammarCategoriesService.findAll(idUser);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.grammarCategoriesService.findOne(+id);
+  @Get('get-grammar-category/-:idGrammarCategories')
+  findOne(@Param('idGrammarCategories') idGrammarCategories: string) {
+    return this.grammarCategoriesService.findOne(idGrammarCategories);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateGrammarCategoryDto: UpdateGrammarCategoryDto) {
-    return this.grammarCategoriesService.update(+id, updateGrammarCategoryDto);
+  @Patch('update-grammar-category/:idGrammarCategories')
+  update(
+    @Param('idGrammarCategories') idGrammarCategories: string,
+    @Body() updateGrammarCategoryDto: UpdateGrammarCategoryDto,
+    @Req() req,
+  ) {
+    const idUser = req.user.id;
+    return this.grammarCategoriesService.update(
+      idGrammarCategories,
+      updateGrammarCategoryDto,
+      idUser,
+    );
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.grammarCategoriesService.remove(+id);
+  @Delete('delete-grammar-category/:idGrammarCategories')
+  remove(@Param('idGrammarCategories') idGrammarCategories: string) {
+    return this.grammarCategoriesService.remove(idGrammarCategories);
   }
 }

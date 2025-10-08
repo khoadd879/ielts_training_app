@@ -1,34 +1,47 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { GrammarService } from './grammar.service';
 import { CreateGrammarDto } from './dto/create-grammar.dto';
 import { UpdateGrammarDto } from './dto/update-grammar.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('grammar')
 export class GrammarController {
   constructor(private readonly grammarService: GrammarService) {}
 
-  @Post()
+  @Post('create-grammar')
   create(@Body() createGrammarDto: CreateGrammarDto) {
     return this.grammarService.create(createGrammarDto);
   }
 
-  @Get()
-  findAll() {
-    return this.grammarService.findAll();
+  @Get('get-all-grammar')
+  findAll(@Param('idGrammarCategory') idGrammarCategory: string) {
+    return this.grammarService.findAllInGrammarCategories(idGrammarCategory);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.grammarService.findOne(+id);
+  @Get('get-grammar/:idGrammar')
+  findOne(@Param('idGrammar') idGrammar: string) {
+    return this.grammarService.findOne(idGrammar);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateGrammarDto: UpdateGrammarDto) {
-    return this.grammarService.update(+id, updateGrammarDto);
+  @Patch('update-grammar/:idGrammar')
+  update(
+    @Param('idGrammar') idGrammar: string,
+    @Body() updateGrammarDto: UpdateGrammarDto,
+  ) {
+    return this.grammarService.update(idGrammar, updateGrammarDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.grammarService.remove(+id);
+  @Delete('delete-grammar/:idGrammar')
+  remove(@Param('idGrammar') idGrammar: string) {
+    return this.grammarService.remove(idGrammar);
   }
 }
