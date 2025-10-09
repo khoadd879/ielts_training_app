@@ -230,7 +230,7 @@ export class UserWritingSubmissionService {
   // 📋 Prompt AI
   private buildPrompt(submissionText: string, writingPrompt: string): string {
     return `
-You are a certified IELTS Writing examiner with deep knowledge of the official IELTS Writing Band Descriptors (public version).
+You are a certified IELTS Writing examiner with deep knowledge of the official IELTS Writing Band Descriptors (public version). But not too strict maybe add more 0.5 to 1 score if that writing is good enough.
 
 Your task is to objectively evaluate the candidate’s essay below as an IELTS examiner would.  
 Please assess according to the four official IELTS Writing criteria:
