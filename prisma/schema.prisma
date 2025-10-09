@@ -239,16 +239,37 @@ model WritingTask {
 }
 
 model UserWritingSubmission {
-  idWritingSubmission String        @id @default(uuid())
-  idUser              String
-  idWritingTask       String
-  submission_text     String
-  submitted_at        DateTime      @default(now())
-  score               Float?
-  status              WritingStatus @default(SUBMITTED)
-  feedback            Json?
-  user                User          @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  writingTask         WritingTask   @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
+  idWritingSubmission String  @id @default(uuid())
+  idUser              String
+  idWritingTask       String
+  submission_text     String
+  submitted_at        DateTime      @default(now())
+  status              WritingStatus @default(SUBMITTED)
+  // BỎ score và feedback ở đây
+
+  user                User          @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  writingTask         WritingTask   @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
+
+  
+  feedback          Feedback?
+}
+
+
+model Feedback {
+  idFeedback              String @id @default(uuid())
+  idWritingSubmission     String @unique 
+  score                     Float
+  taskResponse            String @db.Text
+  coherenceAndCohesion    String @db.Text
+  lexicalResource         String @db.Text
+  grammaticalRangeAndAccuracy String @db.Text
+  generalFeedback         String @db.Text
+  
+  
+  gradedAt                DateTime @default(now())
+
+  
+  submission UserWritingSubmission @relation(fields: [idWritingSubmission], references: [idWritingSubmission], onDelete: Cascade)
 }
 
 model ForumCategories {

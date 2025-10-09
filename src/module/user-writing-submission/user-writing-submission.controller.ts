@@ -43,7 +43,7 @@ export class UserWritingSubmissionController {
     @Param('idWritingSubmission') idWritingSubmission: string,
     @Body() updateUserWritingSubmissionDto: UpdateUserWritingSubmissionDto,
   ) {
-    return this.userWritingSubmissionService.updateUserWritingSubmission(
+    return this.userWritingSubmissionService.update(
       idWritingSubmission,
       updateUserWritingSubmissionDto,
     );

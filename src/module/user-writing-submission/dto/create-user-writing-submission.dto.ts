@@ -1,19 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { WritingStatus } from '@prisma/client';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateUserWritingSubmissionDto {
   @IsNotEmpty()
+  @IsString()
   @ApiProperty({ example: 'user-uuid-123' })
   idUser: string;
 
   @IsNotEmpty()
+  @IsString()
   @ApiProperty({ example: 'writing-task-uuid-123' })
   idWritingTask: string;
 
@@ -21,7 +16,7 @@ export class CreateUserWritingSubmissionDto {
   @IsString()
   @ApiProperty({
     example: 'This is my essay about global warming...',
-    description: 'Bài viết của người dùng',
+    description: 'The user’s essay text',
   })
   submission_text: string;
 }

@@ -1,24 +1,28 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateUserWritingSubmissionDto } from './dto/create-user-writing-submission.dto';
 import { UpdateUserWritingSubmissionDto } from './dto/update-user-writing-submission.dto';
 import { DatabaseService } from 'src/database/database.service';
-import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
-import { Prisma } from '@prisma/client';
+import { GoogleGenAI } from '@google/genai';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// 🧠 Cache kết quả AI để tránh gọi lại cùng một bài viết
-const writingCache = new Map<
-  string,
-  {
-    score: number;
-    feedback: Record<string, any>;
-  }
->();
+type AIFeedbackResult = {
+  score: number;
+  task_response: string;
+  coherence_and_cohesion: string;
+  lexical_resource: string;
+  grammatical_range_and_accuracy: string;
+  general_feedback: string;
+};
 
 @Injectable()
 export class UserWritingSubmissionService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   // 🧾 Tạo submission + gọi AI chấm điểm
   async createUserWritingSubmission(
@@ -27,32 +31,44 @@ export class UserWritingSubmissionService {
     const { idUser, idWritingTask, submission_text } =
       createUserWritingSubmissionDto;
 
-    const existingUser = await this.databaseService.user.findUnique({
-      where: { idUser },
-    });
-    if (!existingUser) throw new BadRequestException('User not found');
+    const [user, writingTask] = await Promise.all([
+      this.databaseService.user.findUnique({ where: { idUser } }),
+      this.databaseService.writingTask.findUnique({ where: { idWritingTask } }),
+    ]);
 
-    const existingTask = await this.databaseService.writingTask.findUnique({
-      where: { idWritingTask },
-    });
-    if (!existingTask) throw new BadRequestException('Writing task not found');
+    if (!user) throw new BadRequestException('User not found');
+    if (!writingTask) throw new BadRequestException('Writing task not found');
 
     // 🧠 1. Gọi AI chấm điểm
     const aiResult = await this.evaluateWriting(
       submission_text,
-      existingTask.prompt, // gửi đề viết vào AI
+      writingTask.prompt,
     );
 
     // 🧠 2. Lưu vào database
-    const data = await this.databaseService.userWritingSubmission.create({
-      data: {
-        idUser,
-        idWritingTask,
-        submission_text,
-        score: aiResult.score,
-        feedback: aiResult.feedback as Prisma.InputJsonValue,
-        status: 'SUBMITTED',
-      },
+    const data = await this.databaseService.$transaction(async (tx) => {
+      const submission = await tx.userWritingSubmission.create({
+        data: {
+          idUser,
+          idWritingTask,
+          submission_text,
+          status: 'GRADED',
+        },
+      });
+
+      const feedback = await tx.feedback.create({
+        data: {
+          idWritingSubmission: submission.idWritingSubmission,
+          score: aiResult.score,
+          taskResponse: aiResult.task_response,
+          coherenceAndCohesion: aiResult.coherence_and_cohesion,
+          lexicalResource: aiResult.lexical_resource,
+          grammaticalRangeAndAccuracy: aiResult.grammatical_range_and_accuracy,
+          generalFeedback: aiResult.general_feedback,
+        },
+      });
+
+      return { ...submission, feedback };
     });
 
     return {
@@ -62,99 +78,48 @@ export class UserWritingSubmissionService {
     };
   }
 
-  // 🧠 HÀM CHẤM BÀI BẰNG GEMINI
+  // 🧠 HÀM CHẤM BÀI BẰNG GEMINI SDK MỚI
   async evaluateWriting(
-    submission_text: string,
-    writing_prompt?: string,
-  ): Promise<{ score: number; feedback: Record<string, any> }> {
-    const cacheKey = submission_text.trim();
+    submissionText: string,
+    writingPrompt: string,
+  ): Promise<AIFeedbackResult> {
+    const cacheKey = `writing-feedback:${submissionText.trim()}:${writingPrompt.trim()}`;
+    const cachedData = await this.cacheManager.get<AIFeedbackResult>(cacheKey);
 
-    // ⚡ 0. Check cache trước
-    if (writingCache.has(cacheKey)) {
-      return writingCache.get(cacheKey)!;
+    if (cachedData) {
+      console.log('⚡️ Cache HIT!');
+      return cachedData;
     }
 
-    // ⚙️ 1. Tạo prompt chuẩn
-    const prompt = `
-You are a certified IELTS Writing examiner with deep knowledge of the official IELTS Writing Band Descriptors (public version).
-
-Your task is to **objectively evaluate** the candidate’s essay below **as an IELTS examiner would**.  
-Please assess the writing according to **the four official IELTS Writing criteria**:
-
-1. **Task Response (TR)** – How fully and appropriately the task is answered.  
-2. **Coherence and Cohesion (CC)** – The logical organization, paragraphing, and flow of ideas.  
-3. **Lexical Resource (LR)** – The range, accuracy, and appropriacy of vocabulary.  
-4. **Grammatical Range and Accuracy (GRA)** – The range and correctness of grammar and sentence structures.
-
-### Rules for evaluation:
-- Be **strict but fair**, following IELTS public band descriptors (0–9), can follow descriptors on https://takeielts.britishcouncil.org/sites/default/files/ielts_writing_band_descriptors.pdf  .
-- Avoid subjective praise. Focus on measurable weaknesses and strengths.
-- Give **specific, concise feedback** for each criterion (2–4 sentences max).
-- Calculate the **overall band score** as the average of the four criteria, rounded to the nearest 0.5.
-- Do **NOT** include markdown, commentary, or explanations outside the JSON.
-
-### Output format:
-Return your entire response in **pure JSON only** — no markdown fences, no extra text.
-
-{
-  "score": number (0–9, rounded to nearest 0.5),
-  "task_response": string,
-  "coherence_and_cohesion": string,
-  "lexical_resource": string,
-  "grammatical_range_and_accuracy": string,
-  "general_feedback": string
-}
-
-### Writing Prompt:
-${writing_prompt ?? '(No prompt provided)'}
-
-### Essay to evaluate:
-${submission_text}
-`;
-
-    let score = 0;
-    let feedback: Record<string, any> = {};
+    const prompt = this.buildPrompt(submissionText, writingPrompt);
 
     try {
-      // 🧠 2. Gọi Gemini API
-      const response: GenerateContentResponse = await ai.models.generateContent(
-        {
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-        },
-      );
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash-001', // hoặc gemini-2.5-flash nếu bạn có quyền
+        contents: prompt,
+      });
 
-      // 🧹 3. Làm sạch text
       const rawText = response.text?.trim() ?? '';
-      const cleanedText = rawText
+      const clean = rawText
         .replace(/```json/i, '')
         .replace(/```/g, '')
         .trim();
 
-      // 🧩 4. Parse JSON
+      let parsed: AIFeedbackResult;
       try {
-        const parsed = JSON.parse(cleanedText);
-        score = parsed.score ?? 0;
-        feedback = parsed;
-      } catch (parseErr) {
-        console.warn('⚠️ Gemini trả về không phải JSON hợp lệ:', parseErr);
-        feedback = {
-          error: 'Invalid AI JSON format',
-          raw: cleanedText,
-        };
+        parsed = JSON.parse(clean);
+      } catch (err) {
+        console.error('❌ JSON parse error from Gemini:', err);
+        throw new BadRequestException('Invalid AI response format');
       }
-    } catch (err) {
-      console.error('❌ Lỗi khi gọi Gemini:', err);
-      feedback = {
-        error: 'AI evaluation failed',
-      };
+
+      // Lưu vào cache 1 giờ
+      await this.cacheManager.set(cacheKey, parsed, 3600);
+      return parsed;
+    } catch (error) {
+      console.error('❌ Error calling Gemini API:', error);
+      throw new BadRequestException('AI evaluation failed.');
     }
-
-    // 🔒 5. Lưu cache để tái sử dụng
-    const result = { score, feedback };
-    writingCache.set(cacheKey, result);
-
-    return result;
   }
 
   // 📚 Lấy toàn bộ submissions theo user
@@ -166,9 +131,7 @@ ${submission_text}
 
     const data = await this.databaseService.userWritingSubmission.findMany({
       where: { idUser },
-      include: {
-        writingTask: true,
-      },
+      include: { writingTask: true },
     });
 
     return {
@@ -194,48 +157,53 @@ ${submission_text}
     };
   }
 
-  // ✏️ Cập nhật submission
-  async updateUserWritingSubmission(
+  // ✏️ Cập nhật submission (chấm lại nếu cần)
+  async update(
     idWritingSubmission: string,
     updateDto: UpdateUserWritingSubmissionDto,
   ) {
-    const existing =
+    const submission =
       await this.databaseService.userWritingSubmission.findUnique({
         where: { idWritingSubmission },
+        include: { writingTask: true, feedback: true },
       });
-    if (!existing)
-      throw new BadRequestException('User writing submission not found');
 
-    const { submission_text } = existing;
+    if (!submission) throw new BadRequestException('Submission not found');
 
-    let updatedScore = existing.score;
-    let updatedFeedback = existing.feedback;
-
-    // 🧠 Nếu update yêu cầu chấm lại bài (vd: status = GRADED)
     if (updateDto.status === 'GRADED') {
-      const aiResult = await this.evaluateWriting(submission_text);
-      updatedScore = aiResult.score;
-      updatedFeedback = aiResult.feedback;
+      console.log(`🔄 Re-grading submission: ${idWritingSubmission}`);
+      const aiResult = await this.evaluateWriting(
+        submission.submission_text,
+        submission.writingTask.prompt,
+      );
+
+      const updatedFeedback = await this.databaseService.feedback.update({
+        where: { idWritingSubmission },
+        data: {
+          score: aiResult.score,
+          taskResponse: aiResult.task_response,
+          coherenceAndCohesion: aiResult.coherence_and_cohesion,
+          lexicalResource: aiResult.lexical_resource,
+          grammaticalRangeAndAccuracy: aiResult.grammatical_range_and_accuracy,
+          generalFeedback: aiResult.general_feedback,
+        },
+      });
+
+      return {
+        message: 'Submission re-graded successfully',
+        data: { ...submission, feedback: updatedFeedback },
+      };
     }
 
-    const data = await this.databaseService.userWritingSubmission.update({
-      where: { idWritingSubmission },
-      data: {
-        score: updatedScore,
-        feedback:
-          updatedFeedback === null
-            ? Prisma.JsonNull
-            : (updatedFeedback as Prisma.InputJsonValue),
-        status: updateDto.status,
-      },
-    });
+    const updatedSubmission =
+      await this.databaseService.userWritingSubmission.update({
+        where: { idWritingSubmission },
+        data: { ...updateDto },
+      });
 
     return {
-      message:
-        updateDto.status === 'GRADED'
-          ? 'Writing submission graded successfully'
-          : 'Writing submission updated successfully',
-      data,
+      message: 'Submission updated successfully',
+      data: updatedSubmission,
       status: 200,
     };
   }
@@ -257,5 +225,42 @@ ${submission_text}
       message: 'User writing submission deleted successfully',
       status: 200,
     };
+  }
+
+  // 📋 Prompt AI
+  private buildPrompt(submissionText: string, writingPrompt: string): string {
+    return `
+You are a certified IELTS Writing examiner with deep knowledge of the official IELTS Writing Band Descriptors (public version).
+
+Your task is to objectively evaluate the candidate’s essay below as an IELTS examiner would.  
+Please assess according to the four official IELTS Writing criteria:
+
+1. Task Response (TR)
+2. Coherence and Cohesion (CC)
+3. Lexical Resource (LR)
+4. Grammatical Range and Accuracy (GRA)
+
+Rules:
+- Be strict but fair.
+- Follow IELTS public band descriptors.
+- Give concise feedback (2–4 sentences each).
+- Return only pure JSON (no markdown).
+
+Format:
+{
+  "score": number,
+  "task_response": string,
+  "coherence_and_cohesion": string,
+  "lexical_resource": string,
+  "grammatical_range_and_accuracy": string,
+  "general_feedback": string
+}
+
+### Writing Prompt:
+${writingPrompt ?? '(No prompt provided)'}
+
+### Essay:
+${submissionText}
+`;
   }
 }
