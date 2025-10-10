@@ -1,113 +1,113 @@
 import { PrismaClient, loaiDe, Level } from '@prisma/client';
-
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Start seeding sample Reading test...');
+  console.log('🌱 Start seeding Reading C19T3...');
 
   // ===== 1️⃣ ADMIN USER =====
   const admin = await prisma.user.findUnique({
     where: { email: 'khoadd879@gmail.com' },
   });
-
-  if (!admin) throw new Error('⚠️ Admin user not found — please check email');
+  if (!admin) throw new Error('⚠️ Admin not found — check email');
 
   // ===== 2️⃣ READING TEST =====
-  const readingTest = await prisma.de.create({
+  const test = await prisma.de.create({
     data: {
       idUser: admin.idUser,
-      title: 'IELTS Reading Practice Test – The kākāpō (Questions 1–6)',
+      title:
+        '[C19T3] Archaeologists discover evidence of prehistoric island settlers',
+      description:
+        'A passage about early human settlement and adaptation on the island of Obi.',
       duration: 60,
+      numberQuestion: 13,
       loaiDe: loaiDe.READING,
-      numberQuestion: 14,
       level: Level.Mid,
-      description: 'How stress affects our judgement',
-      img: `https://cms.youpass.vn/assets/b82aac6b-b273-4a93-b40f-344930d72aab?width=400`,
+      img: 'https://ielts.org/sites/default/files/styles/thumbnail/public/2024-04/archaeology.jpg',
     },
   });
 
-  const readingPart = await prisma.part.create({
+  const part = await prisma.part.create({
     data: {
-      idDe: readingTest.idDe,
-      namePart: 'How stress affects our judgement',
+      idDe: test.idDe,
+      namePart:
+        'Archaeologists discover evidence of prehistoric island settlers',
     },
   });
 
-  const readingPassage = await prisma.doanVan.create({
+  const passage = await prisma.doanVan.create({
     data: {
-      idPart: readingPart.idPart,
-      title: 'How stress affects our judgement',
-      content: `Some of the most important decisions of our lives occur while we're feeling stressed and anxious... (rút gọn cho ngắn)`,
+      idPart: part.idPart,
+      title: 'Archaeologists discover evidence of prehistoric island settlers',
+      content: `In early April 2019, Dr. Ceri Shipton and his colleagues ... (full text shortened for storage)
+The excavations suggest people successfully lived in the two Keio shelters for about 10,000 years...`,
       numberParagraph: 10,
-      image: `https://cms.youpass.vn/assets/b82aac6b-b273-4a93-b40f-344930d72aab?width=400`,
+      image:
+        'https://cms.youpass.vn/assets/b82aac6b-b273-4a93-b40f-344930d72aab?width=400',
     },
   });
 
-  // ===== 3️⃣ GROUP 1 - MULTIPLE CHOICE =====
-  const readingGroup1 = await prisma.nhomCauHoi.create({
+  // ===== 3️⃣ GROUP 1: TRUE/FALSE/NOT GIVEN =====
+  const group1 = await prisma.nhomCauHoi.create({
     data: {
-      idDe: readingTest.idDe,
-      idPart: readingPart.idPart,
-      title: `Do the following statements agree with the information given in Reading Passage 1?
-
-In boxes 1 - 7 on your answer sheet, write
-
-TRUE               if the statement agrees with the information
-
-FALSE              if the statement contradicts the information
-
-NOT GIVEN     if there is no information on this`,
+      idDe: test.idDe,
+      idPart: part.idPart,
+      title:
+        'Do the following statements agree with the information given in Reading Passage 1?',
       typeQuestion: 'TFNG',
       startingOrder: 1,
       endingOrder: 7,
     },
   });
 
-  // --- Câu hỏi và đáp án thực tế ---
-  const questionsData = [
+  const tfngQuestions = [
     {
       numberQuestion: 1,
-      content: `Archaeological research had taken place on the island of Obi before the arrival of Ceri Shipton and his colleagues.`,
+      content:
+        'Archaeological research had taken place on the island of Obi before the arrival of Ceri Shipton and his colleagues.',
       correct: 'FALSE',
     },
     {
       numberQuestion: 2,
-      content: `At the Keio sites, the researchers found the first clam shell axes ever to be discovered in the region.`,
+      content:
+        'At the Keio sites, the researchers found the first clam shell axes ever to be discovered in the region.',
       correct: 'FALSE',
     },
     {
       numberQuestion: 3,
-      content: `The size of Obi today is less than it was 18,000 years ago.`,
+      content: 'The size of Obi today is less than it was 18,000 years ago.',
       correct: 'TRUE',
     },
     {
       numberQuestion: 4,
-      content: `A change in the climate around 11,700 years ago had a greater impact on Obi than on the surrounding islands.`,
+      content:
+        'A change in the climate around 11,700 years ago had a greater impact on Obi than on the surrounding islands.',
       correct: 'NOT GIVEN',
     },
     {
       numberQuestion: 5,
-      content: `The researchers believe there is a connection between warmer, wetter weather and a change in the material used to make axes.`,
+      content:
+        'The researchers believe there is a connection between warmer, wetter weather and a change in the material used to make axes.',
       correct: 'TRUE',
     },
     {
       numberQuestion: 6,
-      content: `Shipton's team were surprised to find evidence of the Obi islanders' hunting practices.`,
+      content:
+        "Shipton's team were surprised to find evidence of the Obi islanders' hunting practices.",
       correct: 'NOT GIVEN',
     },
     {
       numberQuestion: 7,
-      content: `It is thought that the Keio shelters were occupied continuously until about 1,000 years ago.`,
+      content:
+        'It is thought that the Keio shelters were occupied continuously until about 1,000 years ago.',
       correct: 'FALSE',
     },
   ];
 
-  // --- Tạo câu hỏi và đáp án ---
-  for (const q of questionsData) {
-    const cauHoi = await prisma.cauHoi.create({
+  for (const q of tfngQuestions) {
+    const question = await prisma.cauHoi.create({
       data: {
-        idNhomCauHoi: readingGroup1.idNhomCauHoi,
-        idPart: readingPart.idPart,
+        idNhomCauHoi: group1.idNhomCauHoi,
+        idPart: part.idPart,
         numberQuestion: q.numberQuestion,
         content: q.content,
       },
@@ -115,127 +115,79 @@ NOT GIVEN     if there is no information on this`,
 
     await prisma.answer.create({
       data: {
-        idCauHoi: cauHoi.idCauHoi,
+        idCauHoi: question.idCauHoi,
         answer_text: q.correct,
       },
     });
   }
 
-  // ===== 4️⃣ GROUP 2 - MATCHING =====
-  const readingGroup2 = await prisma.nhomCauHoi.create({
+  // ===== 4️⃣ GROUP 2: GAP FILLING =====
+  const group2 = await prisma.nhomCauHoi.create({
     data: {
-      idDe: readingTest.idDe,
-      idPart: readingPart.idPart,
-      title: `Complete each sentence with the correct ending, A–G.`,
-      typeQuestion: 'MATCHING',
-      startingOrder: 5,
-      endingOrder: 9,
+      idDe: test.idDe,
+      idPart: part.idPart,
+      title:
+        'Complete the notes below. Choose ONE WORD ONLY from the passage for each answer.',
+      typeQuestion: 'FILL_BLANK',
+      startingOrder: 8,
+      endingOrder: 13,
     },
   });
 
-  const matchingQuestions = [
-    {
-      numberQuestion: 5,
-      content: `At times when they were relaxed, the firefighters usually`,
-      correct: 'B', // took relatively little notice of bad news
-    },
-    {
-      numberQuestion: 6,
-      content: `When they were stressed, the firefighters`,
-      correct: 'D', // were feeling under stress
-    },
-    {
-      numberQuestion: 7,
-      content: `When the firefighters were told good news, they`,
-      correct: 'C', // responded to negative and positive information in the same way
-    },
+  const gapFillQuestions = [
     {
       numberQuestion: 8,
-      content: `The students' cortisol levels and heart rates increased when they`,
-      correct: 'E', // were put in a stressful situation
+      content:
+        'Excavations of rock shelters inside ___ near the village of Keio revealed:',
+      correct: 'caves',
     },
     {
       numberQuestion: 9,
-      content: `Negative information was processed better when the subjects`,
-      correct: 'G', // thought it more likely they would experience something bad
+      content: 'Axes made out of ___, dating from around 11,700 years ago',
+      correct: 'stone',
     },
-  ];
-
-  for (const mq of matchingQuestions) {
-    const cauHoi = await prisma.cauHoi.create({
-      data: {
-        idNhomCauHoi: readingGroup2.idNhomCauHoi,
-        idPart: readingPart.idPart,
-        numberQuestion: mq.numberQuestion,
-        content: mq.content,
-      },
-    });
-    await prisma.answer.create({
-      data: {
-        idCauHoi: cauHoi.idCauHoi,
-        answer_text: mq.correct,
-      },
-    });
-  }
-
-  // ===== 5️⃣ GROUP 3 - YES/NO/NOT GIVEN =====
-  const readingGroup3 = await prisma.nhomCauHoi.create({
-    data: {
-      idDe: readingTest.idDe,
-      idPart: readingPart.idPart,
-      title: `Do the following statements agree with the information given in Reading Passage 3?`,
-      typeQuestion: 'YES_NO_NOTGIVEN',
-      startingOrder: 10,
-      endingOrder: 14,
-    },
-  });
-
-  const ynQuestions = [
     {
       numberQuestion: 10,
-      content: `The tone of the content we post on social media tends to reflect the nature of the posts in our feeds.`,
-      correct: 'YES',
+      content: '___ of an animal: evidence of what ancient islanders ate',
+      correct: 'bones',
     },
     {
       numberQuestion: 11,
-      content: `Phones have a greater impact on our stress levels than other electronic media devices.`,
-      correct: 'NOT GIVEN',
+      content:
+        'Evidence of travel between islands: obsidian and ___ which resembled ones found on other islands.',
+      correct: 'beads',
     },
     {
       numberQuestion: 12,
-      content: `The more we read about a stressful public event on social media, the less able we are to take the information in.`,
-      correct: 'NO',
+      content: 'Had ___ as well as items made out of metal',
+      correct: 'pottery',
     },
     {
       numberQuestion: 13,
-      content: `Stress created by social media posts can lead us to take unnecessary precautions.`,
-      correct: 'YES',
-    },
-    {
-      numberQuestion: 14,
-      content: `Our tendency to be affected by other people's moods can be used in a positive way.`,
-      correct: 'YES',
+      content: 'Probably took part in the production and sale of ___',
+      correct: 'spices',
     },
   ];
 
-  for (const yq of ynQuestions) {
-    const cauHoi = await prisma.cauHoi.create({
+  for (const q of gapFillQuestions) {
+    const question = await prisma.cauHoi.create({
       data: {
-        idNhomCauHoi: readingGroup3.idNhomCauHoi,
-        idPart: readingPart.idPart,
-        numberQuestion: yq.numberQuestion,
-        content: yq.content,
+        idNhomCauHoi: group2.idNhomCauHoi,
+        idPart: part.idPart,
+        numberQuestion: q.numberQuestion,
+        content: q.content,
       },
     });
+
     await prisma.answer.create({
       data: {
-        idCauHoi: cauHoi.idCauHoi,
-        answer_text: yq.correct,
+        idCauHoi: question.idCauHoi,
+        answer_text: q.correct,
       },
     });
   }
 
-  console.log('✅ Seeding Reading test complete!');
+  console.log('✅ Seeding [C19T3] complete!');
 }
 
 main()
