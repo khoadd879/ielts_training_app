@@ -32,6 +32,7 @@ export class UsersController {
         phoneNumber: { type: 'string', example: '0123456789' },
         accountType: { type: 'string', example: 'LOCAL' },
         address: { type: 'string', example: 'Hanoi' },
+        password: { type: 'string', example: 'password' },
         gender: { type: 'string', example: 'Male' },
         role: { type: 'string', example: 'USER' },
         level: { type: 'string', example: 'Low' },
