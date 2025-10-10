@@ -21,8 +21,29 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post('create-user')
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        nameUser: { type: 'string', example: 'Nguyen Van A' },
+        email: { type: 'string', example: 'a@gmail.com' },
+        phoneNumber: { type: 'string', example: '0123456789' },
+        accountType: { type: 'string', example: 'LOCAL' },
+        address: { type: 'string', example: 'Hanoi' },
+        gender: { type: 'string', example: 'Male' },
+        role: { type: 'string', example: 'USER' },
+        level: { type: 'string', example: 'Low' },
+        avatar: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  create(
+    @Body() createUserDto: CreateUserDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.usersService.create(createUserDto, file);
   }
 
   @Get('get-all')

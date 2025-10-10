@@ -19,19 +19,25 @@ export class UsersService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, file?: Express.Multer.File) {
     const {
       nameUser,
       email,
       password,
       phoneNumber,
       address,
-      avatar,
       role,
       gender,
       accountType,
       level,
     } = createUserDto;
+
+    let avatar = createUserDto.avatar;
+
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      avatar = uploadResult.secure_url;
+    }
 
     const existingUser = await this.databaseService.user.findUnique({
       where: { email },

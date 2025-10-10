@@ -24,7 +24,7 @@ export class UserWritingSubmissionService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
-  // 🧾 Tạo submission + gọi AI chấm điểm
+  //Tạo submission + gọi AI chấm điểm
   async createUserWritingSubmission(
     createUserWritingSubmissionDto: CreateUserWritingSubmissionDto,
   ) {
@@ -39,13 +39,12 @@ export class UserWritingSubmissionService {
     if (!user) throw new BadRequestException('User not found');
     if (!writingTask) throw new BadRequestException('Writing task not found');
 
-    // 🧠 1. Gọi AI chấm điểm
+    // Gọi AI chấm điểm
     const aiResult = await this.evaluateWriting(
       submission_text,
       writingTask.prompt,
     );
 
-    // 🧠 2. Lưu vào database
     const data = await this.databaseService.$transaction(async (tx) => {
       const submission = await tx.userWritingSubmission.create({
         data: {
@@ -78,7 +77,7 @@ export class UserWritingSubmissionService {
     };
   }
 
-  // 🧠 HÀM CHẤM BÀI BẰNG GEMINI SDK MỚI
+  // HÀM CHẤM BÀI BẰNG GEMINI
   async evaluateWriting(
     submissionText: string,
     writingPrompt: string,
@@ -117,12 +116,11 @@ export class UserWritingSubmissionService {
       await this.cacheManager.set(cacheKey, parsed, 3600);
       return parsed;
     } catch (error) {
-      console.error('❌ Error calling Gemini API:', error);
       throw new BadRequestException('AI evaluation failed.');
     }
   }
 
-  // 📚 Lấy toàn bộ submissions theo user
+  // Lấy toàn bộ submissions theo user
   async findAllByIdUser(idUser: string) {
     const user = await this.databaseService.user.findUnique({
       where: { idUser },
@@ -141,7 +139,7 @@ export class UserWritingSubmissionService {
     };
   }
 
-  // 📄 Lấy chi tiết submission
+  // Lấy chi tiết submission
   async findOne(idWritingSubmission: string) {
     const data = await this.databaseService.userWritingSubmission.findUnique({
       where: { idWritingSubmission },
@@ -157,7 +155,7 @@ export class UserWritingSubmissionService {
     };
   }
 
-  // ✏️ Cập nhật submission (chấm lại nếu cần)
+  // Cập nhật submission (chấm lại nếu cần)
   async update(
     idWritingSubmission: string,
     updateDto: UpdateUserWritingSubmissionDto,
@@ -208,7 +206,7 @@ export class UserWritingSubmissionService {
     };
   }
 
-  // ❌ Xóa submission
+  // Xóa submission
   async remove(idWritingSubmission: string) {
     const existing =
       await this.databaseService.userWritingSubmission.findUnique({
