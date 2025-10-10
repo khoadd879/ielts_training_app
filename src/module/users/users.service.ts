@@ -66,7 +66,17 @@ export class UsersService {
     });
     return {
       message: 'User created successfully',
-      data,
+      data: {
+        nameUser,
+        email,
+        phoneNumber,
+        address,
+        avatar,
+        role,
+        gender,
+        accountType,
+        level,
+      },
       status: 200,
     };
   }
