@@ -10,6 +10,7 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { VerificationService } from './verification/verification.service';
 import { OTPType } from '@prisma/client';
 import { CreateUserGoogleDto } from 'src/module/users/dto/create-user-google.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private readonly verificationService: VerificationService,
+    private readonly configService: ConfigService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -39,13 +41,15 @@ export class AuthService {
     }
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET,
-      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRED,
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: (this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRED') ??
+        '30m') as `${number}${'s' | 'm' | 'h' | 'd'}`,
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET,
-      expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRED,
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: (this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRED') ??
+        '7d') as `${number}${'s' | 'm' | 'h' | 'd'}`,
     });
 
     return {
@@ -206,8 +210,10 @@ export class AuthService {
       const payload = { email: decoded.email, sub: decoded.sub };
 
       const newAccessToken = this.jwtService.sign(payload, {
-        secret: process.env.JWT_SECRET,
-        expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRED,
+        secret: this.configService.get<string>('JWT_SECRET'),
+        expiresIn: (this.configService.get<string>(
+          'JWT_ACCESS_TOKEN_EXPIRED',
+        ) ?? '30m') as `${number}${'s' | 'm' | 'h' | 'd'}`,
       });
 
       return {
