@@ -58,7 +58,7 @@ model UserTestResult {
   idTestResult    String       @id @default(uuid())
   idUser          String
   idDe            String
-  score           Int?         @default(0)
+  score           Int?         @default(0) //score theo thang 40
   total_correct   Int?         @default(0)
   total_questions Int?         @default(0)
   raw_score       Int?         @default(0)
@@ -245,7 +245,6 @@ model UserWritingSubmission {
   submission_text     String
   submitted_at        DateTime      @default(now())
   status              WritingStatus @default(SUBMITTED)
-  // BỎ score và feedback ở đây
 
   user                User          @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   writingTask         WritingTask   @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)

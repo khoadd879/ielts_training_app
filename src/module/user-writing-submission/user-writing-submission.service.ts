@@ -70,6 +70,29 @@ export class UserWritingSubmissionService {
       return { ...submission, feedback };
     });
 
+    const idTest = await this.databaseService.writingTask.findUnique({
+      where: {
+        idWritingTask,
+      },
+      include: {
+        de: true,
+      },
+    });
+
+    if (!idTest?.de?.idDe) {
+      throw new BadRequestException('Invalid test or missing "de" reference');
+    }
+
+    await this.databaseService.userTestResult.create({
+      data: {
+        idUser,
+        idDe: idTest.de.idDe,
+        band_score: aiResult.score,
+        level: idTest.de.level,
+        status: 'FINISHED',
+      },
+    });
+
     return {
       message: 'Writing submission created and graded successfully',
       data,
@@ -94,7 +117,7 @@ export class UserWritingSubmissionService {
 
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-001', // hoặc gemini-2.5-flash nếu bạn có quyền
+        model: 'gemini-2.5-flash',
         contents: prompt,
       });
 

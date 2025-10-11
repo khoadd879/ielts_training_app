@@ -36,6 +36,7 @@ import { GrammarCategoriesModule } from './module/grammar-categories/grammar-cat
 
 import { ReviewStreakModule } from './module/review-streak/review-streak.module';
 import { StreakServiceModule } from './module/streak-service/streak-service.module';
+import { StatisticsModule } from './module/statistics/statistics.module';
 
 @Module({
   imports: [
@@ -97,6 +98,8 @@ import { StreakServiceModule } from './module/streak-service/streak-service.modu
     ReviewStreakModule,
 
     StreakServiceModule,
+
+    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [
