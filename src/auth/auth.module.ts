@@ -19,7 +19,6 @@ import { JwtRefreshStrategy } from './passport/jwt-refresh.stategy';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        global: true,
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
           expiresIn: (configService.get('JWT_ACCESS_TOKEN_EXPIRED') ??
