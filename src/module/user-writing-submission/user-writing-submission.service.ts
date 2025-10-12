@@ -5,8 +5,7 @@ import { DatabaseService } from 'src/database/database.service';
 import { GoogleGenAI } from '@google/genai';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { ConfigService } from '@nestjs/config';
 
 type AIFeedbackResult = {
   score: number;
@@ -22,7 +21,17 @@ export class UserWritingSubmissionService {
   constructor(
     private readonly databaseService: DatabaseService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly configService: ConfigService,
   ) {}
+
+  private getAIInstance(): GoogleGenAI {
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    if (!apiKey) {
+      console.error('❌ GEMINI_API_KEY is missing');
+      throw new BadRequestException('AI API key is not configured');
+    }
+    return new GoogleGenAI({ apiKey });
+  }
 
   //Tạo submission + gọi AI chấm điểm
   async createUserWritingSubmission(
@@ -114,6 +123,7 @@ export class UserWritingSubmissionService {
     }
 
     const prompt = this.buildPrompt(submissionText, writingPrompt);
+    const ai = this.getAIInstance();
 
     try {
       const response = await ai.models.generateContent({
@@ -139,6 +149,7 @@ export class UserWritingSubmissionService {
       await this.cacheManager.set(cacheKey, parsed, 3600);
       return parsed;
     } catch (error) {
+      console.error('❌ AI evaluation failed:', error);
       throw new BadRequestException('AI evaluation failed.');
     }
   }

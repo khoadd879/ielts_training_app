@@ -43,7 +43,7 @@ export class WritingTaskController {
     return this.writingTaskService.createWritingTask(createWritingTaskDto);
   }
 
-  @Get('get-all-writing-tasl')
+  @Get('get-all-writing-task')
   findAll() {
     return this.writingTaskService.findAll();
   }
