@@ -17,7 +17,7 @@ COPY . .
 RUN npx prisma generate
 
 # Build the NestJS app
-RUN npm run dev
+RUN npm run build
 
 # ===========================
 # Production stage
