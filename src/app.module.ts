@@ -91,7 +91,7 @@ import * as redisStore from 'cache-manager-redis-store';
       useFactory: () => ({
         store: redisStore as any,
         url: process.env.REDIS_URL,
-        ttl: 60 * 60 * 3, // 3 hour
+        ttl: 0, // 3 hour
       }),
     }),
     WritingTaskModule,

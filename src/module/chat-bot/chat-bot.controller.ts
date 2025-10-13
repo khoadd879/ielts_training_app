@@ -20,7 +20,7 @@ export class ChatBotController {
   @Post('send')
   @ApiBody({ type: SendMessageDto })
   async sendMessage(@Body() body: SendMessageDto) {
-    await this.chatbotService.saveMessage(body.userId, body.message);
+    await this.chatbotService.saveMessage(body.idUser, body.message);
     return { status: 'saved' };
   }
 

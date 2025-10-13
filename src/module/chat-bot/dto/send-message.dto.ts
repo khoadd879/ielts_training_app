@@ -5,7 +5,7 @@ export class SendMessageDto {
     example: 'user123',
     description: 'ID của người dùng đang chat với bot',
   })
-  userId: string;
+  idUser: string;
 
   @ApiProperty({
     example: 'Hello, I need help with my IELTS speaking test.',

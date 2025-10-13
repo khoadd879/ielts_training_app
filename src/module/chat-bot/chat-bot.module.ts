@@ -4,12 +4,6 @@ import { ChatBotController } from './chat-bot.controller';
 import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
-  imports: [
-    CacheModule.register({
-      max: 100,
-      ttl: 0,
-    }),
-  ],
   controllers: [ChatBotController],
   providers: [ChatBotService],
 })
