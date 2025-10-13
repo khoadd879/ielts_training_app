@@ -42,6 +42,7 @@ currentStreak       Int       @default(0) // Chuỗi hiện tại
   userWritingSubmissions UserWritingSubmission[]
   verificationCodes      VerificationCode[]
   grammarCategories     GrammarCategory[]
+  
 }
 
 model VerificationCode {
@@ -449,3 +450,4 @@ model Grammar {
   // THÊM DÒNG NÀY ĐỂ TẠO THỨ TỰ BÀI HỌC
   order             Int      @default(0) 
 }
+

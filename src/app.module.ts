@@ -37,6 +37,9 @@ import { GrammarCategoriesModule } from './module/grammar-categories/grammar-cat
 import { ReviewStreakModule } from './module/review-streak/review-streak.module';
 import { StreakServiceModule } from './module/streak-service/streak-service.module';
 import { StatisticsModule } from './module/statistics/statistics.module';
+import { ChatBotModule } from './module/chat-bot/chat-bot.module';
+
+import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
   imports: [
@@ -83,7 +86,14 @@ import { StatisticsModule } from './module/statistics/statistics.module';
     AnswerModule,
     UserAnswerModule,
     UserTestResultModule,
-    CacheModule.register(),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      useFactory: () => ({
+        store: redisStore as any,
+        url: process.env.REDIS_URL,
+        ttl: 60 * 60 * 3, // 3 hour
+      }),
+    }),
     WritingTaskModule,
     UserWritingSubmissionModule,
     ForumCategoriesModule,
@@ -100,6 +110,8 @@ import { StatisticsModule } from './module/statistics/statistics.module';
     StreakServiceModule,
 
     StatisticsModule,
+
+    ChatBotModule,
   ],
   controllers: [AppController],
   providers: [

@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: ielts_training_app
+    container_name: ielts_training_app
     environment:
       PORT: ${PORT}
       DATABASE_URL: ${DATABASE_URL}
@@ -17,8 +18,24 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_CALL_BACK_URL: ${GOOGLE_CALL_BACK_URL}
       NODE_ENV: development
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - '3000:3000'
     volumes:
       - ./src:/src
       - ./prisma:/prisma
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
