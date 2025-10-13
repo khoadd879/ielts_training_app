@@ -9,7 +9,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { ChatBotService } from './chat-bot.service';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { SendMessageDto } from './dto/send-message.dto';
 
 @ApiBearerAuth()
 @Controller('chat-bot')
@@ -17,7 +18,8 @@ export class ChatBotController {
   constructor(private readonly chatbotService: ChatBotService) {}
 
   @Post('send')
-  async sendMessage(@Body() body: { userId: string; message: string }) {
+  @ApiBody({ type: SendMessageDto })
+  async sendMessage(@Body() body: SendMessageDto) {
     await this.chatbotService.saveMessage(body.userId, body.message);
     return { status: 'saved' };
   }
