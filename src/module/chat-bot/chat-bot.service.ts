@@ -22,7 +22,7 @@ export class ChatBotService {
   private getAIInstance(): GoogleGenAI {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (!apiKey) {
-      this.logger.error('❌ GEMINI_API_KEY is missing');
+      this.logger.error('GEMINI_API_KEY is missing');
       throw new BadRequestException('AI API key is not configured');
     }
     return new GoogleGenAI({ apiKey });
@@ -78,7 +78,7 @@ export class ChatBotService {
     const cached = await this.cacheManager.get<string>(cacheKey);
 
     if (cached) {
-      this.logger.log(`⚡️ Cache HIT for ${idUser}`);
+      this.logger.log(`Cache HIT for ${idUser}`);
       return cached;
     }
 
@@ -97,7 +97,7 @@ export class ChatBotService {
       await this.cacheManager.set(cacheKey, reply, 900); // cache 15 phút
       return reply;
     } catch (error) {
-      this.logger.error('❌ Gemini API error:', error);
+      this.logger.error(' Gemini API error:', error);
       throw new BadRequestException('AI chatbot generation failed.');
     }
   }

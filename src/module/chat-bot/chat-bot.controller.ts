@@ -12,7 +12,6 @@ import { ChatBotService } from './chat-bot.service';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { SendMessageDto } from './dto/send-message.dto';
 
-@ApiBearerAuth()
 @Controller('chat-bot')
 export class ChatBotController {
   constructor(private readonly chatbotService: ChatBotService) {}
