@@ -1,15 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class SendMessageDto {
-  @ApiProperty({
-    example: 'user123',
-    description: 'ID của người dùng đang chat với bot',
-  })
+  @ApiProperty({ example: 'user123' })
+  @IsString()
+  @IsNotEmpty()
   idUser: string;
 
-  @ApiProperty({
-    example: 'Hello, I need help with my IELTS speaking test.',
-    description: 'Tin nhắn người dùng gửi tới chatbot',
-  })
+  @ApiProperty({ example: 'Hello bot' })
+  @IsString()
+  @IsNotEmpty()
   message: string;
 }

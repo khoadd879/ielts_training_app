@@ -203,7 +203,6 @@ export class UserWritingSubmissionService {
     if (!submission) throw new BadRequestException('Submission not found');
 
     if (updateDto.status === 'GRADED') {
-      console.log(`🔄 Re-grading submission: ${idWritingSubmission}`);
       const aiResult = await this.evaluateWriting(
         submission.submission_text,
         submission.writingTask.prompt,
