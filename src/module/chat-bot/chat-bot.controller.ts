@@ -33,14 +33,14 @@ export class ChatBotController {
     return { reply };
   }
 
-  @Get('history')
-  async getHistory(@Query('userId') userId: string) {
+  @Get('history/:userId')
+  async getHistory(@Param('userId') userId: string) {
     const messages = await this.chatbotService.getMessages(userId);
     return { userId, messages };
   }
 
-  @Delete('clear')
-  async clearHistory(@Query('userId') userId: string) {
+  @Delete('clear/:userId')
+  async clearHistory(@Param('userId') userId: string) {
     await this.chatbotService.clearMessages(userId);
     return { status: 'cleared' };
   }
