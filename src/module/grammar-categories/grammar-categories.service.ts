@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { CreateGrammarCategoryDto } from './dto/create-grammar-category.dto';
 import { UpdateGrammarCategoryDto } from './dto/update-grammar-category.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -47,18 +51,17 @@ export class GrammarCategoriesService {
       where: {
         OR: [
           {
-            idUser: idUser, // Lấy TẤT CẢ danh mục của RIÊNG người dùng này
+            idUser: idUser,
           },
           {
-            idUser: null, // VÀ TẤT CẢ danh mục của HỆ THỐNG
+            idUser: null,
           },
         ],
       },
       orderBy: {
-        createdAt: 'asc', // Sắp xếp cho nhất quán
+        createdAt: 'asc',
       },
       include: {
-        // Tùy chọn: Lấy thêm số lượng bài học trong mỗi danh mục
         _count: {
           select: { grammars: true },
         },
@@ -85,51 +88,82 @@ export class GrammarCategoriesService {
   async update(
     id: string,
     updateGrammarCategoryDto: UpdateGrammarCategoryDto,
-    idUser,
+    idUser: string,
   ) {
     const { name, description } = updateGrammarCategoryDto;
-    const existingCategory =
+
+    const categoryToUpdate =
       await this.databaseService.grammarCategory.findUnique({
-        where: {
-          idUser_name: {
-            idUser: idUser,
-            name,
-          },
-        },
+        where: { idGrammarCategory: id },
       });
 
-    if (existingCategory) {
-      throw new BadRequestException(
-        'A category with this name already exists.',
-      );
+    if (!categoryToUpdate) {
+      throw new BadRequestException('Grammar category not found');
+    }
+
+    if (categoryToUpdate.idUser !== idUser) {
+      throw new ForbiddenException('You are not allowed to edit this category');
+    }
+
+    if (name && name !== categoryToUpdate.name) {
+      const existingCategory =
+        await this.databaseService.grammarCategory.findUnique({
+          where: {
+            idUser_name: { idUser, name },
+          },
+        });
+
+      if (existingCategory) {
+        throw new BadRequestException(
+          'A category with this name already exists.',
+        );
+      }
     }
 
     const data = await this.databaseService.grammarCategory.update({
       where: {
         idGrammarCategory: id,
+        idUser: idUser,
       },
       data: {
         name,
         description,
-        idUser,
       },
     });
 
     return {
-      message: 'Grammar category created successfully',
+      message: 'Grammar category updated successfully',
       data,
       status: 200,
     };
   }
 
-  async remove(id: string) {
-    const data = await this.databaseService.grammarCategory.delete({
+  async remove(id: string, idUser: string) {
+    const categoryToDelete =
+      await this.databaseService.grammarCategory.findUnique({
+        where: { idGrammarCategory: id },
+      });
+
+    if (!categoryToDelete) {
+      throw new BadRequestException('Grammar category not found');
+    }
+
+    if (categoryToDelete.idUser === null) {
+      throw new ForbiddenException('You cannot delete a system category.');
+    }
+
+    if (categoryToDelete.idUser !== idUser) {
+      throw new ForbiddenException(
+        'You are not allowed to delete this category.',
+      );
+    }
+
+    await this.databaseService.grammarCategory.delete({
       where: {
         idGrammarCategory: id,
+        idUser: idUser,
       },
     });
-
-    if (!data) throw new BadRequestException('Grammar category not found');
 
     return {
       message: 'Grammar category deleted successfully',

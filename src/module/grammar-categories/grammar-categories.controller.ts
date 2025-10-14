@@ -60,8 +60,12 @@ export class GrammarCategoriesController {
     );
   }
 
-  @Delete('delete-grammar-category/:idGrammarCategories')
-  remove(@Param('idGrammarCategories') idGrammarCategories: string) {
-    return this.grammarCategoriesService.remove(idGrammarCategories);
+  @Delete('delete-grammar-category/:idGrammarCategories/:idUser')
+  remove(
+    @Param('idGrammarCategories') idGrammarCategories: string,
+    @Req() req,
+  ) {
+    const idUser = req.user.id;
+    return this.grammarCategoriesService.remove(idGrammarCategories, idUser);
   }
 }
