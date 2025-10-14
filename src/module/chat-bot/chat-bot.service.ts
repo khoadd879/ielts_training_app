@@ -94,7 +94,7 @@ export class ChatBotService {
       const rawText = response.text?.trim() ?? '';
       const reply = this.cleanReply(rawText);
 
-      await this.cacheManager.set(cacheKey, reply, 900); // cache 15 phút
+      await this.cacheManager.set(cacheKey, reply, 86400); // cache 15 phút
       return reply;
     } catch (error) {
       this.logger.error(' Gemini API error:', error);
@@ -116,6 +116,10 @@ You are IELTS Assistant AI.
 Your role: help the user improve English for IELTS (Writing, Speaking, Vocabulary, etc.)
 Respond in a natural, friendly tone.  
 Be concise, educational, and clear.
+Answer don't make up answers if you don't know.
+Answer in English if the user asks in English.
+Answer in Vietnamese if the user asks in Vietnamese.
+Don't answer if the question is not related to IELTS or English learning.
 
 Conversation so far:
 ${history}
