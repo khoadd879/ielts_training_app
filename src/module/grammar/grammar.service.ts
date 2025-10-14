@@ -1,4 +1,9 @@
-import { BadGatewayException, Injectable } from '@nestjs/common';
+import {
+  BadGatewayException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateGrammarDto } from './dto/create-grammar.dto';
 import { UpdateGrammarDto } from './dto/update-grammar.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -7,20 +12,42 @@ import { DatabaseService } from 'src/database/database.service';
 export class GrammarService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async existingGrammarCategory(idGrammarCategory: string) {
-    const data = await this.databaseService.grammarCategory.findUnique({
+  async verifyCategoryOwnership(idGrammarCategory: string, idUser: string) {
+    const user = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+
+    if (!user) {
+      throw new ForbiddenException('User not found.');
+    }
+
+    const category = await this.databaseService.grammarCategory.findFirst({
       where: {
         idGrammarCategory,
+        OR: [{ idUser }, { idUser: null }],
       },
     });
 
-    return data;
+    if (!category) {
+      throw new ForbiddenException(
+        'Grammar category not found or you do not have permission to access it.',
+      );
+    }
+
+    if (category.idUser === null) {
+      if (user.role !== 'ADMIN') {
+        throw new ForbiddenException(
+          'You cannot add grammar to a system category.',
+        );
+      }
+    }
   }
-  async create(createGrammarDto: CreateGrammarDto) {
+
+  async create(createGrammarDto: CreateGrammarDto, idUser: string) {
     const { idGrammarCategory, title, explanation, commonMistakes, examples } =
       createGrammarDto;
 
-    await this.existingGrammarCategory(idGrammarCategory);
+    await this.verifyCategoryOwnership(idGrammarCategory, idUser);
 
     const data = await this.databaseService.grammar.create({
       data: {
@@ -35,7 +62,7 @@ export class GrammarService {
     return {
       message: 'Grammar created succesfully',
       data,
-      statsu: 200,
+      status: 200,
     };
   }
 
@@ -49,7 +76,7 @@ export class GrammarService {
     return {
       message: 'Grammar retrieved succesfully',
       data,
-      statsu: 200,
+      status: 200,
     };
   }
 
@@ -69,11 +96,13 @@ export class GrammarService {
     };
   }
 
-  async update(id: string, updateGrammarDto: UpdateGrammarDto) {
+  async update(id: string, updateGrammarDto: UpdateGrammarDto, idUser: string) {
     const { idGrammarCategory, title, explanation, commonMistakes, examples } =
       updateGrammarDto;
 
-    await this.existingGrammarCategory(idGrammarCategory);
+    if (idGrammarCategory) {
+      await this.verifyCategoryOwnership(idGrammarCategory, idUser);
+    }
 
     const data = await this.databaseService.grammar.update({
       where: {
@@ -95,18 +124,49 @@ export class GrammarService {
     };
   }
 
-  async remove(id: string) {
-    const data = await this.databaseService.grammar.delete({
-      where: {
-        idGrammar: id,
+  // Bên trong GrammarService
+
+  async remove(id: string, idUser: string) {
+    // Thêm idUser
+    const grammarToDelete = await this.databaseService.grammar.findUnique({
+      where: { idGrammar: id },
+      select: {
+        category: {
+          select: { idGrammarCategory: true },
+        },
       },
     });
 
-    if (!data) throw new BadGatewayException('Grammar not found');
+    if (!grammarToDelete) {
+      throw new NotFoundException('Grammar not found');
+    }
+
+    const grammarCategory =
+      await this.databaseService.grammarCategory.findUnique({
+        where: {
+          idGrammarCategory: grammarToDelete.category.idGrammarCategory,
+        },
+      });
+
+    console.log(grammarCategory);
+
+    if (!grammarCategory) {
+      throw new NotFoundException('Grammar category not found');
+    }
+
+    if (grammarCategory.idUser !== idUser) {
+      throw new ForbiddenException(
+        'You are not allowed to delete this grammar.',
+      );
+    }
+
+    await this.databaseService.grammar.delete({
+      where: { idGrammar: id },
+    });
 
     return {
-      message: 'Grammar deleted succesfully',
-      statsu: 200,
+      message: 'Grammar deleted successfully',
+      status: 200,
     };
   }
 }

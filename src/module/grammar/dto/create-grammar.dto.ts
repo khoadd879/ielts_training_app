@@ -44,7 +44,6 @@ export class CreateGrammarDto {
       {
         mistake: 'I have seen him yesterday.',
         correction: 'I saw him yesterday.',
-        explanation: "Dùng Quá khứ đơn với 'yesterday'.",
       },
     ],
     required: false,

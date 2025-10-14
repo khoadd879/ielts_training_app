@@ -17,9 +17,12 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 export class GrammarController {
   constructor(private readonly grammarService: GrammarService) {}
 
-  @Post('create-grammar')
-  create(@Body() createGrammarDto: CreateGrammarDto) {
-    return this.grammarService.create(createGrammarDto);
+  @Post('create-grammar/:idUser')
+  create(
+    @Body() createGrammarDto: CreateGrammarDto,
+    @Param('idUser') idUser: string,
+  ) {
+    return this.grammarService.create(createGrammarDto, idUser);
   }
 
   @Get('get-all-grammar/:idGrammarCategory')
@@ -32,16 +35,20 @@ export class GrammarController {
     return this.grammarService.findOne(idGrammar);
   }
 
-  @Patch('update-grammar/:idGrammar')
+  @Patch('update-grammar/:idGrammar/:idUser')
   update(
     @Param('idGrammar') idGrammar: string,
     @Body() updateGrammarDto: UpdateGrammarDto,
+    @Param('idUser') idUser: string,
   ) {
-    return this.grammarService.update(idGrammar, updateGrammarDto);
+    return this.grammarService.update(idGrammar, updateGrammarDto, idUser);
   }
 
-  @Delete('delete-grammar/:idGrammar')
-  remove(@Param('idGrammar') idGrammar: string) {
-    return this.grammarService.remove(idGrammar);
+  @Delete('delete-grammar/:idGrammar/:idUser')
+  remove(
+    @Param('idGrammar') idGrammar: string,
+    @Param('idUser') idUser: string,
+  ) {
+    return this.grammarService.remove(idGrammar, idUser);
   }
 }
