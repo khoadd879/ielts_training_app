@@ -22,7 +22,7 @@ export class GrammarController {
     return this.grammarService.create(createGrammarDto);
   }
 
-  @Get('get-all-grammar')
+  @Get('get-all-grammar/:idGrammarCategory')
   findAll(@Param('idGrammarCategory') idGrammarCategory: string) {
     return this.grammarService.findAllInGrammarCategories(idGrammarCategory);
   }

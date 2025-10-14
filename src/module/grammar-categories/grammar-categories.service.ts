@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateGrammarCategoryDto } from './dto/create-grammar-category.dto';
 import { UpdateGrammarCategoryDto } from './dto/update-grammar-category.dto';
@@ -10,16 +11,13 @@ import { DatabaseService } from 'src/database/database.service';
 @Injectable()
 export class GrammarCategoriesService {
   constructor(private readonly databaseService: DatabaseService) {}
-  async create(
-    createGrammarCategoryDto: CreateGrammarCategoryDto,
-    idUser: string,
-  ) {
-    const { name, description } = createGrammarCategoryDto;
+  async create(createGrammarCategoryDto: CreateGrammarCategoryDto) {
+    const { idUser, name, description } = createGrammarCategoryDto;
     const existingCategory =
       await this.databaseService.grammarCategory.findUnique({
         where: {
           idUser_name: {
-            idUser: idUser,
+            idUser,
             name,
           },
         },
@@ -75,14 +73,34 @@ export class GrammarCategoriesService {
     };
   }
 
-  async findOne(id: string) {
-    const category = await this.databaseService.grammarCategory.findUnique({
-      where: { idGrammarCategory: id },
+  async findOne(id: string, idUser: string) {
+    // Nhận thêm idUser
+    const category = await this.databaseService.grammarCategory.findFirst({
+      where: {
+        idGrammarCategory: id,
+        OR: [{ idUser: idUser }, { idUser: null }], // Chỉ tìm category của user hoặc của hệ thống
+      },
+      include: {
+        // Lấy toàn bộ bài học bên trong để xem chi tiết
+        grammars: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
+      },
     });
+
     if (!category) {
-      throw new BadRequestException('Grammar category not found');
+      // Dùng 404 Not Found thì ngữ cảnh sẽ đúng hơn
+      throw new NotFoundException(
+        'Grammar category not found or you do not have permission to view it.',
+      );
     }
-    return category;
+    return {
+      message: 'Grammar category retrieved successfully',
+      data: category,
+      status: 200,
+    };
   }
 
   async update(

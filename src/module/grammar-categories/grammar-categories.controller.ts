@@ -24,35 +24,29 @@ export class GrammarCategoriesController {
   ) {}
 
   @Post('create-grammar-categories')
-  create(
-    @Body() createGrammarCategoryDto: CreateGrammarCategoryDto,
-    @Req() req,
-  ) {
-    const idUser = req.user.id;
-    return this.grammarCategoriesService.create(
-      createGrammarCategoryDto,
-      idUser,
-    );
+  create(@Body() createGrammarCategoryDto: CreateGrammarCategoryDto) {
+    return this.grammarCategoriesService.create(createGrammarCategoryDto);
   }
 
-  @Get('get-user-grammar-categories')
-  findAll(@Req() req) {
-    const idUser = req.user.id;
+  @Get('get-user-grammar-categories/:idUser')
+  findAll(@Param(`idUser`) idUser: string) {
     return this.grammarCategoriesService.findAll(idUser);
   }
 
-  @Get('get-grammar-category/-:idGrammarCategories')
-  findOne(@Param('idGrammarCategories') idGrammarCategories: string) {
-    return this.grammarCategoriesService.findOne(idGrammarCategories);
+  @Get('get-grammar-category/-:idGrammarCategories/:idUser')
+  findOne(
+    @Param('idGrammarCategories') idGrammarCategories: string,
+    @Param('idUser') idUser: string,
+  ) {
+    return this.grammarCategoriesService.findOne(idGrammarCategories, idUser);
   }
 
-  @Patch('update-grammar-category/:idGrammarCategories')
+  @Patch('update-grammar-category/:idGrammarCategories/:idUser')
   update(
     @Param('idGrammarCategories') idGrammarCategories: string,
     @Body() updateGrammarCategoryDto: UpdateGrammarCategoryDto,
-    @Req() req,
+    @Param('idUser') idUser: string,
   ) {
-    const idUser = req.user.id;
     return this.grammarCategoriesService.update(
       idGrammarCategories,
       updateGrammarCategoryDto,
@@ -63,9 +57,8 @@ export class GrammarCategoriesController {
   @Delete('delete-grammar-category/:idGrammarCategories/:idUser')
   remove(
     @Param('idGrammarCategories') idGrammarCategories: string,
-    @Req() req,
+    @Param('idUser') idUser: string,
   ) {
-    const idUser = req.user.id;
     return this.grammarCategoriesService.remove(idGrammarCategories, idUser);
   }
 }

@@ -4,6 +4,10 @@ import { IsString, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateGrammarCategoryDto {
   @IsNotEmpty()
+  @ApiProperty({ example: '123' })
+  idUser: string;
+
+  @IsNotEmpty()
   @ApiProperty({ example: 'Present simple' })
   name: string;
 
