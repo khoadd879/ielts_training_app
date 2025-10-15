@@ -1,16 +1,9 @@
+import { Optional } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Level, Prisma } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateGrammarDto {
-  @IsString() // Thêm validator
-  @IsNotEmpty()
-  @ApiProperty({
-    description: 'ID của danh mục ngữ pháp',
-    example: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-  })
-  idGrammarCategory: string;
-
   @IsString()
   @IsNotEmpty()
   @ApiProperty({

@@ -77,13 +77,26 @@ export class GrammarCategoriesService {
     const category = await this.databaseService.grammarCategory.findUnique({
       where: { idGrammarCategory: idGrammarCategories },
       include: {
-        grammars: true,
+        grammars: {
+          include: {
+            grammar: true,
+          },
+        },
       },
     });
 
+    if (!category) {
+      throw new NotFoundException('Grammar category not found');
+    }
+
+    const grammarsData = category.grammars.map((item) => item.grammar);
+
     return {
       message: 'Grammar category retrieved successfully',
-      data: category,
+      data: {
+        ...category,
+        grammars: grammarsData,
+      },
       status: 200,
     };
   }

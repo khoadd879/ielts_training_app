@@ -17,15 +17,12 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 export class GrammarController {
   constructor(private readonly grammarService: GrammarService) {}
 
-  @Post('create-grammar/:idUser')
-  create(
+  @Post('create-grammar-alone/:idUser')
+  createGrammarAlone(
     @Body() createGrammarDto: CreateGrammarDto,
     @Param('idUser') idUser: string,
   ) {
-    return this.grammarService.createAndAssignToCategory(
-      createGrammarDto,
-      idUser,
-    );
+    return this.grammarService.create(createGrammarDto, idUser);
   }
 
   @Patch('update-grammar/:idGrammar/:idUser')

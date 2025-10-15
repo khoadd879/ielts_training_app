@@ -15,66 +15,34 @@ import { Role } from '@prisma/client';
 export class GrammarService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async createAndAssignToCategory(
-    createGrammarDto: CreateGrammarDto,
-    idUser: string,
-  ) {
-    const {
-      idGrammarCategory,
-      title,
-      explanation,
-      commonMistakes,
-      examples,
-      level,
-      order,
-    } = createGrammarDto;
-
-    const categoryExists =
-      await this.databaseService.grammarCategory.findUnique({
-        where: { idGrammarCategory },
-      });
-
-    if (!categoryExists) {
-      throw new NotFoundException('Grammar category not found.');
-    }
-
+  async create(createGrammarDto: CreateGrammarDto, idUser: string) {
     const user = await this.databaseService.user.findUnique({
       where: { idUser },
     });
+
     if (!user || (user.role !== Role.ADMIN && user.role !== Role.GIAOVIEN)) {
       throw new ForbiddenException(
         'You do not have permission to perform this action.',
       );
     }
 
-    const transactionResult = await this.databaseService.$transaction(
-      async (prisma) => {
-        const newGrammar = await prisma.grammar.create({
-          data: {
-            title,
-            explanation,
-            commonMistakes,
-            examples,
-            level,
-            order,
-          },
-        });
+    const { title, explanation, commonMistakes, examples, level, order } =
+      createGrammarDto;
 
-        await prisma.grammarsOnCategories.create({
-          data: {
-            idGrammar: newGrammar.idGrammar,
-            idGrammarCategory: idGrammarCategory,
-            assignedBy: idUser,
-          },
-        });
-
-        return newGrammar;
+    const newGrammar = await this.databaseService.grammar.create({
+      data: {
+        title,
+        explanation,
+        commonMistakes,
+        examples,
+        level,
+        order,
       },
-    );
+    });
 
     return {
-      message: 'Grammar created and assigned to category successfully',
-      data: transactionResult,
+      message: 'Grammar created successfully',
+      data: newGrammar,
       status: 201,
     };
   }
@@ -189,46 +157,30 @@ export class GrammarService {
     idGrammar: string,
     idUser: string,
   ) {
-    const category = await this.databaseService.grammarCategory.findFirst({
-      where: { idGrammarCategory, idUser },
-    });
-    if (!category) {
-      throw new ForbiddenException('Category not found or access denied.');
-    }
-
-    const grammar = await this.databaseService.grammar.findUnique({
-      where: { idGrammar },
-    });
-    if (!grammar) {
-      throw new NotFoundException('Grammar not found.');
-    }
-
-    const data = await this.databaseService.grammarsOnCategories.create({
-      data: {
-        idGrammarCategory,
-        idGrammar,
-        assignedBy: idUser,
-      },
+    const category = await this.databaseService.grammarCategory.findUnique({
+      where: { idGrammarCategory },
     });
 
-    return {
-      message: 'Grammar added to category successfully',
-      data,
-      status: 200,
-    };
-  }
-
-  async moveGrammarToCategory(
-    idGrammarCategory: string,
-    idGrammar: string,
-    idUser: string,
-  ) {
-    const category = await this.databaseService.grammarCategory.findFirst({
-      where: { idGrammarCategory, idUser },
+    const user = await this.databaseService.user.findUnique({
+      where: { idUser },
     });
 
     if (!category) {
-      throw new ForbiddenException('Category not found or access denied.');
+      throw new NotFoundException('Category not found.');
+    }
+    if (!user) {
+      throw new ForbiddenException('User performing the action not found.');
+    }
+
+    const isSystemCategory = category.idUser === null;
+    const isOwner = category.idUser === user.idUser;
+    const isAdminOrTeacher =
+      user.role === Role.ADMIN || user.role === Role.GIAOVIEN;
+
+    if (!((isSystemCategory && isAdminOrTeacher) || isOwner)) {
+      throw new ForbiddenException(
+        'You do not have permission to add grammar to this category.',
+      );
     }
 
     const grammar = await this.databaseService.grammar.findUnique({
@@ -248,27 +200,20 @@ export class GrammarService {
         },
       });
 
-    if (!existingRelation) {
-      throw new BadRequestException(
-        'Grammar is not currently assigned to this category.',
-      );
+    if (existingRelation) {
+      throw new BadRequestException('This grammar is already in the category.');
     }
 
-    const data = await this.databaseService.grammarsOnCategories.update({
-      where: {
-        idGrammarCategory_idGrammar: {
-          idGrammarCategory,
-          idGrammar,
-        },
-      },
+    const data = await this.databaseService.grammarsOnCategories.create({
       data: {
         idGrammarCategory,
+        idGrammar,
         assignedBy: idUser,
       },
     });
 
     return {
-      message: 'Grammar moved to new category successfully',
+      message: 'Grammar added to category successfully',
       data,
       status: 200,
     };
@@ -279,11 +224,30 @@ export class GrammarService {
     idGrammar: string,
     idUser: string,
   ) {
-    const category = await this.databaseService.grammarCategory.findFirst({
-      where: { idGrammarCategory, idUser },
+    const category = await this.databaseService.grammarCategory.findUnique({
+      where: { idGrammarCategory },
     });
+
+    const user = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+
     if (!category) {
-      throw new ForbiddenException('Category not found or access denied.');
+      throw new NotFoundException('Category not found.');
+    }
+    if (!user) {
+      throw new ForbiddenException('User performing the action not found.');
+    }
+
+    const isSystemCategory = category.idUser === null;
+    const isOwner = category.idUser === user.idUser;
+    const isAdminOrTeacher =
+      user.role === Role.ADMIN || user.role === Role.GIAOVIEN;
+
+    if (!((isSystemCategory && isAdminOrTeacher) || isOwner)) {
+      throw new ForbiddenException(
+        'You do not have permission to remove grammar from this category.',
+      );
     }
 
     await this.databaseService.grammarsOnCategories.delete({
