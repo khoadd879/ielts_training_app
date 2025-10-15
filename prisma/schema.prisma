@@ -417,37 +417,49 @@ enum WritingStatus {
 
 model GrammarCategory {
   idGrammarCategory String    @id @default(uuid())
-  name              String 
+  name              String
   description       String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   
-  // THÊM DÒNG NÀY
-  idUser            String?   // Khóa ngoại đến bảng User, có thể null
+  idUser            String?   // null cho hệ thống, có giá trị cho user
+  user              User?     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
-  grammars          Grammar[]
-  // Thêm quan hệ nếu cần
-  user User? @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+ 
+  grammars          GrammarsOnCategories[]
 
-  // Đảm bảo tên category là duy nhất cho mỗi user hoặc cho hệ thống
   @@unique([idUser, name])
 }
 
 
 model Grammar {
-  idGrammar         String   @id @default(uuid())
+  idGrammar         String    @id @default(uuid())
   title             String
   explanation       String
-  level             Level    @default(Low)
-  commonMistakes    Json?    
+  level             Level     @default(Low)
+  commonMistakes    Json?
   examples          Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  order             Int       @default(0)
+
+  
+  categories        GrammarsOnCategories[]
+}
+
+model GrammarsOnCategories {
   
   idGrammarCategory String
-  category          GrammarCategory @relation(fields: [idGrammarCategory], references: [idGrammarCategory], onDelete: Cascade)
+  idGrammar         String
 
-  // THÊM DÒNG NÀY ĐỂ TẠO THỨ TỰ BÀI HỌC
-  order             Int      @default(0) 
+  assignedAt        DateTime @default(now())
+  assignedBy        String 
+
+  
+  category          GrammarCategory @relation(fields: [idGrammarCategory], references: [idGrammarCategory], onDelete: Cascade)
+  grammar           Grammar         @relation(fields: [idGrammar], references: [idGrammar], onDelete: Cascade)
+
+  
+  @@id([idGrammarCategory, idGrammar])
 }
 

@@ -63,4 +63,12 @@ export class CreateGrammarDto {
     required: false,
   })
   examples?: Prisma.JsonArray;
+
+  @IsOptional()
+  @ApiProperty({
+    description: 'Thứ tự hiển thị của bài học trong danh mục',
+    example: 1,
+    required: false,
+  })
+  order?: number;
 }

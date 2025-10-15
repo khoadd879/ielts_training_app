@@ -1,171 +1,302 @@
 import {
   BadGatewayException,
+  BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateGrammarDto } from './dto/create-grammar.dto';
 import { UpdateGrammarDto } from './dto/update-grammar.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class GrammarService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async verifyCategoryOwnership(idGrammarCategory: string, idUser: string) {
+  async createAndAssignToCategory(
+    createGrammarDto: CreateGrammarDto,
+    idUser: string,
+  ) {
+    const {
+      idGrammarCategory,
+      title,
+      explanation,
+      commonMistakes,
+      examples,
+      level,
+      order,
+    } = createGrammarDto;
+
+    const categoryExists =
+      await this.databaseService.grammarCategory.findUnique({
+        where: { idGrammarCategory },
+      });
+
+    if (!categoryExists) {
+      throw new NotFoundException('Grammar category not found.');
+    }
+
     const user = await this.databaseService.user.findUnique({
       where: { idUser },
     });
-
-    if (!user) {
-      throw new ForbiddenException('User not found.');
-    }
-
-    const category = await this.databaseService.grammarCategory.findFirst({
-      where: {
-        idGrammarCategory,
-        OR: [{ idUser }, { idUser: null }],
-      },
-    });
-
-    if (!category) {
+    if (!user || (user.role !== Role.ADMIN && user.role !== Role.GIAOVIEN)) {
       throw new ForbiddenException(
-        'Grammar category not found or you do not have permission to access it.',
+        'You do not have permission to perform this action.',
       );
     }
 
-    if (category.idUser === null) {
-      if (user.role !== 'ADMIN') {
-        throw new ForbiddenException(
-          'You cannot add grammar to a system category.',
-        );
-      }
+    const transactionResult = await this.databaseService.$transaction(
+      async (prisma) => {
+        const newGrammar = await prisma.grammar.create({
+          data: {
+            title,
+            explanation,
+            commonMistakes,
+            examples,
+            level,
+            order,
+          },
+        });
+
+        await prisma.grammarsOnCategories.create({
+          data: {
+            idGrammar: newGrammar.idGrammar,
+            idGrammarCategory: idGrammarCategory,
+            assignedBy: idUser,
+          },
+        });
+
+        return newGrammar;
+      },
+    );
+
+    return {
+      message: 'Grammar created and assigned to category successfully',
+      data: transactionResult,
+      status: 201,
+    };
+  }
+
+  async updateGrammar(
+    idGrammar: string,
+    updateGrammarDto: UpdateGrammarDto,
+    idUser: string,
+  ) {
+    const existingGrammar = await this.databaseService.grammar.findUnique({
+      where: { idGrammar },
+    });
+
+    if (!existingGrammar) {
+      throw new BadRequestException('Grammar not found.');
     }
-  }
 
-  async create(createGrammarDto: CreateGrammarDto, idUser: string) {
-    const { idGrammarCategory, title, explanation, commonMistakes, examples } =
-      createGrammarDto;
-
-    await this.verifyCategoryOwnership(idGrammarCategory, idUser);
-
-    const data = await this.databaseService.grammar.create({
-      data: {
-        idGrammarCategory,
-        title,
-        explanation,
-        commonMistakes,
-        examples,
-      },
+    const user = await this.databaseService.user.findUnique({
+      where: { idUser },
     });
+    if (!user || (user.role !== Role.ADMIN && user.role !== Role.GIAOVIEN)) {
+      throw new ForbiddenException(
+        'You do not have permission to perform this action.',
+      );
+    }
 
-    return {
-      message: 'Grammar created succesfully',
-      data,
-      status: 200,
-    };
-  }
-
-  async findAllInGrammarCategories(idGrammarCategory: string) {
-    const data = await this.databaseService.grammar.findMany({
-      where: {
-        idGrammarCategory,
-      },
-    });
-
-    return {
-      message: 'Grammar retrieved succesfully',
-      data,
-      status: 200,
-    };
-  }
-
-  async findOne(id: string) {
-    const data = await this.databaseService.grammar.findUnique({
-      where: {
-        idGrammar: id,
-      },
-    });
-
-    if (!data) throw new BadGatewayException('Grammar not found');
-
-    return {
-      message: 'Grammar retrieved succesfully',
-      data,
-      statsu: 200,
-    };
-  }
-
-  async update(id: string, updateGrammarDto: UpdateGrammarDto, idUser: string) {
-    const { idGrammarCategory, title, explanation, commonMistakes, examples } =
+    const { title, explanation, commonMistakes, examples, level, order } =
       updateGrammarDto;
 
-    if (idGrammarCategory) {
-      await this.verifyCategoryOwnership(idGrammarCategory, idUser);
-    }
-
     const data = await this.databaseService.grammar.update({
-      where: {
-        idGrammar: id,
-      },
+      where: { idGrammar },
       data: {
-        idGrammarCategory,
         title,
         explanation,
         commonMistakes,
         examples,
+        level,
+        order,
       },
     });
 
     return {
-      message: 'Grammar updated succesfully',
+      message: 'Grammar updated successfully',
       data,
-      statsu: 200,
+      status: 200,
     };
   }
 
-  // Bên trong GrammarService
-
-  async remove(id: string, idUser: string) {
-    // Thêm idUser
-    const grammarToDelete = await this.databaseService.grammar.findUnique({
-      where: { idGrammar: id },
-      select: {
-        category: {
-          select: { idGrammarCategory: true },
-        },
-      },
+  async remove(idGrammar: string, idUser: string) {
+    const existingGrammar = await this.databaseService.grammar.findUnique({
+      where: { idGrammar },
     });
-
-    if (!grammarToDelete) {
-      throw new NotFoundException('Grammar not found');
+    if (!existingGrammar) {
+      throw new BadRequestException('Grammar not found.');
     }
-
-    const grammarCategory =
-      await this.databaseService.grammarCategory.findUnique({
-        where: {
-          idGrammarCategory: grammarToDelete.category.idGrammarCategory,
-        },
-      });
-
-    console.log(grammarCategory);
-
-    if (!grammarCategory) {
-      throw new NotFoundException('Grammar category not found');
-    }
-
-    if (grammarCategory.idUser !== idUser) {
+    const user = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+    if (!user || (user.role !== Role.ADMIN && user.role !== Role.GIAOVIEN)) {
       throw new ForbiddenException(
-        'You are not allowed to delete this grammar.',
+        'You do not have permission to perform this action.',
       );
     }
 
     await this.databaseService.grammar.delete({
-      where: { idGrammar: id },
+      where: { idGrammar },
     });
 
     return {
       message: 'Grammar deleted successfully',
+      status: 200,
+    };
+  }
+
+  async findAll() {
+    const data = await this.databaseService.grammar.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
+    return {
+      message: 'Grammars retrieved successfully',
+      data,
+      status: 200,
+    };
+  }
+
+  async findAllInUserCategory(idGrammarCategory: string, idUser: string) {
+    const category = await this.databaseService.grammarCategory.findFirst({
+      where: { idGrammarCategory, idUser },
+    });
+    if (!category) {
+      throw new ForbiddenException('Category not found or access denied.');
+    }
+
+    const data = await this.databaseService.grammarsOnCategories.findMany({
+      where: { idGrammarCategory },
+      include: {
+        grammar: true,
+      },
+    });
+
+    const grammars = data.map((item) => item.grammar);
+
+    return {
+      message: 'Grammar in category retrieved successfully',
+      data: grammars,
+      status: 200,
+    };
+  }
+
+  async addGrammarToCategory(
+    idGrammarCategory: string,
+    idGrammar: string,
+    idUser: string,
+  ) {
+    const category = await this.databaseService.grammarCategory.findFirst({
+      where: { idGrammarCategory, idUser },
+    });
+    if (!category) {
+      throw new ForbiddenException('Category not found or access denied.');
+    }
+
+    const grammar = await this.databaseService.grammar.findUnique({
+      where: { idGrammar },
+    });
+    if (!grammar) {
+      throw new NotFoundException('Grammar not found.');
+    }
+
+    const data = await this.databaseService.grammarsOnCategories.create({
+      data: {
+        idGrammarCategory,
+        idGrammar,
+        assignedBy: idUser,
+      },
+    });
+
+    return {
+      message: 'Grammar added to category successfully',
+      data,
+      status: 200,
+    };
+  }
+
+  async moveGrammarToCategory(
+    idGrammarCategory: string,
+    idGrammar: string,
+    idUser: string,
+  ) {
+    const category = await this.databaseService.grammarCategory.findFirst({
+      where: { idGrammarCategory, idUser },
+    });
+
+    if (!category) {
+      throw new ForbiddenException('Category not found or access denied.');
+    }
+
+    const grammar = await this.databaseService.grammar.findUnique({
+      where: { idGrammar },
+    });
+    if (!grammar) {
+      throw new NotFoundException('Grammar not found.');
+    }
+
+    const existingRelation =
+      await this.databaseService.grammarsOnCategories.findUnique({
+        where: {
+          idGrammarCategory_idGrammar: {
+            idGrammarCategory,
+            idGrammar,
+          },
+        },
+      });
+
+    if (!existingRelation) {
+      throw new BadRequestException(
+        'Grammar is not currently assigned to this category.',
+      );
+    }
+
+    const data = await this.databaseService.grammarsOnCategories.update({
+      where: {
+        idGrammarCategory_idGrammar: {
+          idGrammarCategory,
+          idGrammar,
+        },
+      },
+      data: {
+        idGrammarCategory,
+        assignedBy: idUser,
+      },
+    });
+
+    return {
+      message: 'Grammar moved to new category successfully',
+      data,
+      status: 200,
+    };
+  }
+
+  async removeGrammarFromCategory(
+    idGrammarCategory: string,
+    idGrammar: string,
+    idUser: string,
+  ) {
+    const category = await this.databaseService.grammarCategory.findFirst({
+      where: { idGrammarCategory, idUser },
+    });
+    if (!category) {
+      throw new ForbiddenException('Category not found or access denied.');
+    }
+
+    await this.databaseService.grammarsOnCategories.delete({
+      where: {
+        idGrammarCategory_idGrammar: {
+          idGrammarCategory,
+          idGrammar,
+        },
+      },
+    });
+
+    return {
+      message: 'Grammar removed from category successfully',
       status: 200,
     };
   }

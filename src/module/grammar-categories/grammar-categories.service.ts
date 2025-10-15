@@ -73,29 +73,14 @@ export class GrammarCategoriesService {
     };
   }
 
-  async findOne(id: string, idUser: string) {
-    // Nhận thêm idUser
-    const category = await this.databaseService.grammarCategory.findFirst({
-      where: {
-        idGrammarCategory: id,
-        OR: [{ idUser: idUser }, { idUser: null }], // Chỉ tìm category của user hoặc của hệ thống
-      },
+  async findOne(idGrammarCategories: string) {
+    const category = await this.databaseService.grammarCategory.findUnique({
+      where: { idGrammarCategory: idGrammarCategories },
       include: {
-        // Lấy toàn bộ bài học bên trong để xem chi tiết
-        grammars: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
+        grammars: true,
       },
     });
 
-    if (!category) {
-      // Dùng 404 Not Found thì ngữ cảnh sẽ đúng hơn
-      throw new NotFoundException(
-        'Grammar category not found or you do not have permission to view it.',
-      );
-    }
     return {
       message: 'Grammar category retrieved successfully',
       data: category,

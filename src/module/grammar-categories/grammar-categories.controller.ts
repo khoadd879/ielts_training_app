@@ -33,12 +33,9 @@ export class GrammarCategoriesController {
     return this.grammarCategoriesService.findAll(idUser);
   }
 
-  @Get('get-grammar-category/-:idGrammarCategories/:idUser')
-  findOne(
-    @Param('idGrammarCategories') idGrammarCategories: string,
-    @Param('idUser') idUser: string,
-  ) {
-    return this.grammarCategoriesService.findOne(idGrammarCategories, idUser);
+  @Get('get-grammar-category/:idGrammarCategories')
+  findOne(@Param('idGrammarCategories') idGrammarCategories: string) {
+    return this.grammarCategoriesService.findOne(idGrammarCategories);
   }
 
   @Patch('update-grammar-category/:idGrammarCategories/:idUser')
