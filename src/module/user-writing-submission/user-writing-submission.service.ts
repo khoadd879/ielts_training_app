@@ -7,6 +7,13 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
 
+type CorrectionDetail = {
+  mistake: string;
+  correct: string;
+  explanation: string;
+  type: string; //Loại lỗi
+};
+
 type AIFeedbackResult = {
   score: number;
   task_response: string;
@@ -14,6 +21,7 @@ type AIFeedbackResult = {
   lexical_resource: string;
   grammatical_range_and_accuracy: string;
   general_feedback: string;
+  detailed_corrections: CorrectionDetail[];
 };
 
 @Injectable()
@@ -27,7 +35,7 @@ export class UserWritingSubmissionService {
   private getAIInstance(): GoogleGenAI {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (!apiKey) {
-      console.error('❌ GEMINI_API_KEY is missing');
+      console.error('GEMINI_API_KEY is missing');
       throw new BadRequestException('AI API key is not configured');
     }
     return new GoogleGenAI({ apiKey });
@@ -67,12 +75,12 @@ export class UserWritingSubmissionService {
       const feedback = await tx.feedback.create({
         data: {
           idWritingSubmission: submission.idWritingSubmission,
-          score: aiResult.score,
           taskResponse: aiResult.task_response,
           coherenceAndCohesion: aiResult.coherence_and_cohesion,
           lexicalResource: aiResult.lexical_resource,
           grammaticalRangeAndAccuracy: aiResult.grammatical_range_and_accuracy,
           generalFeedback: aiResult.general_feedback,
+          detailedCorrections: aiResult.detailed_corrections ?? [],
         },
       });
 
@@ -141,7 +149,7 @@ export class UserWritingSubmissionService {
       try {
         parsed = JSON.parse(clean);
       } catch (err) {
-        console.error('❌ JSON parse error from Gemini:', err);
+        console.error('JSON parse error from Gemini:', err);
         throw new BadRequestException('Invalid AI response format');
       }
 
@@ -149,7 +157,7 @@ export class UserWritingSubmissionService {
       await this.cacheManager.set(cacheKey, parsed, 3600);
       return parsed;
     } catch (error) {
-      console.error('❌ AI evaluation failed:', error);
+      console.error('AI evaluation failed:', error);
       throw new BadRequestException('AI evaluation failed.');
     }
   }
@@ -163,7 +171,13 @@ export class UserWritingSubmissionService {
 
     const data = await this.databaseService.userWritingSubmission.findMany({
       where: { idUser },
-      include: { writingTask: true },
+      include: {
+        writingTask: true,
+        feedback: {
+          orderBy: { gradedAt: 'desc' },
+          take: 1,
+        },
+      },
     });
 
     return {
@@ -197,7 +211,16 @@ export class UserWritingSubmissionService {
     const submission =
       await this.databaseService.userWritingSubmission.findUnique({
         where: { idWritingSubmission },
-        include: { writingTask: true, feedback: true },
+        include: {
+          writingTask: true,
+          //Lấy feedback mới nhất
+          feedback: {
+            orderBy: {
+              gradedAt: 'desc',
+            },
+            take: 1,
+          },
+        },
       });
 
     if (!submission) throw new BadRequestException('Submission not found');
@@ -208,15 +231,15 @@ export class UserWritingSubmissionService {
         submission.writingTask.prompt,
       );
 
-      const updatedFeedback = await this.databaseService.feedback.update({
-        where: { idWritingSubmission },
+      const updatedFeedback = await this.databaseService.feedback.create({
         data: {
-          score: aiResult.score,
+          idWritingSubmission,
           taskResponse: aiResult.task_response,
           coherenceAndCohesion: aiResult.coherence_and_cohesion,
           lexicalResource: aiResult.lexical_resource,
           grammaticalRangeAndAccuracy: aiResult.grammatical_range_and_accuracy,
           generalFeedback: aiResult.general_feedback,
+          detailedCorrections: aiResult.detailed_corrections ?? [],
         },
       });
 
@@ -258,39 +281,43 @@ export class UserWritingSubmissionService {
     };
   }
 
-  // 📋 Prompt AI
+  // Prompt AI
+  // Trong class UserWritingSubmissionService
+
   private buildPrompt(submissionText: string, writingPrompt: string): string {
     return `
-You are a certified IELTS Writing examiner with deep knowledge of the official IELTS Writing Band Descriptors (public version). But not too strict maybe add more 0.5 to 1 score if that writing is good enough.
+You are a certified IELTS Writing examiner with deep knowledge of the official IELTS Writing Band Descriptors. 
+Your task is to objectively evaluate the candidate’s essay and provide detailed, constructive feedback.
 
-Your task is to objectively evaluate the candidate’s essay below as an IELTS examiner would.  
-Please assess according to the four official IELTS Writing criteria:
+RULES:
+1.  Act as a strict but fair IELTS examiner.
+2.  Follow IELTS public band descriptors.
+3.  For each of the 4 criteria (TR, CC, LR, GRA), provide detailed feedback (3-5 sentences).
+4.  Crucially, identify specific mistakes in the essay. For each mistake, provide the original text, the correction, a brief explanation, and classify the error type.
+5.  Return ONLY pure JSON (no markdown, no surrounding text).
 
-1. Task Response (TR)
-2. Coherence and Cohesion (CC)
-3. Lexical Resource (LR)
-4. Grammatical Range and Accuracy (GRA)
-
-Rules:
-- Be strict but fair.
-- Follow IELTS public band descriptors.
-- Give concise feedback (2–4 sentences each).
-- Return only pure JSON (no markdown).
-
-Format:
+JSON OUTPUT FORMAT:
 {
-  "score": number,
-  "task_response": string,
-  "coherence_and_cohesion": string,
-  "lexical_resource": string,
-  "grammatical_range_and_accuracy": string,
-  "general_feedback": string
+  "score": number, // Overall band score (e.g., 6.0, 6.5, 7.0)
+  "task_response": string, // Detailed feedback on Task Response
+  "coherence_and_cohesion": string, // Detailed feedback on Coherence and Cohesion
+  "lexical_resource": string, // Detailed feedback on Lexical Resource
+  "grammatical_range_and_accuracy": string, // Detailed feedback on Grammatical Range and Accuracy
+  "general_feedback": string, // A general summary and tips for improvement
+  "detailed_corrections": [
+    {
+      "mistake": "The original text snippet with the error.",
+      "correction": "The corrected text snippet.",
+      "explanation": "Brief explanation of why it was wrong.",
+      "type": "Grammar | Lexis | Spelling | Cohesion"
+    }
+  ]
 }
 
-### Writing Prompt:
+### Writing Prompt (Task):
 ${writingPrompt ?? '(No prompt provided)'}
 
-### Essay:
+### Candidate's Essay:
 ${submissionText}
 `;
   }

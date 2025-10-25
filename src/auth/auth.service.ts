@@ -37,7 +37,7 @@ export class AuthService {
     const payload = { email: user.email, sub: user.idUser };
 
     if (user.isActive === false) {
-      throw new UnauthorizedException('Account is not activated');
+      throw new BadRequestException('Account is not activated');
     }
 
     const accessToken = this.jwtService.sign(payload, {
