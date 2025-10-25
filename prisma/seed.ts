@@ -1,6 +1,9 @@
-import { PrismaClient, Level } from '@prisma/client';
+import { PrismaClient, Level, Grammar } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+// ID của Admin user dùng để gán 'assignedBy'
+const ADMIN_ASSIGNER_ID = '731328db-1b94-4f4e-acde-7a013a965a38';
 
 const grammarData = [
   // ==========================
@@ -92,6 +95,84 @@ const grammarData = [
           },
         ]),
         order: 4,
+      },
+      // ===== 3 BÀI HỌC THÊM VÀO (RẤT QUAN TRỌNG) =====
+      {
+        title: 'Present Perfect vs. Simple Past',
+        explanation:
+          'Simple Past is for finished actions at a specific time. Present Perfect is for unfinished actions or finished actions with a present result (time is not specified).',
+        level: Level.Mid,
+        examples: JSON.stringify([
+          {
+            sentence: 'I lived in Japan for 5 years.',
+            note: 'Simple Past (I don-t live there now)',
+          },
+          {
+            sentence: 'I have lived in Vietnam for 5 years.',
+            note: 'Present Perfect (I still live here)',
+          },
+          {
+            sentence: 'I have lost my keys.',
+            note: 'Present Perfect (Result: I can-t get in now)',
+          },
+        ]),
+        commonMistakes: JSON.stringify([
+          {
+            wrong: 'I have seen that movie yesterday.',
+            right: 'I saw that movie yesterday.',
+          },
+        ]),
+        order: 5,
+      },
+      {
+        title: 'Past Perfect',
+        explanation:
+          'Used to describe an action that happened *before* another action in the past. (The "past of the past").',
+        level: Level.High,
+        examples: JSON.stringify([
+          {
+            sentence: 'When I arrived, the train had already left.',
+            note: '1st action: train left. 2nd action: I arrived.',
+          },
+          {
+            sentence: 'She told me she had finished her homework.',
+            note: '1st action: finish homework. 2nd action: she told me.',
+          },
+        ]),
+        commonMistakes: JSON.stringify([
+          {
+            wrong: 'When I arrived, the train left.',
+            right: 'When I arrived, the train had left.',
+          },
+        ]),
+        order: 6,
+      },
+      {
+        title: 'Future Tenses (will vs. be going to)',
+        explanation:
+          '"Will" is for predictions or spontaneous decisions. "Be going to" is for plans or intentions made before speaking.',
+        level: Level.Low,
+        examples: JSON.stringify([
+          {
+            sentence: 'I think it will rain tomorrow.',
+            note: 'Prediction',
+          },
+          {
+            sentence: 'I am going to visit my aunt next weekend.',
+            note: 'Plan',
+          },
+          {
+            sentence: 'Oh no, I spilled the milk. I-ll clean it up.',
+            note: 'Spontaneous decision',
+          },
+        ]),
+        commonMistakes: JSON.stringify([
+          {
+            wrong: 'I will travel to Da Nang next month. (if it-s a plan)',
+            right: 'I am going to travel to Da Nang next month.',
+          },
+        ]),
+        order: 7,
       },
     ],
   },
@@ -345,6 +426,25 @@ const grammarData = [
         ]),
         order: 2,
       },
+      {
+        title: 'Third Conditional',
+        explanation:
+          'Used for unreal situations in the past. Structure: If + Past Perfect, ... would have + Past Participle.',
+        level: Level.High,
+        examples: JSON.stringify([
+          {
+            sentence: 'If I had studied, I would have passed the exam.',
+            note: 'Past regret',
+          },
+        ]),
+        commonMistakes: JSON.stringify([
+          {
+            wrong: 'If I would have studied, I passed.',
+            right: 'If I had studied, I would have passed.',
+          },
+        ]),
+        order: 3,
+      },
     ],
   },
   // ==========================
@@ -405,57 +505,265 @@ const grammarData = [
       },
     ],
   },
+  // ========================================================
+  // ===== 4 DANH MỤC MỚI CỰC KỲ QUAN TRỌNG CHO IELTS =====
+  // ========================================================
+
+  // ==========================
+  // ===== 8. (MỚI) SENTENCE STRUCTURE (Cấu trúc câu) =====
+  // ==========================
+  {
+    category: {
+      name: 'Sentence Structure',
+      description:
+        'Learn to build complex sentences using clauses and conjunctions for a higher grammar score.',
+    },
+    lessons: [
+      {
+        title: 'Relative Clauses (Defining vs. Non-defining)',
+        explanation:
+          'Clauses that start with "who, which, that, whose, where" to describe a noun. Defining clauses are essential; Non-defining add extra info (using commas).',
+        level: Level.Mid,
+        examples: JSON.stringify([
+          {
+            sentence: 'The man who lives next door is a doctor.',
+            note: 'Defining (essential info)',
+          },
+          {
+            sentence: 'My brother, who lives in London, is a doctor.',
+            note: 'Non-defining (extra info, with commas)',
+          },
+        ]),
+        commonMistakes: JSON.stringify([
+          {
+            wrong: 'My brother who lives in London is a doctor.',
+            right: 'My brother, who lives in London, is a doctor.',
+          },
+          {
+            wrong: 'The book, that I am reading, is good.',
+            right: 'The book that I am reading is good. (no commas for "that")',
+          },
+        ]),
+        order: 1,
+      },
+      {
+        title: 'Subordinating Conjunctions',
+        explanation:
+          'Words that connect a dependent (subordinate) clause to an independent clause. (e.g., although, because, while, when, if, unless).',
+        level: Level.Mid,
+        examples: JSON.stringify([
+          {
+            sentence: 'Although it was raining, we went for a walk.',
+            note: 'Contrast',
+          },
+          {
+            sentence: 'He passed the exam because he studied hard.',
+            note: 'Cause/Reason',
+          },
+          {
+            sentence: 'While I was cooking, my phone rang.',
+            note: 'Time',
+          },
+        ]),
+        commonMistakes: JSON.stringify([
+          {
+            wrong: 'Although it was raining. We went for a walk.',
+            right: 'Although it was raining, we went for a walk.',
+          },
+        ]),
+        order: 2,
+      },
+    ],
+  },
+  // ==========================
+  // ===== 9. (MỚI) PASSIVE VOICE (Thể Bị động) =====
+  // ==========================
+  {
+    category: {
+      name: 'Passive Voice',
+      description:
+        'Learn to use the passive voice (be + past participle) when the action is more important than the doer. Essential for academic writing.',
+    },
+    lessons: [
+      {
+        title: 'Forming the Passive Voice',
+        explanation:
+          'Used when the subject is unknown or unimportant. Structure: Subject + [form of "to be"] + [Past Participle].',
+        level: Level.Mid,
+        examples: JSON.stringify([
+          {
+            sentence:
+              'The report was written by the manager. (Active: The manager wrote the report)',
+            note: 'Simple Past Passive',
+          },
+          {
+            sentence: 'The data is collected every year.',
+            note: 'Simple Present Passive (Used in Task 1)',
+          },
+          {
+            sentence: 'The problem will be solved soon.',
+            note: 'Future Passive',
+          },
+        ]),
+        commonMistakes: JSON.stringify([
+          {
+            wrong: 'The report written by the manager.',
+            right: 'The report was written by the manager.',
+          },
+        ]),
+        order: 1,
+      },
+    ],
+  },
+  // ==========================
+  // ===== 10. (MỚI) REPORTED SPEECH (Câu tường thuật) =====
+  // ==========================
+  {
+    category: {
+      name: 'Reported Speech',
+      description:
+        'Learn how to report what someone else said, often by "shifting" the tenses back.',
+    },
+    lessons: [
+      {
+        title: 'Reported Statements (Tense Backshift)',
+        explanation:
+          'When reporting what someone said in the past, the verb tense often shifts one step back (e.g., Present -> Past, Past -> Past Perfect).',
+        level: Level.High,
+        examples: JSON.stringify([
+          {
+            sentence:
+              'Direct: "I am hungry." -> Reported: He said (that) he was hungry.',
+            note: 'Present -> Past',
+          },
+          {
+            sentence:
+              'Direct: "I finished the test." -> Reported: She said she had finished the test.',
+            note: 'Past -> Past Perfect',
+          },
+        ]),
+        commonMistakes: JSON.stringify([
+          {
+            wrong: 'He said he is hungry.',
+            right: 'He said he was hungry.',
+          },
+        ]),
+        order: 1,
+      },
+    ],
+  },
+  // ==========================
+  // ===== 11. (MỚI) QUANTIFIERS (Lượng từ) =====
+  // ==========================
+  {
+    category: {
+      name: 'Quantifiers (Countable/Uncountable)',
+      description:
+        'Learn to use words that describe quantity (some, any, much, many, few, little).',
+    },
+    lessons: [
+      {
+        title: 'much/many vs. (a) few / (a) little',
+        explanation:
+          '"Many" & "(a) few" are for countable nouns. "Much" & "(a) little" are for uncountable nouns. "A few/A little" = some. "Few/Little" = almost none.',
+        level: Level.Mid,
+        examples: JSON.stringify([
+          {
+            sentence: 'There are many students in the class.',
+            note: 'Countable',
+          },
+          {
+            sentence: 'I don-t have much time.',
+            note: 'Uncountable',
+          },
+          {
+            sentence: 'I have a few apples. (some apples)',
+            note: 'Countable, positive',
+          },
+          {
+            sentence: 'I have few apples. (almost no apples)',
+            note: 'Countable, negative',
+          },
+          {
+            sentence: 'There is a little milk left.',
+            note: 'Uncountable, positive',
+          },
+        ]),
+        commonMistakes: JSON.stringify([
+          {
+            wrong: 'I don-t have many money.',
+            right: 'I don-t have much money.',
+          },
+        ]),
+        order: 1,
+      },
+    ],
+  },
 ];
 
 async function main() {
-  console.log('🌱 Start seeding system-level grammar...');
+  console.log('🌱 Start RE-SEEDING system-level grammar...');
+
+  // --- PHẦN MỚI: DỌN DẸP TRIỆT ĐỂ ---
+  // BƯỚC 1: Xóa tất cả các *liên kết* N-N (GrammarsOnCategories)
+  console.log('🗑️ Deleting ALL old links (GrammarsOnCategories)...');
+  await prisma.grammarsOnCategories.deleteMany({});
+
+  // BƯỚC 2: Xóa tất cả các *Bài học* (Grammar)
+  console.log('🗑️ Deleting ALL old Grammar lesson records...');
+  await prisma.grammar.deleteMany({});
+
+  // BƯỚC 3: Xóa tất cả *Danh mục* của hệ thống (idUser: null)
+  console.log('🗑️ Deleting ALL old system GrammarCategory records...');
+  await prisma.grammarCategory.deleteMany({
+    where: { idUser: null },
+  });
+  // --- KẾT THÚC PHẦN DỌN DẸP ---
+
+  console.log('🌱 Seeding new grammar (24 lessons across 11 categories)...');
 
   for (const item of grammarData) {
-    let category;
-
-    // 1. Tìm category trước
-    const existingCategory = await prisma.grammarCategory.findFirst({
-      where: {
-        idUser: null,
+    // 2. Tạo Category (cho hệ thống, idUser: null)
+    const category = await prisma.grammarCategory.create({
+      data: {
         name: item.category.name,
+        description: item.category.description,
+        idUser: null, // Quan trọng: Đây là data hệ thống
       },
     });
+    console.log(`📚 Created category: ${category.name}`);
 
-    if (existingCategory) {
-      // 2a. Nếu đã tồn tại, dùng nó
-      category = existingCategory;
-      console.log(`📚 Category "${category.name}" already exists.`);
-    } else {
-      // 2b. Nếu không, tạo mới
-      category = await prisma.grammarCategory.create({
+    // Khai báo rõ kiểu cho mảng
+    const createdLessons: Grammar[] = [];
+
+    // 3. Tạo tất cả bài học (Grammar)
+    for (const lessonData of item.lessons) {
+      const newLesson = await prisma.grammar.create({
         data: {
-          name: item.category.name,
-          description: item.category.description,
-          // idUser mặc định là null
+          title: lessonData.title,
+          explanation: lessonData.explanation,
+          level: lessonData.level,
+          examples: lessonData.examples,
+          commonMistakes: lessonData.commonMistakes,
+          order: lessonData.order,
         },
       });
-      console.log(`📚 Created category: ${category.name}`);
+      createdLessons.push(newLesson);
     }
+    console.log(
+      `✏️ Created ${createdLessons.length} lessons for ${category.name}.`,
+    );
 
-    // 3. Xóa các bài học cũ để đảm bảo dữ liệu luôn mới (tùy chọn)
-    await prisma.grammar.deleteMany({
-      where: { idGrammarCategory: category.idGrammarCategory },
-    });
-
-    // 4. Tạo mới tất cả bài học trong danh mục
-    await prisma.grammar.createMany({
-      data: item.lessons.map((lesson) => ({
+    // 4. Tạo liên kết trong bảng GrammarsOnCategories
+    await prisma.grammarsOnCategories.createMany({
+      data: createdLessons.map((lesson) => ({
         idGrammarCategory: category.idGrammarCategory,
-        title: lesson.title,
-        explanation: lesson.explanation,
-        level: lesson.level,
-        examples: lesson.examples,
-        commonMistakes: lesson.commonMistakes,
-        order: lesson.order,
+        idGrammar: lesson.idGrammar,
+        assignedBy: ADMIN_ASSIGNER_ID, // Admin user ID
       })),
     });
     console.log(
-      `✏️ Created ${item.lessons.length} lessons for ${category.name}.`,
+      `🔗 Linked ${createdLessons.length} lessons to ${category.name}.`,
     );
   }
 

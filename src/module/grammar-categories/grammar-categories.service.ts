@@ -117,6 +117,10 @@ export class GrammarCategoriesService {
       throw new BadRequestException('Grammar category not found');
     }
 
+    if (categoryToUpdate.idUser === null) {
+      throw new ForbiddenException('You cannot edit a system category.');
+    }
+
     if (categoryToUpdate.idUser !== idUser) {
       throw new ForbiddenException('You are not allowed to edit this category');
     }
