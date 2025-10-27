@@ -18,7 +18,7 @@ export class ChatBotService {
     private readonly configService: ConfigService,
   ) {}
 
-  // 🔹 Lấy instance Gemini
+  // Lấy instance Gemini
   private getAIInstance(): GoogleGenAI {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (!apiKey) {
@@ -32,7 +32,7 @@ export class ChatBotService {
     return `chat:${idUser}`;
   }
 
-  // 🔹 Lưu tin nhắn
+  // Lưu tin nhắn
   async saveMessage(idUser: string, sender: 'user' | 'bot', message: string) {
     const key = this.getUserKey(idUser);
     const oldRaw = await this.cacheManager.get<string>(key);
@@ -44,20 +44,20 @@ export class ChatBotService {
     await this.cacheManager.set(key, JSON.stringify(newMessages), 86400); // TTL = 1 ngày
   }
 
-  // 🔹 Lấy toàn bộ hội thoại
+  // Lấy toàn bộ hội thoại
   async getMessages(idUser: string) {
     const key = this.getUserKey(idUser);
     const raw = await this.cacheManager.get<string>(key);
     return raw ? JSON.parse(raw) : [];
   }
 
-  // 🔹 Xóa hội thoại
+  // Xóa hội thoại
   async clearMessages(idUser: string) {
     const key = this.getUserKey(idUser);
     await this.cacheManager.del(key);
   }
 
-  // 🔹 Xử lý tin nhắn người dùng
+  // Xử lý tin nhắn người dùng
   async handleUserMessage(idUser: string, message: string): Promise<string> {
     await this.saveMessage(idUser, 'user', message);
 
@@ -68,7 +68,7 @@ export class ChatBotService {
     return reply;
   }
 
-  // 🔹 Gọi Gemini để trả lời
+  // Gọi Gemini để trả lời
   private async generateGeminiReply(
     idUser: string,
     latestMessage: string,
@@ -102,7 +102,7 @@ export class ChatBotService {
     }
   }
 
-  // 🔹 Tạo prompt
+  // Tạo prompt
   private buildPrompt(
     messages: { sender: string; message: string }[],
     latest: string,

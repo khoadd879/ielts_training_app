@@ -40,7 +40,10 @@ export class WritingTaskController {
     @Body() createWritingTaskDto: CreateWritingTaskDto,
     @UploadedFile() image?: Express.Multer.File,
   ) {
-    return this.writingTaskService.createWritingTask(createWritingTaskDto);
+    return this.writingTaskService.createWritingTask(
+      createWritingTaskDto,
+      image,
+    );
   }
 
   @Get('get-all-writing-task')

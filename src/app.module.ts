@@ -38,6 +38,10 @@ import { ReviewStreakModule } from './module/review-streak/review-streak.module'
 import { StreakServiceModule } from './module/streak-service/streak-service.module';
 import { StatisticsModule } from './module/statistics/statistics.module';
 import { ChatBotModule } from './module/chat-bot/chat-bot.module';
+import { RecommendTestModule } from './module/recommend-test/recommend-test.module';
+import { SpeakingTaskModule } from './module/speaking-task/speaking-task.module';
+import { SpeakingQuestionModule } from './module/speaking-question/speaking-question.module';
+import { UserSpeakingSubmissionModule } from './module/user-speaking-submission/user-speaking-submission.module';
 
 import * as redisStore from 'cache-manager-redis-store';
 
@@ -112,6 +116,14 @@ import * as redisStore from 'cache-manager-redis-store';
     StatisticsModule,
 
     ChatBotModule,
+
+    //RecommendTestModule,
+
+    SpeakingTaskModule,
+
+    SpeakingQuestionModule,
+
+    UserSpeakingSubmissionModule,
   ],
   controllers: [AppController],
   providers: [

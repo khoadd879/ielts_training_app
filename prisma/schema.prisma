@@ -42,7 +42,7 @@ currentStreak       Int       @default(0) // Chuỗi hiện tại
   userWritingSubmissions UserWritingSubmission[]
   verificationCodes      VerificationCode[]
   grammarCategories     GrammarCategory[]
-  
+  speaking              UserSpeakingSubmission[]
 }
 
 model VerificationCode {
@@ -123,6 +123,7 @@ model De {
   parts           Part[]
   userTestResults UserTestResult[]
   writingTasks    WritingTask[]
+  speakingTasks   SpeakingTask[]
 }
 
 model Part {
@@ -389,6 +390,7 @@ enum loaiDe {
   LISTENING
   READING
   WRITING
+  SPEAKING
 }
 
 enum QuestionType {
@@ -458,5 +460,74 @@ model GrammarsOnCategories {
 
   
   @@id([idGrammarCategory, idGrammar])
+}
+
+model SpeakingTask {
+  idSpeakingTask String  @id @default(uuid())
+  idDe           String
+  title          String // Ví dụ: "Speaking Test 1 - Topic: Travel"
+  audioPromptUrl String? // Có thể là file audio của giám khảo
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  de            De                     @relation(fields: [idDe], references: [idDe], onDelete: Cascade)
+  questions     SpeakingQuestion[]     // Các câu hỏi cho Part 1, 2, 3
+  userSubmissions UserSpeakingSubmission[] // Các bài nộp của user
+
+  @@unique([idDe]) // Đảm bảo mỗi 'De' (loại SPEAKING) chỉ có 1 SpeakingTask
+}
+
+model SpeakingQuestion {
+  idSpeakingQuestion String           @id @default(uuid())
+  idSpeakingTask     String
+  part               SpeakingPartType 
+  topic              String?         
+  prompt             String           @db.Text // Câu hỏi chính, hoặc nội dung cue card
+  subPrompts         Json?            // Các gạch đầu dòng cho Part 2 (You should say...)
+  preparationTime    Int              @default(0) // Thời gian chuẩn bị (giây), vd: 60 cho Part 2
+  speakingTime       Int              @default(120) // Thời gian nói (giây)
+  order              Int              @default(0) // Để sắp xếp thứ tự câu hỏi
+
+  speakingTask SpeakingTask @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
+}
+
+model UserSpeakingSubmission {
+  idSpeakingSubmission String   @id @default(uuid())
+  idUser               String
+  idSpeakingTask       String
+  audioUrl             String   // URL tới file audio user đã ghi
+  submittedAt          DateTime @default(now())
+  status               SpeakingStatus @default(SUBMITTED)
+
+  user         User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  speakingTask SpeakingTask    @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
+  feedback     SpeakingFeedback[] // Phản hồi cho bài nộp này
+}
+
+model SpeakingFeedback {
+  idSpeakingFeedback            String @id @default(uuid())
+  idSpeakingSubmission          String @unique // 1 bài nộp chỉ có 1 feedback tổng thể
+  
+  fluencyAndCoherence           String @db.Text
+  lexicalResource               String @db.Text
+  grammaticalRangeAndAccuracy   String @db.Text
+  pronunciation                 String @db.Text
+  
+  generalFeedback               String @db.Text
+  detailedCorrections           Json? // Lưu các lỗi chi tiết (phát âm, ngữ pháp)
+  gradedAt                      DateTime @default(now())
+
+  submission UserSpeakingSubmission @relation(fields: [idSpeakingSubmission], references: [idSpeakingSubmission], onDelete: Cascade)
+}
+
+enum SpeakingPartType {
+  PART1
+  PART2
+  PART3
+}
+
+enum SpeakingStatus {
+  SUBMITTED
+  GRADED
 }
 
