@@ -31,13 +31,18 @@ export class SpeakingQuestionService {
       throw new BadRequestException('Speaking task not found');
     }
 
+    const parsedSubPrompts =
+      typeof subPrompts === 'string'
+        ? JSON.parse(subPrompts)
+        : (subPrompts ?? null);
+
     const data = await this.databaseService.speakingQuestion.create({
       data: {
         idSpeakingTask,
         part,
-        topic,
-        prompt,
-        subPrompts: subPrompts ?? Prisma.JsonNull,
+        topic: topic ?? prompt,
+        prompt: prompt ?? null,
+        subPrompts: parsedSubPrompts,
         preparationTime: preparationTime ?? 0,
         speakingTime: speakingTime ?? 120,
         order,
@@ -90,13 +95,16 @@ export class SpeakingQuestionService {
       throw new BadRequestException('Speaking question not found');
     }
 
+    const parsedSubPrompts =
+      typeof updateSpeakingQuestionDto.subPrompts === 'string'
+        ? JSON.parse(updateSpeakingQuestionDto.subPrompts)
+        : (updateSpeakingQuestionDto.subPrompts ?? null);
+
     const data = await this.databaseService.speakingQuestion.update({
-      where: {
-        idSpeakingQuestion: id,
-      },
+      where: { idSpeakingQuestion: id },
       data: {
         ...updateSpeakingQuestionDto,
-        subPrompts: updateSpeakingQuestionDto.subPrompts ?? Prisma.JsonNull,
+        subPrompts: parsedSubPrompts,
       },
     });
 

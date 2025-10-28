@@ -482,7 +482,7 @@ model SpeakingQuestion {
   idSpeakingTask     String
   part               SpeakingPartType 
   topic              String?         
-  prompt             String           @db.Text // Câu hỏi chính, hoặc nội dung cue card
+  prompt             String?           @db.Text // Câu hỏi chính, hoặc nội dung cue card
   subPrompts         Json?            // Các gạch đầu dòng cho Part 2 (You should say...)
   preparationTime    Int              @default(0) // Thời gian chuẩn bị (giây), vd: 60 cho Part 2
   speakingTime       Int              @default(120) // Thời gian nói (giây)
