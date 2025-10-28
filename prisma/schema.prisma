@@ -496,6 +496,7 @@ model UserSpeakingSubmission {
   idUser               String
   idSpeakingTask       String
   audioUrl             String   // URL tới file audio user đã ghi
+  transcript           String?  @db.Text
   submittedAt          DateTime @default(now())
   status               SpeakingStatus @default(SUBMITTED)
 
