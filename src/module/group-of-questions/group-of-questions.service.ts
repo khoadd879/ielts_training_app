@@ -52,6 +52,21 @@ export class GroupOfQuestionsService {
       );
     }
 
+    if (
+      previousEndingOrder &&
+      previousEndingOrder.endingOrder == existingDe.numberQuestion
+    ) {
+      throw new BadRequestException(
+        `Can't create more questions because you have reached the limit of questions : (${existingDe.numberQuestion})`,
+      );
+    }
+
+    if (endingOrder >= existingDe.numberQuestion) {
+      throw new BadRequestException(
+        `endingOrder must be smaller or equal to numberQuestion of Test: (${existingDe.numberQuestion})`,
+      );
+    }
+
     const data = await this.databaseService.nhomCauHoi.create({
       data: {
         idDe,

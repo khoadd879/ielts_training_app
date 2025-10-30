@@ -30,6 +30,14 @@ export class PassageService {
       image = uploadResult.secure_url;
     }
 
+    const numParagraph =
+      typeof numberParagraph === 'number'
+        ? numberParagraph
+        : Number.parseInt(String(numberParagraph), 10);
+
+    if (Number.isNaN(numParagraph))
+      throw new BadRequestException('numberParagraph must be an integer');
+
     const data = await this.databaseService.doanVan.create({
       data: {
         idPart,
@@ -37,7 +45,7 @@ export class PassageService {
         content,
         image,
         description,
-        numberParagraph,
+        numberParagraph: numParagraph,
       },
     });
     return {
