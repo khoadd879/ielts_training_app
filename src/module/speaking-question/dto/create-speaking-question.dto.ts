@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SpeakingPartType } from '@prisma/client';
-import { IsEnum, IsNotEmpty } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateSpeakingQuestionDto {
   @IsNotEmpty()
@@ -12,14 +12,19 @@ export class CreateSpeakingQuestionDto {
   @ApiProperty({ example: 'PART1', enum: SpeakingPartType })
   part: SpeakingPartType;
 
-  @ApiProperty({ example: 'Describe your hometown' })
+  @IsOptional()
+  @ApiPropertyOptional({ example: 'Describe your hometown' })
   topic?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @ApiProperty({ example: 'What is your favorite food?' })
-  prompt: string;
+  prompt?: string;
 
-  @ApiProperty({ example: ['Why do you like it?', 'How often do you eat it?'] })
+  @ApiPropertyOptional({
+    example: ['Why do you like it?', 'How often do you eat it?'],
+    type: [String],
+  })
+  @IsOptional()
   subPrompts?: string[];
 
   @ApiProperty({ example: 30 })
