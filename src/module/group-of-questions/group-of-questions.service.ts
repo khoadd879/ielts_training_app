@@ -30,6 +30,28 @@ export class GroupOfQuestionsService {
     if (!existingDe) throw new BadRequestException('Test not found');
     if (!existingPart) throw new BadRequestException('Part not found');
 
+    if (startingOrder > endingOrder)
+      throw new BadRequestException(
+        'startingOrder must be less than or equal to endingOrder',
+      );
+
+    const previousEndingOrder = await this.databaseService.nhomCauHoi.findFirst(
+      {
+        where: { idPart },
+        orderBy: { endingOrder: 'desc' },
+        take: 1,
+      },
+    );
+
+    if (
+      previousEndingOrder &&
+      startingOrder <= previousEndingOrder.endingOrder
+    ) {
+      throw new BadRequestException(
+        `startingOrder must be greater than previous endingOrder (${previousEndingOrder.endingOrder})`,
+      );
+    }
+
     const data = await this.databaseService.nhomCauHoi.create({
       data: {
         idDe,
@@ -52,6 +74,9 @@ export class GroupOfQuestionsService {
     const existingPart = await this.databaseService.part.findUnique({
       where: {
         idPart,
+      },
+      include: {
+        nhomCauHois: true,
       },
     });
 
@@ -103,6 +128,31 @@ export class GroupOfQuestionsService {
 
     if (!existingDe) throw new BadRequestException('Test not found');
     if (!existingPart) throw new BadRequestException('Part not found');
+
+    if (startingOrder > endingOrder)
+      throw new BadRequestException(
+        'startingOrder must be less than or equal to endingOrder',
+      );
+
+    const overlapping = await this.databaseService.nhomCauHoi.findFirst({
+      where: {
+        idPart,
+        //lọc ra phần không phải id của nhóm câu hỏi đang update
+        NOT: { idNhomCauHoi: id },
+        AND: [
+          //startingOrder <= other.endingOrder
+          { startingOrder: { lte: endingOrder } },
+          // endingOrder >= other.startingOrder
+          { endingOrder: { gte: startingOrder } },
+        ],
+      },
+    });
+
+    if (overlapping) {
+      throw new BadRequestException(
+        `Order range overlaps with existing group (id: ${overlapping.idNhomCauHoi}, ${overlapping.startingOrder}-${overlapping.endingOrder})`,
+      );
+    }
 
     const data = await this.databaseService.nhomCauHoi.update({
       where: {
