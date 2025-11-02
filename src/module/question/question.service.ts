@@ -3,6 +3,8 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { AnswerService } from '../answer/answer.service';
+import { createManyQuestionsDto } from './dto/create-many-question.dto';
+import { CreateQuestionAndAnswerDto } from './dto/create-question-and-answer.dto';
 
 @Injectable()
 export class QuestionService {
@@ -150,7 +152,7 @@ export class QuestionService {
     };
   }
 
-  async createManyQuestions(createQuestionsDto: CreateQuestionDto[]) {
+  async createManyQuestions(createQuestionsDto: CreateQuestionAndAnswerDto[]) {
     if (!Array.isArray(createQuestionsDto) || createQuestionsDto.length === 0) {
       throw new BadRequestException(
         'Payload must be a non-empty array of questions',
@@ -201,40 +203,34 @@ export class QuestionService {
       seen.add(key);
     }
 
-    // // Optionally: check existing conflicts in DB (same group + numberQuestion)
-    // // gather pairs to check
-    // const whereChecks = createQuestionsDto.map((q) => ({
-    //   idGroupOfQuestions: q.idGroupOfQuestions,
-    //   numberQuestion: q.numberQuestion,
-    // }));
-    // const existingConflicts = await this.databaseService.question.findMany({
-    //   where: {
-    //     OR: whereChecks,
-    //   },
-    //   select: {
-    //     idQuestion: true,
-    //     idGroupOfQuestions: true,
-    //     numberQuestion: true,
-    //   },
-    // });
-    // if (existingConflicts.length > 0) {
-    //   const conflict = existingConflicts[0];
-    //   throw new BadRequestException(
-    //     `Conflict: question number ${conflict.numberQuestion} already exists in group ${conflict.idGroupOfQuestions}`,
-    //   );
-    // }
-
     // create each question inside a single transaction so we get created records (with ids)
-    const createOps = createQuestionsDto.map((q) =>
-      this.databaseService.question.create({
+    const createOps = createQuestionsDto.map((q) => {
+      const questionData = {
+        idGroupOfQuestions: q.idGroupOfQuestions,
+        idPart: q.idPart,
+        numberQuestion: q.numberQuestion,
+        content: q.content,
+      };
+
+      const answerData = q.answers?.map((a) => ({
+        idOption: a.idOption,
+        answer_text: capitalizeFirstLetter(a.answer_text),
+        matching_key: capitalizeFirstLetter(a.matching_key),
+        matching_value: capitalizeFirstLetter(a.matching_value),
+      }));
+
+      return this.databaseService.question.create({
         data: {
-          idGroupOfQuestions: q.idGroupOfQuestions,
-          idPart: q.idPart,
-          numberQuestion: q.numberQuestion,
-          content: q.content,
+          ...questionData,
+          answers: {
+            create: answerData || [],
+          },
         },
-      }),
-    );
+        include: {
+          answers: true, // Include created answers in the response
+        },
+      });
+    });
 
     // $transaction will run all creates and return an array of created records
     const createdRecords = await this.databaseService.$transaction(createOps);
@@ -245,4 +241,9 @@ export class QuestionService {
       status: 200,
     };
   }
+}
+
+function capitalizeFirstLetter(value: string): string {
+  if (!value) return value; // Nếu giá trị null hoặc undefined, trả về chính nó
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
