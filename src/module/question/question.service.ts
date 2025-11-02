@@ -224,23 +224,24 @@ export class QuestionService {
     //   );
     // }
 
-    // prepare data array for createMany
-    const data = createQuestionsDto.map((q) => ({
-      idGroupOfQuestions: q.idGroupOfQuestions,
-      idPart: q.idPart,
-      numberQuestion: q.numberQuestion,
-      content: q.content,
-    }));
+    // create each question inside a single transaction so we get created records (with ids)
+    const createOps = createQuestionsDto.map((q) =>
+      this.databaseService.question.create({
+        data: {
+          idGroupOfQuestions: q.idGroupOfQuestions,
+          idPart: q.idPart,
+          numberQuestion: q.numberQuestion,
+          content: q.content,
+        },
+      }),
+    );
 
-    // createMany returns { count: number } — it does not return created records
-    const result = await this.databaseService.question.createMany({
-      data,
-      skipDuplicates: false, // not skip duplicates
-    });
+    // $transaction will run all creates and return an array of created records
+    const createdRecords = await this.databaseService.$transaction(createOps);
 
     return {
       message: 'Questions created successfully',
-      data: data,
+      data: createdRecords,
       status: 200,
     };
   }
