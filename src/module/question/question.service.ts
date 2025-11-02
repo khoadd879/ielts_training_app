@@ -214,9 +214,9 @@ export class QuestionService {
 
       const answerData = q.answers?.map((a) => ({
         idOption: a.idOption,
-        answer_text: capitalizeFirstLetter(a.answer_text),
-        matching_key: capitalizeFirstLetter(a.matching_key),
-        matching_value: capitalizeFirstLetter(a.matching_value),
+        answer_text: a.answer_text?.toUpperCase(),
+        matching_key: a.matching_key?.toUpperCase(),
+        matching_value: a.matching_value?.toUpperCase(),
       }));
 
       return this.databaseService.question.create({
@@ -227,7 +227,7 @@ export class QuestionService {
           },
         },
         include: {
-          answers: true, // Include created answers in the response
+          answers: true,
         },
       });
     });
@@ -241,9 +241,4 @@ export class QuestionService {
       status: 200,
     };
   }
-}
-
-function capitalizeFirstLetter(value: string): string {
-  if (!value) return value; // Nếu giá trị null hoặc undefined, trả về chính nó
-  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
