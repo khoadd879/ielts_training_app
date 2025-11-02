@@ -36,17 +36,17 @@ export class VocabularyController {
   //   return this.vocabularyService.findByWord(word, idUser);
   // }
 
-  @Patch(':id')
+  @Patch('update-vocabulary/:idVocab')
   update(
-    @Param('id') id: string,
+    @Param('idVocab') idVocab: string,
     @Body() updateVocabularyDto: UpdateVocabularyDto,
   ) {
-    return this.vocabularyService.update(id, updateVocabularyDto);
+    return this.vocabularyService.update(idVocab, updateVocabularyDto);
   }
 
-  @Delete(':id/:idUser')
-  remove(@Param('id') id: string, @Param('idUser') idUser: string) {
-    return this.vocabularyService.remove(id, idUser);
+  @Delete('delete-vocabulary-by-id-user/:idVocab/:idUser')
+  remove(@Param('idVocab') idVocab: string, @Param('idUser') idUser: string) {
+    return this.vocabularyService.remove(idVocab, idUser);
   }
 
   @Post('add-vocabulary-to-topic')
@@ -54,7 +54,7 @@ export class VocabularyController {
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   addVocabularyToTopic(@Body() body: AddVocabularyToTopicDto) {
     return this.vocabularyService.addVocabularyToTopic(
-      body.idTuVung,
+      body.idVocab,
       body.idTopic,
     );
   }

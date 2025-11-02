@@ -29,14 +29,14 @@ currentStreak       Int       @default(0) // Chuỗi hiện tại
   lastStudiedAt       DateTime? // Ngày cuối cùng có hoạt động học
 
 
-  des                    De[]
+  test                    Test[]
   forumComment           ForumComment[]
   forumCommentLikes      ForumCommentLikes[]
   forumPosts             ForumPost[]
   forumPostLikes         ForumPostLikes[]
   forumThreads           ForumThreads[]
   Topic                  Topic[]
-  tuVungs                TuVung[]
+  Vocabulary                Vocabulary[]
   userAnswers            UserAnswer[]
   userTestResults        UserTestResult[]
   userWritingSubmissions UserWritingSubmission[]
@@ -58,7 +58,7 @@ model VerificationCode {
 model UserTestResult {
   idTestResult    String       @id @default(uuid())
   idUser          String
-  idDe            String
+  idTest            String
   score           Int?         @default(0) //score theo thang 40
   total_correct   Int?         @default(0)
   total_questions Int?         @default(0)
@@ -72,12 +72,12 @@ model UserTestResult {
   status          TestStatus   @default(IN_PROGRESS)
   level           Level        @default(Low)
   userAnswer      UserAnswer[]
-  de              De           @relation(fields: [idDe], references: [idDe], onDelete: Cascade)
+  test              Test           @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
   user            User         @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 }
 
-model TuVung {
-  idTuVung      String     @id @default(uuid())
+model Vocabulary {
+  idVocab      String     @id @default(uuid())
   word          String
   phonetic      String?
   meaning       String
@@ -86,7 +86,7 @@ model TuVung {
   updatedAt     DateTime   @updatedAt
   idUser        String
   idTopic       String?
-  loaiTuVung    loaiTuVung
+  VocabType    VocabType
   level         Level?
   correctStreak Int        @default(0)
   lastReviewed  DateTime?
@@ -102,24 +102,24 @@ model Topic {
   updatedAt DateTime @updatedAt
   idUser    String
   user      User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  tuVungs   TuVung[]
+  vocabulary   Vocabulary[]
 }
 
-model De {
-  idDe            String           @id @default(uuid())
+model Test {
+  idTest            String           @id @default(uuid())
   idUser          String
   title           String
   duration        Int
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
-  loaiDe          loaiDe
+  testType          TestType
   img             String?
   description     String?
   numberQuestion  Int
   audioUrl        String?
   level           Level            @default(Low)
   user            User             @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  nhomCauHois     NhomCauHoi[]
+  groupOfQuestions     GroupOfQuestions[]
   parts           Part[]
   userTestResults UserTestResult[]
   writingTasks    WritingTask[]
@@ -128,18 +128,18 @@ model De {
 
 model Part {
   idPart      String       @id @default(uuid())
-  idDe        String
+  idTest        String
   namePart    String
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  cauHois     CauHoi[]
-  doanVans    DoanVan?
-  nhomCauHois NhomCauHoi[]
-  de          De           @relation(fields: [idDe], references: [idDe], onDelete: Cascade)
+  question     Question[]
+  passage    Passage?
+  groupOfQuestions GroupOfQuestions[]
+  test          Test           @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
 }
 
-model DoanVan {
-  idDoanVan       String   @id @default(uuid())
+model Passage {
+  idPassage       String   @id @default(uuid())
   idPart          String   @unique
   title           String
   content         String
@@ -151,9 +151,9 @@ model DoanVan {
   part            Part     @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
 }
 
-model NhomCauHoi {
-  idNhomCauHoi  String       @id @default(uuid())
-  idDe          String
+model GroupOfQuestions {
+  idGroupOfQuestions  String       @id @default(uuid())
+  idTest          String
   idPart        String
   title         String
   startingOrder Int
@@ -161,21 +161,21 @@ model NhomCauHoi {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   typeQuestion  QuestionType
-  cauHois       CauHoi[]
-  de            De           @relation(fields: [idDe], references: [idDe], onDelete: Cascade)
+  question       Question[]
+  test            Test           @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
   part          Part         @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
 }
 
-model CauHoi {
-  idCauHoi       String       @id @default(uuid())
-  idNhomCauHoi   String
+model Question {
+  idQuestion       String       @id @default(uuid())
+  idGroupOfQuestions   String
   idPart         String
   numberQuestion Int
   content        String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   answers        Answer[]
-  nhomCauHoi     NhomCauHoi   @relation(fields: [idNhomCauHoi], references: [idNhomCauHoi], onDelete: Cascade)
+  groupOfQuestions     GroupOfQuestions   @relation(fields: [idGroupOfQuestions], references: [idGroupOfQuestions], onDelete: Cascade)
   part           Part         @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
   options        Option[]
   userAnswers    UserAnswer[]
@@ -183,32 +183,32 @@ model CauHoi {
 
 model Option {
   idOption       String       @id @default(uuid())
-  idCauHoi       String
+  idQuestion       String
   option_label   String
   option_content String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   answers        Answer[]
-  cauHoi         CauHoi       @relation(fields: [idCauHoi], references: [idCauHoi], onDelete: Cascade)
+  question         Question       @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
   userAnswers    UserAnswer[]
 }
 
 model Answer {
   idAnswer       String   @id @default(uuid())
-  idCauHoi       String
+  idQuestion       String
   idOption       String?
   answer_text    String?
   matching_key   String?
   matching_value String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  cauHoi         CauHoi   @relation(fields: [idCauHoi], references: [idCauHoi], onDelete: Cascade)
+  question         Question   @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
   option         Option?  @relation(fields: [idOption], references: [idOption], onDelete: Cascade)
 }
 
 model UserAnswer {
-  idBaiLam       String         @id @default(uuid())
-  idCauHoi       String
+  idUserAnswer       String         @id @default(uuid())
+  idQuestion       String
   idUser         String
   idOption       String?
   answerText     String?
@@ -218,38 +218,37 @@ model UserAnswer {
   matching_key   String?
   matching_value String?
   userAnswerType QuestionType
-  cauHoi         CauHoi         @relation(fields: [idCauHoi], references: [idCauHoi], onDelete: Cascade)
+  question         Question         @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
   option         Option?        @relation(fields: [idOption], references: [idOption], onDelete: Cascade)
   testResult     UserTestResult @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
   user           User           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
-  @@unique([idCauHoi, idUser, idTestResult])
+  @@unique([idQuestion, idUser, idTestResult])
 }
 
 model WritingTask {
   idWritingTask          String                  @id @default(uuid())
-  idDe                   String
-  prompt                 String
+  idTest                   String
+  title                 String
   time_limit             Int
-  word_limit             Int
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
   task_type              WritingTaskType
   image                  String?
   userWritingSubmissions UserWritingSubmission[]
-  de                     De                      @relation(fields: [idDe], references: [idDe], onDelete: Cascade)
+  test                     Test                      @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
 }
 
 model UserWritingSubmission {
-  idWritingSubmission String  @id @default(uuid())
-  idUser              String
-  idWritingTask       String
-  submission_text     String
-  submitted_at        DateTime      @default(now())
-  status              WritingStatus @default(SUBMITTED)
+ idWritingSubmission String  @id @default(uuid())
+ idUser String
+ idWritingTask  String
+ submission_text  String
+ submitted_at DateTime @default(now())
+ status WritingStatus @default(SUBMITTED)
 
-  user                User          @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  writingTask         WritingTask   @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
+ user User @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+ writingTask  WritingTask  @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
   
   feedback          Feedback[]
 }
@@ -374,7 +373,7 @@ enum TestStatus {
   CANCELLED
 }
 
-enum loaiTuVung {
+enum VocabType {
   NOUN
   VERB
   ADJECTIVE
@@ -386,7 +385,7 @@ enum loaiTuVung {
   INTERJECTION
 }
 
-enum loaiDe {
+enum TestType {
   LISTENING
   READING
   WRITING
@@ -464,17 +463,17 @@ model GrammarsOnCategories {
 
 model SpeakingTask {
   idSpeakingTask String  @id @default(uuid())
-  idDe           String
+  idTest           String
   title          String // Ví dụ: "Speaking Test 1 - Topic: Travel"
   audioPromptUrl String? // Có thể là file audio của giám khảo
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  de            De                     @relation(fields: [idDe], references: [idDe], onDelete: Cascade)
+  test            Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
   questions     SpeakingQuestion[]     // Các câu hỏi cho Part 1, 2, 3
   userSubmissions UserSpeakingSubmission[] // Các bài nộp của user
 
-  @@unique([idDe]) // Đảm bảo mỗi 'De' (loại SPEAKING) chỉ có 1 SpeakingTask
+  @@unique([idTest]) // Đảm bảo mỗi 'De' (loại SPEAKING) chỉ có 1 SpeakingTask
 }
 
 model SpeakingQuestion {

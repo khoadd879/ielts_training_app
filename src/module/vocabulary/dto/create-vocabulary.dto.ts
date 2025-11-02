@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Level, loaiTuVung } from '@prisma/client';
+import { Level, VocabType } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateVocabularyDto {
@@ -33,8 +33,8 @@ export class CreateVocabularyDto {
   @IsOptional()
   example: string;
 
-  @ApiProperty({ example: 'NOUN', enum: loaiTuVung })
+  @ApiProperty({ example: 'NOUN', enum: VocabType })
   @IsNotEmpty({ message: 'Vocabulary type should not be empty' })
-  @IsEnum(loaiTuVung, { message: 'Invalid vocabulary type' })
-  loaiTuVung: loaiTuVung;
+  @IsEnum(VocabType, { message: 'Invalid vocabulary type' })
+  VocabType: VocabType;
 }

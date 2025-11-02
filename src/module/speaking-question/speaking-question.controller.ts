@@ -31,14 +31,17 @@ export class SpeakingQuestionController {
 
   @Patch('update-speaking-question/:idSpeakingQuestion')
   update(
-    @Param('idSpeakingQuestion') id: string,
+    @Param('idSpeakingQuestion') idSpeakingQuestion: string,
     @Body() updateSpeakingQuestionDto: UpdateSpeakingQuestionDto,
   ) {
-    return this.speakingQuestionService.update(id, updateSpeakingQuestionDto);
+    return this.speakingQuestionService.update(
+      idSpeakingQuestion,
+      updateSpeakingQuestionDto,
+    );
   }
 
   @Delete('remove-speaking-question/:idSpeakingQuestion')
-  remove(@Param('idSpeakingQuestion') id: string) {
-    return this.speakingQuestionService.remove(id);
+  remove(@Param('idSpeakingQuestion') idSpeakingQuestion: string) {
+    return this.speakingQuestionService.remove(idSpeakingQuestion);
   }
 }

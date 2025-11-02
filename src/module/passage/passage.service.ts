@@ -38,7 +38,7 @@ export class PassageService {
     if (Number.isNaN(numParagraph))
       throw new BadRequestException('numberParagraph must be an integer');
 
-    const data = await this.databaseService.doanVan.create({
+    const data = await this.databaseService.passage.create({
       data: {
         idPart,
         title,
@@ -62,7 +62,7 @@ export class PassageService {
 
     if (!existingPart) throw new BadRequestException('Part not found');
 
-    const data = await this.databaseService.doanVan.findMany({
+    const data = await this.databaseService.passage.findMany({
       where: {
         idPart,
       },
@@ -77,8 +77,8 @@ export class PassageService {
   }
 
   async findById(idPassage: string) {
-    const existingPassage = await this.databaseService.doanVan.findUnique({
-      where: { idDoanVan: idPassage },
+    const existingPassage = await this.databaseService.passage.findUnique({
+      where: { idPassage },
     });
 
     if (!existingPassage) throw new BadRequestException('Passage not found');
@@ -104,8 +104,8 @@ export class PassageService {
 
     if (!existingPart) throw new BadRequestException('Part not found');
 
-    const existingPassage = await this.databaseService.doanVan.findUnique({
-      where: { idDoanVan: idPassage },
+    const existingPassage = await this.databaseService.passage.findUnique({
+      where: { idPassage },
     });
 
     if (!existingPassage) throw new BadRequestException('Passage not found');
@@ -125,9 +125,9 @@ export class PassageService {
     if (Number.isNaN(numParagraph))
       throw new BadRequestException('numberParagraph must be an integer');
 
-    const data = await this.databaseService.doanVan.update({
+    const data = await this.databaseService.passage.update({
       where: {
-        idDoanVan: idPassage,
+        idPassage,
       },
       data: {
         idPart,
@@ -146,15 +146,15 @@ export class PassageService {
   }
 
   async removePassage(idPassage: string) {
-    const existingPassage = await this.databaseService.doanVan.findUnique({
-      where: { idDoanVan: idPassage },
+    const existingPassage = await this.databaseService.passage.findUnique({
+      where: { idPassage },
     });
 
     if (!existingPassage) throw new BadRequestException('Passage not found');
 
-    await this.databaseService.doanVan.delete({
+    await this.databaseService.passage.delete({
       where: {
-        idDoanVan: idPassage,
+        idPassage,
       },
     });
 

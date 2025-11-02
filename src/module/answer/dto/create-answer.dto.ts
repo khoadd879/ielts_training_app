@@ -4,7 +4,7 @@ import { IsNotEmpty, IsOptional } from 'class-validator';
 export class CreateAnswerDto {
   @IsNotEmpty()
   @ApiProperty({ example: '123' })
-  idCauHoi: string;
+  idQuestion: string;
 
   @IsOptional()
   @ApiProperty({ example: '123' })

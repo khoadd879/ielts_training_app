@@ -64,7 +64,7 @@ export class TopicService {
         idUser: idUser,
       },
       include: {
-        tuVungs: true,
+        vocabulary: true,
       },
     });
 
@@ -126,7 +126,7 @@ export class TopicService {
     if (!existingTopic) {
       throw new BadRequestException('Topic not found');
     }
-    const data = await this.databaseService.tuVung.findMany({
+    const data = await this.databaseService.vocabulary.findMany({
       where: { idTopic },
     });
     return {

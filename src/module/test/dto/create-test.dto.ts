@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Level, loaiDe } from '@prisma/client';
+import { Level, TestType } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateTestDto {
@@ -11,10 +11,10 @@ export class CreateTestDto {
   @IsNotEmpty({ message: 'Title cannot be empty' })
   title: string;
 
-  @ApiProperty({ example: 'LISTENING', enum: loaiDe })
-  @IsEnum(loaiDe)
+  @ApiProperty({ example: 'LISTENING', enum: TestType })
+  @IsEnum(TestType)
   @IsNotEmpty({ message: 'Test type is required' })
-  loaiDe: loaiDe;
+  testType: TestType;
 
   @ApiProperty({ example: 'This is a test description' })
   @IsOptional()

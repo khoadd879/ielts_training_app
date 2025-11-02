@@ -13,11 +13,11 @@ export class GroupOfQuestionsService {
   async createGroupOfQuestions(
     createGroupOfQuestionDto: CreateGroupOfQuestionDto,
   ) {
-    const { idDe, idPart, typeQuestion, title, startingOrder, endingOrder } =
+    const { idTest, idPart, typeQuestion, title, startingOrder, endingOrder } =
       createGroupOfQuestionDto;
-    const existingDe = await this.databaseService.de.findUnique({
+    const existingDe = await this.databaseService.test.findUnique({
       where: {
-        idDe,
+        idTest,
       },
     });
 
@@ -35,13 +35,12 @@ export class GroupOfQuestionsService {
         'startingOrder must be less than or equal to endingOrder',
       );
 
-    const previousEndingOrder = await this.databaseService.nhomCauHoi.findFirst(
-      {
+    const previousEndingOrder =
+      await this.databaseService.groupOfQuestions.findFirst({
         where: { idPart },
         orderBy: { endingOrder: 'desc' },
         take: 1,
-      },
-    );
+      });
 
     if (
       previousEndingOrder &&
@@ -67,9 +66,9 @@ export class GroupOfQuestionsService {
       );
     }
 
-    const data = await this.databaseService.nhomCauHoi.create({
+    const data = await this.databaseService.groupOfQuestions.create({
       data: {
-        idDe,
+        idTest,
         idPart,
         typeQuestion,
         title,
@@ -91,7 +90,7 @@ export class GroupOfQuestionsService {
         idPart,
       },
       include: {
-        nhomCauHois: true,
+        groupOfQuestions: true,
       },
     });
 
@@ -107,12 +106,12 @@ export class GroupOfQuestionsService {
   }
 
   async findById(idGroupOfQuestions: string) {
-    const data = await this.databaseService.nhomCauHoi.findMany({
+    const data = await this.databaseService.groupOfQuestions.findMany({
       where: {
-        idNhomCauHoi: idGroupOfQuestions,
+        idGroupOfQuestions: idGroupOfQuestions,
       },
       include: {
-        cauHois: true,
+        question: true,
       },
     });
 
@@ -124,14 +123,14 @@ export class GroupOfQuestionsService {
   }
 
   async updateGroupOfQuestion(
-    id: string,
+    idGroupOfQuestions: string,
     updateGroupOfQuestionDto: UpdateGroupOfQuestionDto,
   ) {
-    const { idDe, idPart, typeQuestion, title, startingOrder, endingOrder } =
+    const { idTest, idPart, typeQuestion, title, startingOrder, endingOrder } =
       updateGroupOfQuestionDto;
-    const existingDe = await this.databaseService.de.findUnique({
+    const existingDe = await this.databaseService.test.findUnique({
       where: {
-        idDe,
+        idTest,
       },
     });
 
@@ -149,11 +148,11 @@ export class GroupOfQuestionsService {
         'startingOrder must be less than or equal to endingOrder',
       );
 
-    const overlapping = await this.databaseService.nhomCauHoi.findFirst({
+    const overlapping = await this.databaseService.groupOfQuestions.findFirst({
       where: {
         idPart,
         //lọc ra phần không phải id của nhóm câu hỏi đang update
-        NOT: { idNhomCauHoi: id },
+        NOT: { idGroupOfQuestions },
         AND: [
           //startingOrder <= other.endingOrder
           { startingOrder: { lte: endingOrder } },
@@ -165,16 +164,16 @@ export class GroupOfQuestionsService {
 
     if (overlapping) {
       throw new BadRequestException(
-        `Order range overlaps with existing group (id: ${overlapping.idNhomCauHoi}, ${overlapping.startingOrder}-${overlapping.endingOrder})`,
+        `Order range overlaps with existing group (id: ${overlapping.idGroupOfQuestions}, ${overlapping.startingOrder}-${overlapping.endingOrder})`,
       );
     }
 
-    const data = await this.databaseService.nhomCauHoi.update({
+    const data = await this.databaseService.groupOfQuestions.update({
       where: {
-        idNhomCauHoi: id,
+        idGroupOfQuestions,
       },
       data: {
-        idDe,
+        idTest,
         idPart,
         typeQuestion,
         title,
@@ -190,11 +189,11 @@ export class GroupOfQuestionsService {
     };
   }
 
-  async removeGroupOfQuestions(id: string) {
+  async removeGroupOfQuestions(idGroupOfQuestions: string) {
     const existingGroupOfQuestions =
-      await this.databaseService.nhomCauHoi.findUnique({
+      await this.databaseService.groupOfQuestions.findUnique({
         where: {
-          idNhomCauHoi: id,
+          idGroupOfQuestions,
         },
       });
 
@@ -202,12 +201,14 @@ export class GroupOfQuestionsService {
       throw new BadGatewayException('Group of question not found');
 
     await this.databaseService.$transaction([
-      this.databaseService.cauHoi.deleteMany({
+      this.databaseService.question.deleteMany({
         where: {
-          idNhomCauHoi: id,
+          idGroupOfQuestions,
         },
       }),
-      this.databaseService.nhomCauHoi.delete({ where: { idNhomCauHoi: id } }),
+      this.databaseService.groupOfQuestions.delete({
+        where: { idGroupOfQuestions },
+      }),
     ]);
 
     return {

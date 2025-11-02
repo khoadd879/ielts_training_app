@@ -10,5 +10,5 @@ export class AddPartToTest {
   @ApiProperty({ example: '123' })
   @IsNotEmpty({ message: 'idDe must not be empty' })
   @IsString()
-  idDe: string;
+  idTest: string;
 }

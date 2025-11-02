@@ -23,7 +23,7 @@ export class TestService {
   ) {
     const {
       idUser,
-      loaiDe,
+      testType,
       title,
       description,
       duration,
@@ -57,7 +57,7 @@ export class TestService {
       );
     }
 
-    if (audioFile && loaiDe === 'LISTENING') {
+    if (audioFile && testType === 'LISTENING') {
       uploadTasks.push(
         this.cloudinaryService
           .uploadFile(audioFile, 'test-audio', 'audio')
@@ -73,10 +73,10 @@ export class TestService {
     }
 
     // Tạo test trong DB
-    const data = await this.databaseService.de.create({
+    const data = await this.databaseService.test.create({
       data: {
         idUser,
-        loaiDe,
+        testType,
         title,
         description,
         level,
@@ -118,35 +118,9 @@ export class TestService {
       };
     }
 
-    const data = await this.databaseService.de.findMany({ where: { idUser } });
-    await this.cache.set(cacheKey, data, 300); // cache 5 phút
-    return {
-      message: 'Tests retrieved successfully',
-      data,
-      status: 200,
-    };
-  }
-
-  async findByName(tieuDe: string) {
-    const cacheKey = `tests_name_${tieuDe}`;
-    const cached = await this.cache.get(cacheKey);
-    if (cached) {
-      return {
-        message: 'Tests retrieved successfully (from cache)',
-        data: cached,
-        status: 200,
-      };
-    }
-
-    const data = await this.databaseService.de.findMany({
-      where: {
-        title: {
-          contains: tieuDe,
-          mode: 'insensitive',
-        },
-      },
+    const data = await this.databaseService.test.findMany({
+      where: { idUser },
     });
-
     await this.cache.set(cacheKey, data, 300); // cache 5 phút
     return {
       message: 'Tests retrieved successfully',
@@ -166,7 +140,7 @@ export class TestService {
       };
     }
 
-    const data = await this.databaseService.de.findMany();
+    const data = await this.databaseService.test.findMany();
 
     await this.cache.set(cacheKey, data, 300); // cache 5 phút
     return {
@@ -177,14 +151,14 @@ export class TestService {
   }
 
   async update(
-    idDe: string,
+    idTest: string,
     updateTestDto: UpdateTestDto,
     file?: Express.Multer.File,
     audioFile?: Express.Multer.File,
   ) {
     const {
       idUser,
-      loaiDe,
+      testType,
       title,
       description,
       duration,
@@ -214,7 +188,7 @@ export class TestService {
       imageUrl = uploadResult.secure_url;
     }
 
-    if (audioFile && loaiDe === 'LISTENING') {
+    if (audioFile && testType === 'LISTENING') {
       const uploadResult = await this.cloudinaryService.uploadFile(
         audioFile,
         'test-audio',
@@ -222,11 +196,11 @@ export class TestService {
       audio = uploadResult.secure_url;
     }
 
-    const data = await this.databaseService.de.update({
-      where: { idDe },
+    const data = await this.databaseService.test.update({
+      where: { idTest },
       data: {
         idUser,
-        loaiDe,
+        testType,
         title,
         description,
         level,
@@ -239,7 +213,7 @@ export class TestService {
 
     // Xóa cache liên quan
     await this.cache.del(`tests_user_${idUser}`);
-    await this.cache.del(`test_${idDe}`);
+    await this.cache.del(`test_${idTest}`);
     await this.cache.del('tests_all');
 
     return {
@@ -249,9 +223,9 @@ export class TestService {
     };
   }
 
-  async remove(idDe: string) {
-    const existingTest = await this.databaseService.de.findUnique({
-      where: { idDe },
+  async remove(idTest: string) {
+    const existingTest = await this.databaseService.test.findUnique({
+      where: { idTest },
     });
     if (!existingTest) {
       throw new BadRequestException('Test not found');
@@ -260,22 +234,22 @@ export class TestService {
     await this.databaseService.$transaction([
       this.databaseService.part.deleteMany({
         where: {
-          idDe,
+          idTest,
         },
       }),
-      this.databaseService.de.delete({ where: { idDe } }),
+      this.databaseService.test.delete({ where: { idTest } }),
     ]);
 
     // Xóa cache liên quan
     await this.cache.del(`tests_user_${existingTest.idUser}`);
-    await this.cache.del(`test_${idDe}`);
+    await this.cache.del(`test_${idTest}`);
     await this.cache.del('tests_all');
 
     return { message: 'Test deleted successfully', status: 200 };
   }
 
-  async getPartInTest(idDe: string) {
-    const cacheKey = `test_${idDe}_parts`;
+  async getPartInTest(idTest: string) {
+    const cacheKey = `test_${idTest}_parts`;
     const cached = await this.cache.get(cacheKey);
     if (cached) {
       return {
@@ -285,15 +259,15 @@ export class TestService {
       };
     }
 
-    const existingTest = await this.databaseService.de.findUnique({
-      where: { idDe },
+    const existingTest = await this.databaseService.test.findUnique({
+      where: { idTest },
     });
     if (!existingTest) {
       throw new BadRequestException('Test not found');
     }
 
-    const data = await this.databaseService.de.findMany({
-      where: { idDe },
+    const data = await this.databaseService.test.findMany({
+      where: { idTest },
       include: { parts: true },
     });
 

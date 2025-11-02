@@ -32,8 +32,8 @@ export class GroupOfQuestionsController {
   }
 
   @Get('get-by-id/:idGroupOfQuestions')
-  findById(@Param('idGroupOfQuestions') id: string) {
-    return this.groupOfQuestionsService.findById(id);
+  findById(@Param('idGroupOfQuestions') idGroupOfQuestions: string) {
+    return this.groupOfQuestionsService.findById(idGroupOfQuestions);
   }
 
   @Patch('update-group-of-questions/:idGroupOfQuestions')

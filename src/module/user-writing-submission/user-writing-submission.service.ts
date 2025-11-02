@@ -59,7 +59,7 @@ export class UserWritingSubmissionService {
     // Gọi AI chấm điểm
     const aiResult = await this.evaluateWriting(
       submission_text,
-      writingTask.prompt,
+      writingTask.title,
     );
 
     const data = await this.databaseService.$transaction(async (tx) => {
@@ -92,20 +92,20 @@ export class UserWritingSubmissionService {
         idWritingTask,
       },
       include: {
-        de: true,
+        test: true,
       },
     });
 
-    if (!idTest?.de?.idDe) {
+    if (!idTest?.test?.idTest) {
       throw new BadRequestException('Invalid test or missing "de" reference');
     }
 
     await this.databaseService.userTestResult.create({
       data: {
         idUser,
-        idDe: idTest.de.idDe,
+        idTest: idTest.test.idTest,
         band_score: aiResult.score,
-        level: idTest.de.level,
+        level: idTest.test.level,
         status: 'FINISHED',
       },
     });
@@ -228,7 +228,7 @@ export class UserWritingSubmissionService {
     if (updateDto.status === 'GRADED') {
       const aiResult = await this.evaluateWriting(
         submission.submission_text,
-        submission.writingTask.prompt,
+        submission.writingTask.title,
       );
 
       const updatedFeedback = await this.databaseService.feedback.create({

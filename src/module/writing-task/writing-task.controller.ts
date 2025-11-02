@@ -27,12 +27,11 @@ export class WritingTaskController {
     schema: {
       type: 'object',
       properties: {
-        idDe: { type: 'string', example: '123' },
+        idTest: { type: 'string', example: '123' },
         task_type: { type: 'string', example: 'TASK1' },
         prompt: { type: 'string', example: 'prompt' },
         image: { type: 'string', format: 'binary' },
         time_limit: { type: 'number', example: 60 },
-        word_limit: { type: 'number', example: 300 },
       },
     },
   })
@@ -57,13 +56,29 @@ export class WritingTaskController {
   }
 
   @Patch('update-writing-task/:idWritingTask')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        idTest: { type: 'string', example: '123' },
+        task_type: { type: 'string', example: 'TASK1' },
+        prompt: { type: 'string', example: 'prompt' },
+        image: { type: 'string', format: 'binary' },
+        time_limit: { type: 'number', example: 60 },
+      },
+    },
+  })
   update(
     @Param('idWritingTask') idWritingTask: string,
     @Body() updateWritingTaskDto: UpdateWritingTaskDto,
+    @UploadedFile() image?: Express.Multer.File,
   ) {
     return this.writingTaskService.updateWritingTask(
       idWritingTask,
       updateWritingTaskDto,
+      image,
     );
   }
 

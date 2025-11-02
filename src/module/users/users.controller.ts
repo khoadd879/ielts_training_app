@@ -52,12 +52,12 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Get('get-one/:id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  @Get('get-one/:idUser')
+  findOne(@Param('idUser') idUser: string) {
+    return this.usersService.findOne(idUser);
   }
 
-  @Patch(':id')
+  @Patch('update-user/:idUser')
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -77,15 +77,15 @@ export class UsersController {
     },
   })
   async update(
-    @Param('id') id: string,
+    @Param('idUser') idUser: string,
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    return this.usersService.update(id, updateUserDto, file);
+    return this.usersService.update(idUser, updateUserDto, file);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  @Delete('delete-user/:idUser')
+  remove(@Param('idUser') idUser: string) {
+    return this.usersService.remove(idUser);
   }
 }

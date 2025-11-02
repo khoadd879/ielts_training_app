@@ -22,9 +22,9 @@ export class AnswerController {
     return this.answerService.createAnswer(createAnswerDto);
   }
 
-  @Get('get-by-id-question/:idCauhoi')
-  findByIdQuestion(@Param('idCauhoi') idCauhoi: string) {
-    return this.answerService.findByIdQuestion(idCauhoi);
+  @Get('get-by-id-question/:idQuestion')
+  findByIdQuestion(@Param('idQuestion') idQuestion: string) {
+    return this.answerService.findByIdQuestion(idQuestion);
   }
 
   @Get('get-by-id-answer/:idAnswer')

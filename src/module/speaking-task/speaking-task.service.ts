@@ -15,11 +15,11 @@ export class SpeakingTaskService {
     createSpeakingTaskDto: CreateSpeakingTaskDto,
     file?: Express.Multer.File,
   ) {
-    const { idDe, title, audioPromptUrl } = createSpeakingTaskDto;
+    const { idTest, title, audioPromptUrl } = createSpeakingTaskDto;
 
-    const existingTest = await this.databaseService.de.findUnique({
+    const existingTest = await this.databaseService.test.findUnique({
       where: {
-        idDe,
+        idTest,
       },
     });
 
@@ -32,7 +32,7 @@ export class SpeakingTaskService {
 
     const data = await this.databaseService.speakingTask.create({
       data: {
-        idDe,
+        idTest,
         title,
         audioPromptUrl: createSpeakingTaskDto.audioPromptUrl ?? null,
       },
@@ -60,11 +60,11 @@ export class SpeakingTaskService {
     updateSpeakingTaskDto: UpdateSpeakingTaskDto,
     file?: Express.Multer.File,
   ) {
-    const { idDe, title, audioPromptUrl } = updateSpeakingTaskDto;
+    const { idTest, title, audioPromptUrl } = updateSpeakingTaskDto;
 
-    const existingTest = await this.databaseService.de.findUnique({
+    const existingTest = await this.databaseService.test.findUnique({
       where: {
-        idDe,
+        idTest,
       },
     });
 
@@ -90,7 +90,7 @@ export class SpeakingTaskService {
         idSpeakingTask,
       },
       data: {
-        idDe,
+        idTest,
         title,
         audioPromptUrl:
           updateSpeakingTaskDto.audioPromptUrl ??

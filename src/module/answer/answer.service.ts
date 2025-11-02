@@ -8,11 +8,11 @@ import { timeStamp } from 'console';
 export class AnswerService {
   constructor(private readonly databaseService: DatabaseService) {}
   async createAnswer(createAnswerDto: CreateAnswerDto) {
-    const { idCauHoi, idOption, answer_text, matching_key, matching_value } =
+    const { idQuestion, idOption, answer_text, matching_key, matching_value } =
       createAnswerDto;
-    const existingQuestion = await this.databaseService.cauHoi.findUnique({
+    const existingQuestion = await this.databaseService.question.findUnique({
       where: {
-        idCauHoi,
+        idQuestion,
       },
     });
 
@@ -20,7 +20,7 @@ export class AnswerService {
 
     const data = await this.databaseService.answer.create({
       data: {
-        idCauHoi,
+        idQuestion,
         idOption: idOption ? idOption : null,
         answer_text: answer_text ? answer_text : null,
         matching_key: matching_key ? matching_key : null,
@@ -36,9 +36,9 @@ export class AnswerService {
   }
 
   async findByIdQuestion(idQuestion: string) {
-    const existingQuestion = await this.databaseService.cauHoi.findUnique({
+    const existingQuestion = await this.databaseService.question.findUnique({
       where: {
-        idCauHoi: idQuestion,
+        idQuestion,
       },
     });
 
@@ -46,7 +46,7 @@ export class AnswerService {
 
     const data = await this.databaseService.answer.findMany({
       where: {
-        idCauHoi: idQuestion,
+        idQuestion,
       },
     });
 
@@ -72,11 +72,11 @@ export class AnswerService {
   }
 
   async updateAnswer(idAnswer: string, updateAnswerDto: UpdateAnswerDto) {
-    const { idCauHoi, idOption, answer_text, matching_key, matching_value } =
+    const { idQuestion, idOption, answer_text, matching_key, matching_value } =
       updateAnswerDto;
-    const existingQuestion = await this.databaseService.cauHoi.findUnique({
+    const existingQuestion = await this.databaseService.question.findUnique({
       where: {
-        idCauHoi,
+        idQuestion,
       },
     });
 
@@ -97,7 +97,7 @@ export class AnswerService {
         idAnswer,
       },
       data: {
-        idCauHoi,
+        idQuestion,
         idOption: idOption ? idOption : null,
         answer_text: answer_text ? answer_text : null,
         matching_key: matching_key ? matching_key : null,

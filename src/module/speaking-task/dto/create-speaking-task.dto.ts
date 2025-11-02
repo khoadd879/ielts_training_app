@@ -2,7 +2,7 @@ import { IsNotEmpty } from 'class-validator';
 
 export class CreateSpeakingTaskDto {
   @IsNotEmpty()
-  idDe: string;
+  idTest: string;
 
   @IsNotEmpty()
   title: string;

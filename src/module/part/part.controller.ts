@@ -23,8 +23,8 @@ export class PartController {
   }
 
   @Get('get-all-part-by-idTest/:idTest')
-  findAll(@Param('idTest') id: string) {
-    return this.partService.findAll(id);
+  findAll(@Param('idTest') idPart: string) {
+    return this.partService.findAll(idPart);
   }
 
   @Get('get-one/:idPart')
@@ -33,12 +33,15 @@ export class PartController {
   }
 
   @Patch('update/:idPart')
-  update(@Param('idPart') id: string, @Body() updatePartDto: UpdatePartDto) {
-    return this.partService.update(id, updatePartDto);
+  update(
+    @Param('idPart') idPart: string,
+    @Body() updatePartDto: UpdatePartDto,
+  ) {
+    return this.partService.update(idPart, updatePartDto);
   }
 
   @Delete('delete/:idPart')
-  remove(@Param('idPart') id: string) {
-    return this.partService.remove(id);
+  remove(@Param('idPart') idPart: string) {
+    return this.partService.remove(idPart);
   }
 }

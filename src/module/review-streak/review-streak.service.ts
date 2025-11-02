@@ -20,8 +20,8 @@ export class ReviewStreakService {
         // Xử lý từng câu trả lời trong mảng
         for (const answer of answers) {
           // Lấy thông tin hiện tại của từ vựng
-          const tuVung = await prisma.tuVung.findUnique({
-            where: { idTuVung: answer.idTuVung, idUser: idUser }, // Đảm bảo từ vựng thuộc về user
+          const tuVung = await prisma.vocabulary.findUnique({
+            where: { idVocab: answer.idTuVung, idUser: idUser }, // Đảm bảo từ vựng thuộc về user
           });
 
           if (!tuVung) {
@@ -39,8 +39,8 @@ export class ReviewStreakService {
           const xpGained = answer.isCorrect ? xpPerCorrectAnswer : 0;
 
           // Cập nhật lại từ vựng trong database
-          await prisma.tuVung.update({
-            where: { idTuVung: answer.idTuVung },
+          await prisma.vocabulary.update({
+            where: { idVocab: answer.idTuVung },
             data: {
               lastReviewed: new Date(),
               correctStreak: newCorrectStreak,

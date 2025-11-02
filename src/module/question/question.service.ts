@@ -12,9 +12,9 @@ export class QuestionService {
       createQuestionDto;
 
     const existingGroupOfQuestions =
-      await this.databaseService.nhomCauHoi.findUnique({
+      await this.databaseService.groupOfQuestions.findUnique({
         where: {
-          idNhomCauHoi: idGroupOfQuestions,
+          idGroupOfQuestions,
         },
       });
 
@@ -29,9 +29,9 @@ export class QuestionService {
 
     if (!existingPart) return new BadRequestException('Part not found');
 
-    const data = await this.databaseService.cauHoi.create({
+    const data = await this.databaseService.question.create({
       data: {
-        idNhomCauHoi: idGroupOfQuestions,
+        idGroupOfQuestions,
         idPart,
         numberQuestion,
         content,
@@ -47,18 +47,18 @@ export class QuestionService {
 
   async findByIdGroupOfQuestion(idGroupOfQuestions: string) {
     const existingGroupOfQuestions =
-      await this.databaseService.nhomCauHoi.findUnique({
+      await this.databaseService.groupOfQuestions.findUnique({
         where: {
-          idNhomCauHoi: idGroupOfQuestions,
+          idGroupOfQuestions,
         },
       });
 
     if (!existingGroupOfQuestions)
       throw new BadRequestException('Group of questions not found');
 
-    const data = await this.databaseService.cauHoi.findMany({
+    const data = await this.databaseService.question.findMany({
       where: {
-        idNhomCauHoi: idGroupOfQuestions,
+        idGroupOfQuestions,
       },
       orderBy: {
         numberQuestion: 'asc',
@@ -73,9 +73,9 @@ export class QuestionService {
   }
 
   async findById(idQuestion: string) {
-    const data = await this.databaseService.cauHoi.findUnique({
+    const data = await this.databaseService.question.findUnique({
       where: {
-        idCauHoi: idQuestion,
+        idQuestion,
       },
     });
 
@@ -94,9 +94,9 @@ export class QuestionService {
       updateQuestionDto;
 
     const existingGroupOfQuestions =
-      await this.databaseService.nhomCauHoi.findUnique({
+      await this.databaseService.groupOfQuestions.findUnique({
         where: {
-          idNhomCauHoi: idGroupOfQuestions,
+          idGroupOfQuestions,
         },
       });
 
@@ -111,12 +111,12 @@ export class QuestionService {
 
     if (!existingPart) return new BadRequestException('Part not found');
 
-    const data = await this.databaseService.cauHoi.update({
+    const data = await this.databaseService.question.update({
       where: {
-        idCauHoi: idQuestion,
+        idQuestion,
       },
       data: {
-        idNhomCauHoi: idGroupOfQuestions,
+        idGroupOfQuestions,
         idPart,
         numberQuestion,
         content,
@@ -131,9 +131,9 @@ export class QuestionService {
   }
 
   async removeQuestion(idQuestion: string) {
-    const existingQuestion = await this.databaseService.cauHoi.findUnique({
+    const existingQuestion = await this.databaseService.question.findUnique({
       where: {
-        idCauHoi: idQuestion,
+        idQuestion,
       },
     });
 
@@ -143,10 +143,10 @@ export class QuestionService {
       await this.databaseService.$transaction([
         this.databaseService.option.deleteMany({
           where: {
-            idCauHoi: idQuestion,
+            idQuestion,
           },
         }),
-        this.databaseService.cauHoi.delete({ where: { idCauHoi: idQuestion } }),
+        this.databaseService.question.delete({ where: { idQuestion } }),
       ]);
     }
     return {

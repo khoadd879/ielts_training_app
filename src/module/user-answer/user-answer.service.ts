@@ -8,7 +8,7 @@ export class UserAnswerService {
 
   async UpsertCreateUserAnswer(createUserAnswerDto: CreateUserAnswerDto) {
     const {
-      idCauHoi,
+      idQuestion,
       idUser,
       idOption,
       answerText,
@@ -17,9 +17,9 @@ export class UserAnswerService {
       matching_value,
       idTestResult,
     } = createUserAnswerDto;
-    const existingQuestion = await this.databaseService.cauHoi.findUnique({
+    const existingQuestion = await this.databaseService.question.findUnique({
       where: {
-        idCauHoi,
+        idQuestion,
       },
     });
 
@@ -42,8 +42,8 @@ export class UserAnswerService {
 
     const data = await this.databaseService.userAnswer.upsert({
       where: {
-        idCauHoi_idUser_idTestResult: {
-          idCauHoi,
+        idQuestion_idUser_idTestResult: {
+          idQuestion,
           idUser,
           idTestResult: idTestResult,
         },
@@ -66,7 +66,7 @@ export class UserAnswerService {
       message: 'User answer upserted successfully',
       status: 200,
       data: {
-        idCauHoi: data.idCauHoi,
+        idCauHoi: data.idQuestion,
         idUser: data.idUser,
         idTestResult: data.idTestResult,
         answerText: data.answerText,

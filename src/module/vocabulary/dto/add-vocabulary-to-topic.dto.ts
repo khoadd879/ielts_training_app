@@ -5,7 +5,7 @@ export class AddVocabularyToTopicDto {
   @ApiProperty({ example: 'tuVung123' })
   @IsString()
   @IsNotEmpty({ message: 'idTuVung must not be empty' })
-  idTuVung: string;
+  idVocab: string;
 
   @ApiProperty({ example: 'topic456' })
   @IsString()

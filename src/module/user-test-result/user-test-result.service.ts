@@ -25,7 +25,7 @@ export class UserTestResultService {
     const data = await this.databaseService.userTestResult.findMany({
       where: { idUser },
       include: {
-        de: true,
+        test: true,
         userAnswer: true,
       },
     });
@@ -81,15 +81,15 @@ export class UserTestResultService {
     if (!existingUser) throw new BadRequestException('User not found');
 
     // Kiểm tra test
-    const existingTest = await this.databaseService.de.findUnique({
-      where: { idDe: idTest },
+    const existingTest = await this.databaseService.test.findUnique({
+      where: { idTest },
     });
     if (!existingTest) throw new BadRequestException('Test not found');
 
     const testResult = await this.databaseService.userTestResult.create({
       data: {
         idUser,
-        idDe: idTest,
+        idTest,
         status: 'IN_PROGRESS',
         startedAt: new Date(),
       },
@@ -126,7 +126,7 @@ export class UserTestResultService {
       },
       include: {
         userAnswer: true, // Lấy kèm các câu trả lời để chấm điểm
-        de: true, // Lấy kèm thông tin đề thi để biết level
+        test: true, // Lấy kèm thông tin đề thi để biết level
       },
     });
 
@@ -143,7 +143,7 @@ export class UserTestResultService {
     }
 
     // 2. Chấm điểm và tính toán kết quả
-    const total_questions = testResult.de.numberQuestion; // Lấy tổng số câu hỏi từ đề
+    const total_questions = testResult.test.numberQuestion; // Lấy tổng số câu hỏi từ đề
     const total_correct = testResult.userAnswer.filter(
       (answer) => answer.isCorrect,
     ).length;
@@ -164,7 +164,7 @@ export class UserTestResultService {
     });
 
     // 4. Tính toán và cập nhật XP (Sử dụng các hàm có sẵn của bạn)
-    const xpGained = this.calculateXp(testResult.de.level, band_score);
+    const xpGained = this.calculateXp(testResult.test.level, band_score);
     await this.updateUserXpAndLevel(idUser, xpGained);
 
     // 5. Cập nhật chuỗi học

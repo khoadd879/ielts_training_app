@@ -5,7 +5,7 @@ import { IsNotEmpty } from 'class-validator';
 export class CreateGroupOfQuestionDto {
   @IsNotEmpty()
   @ApiProperty({ example: '123' })
-  idDe: string;
+  idTest: string;
 
   @ApiProperty({ example: '123' })
   @IsNotEmpty()

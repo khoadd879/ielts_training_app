@@ -14,12 +14,11 @@ export class WritingTaskService {
     createWritingTaskDto: CreateWritingTaskDto,
     file?: Express.Multer.File,
   ) {
-    const { idDe, task_type, prompt, time_limit, word_limit } =
-      createWritingTaskDto;
+    const { idTest, task_type, title, time_limit } = createWritingTaskDto;
 
-    const existingTest = await this.databaseService.de.findUnique({
+    const existingTest = await this.databaseService.test.findUnique({
       where: {
-        idDe,
+        idTest,
       },
     });
 
@@ -34,12 +33,11 @@ export class WritingTaskService {
 
     const data = await this.databaseService.writingTask.create({
       data: {
-        idDe,
+        idTest,
         task_type,
-        prompt,
+        title,
         image: image ?? null,
         time_limit: Number(time_limit),
-        word_limit: Number(word_limit),
       },
     });
 
@@ -79,12 +77,11 @@ export class WritingTaskService {
     updateWritingTaskDto: UpdateWritingTaskDto,
     file?: Express.Multer.File,
   ) {
-    const { idDe, task_type, prompt, time_limit, word_limit } =
-      updateWritingTaskDto;
+    const { idTest, task_type, title, time_limit } = updateWritingTaskDto;
 
-    const existingTest = await this.databaseService.de.findUnique({
+    const existingTest = await this.databaseService.test.findUnique({
       where: {
-        idDe,
+        idTest,
       },
     });
 
@@ -102,12 +99,11 @@ export class WritingTaskService {
         idWritingTask,
       },
       data: {
-        idDe,
+        idTest,
         task_type,
-        prompt,
+        title,
         image: image ?? null,
         time_limit: Number(time_limit),
-        word_limit: Number(word_limit),
       },
     });
 

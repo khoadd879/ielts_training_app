@@ -36,14 +36,14 @@ export class QuestionController {
 
   @Patch('update-question/:idQuestion')
   update(
-    @Param('idQuestion') id: string,
+    @Param('idQuestion') idQuestion: string,
     @Body() updateQuestionDto: UpdateQuestionDto,
   ) {
-    return this.questionService.updateQuestion(id, updateQuestionDto);
+    return this.questionService.updateQuestion(idQuestion, updateQuestionDto);
   }
 
   @Delete('delete-questiong/:idGroupOfQuestions')
-  remove(@Param('idGroupOfQuestions') id: string) {
-    return this.questionService.removeQuestion(id);
+  remove(@Param('idGroupOfQuestions') idGroupOfQuestions: string) {
+    return this.questionService.removeQuestion(idGroupOfQuestions);
   }
 }

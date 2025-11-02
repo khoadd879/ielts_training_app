@@ -38,7 +38,7 @@ export class TestController {
       type: 'object',
       properties: {
         idUser: { type: 'string', example: '123' },
-        loaiDe: { type: 'string', example: 'LISTENING' },
+        testType: { type: 'string', example: 'LISTENING' },
         title: { type: 'string', example: 'Sample Test Title' },
         description: { type: 'string', example: 'This is a test description' },
         duration: { type: 'number', example: 60 },
@@ -62,17 +62,11 @@ export class TestController {
   }
 
   @Get('get-all-by-id-user/:idUser')
-  findAll(@Param('idUser') id: string) {
-    return this.testService.findAllTestCreatedByIdUser(id);
+  findAll(@Param('idUser') idUser: string) {
+    return this.testService.findAllTestCreatedByIdUser(idUser);
   }
 
-  @Get('get-by-name')
-  @ApiQuery({ name: 'tieuDe', required: true, description: 'Tên đề cần tìm' })
-  findByName(@Body('tieuDe') tieuDe: string) {
-    return this.testService.findByName(tieuDe);
-  }
-
-  @Patch('update-test/:idDe')
+  @Patch('update-test/:idTest')
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'img', maxCount: 1 }, // ảnh
@@ -85,7 +79,7 @@ export class TestController {
       type: 'object',
       properties: {
         idUser: { type: 'string', example: '123' },
-        loaiDe: { type: 'string', example: 'LISTENING' },
+        testType: { type: 'string', example: 'LISTENING' },
         title: { type: 'string', example: 'Sample Test Title' },
         description: { type: 'string', example: 'This is a test description' },
         duration: { type: 'number', example: 60 },
@@ -97,32 +91,32 @@ export class TestController {
     },
   })
   update(
-    @Param('idDe') id: string,
+    @Param('idTest') idTest: string,
     @Body() updateTestDto: UpdateTestDto,
     @UploadedFiles()
     files: { img?: Express.Multer.File[]; audioUrl?: Express.Multer.File[] },
   ) {
     return this.testService.update(
-      id,
+      idTest,
       updateTestDto,
       files?.img?.[0],
       files?.audioUrl?.[0],
     );
   }
 
-  @Delete('delete-test/:id')
-  remove(@Param('id') id: string) {
-    return this.testService.remove(id);
-  }
-
-  @Get('get-part-in-test/:idDe')
-  getPartInTest(@Param('idDe') idDe: string) {
-    return this.testService.getPartInTest(idDe);
+  @Get('get-part-in-test/:idTest')
+  getPartInTest(@Param('idTest') idTest: string) {
+    return this.testService.getPartInTest(idTest);
   }
 
   @Get('get-all-test')
   @Public()
   getAllTest() {
     return this.testService.findAll();
+  }
+
+  @Delete('delete-test/:idTest')
+  remove(@Param('idTest') idTest: string) {
+    return this.testService.remove(idTest);
   }
 }

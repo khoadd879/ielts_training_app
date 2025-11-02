@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { GoogleGenAI } from '@google/genai';
 import { ConfigService } from '@nestjs/config';
-import { Level, loaiDe, UserTestResult } from '@prisma/client';
+import { Level, TestType, UserTestResult } from '@prisma/client';
 
 // Hồ sơ năng lực người dùng
 type PerformanceStats = {
@@ -13,14 +13,14 @@ type PerformanceStats = {
 
 //{ READING: { Low: { avgScore: 7.5, count: 2 } } }
 type PerformanceProfile = Partial<
-  Record<loaiDe, Partial<Record<Level, PerformanceStats>>>
+  Record<TestType, Partial<Record<Level, PerformanceStats>>>
 >;
 
 //Kiểu dữ liệu trả về từ hàm getTestHistoryKey
 type TestHistoryResult = (UserTestResult & {
   de: {
     level: Level;
-    loaiDe: loaiDe;
+    TestType: TestType;
   };
 })[];
 
@@ -50,8 +50,8 @@ export class RecommendTestService {
         status: 'FINISHED',
       },
       include: {
-        de: {
-          select: { level: true, loaiDe: true },
+        test: {
+          select: { level: true, testType: true },
         },
       },
     });

@@ -5,7 +5,7 @@ import { IsEnum, IsNotEmpty, IsOptional, ValidateIf } from 'class-validator';
 export class CreateUserAnswerDto {
   @IsNotEmpty()
   @ApiProperty({ example: '123' })
-  idCauHoi: string;
+  idQuestion: string;
 
   @IsNotEmpty()
   @ApiProperty({ example: '123' })

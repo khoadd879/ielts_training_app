@@ -15,18 +15,18 @@ export class OptionService {
       throw new BadRequestException('No options provided');
     }
 
-    const idCauHoi = createOptionsDto[0].idCauHoi;
+    const idQuestion = createOptionsDto[0].idQuestion;
 
     // Check question exists
-    const existingQuestion = await this.databaseService.cauHoi.findUnique({
-      where: { idCauHoi },
+    const existingQuestion = await this.databaseService.question.findUnique({
+      where: { idQuestion },
     });
     if (!existingQuestion) throw new BadRequestException('Question not found');
 
     // Insert all options
     const data = await this.databaseService.option.createMany({
       data: createOptionsDto.map((opt) => ({
-        idCauHoi,
+        idQuestion,
         option_label: opt.option_label,
         option_content: opt.option_content,
       })),
@@ -40,14 +40,14 @@ export class OptionService {
   }
 
   async findAllbyIdQuestion(idQuestion: string) {
-    const existingQuestion = await this.databaseService.cauHoi.findUnique({
-      where: { idCauHoi: idQuestion },
+    const existingQuestion = await this.databaseService.question.findUnique({
+      where: { idQuestion },
     });
     if (!existingQuestion) throw new BadRequestException('Question not found');
 
     const data = await this.databaseService.option.findMany({
       where: {
-        idCauHoi: idQuestion,
+        idQuestion,
       },
     });
 
@@ -59,7 +59,7 @@ export class OptionService {
   }
 
   async updateOption(idOption: string, updateOptionDto: UpdateOptionDto) {
-    const { idCauHoi, option_label, option_content } = updateOptionDto;
+    const { idQuestion, option_label, option_content } = updateOptionDto;
     const existingOption = await this.databaseService.option.findUnique({
       where: {
         idOption,
@@ -73,7 +73,7 @@ export class OptionService {
         idOption,
       },
       data: {
-        idCauHoi,
+        idQuestion,
         option_label,
         option_content,
       },

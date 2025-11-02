@@ -23,7 +23,7 @@ export class StatisticsService {
       select: {
         createdAt: true,
         band_score: true,
-        de: { select: { loaiDe: true } },
+        test: { select: { testType: true } },
       },
     });
 
@@ -44,9 +44,11 @@ export class StatisticsService {
 
       // Nhóm bài làm theo loại đề
       const groupedByType = {
-        READING: dailyTests.filter((test) => test.de.loaiDe === 'READING'),
-        LISTENING: dailyTests.filter((test) => test.de.loaiDe === 'LISTENING'),
-        WRITING: dailyTests.filter((test) => test.de.loaiDe === 'WRITING'),
+        READING: dailyTests.filter((test) => test.test.testType === 'READING'),
+        LISTENING: dailyTests.filter(
+          (test) => test.test.testType === 'LISTENING',
+        ),
+        WRITING: dailyTests.filter((test) => test.test.testType === 'WRITING'),
       };
 
       // Tính điểm trung bình cho từng loại đề

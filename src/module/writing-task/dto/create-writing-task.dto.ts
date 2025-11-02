@@ -5,7 +5,7 @@ import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 export class CreateWritingTaskDto {
   @IsNotEmpty()
   @ApiProperty({ example: '123' })
-  idDe: string;
+  idTest: string;
 
   @IsNotEmpty()
   @IsEnum(WritingTaskType)
@@ -18,15 +18,11 @@ export class CreateWritingTaskDto {
 
   @IsNotEmpty()
   @ApiProperty({ example: 'promt' })
-  prompt: string;
+  title: string;
 
   @IsNotEmpty()
   @ApiProperty({ example: '60' })
   time_limit: number;
-
-  @IsNotEmpty()
-  @ApiProperty({ example: '150' })
-  word_limit: number;
 
   @IsOptional()
   @ApiProperty({ example: 'img', nullable: true })

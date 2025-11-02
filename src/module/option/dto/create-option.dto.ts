@@ -5,7 +5,7 @@ export class CreateOptionDto {
   @IsNotEmpty()
   @IsString()
   @ApiProperty({ example: 'uuid-cau-hoi', description: 'ID câu hỏi' })
-  idCauHoi: string;
+  idQuestion: string;
 
   @IsNotEmpty()
   @IsString()

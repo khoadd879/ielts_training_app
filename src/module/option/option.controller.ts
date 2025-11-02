@@ -37,7 +37,7 @@ export class OptionController {
     return this.optionService.updateOption(idOption, updateOptionDto);
   }
 
-  @Delete('delete-option/:id')
+  @Delete('delete-option/:idQuestion')
   removeOne(@Param('idOption') idOption: string) {
     return this.optionService.removeOption(idOption);
   }

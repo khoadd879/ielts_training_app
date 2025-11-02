@@ -15,10 +15,10 @@ export class PartService {
     private readonly userService: UsersService,
   ) {}
   async create(createPartDto: CreatePartDto) {
-    const { idDe, namePart } = createPartDto;
+    const { idTest, namePart } = createPartDto;
 
-    const existingTest = await this.databaseService.de.findUnique({
-      where: { idDe },
+    const existingTest = await this.databaseService.test.findUnique({
+      where: { idTest },
     });
 
     if (!existingTest) {
@@ -26,7 +26,7 @@ export class PartService {
     }
     const data = await this.databaseService.part.create({
       data: {
-        idDe,
+        idTest,
         namePart,
       },
     });
@@ -38,9 +38,9 @@ export class PartService {
     };
   }
 
-  async findAll(idDe: string) {
-    const existingTest = await this.databaseService.de.findUnique({
-      where: { idDe },
+  async findAll(idTest: string) {
+    const existingTest = await this.databaseService.test.findUnique({
+      where: { idTest },
     });
 
     if (!existingTest) {
@@ -49,7 +49,7 @@ export class PartService {
 
     const data = await this.databaseService.part.findMany({
       where: {
-        idDe,
+        idTest,
       },
     });
 
@@ -68,8 +68,8 @@ export class PartService {
         idPart,
       },
       include: {
-        doanVans: true,
-        nhomCauHois: true,
+        passage: true,
+        groupOfQuestions: true,
       },
     });
 
@@ -83,10 +83,10 @@ export class PartService {
   }
 
   async update(idPart: string, updatePartDto: UpdatePartDto) {
-    const { idDe, namePart } = updatePartDto;
+    const { idTest, namePart } = updatePartDto;
 
-    const existingTest = await this.databaseService.de.findUnique({
-      where: { idDe },
+    const existingTest = await this.databaseService.test.findUnique({
+      where: { idTest },
     });
 
     if (!existingTest) {
@@ -98,7 +98,7 @@ export class PartService {
         idPart,
       },
       include: {
-        doanVans: true,
+        passage: true,
       },
     });
 
@@ -108,7 +108,7 @@ export class PartService {
         idPart,
       },
       data: {
-        idDe,
+        idTest,
         namePart,
       },
     });
@@ -127,7 +127,7 @@ export class PartService {
 
     if (!existingPart) throw new BadRequestException('Part not found');
     await this.databaseService.$transaction([
-      this.databaseService.doanVan.deleteMany({
+      this.databaseService.passage.deleteMany({
         where: {
           idPart,
         },
