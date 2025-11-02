@@ -22,16 +22,14 @@ export class ForumThreadsController {
     return this.forumThreadsService.createForumThread(createForumThreadDto);
   }
 
-  @Get('get-forum-threads-by-idForumCategories/:idForumCategories')
-  findAll(@Param('idForumCategories') idForumCategories: string) {
-    return this.forumThreadsService.findAllByIdForumCategories(
-      idForumCategories,
-    );
+  @Get('get-forum-threads-by-idForumThreads')
+  findAll() {
+    return this.forumThreadsService.findAllForumThreads();
   }
 
-  @Get('get-forum-thread/:idForumCategories')
-  findOne(@Param('idForumCategories') idForumCategories: string) {
-    return this.forumThreadsService.findForumThread(idForumCategories);
+  @Get('get-forumThread/:idForumThreads')
+  findOne(@Param('idForumThreads') idForumThreads: string) {
+    return this.forumThreadsService.findForumThread(idForumThreads);
   }
 
   @Patch('update-forum-thread/:idForumThreads')

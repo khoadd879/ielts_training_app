@@ -156,8 +156,7 @@ model GroupOfQuestions {
   idTest          String
   idPart        String
   title         String
-  startingOrder Int
-  endingOrder   Int
+  quantity Int
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   typeQuestion  QuestionType
@@ -269,25 +268,15 @@ model Feedback {
   submission UserWritingSubmission @relation(fields: [idWritingSubmission], references: [idWritingSubmission], onDelete: Cascade)
 }
 
-model ForumCategories {
-  idForumCategories String         @id @default(uuid())
-  description       String?
-  created_at        DateTime       @default(now())
-  updated_at        DateTime       @updatedAt
-  nameForum         String
-  forumThreads      ForumThreads[]
-}
 
 model ForumThreads {
   idForumThreads    String          @id @default(uuid())
-  idForumCategories String
   idUser            String
   title             String
   content           String
   created_at        DateTime        @default(now())
   updated_at        DateTime        @updatedAt
   forumPost         ForumPost[]
-  forumCategories   ForumCategories @relation(fields: [idForumCategories], references: [idForumCategories], onDelete: Cascade)
   user              User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 }
 

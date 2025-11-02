@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { QuestionType } from '@prisma/client';
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsNumber } from 'class-validator';
 
 export class CreateGroupOfQuestionDto {
   @IsNotEmpty()
@@ -20,10 +20,7 @@ export class CreateGroupOfQuestionDto {
   title: string;
 
   @IsNotEmpty()
+  @IsNumber()
   @ApiProperty({ example: '1' })
-  startingOrder: number;
-
-  @IsNotEmpty()
-  @ApiProperty({ example: '3' })
-  endingOrder: number;
+  quantity: number;
 }

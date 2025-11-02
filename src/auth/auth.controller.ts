@@ -131,10 +131,4 @@ export class AuthController {
   async refreshToken(@Body() body: { token: string }) {
     return this.authService.refreshTokens(body.token);
   }
-
-  @Get('health')
-  @Public()
-  healthCheck() {
-    return { status: 'ok' };
-  }
 }

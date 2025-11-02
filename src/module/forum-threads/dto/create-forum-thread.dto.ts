@@ -4,10 +4,6 @@ import { IsNotEmpty } from 'class-validator';
 export class CreateForumThreadDto {
   @IsNotEmpty()
   @ApiProperty({ example: '123' })
-  idForumCategories: string;
-
-  @IsNotEmpty()
-  @ApiProperty({ example: '123' })
   idUser: string;
 
   @IsNotEmpty()

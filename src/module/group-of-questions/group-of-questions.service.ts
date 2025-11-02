@@ -13,7 +13,7 @@ export class GroupOfQuestionsService {
   async createGroupOfQuestions(
     createGroupOfQuestionDto: CreateGroupOfQuestionDto,
   ) {
-    const { idTest, idPart, typeQuestion, title, startingOrder, endingOrder } =
+    const { idTest, idPart, typeQuestion, title, quantity } =
       createGroupOfQuestionDto;
     const existingDe = await this.databaseService.test.findUnique({
       where: {
@@ -30,41 +30,25 @@ export class GroupOfQuestionsService {
     if (!existingDe) throw new BadRequestException('Test not found');
     if (!existingPart) throw new BadRequestException('Part not found');
 
-    if (startingOrder > endingOrder)
+    // kiểm tra quantity không lớn hơn số câu của test và không quá 40
+    if (quantity > existingDe.numberQuestion)
       throw new BadRequestException(
-        'startingOrder must be less than or equal to endingOrder',
+        'Quantity cant be greater than  numberQuestion test ',
       );
 
-    const previousEndingOrder =
-      await this.databaseService.groupOfQuestions.findFirst({
-        where: { idPart },
-        orderBy: { endingOrder: 'desc' },
-        take: 1,
-      });
+    if (quantity > 40)
+      throw new BadRequestException('The maximum numberQuestion is 40');
 
-    if (
-      previousEndingOrder &&
-      startingOrder <= previousEndingOrder.endingOrder
-    ) {
+    // kiểm tra tổng quantity các nhóm hiện có trong test (đã sử dụng) + quantity mới không vượt quá số câu của test
+    const sumResult = await this.databaseService.groupOfQuestions.aggregate({
+      _sum: { quantity: true },
+      where: { idTest },
+    });
+    const existingTotal = sumResult._sum.quantity ?? 0;
+    if (existingTotal + quantity > existingDe.numberQuestion)
       throw new BadRequestException(
-        `startingOrder must be greater than previous endingOrder (${previousEndingOrder.endingOrder})`,
+        'Sum of questions cant be greater than numberQuestion test',
       );
-    }
-
-    if (
-      previousEndingOrder &&
-      previousEndingOrder.endingOrder == existingDe.numberQuestion
-    ) {
-      throw new BadRequestException(
-        `Can't create more questions because you have reached the limit of questions : (${existingDe.numberQuestion})`,
-      );
-    }
-
-    if (endingOrder >= existingDe.numberQuestion) {
-      throw new BadRequestException(
-        `endingOrder must be smaller or equal to numberQuestion of Test: (${existingDe.numberQuestion})`,
-      );
-    }
 
     const data = await this.databaseService.groupOfQuestions.create({
       data: {
@@ -72,8 +56,7 @@ export class GroupOfQuestionsService {
         idPart,
         typeQuestion,
         title,
-        startingOrder,
-        endingOrder,
+        quantity,
       },
     });
 
@@ -126,7 +109,7 @@ export class GroupOfQuestionsService {
     idGroupOfQuestions: string,
     updateGroupOfQuestionDto: UpdateGroupOfQuestionDto,
   ) {
-    const { idTest, idPart, typeQuestion, title, startingOrder, endingOrder } =
+    const { idTest, idPart, typeQuestion, title, quantity } =
       updateGroupOfQuestionDto;
     const existingDe = await this.databaseService.test.findUnique({
       where: {
@@ -143,30 +126,25 @@ export class GroupOfQuestionsService {
     if (!existingDe) throw new BadRequestException('Test not found');
     if (!existingPart) throw new BadRequestException('Part not found');
 
-    if (startingOrder > endingOrder)
+    // kiểm tra quantity không lớn hơn số câu của test và không quá 40
+    if (quantity > existingDe.numberQuestion)
       throw new BadRequestException(
-        'startingOrder must be less than or equal to endingOrder',
+        'Quantity cant be greater than  numberQuestion test ',
       );
 
-    const overlapping = await this.databaseService.groupOfQuestions.findFirst({
-      where: {
-        idPart,
-        //lọc ra phần không phải id của nhóm câu hỏi đang update
-        NOT: { idGroupOfQuestions },
-        AND: [
-          //startingOrder <= other.endingOrder
-          { startingOrder: { lte: endingOrder } },
-          // endingOrder >= other.startingOrder
-          { endingOrder: { gte: startingOrder } },
-        ],
-      },
+    if (quantity > 40)
+      throw new BadRequestException('The maximum numberQuestion is 40');
+
+    // kiểm tra tổng quantity các nhóm hiện có trong test (đã sử dụng) + quantity mới không vượt quá số câu của test
+    const sumResult = await this.databaseService.groupOfQuestions.aggregate({
+      _sum: { quantity: true },
+      where: { idTest },
     });
-
-    if (overlapping) {
+    const existingTotal = sumResult._sum.quantity ?? 0;
+    if (existingTotal + quantity > existingDe.numberQuestion)
       throw new BadRequestException(
-        `Order range overlaps with existing group (id: ${overlapping.idGroupOfQuestions}, ${overlapping.startingOrder}-${overlapping.endingOrder})`,
+        'Sum of questions cant be greater than numberQuestion test',
       );
-    }
 
     const data = await this.databaseService.groupOfQuestions.update({
       where: {
@@ -177,8 +155,7 @@ export class GroupOfQuestionsService {
         idPart,
         typeQuestion,
         title,
-        startingOrder,
-        endingOrder,
+        quantity,
       },
     });
 

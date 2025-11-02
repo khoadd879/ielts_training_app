@@ -29,7 +29,7 @@ export class WritingTaskController {
       properties: {
         idTest: { type: 'string', example: '123' },
         task_type: { type: 'string', example: 'TASK1' },
-        prompt: { type: 'string', example: 'prompt' },
+        title: { type: 'string', example: 'title' },
         image: { type: 'string', format: 'binary' },
         time_limit: { type: 'number', example: 60 },
       },
@@ -64,7 +64,7 @@ export class WritingTaskController {
       properties: {
         idTest: { type: 'string', example: '123' },
         task_type: { type: 'string', example: 'TASK1' },
-        prompt: { type: 'string', example: 'prompt' },
+        title: { type: 'string', example: 'title' },
         image: { type: 'string', format: 'binary' },
         time_limit: { type: 'number', example: 60 },
       },

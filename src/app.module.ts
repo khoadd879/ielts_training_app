@@ -25,7 +25,7 @@ import { UserTestResultModule } from './module/user-test-result/user-test-result
 import { CacheModule } from '@nestjs/cache-manager';
 import { WritingTaskModule } from './module/writing-task/writing-task.module';
 import { UserWritingSubmissionModule } from './module/user-writing-submission/user-writing-submission.module';
-import { ForumCategoriesModule } from './module/forum-categories/forum-categories.module';
+
 import { ForumThreadsModule } from './module/forum-threads/forum-threads.module';
 import { ForumPostModule } from './module/forum-post/forum-post.module';
 import { ForumCommentModule } from './module/forum-comment/forum-comment.module';
@@ -100,7 +100,6 @@ import * as redisStore from 'cache-manager-redis-store';
     }),
     WritingTaskModule,
     UserWritingSubmissionModule,
-    ForumCategoriesModule,
     ForumThreadsModule,
     ForumPostModule,
     ForumCommentModule,

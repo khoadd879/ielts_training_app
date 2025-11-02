@@ -17,26 +17,12 @@ export class ForumThreadsService {
     if (!existingUser) throw new BadRequestException('User not found');
   }
 
-  async existingForumCategories(idForumCategories: string) {
-    const existingForumCategories =
-      await this.databaseService.forumCategories.findUnique({
-        where: {
-          idForumCategories,
-        },
-      });
-
-    if (!existingForumCategories)
-      throw new BadRequestException('Forum Category not found');
-  }
-
   async createForumThread(createForumThreadDto: CreateForumThreadDto) {
-    const { idForumCategories, idUser, title, content } = createForumThreadDto;
+    const { idUser, title, content } = createForumThreadDto;
     await this.existingUser(idUser);
-    await this.existingForumCategories(idForumCategories);
 
     const data = await this.databaseService.forumThreads.create({
       data: {
-        idForumCategories,
         idUser,
         title,
         content,
@@ -50,14 +36,8 @@ export class ForumThreadsService {
     };
   }
 
-  async findAllByIdForumCategories(idForumCategories: string) {
-    this.existingForumCategories(idForumCategories);
-
-    const data = await this.databaseService.forumThreads.findMany({
-      where: {
-        idForumCategories,
-      },
-    });
+  async findAllForumThreads() {
+    const data = await this.databaseService.forumThreads.findMany();
 
     return {
       message: 'Forum Thread retrieved successfully',
@@ -86,7 +66,7 @@ export class ForumThreadsService {
     idForumThreads: string,
     updateForumThreadDto: UpdateForumThreadDto,
   ) {
-    const { idForumCategories, idUser, title, content } = updateForumThreadDto;
+    const { idUser, title, content } = updateForumThreadDto;
     await this.existingUser(idUser);
     const existingForumThread =
       await this.databaseService.forumThreads.findUnique({
@@ -103,7 +83,6 @@ export class ForumThreadsService {
         idForumThreads,
       },
       data: {
-        idForumCategories,
         idUser,
         title,
         content,

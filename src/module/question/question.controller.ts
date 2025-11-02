@@ -10,7 +10,8 @@ import {
 import { QuestionService } from './question.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { createManyQuestionsDto } from './dto/create-many-question.dto';
 
 @ApiBearerAuth()
 @Controller('question')
@@ -20,6 +21,14 @@ export class QuestionController {
   @Post('create-question')
   create(@Body() createQuestionDto: CreateQuestionDto) {
     return this.questionService.createQuestion(createQuestionDto);
+  }
+
+  @Post('create-many-questions')
+  @ApiBody({ type: createManyQuestionsDto })
+  createMany(@Body() createQuestionsDto: createManyQuestionsDto) {
+    return this.questionService.createManyQuestions(
+      createQuestionsDto.question,
+    );
   }
 
   @Get('find-by-id-group-of-questions/:idGroupOfQuestions')
