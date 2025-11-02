@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateAnswerDto } from './dto/create-answer.dto';
 import { UpdateAnswerDto } from './dto/update-answer.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { timeStamp } from 'console';
 
 @Injectable()
 export class AnswerService {
@@ -56,6 +57,20 @@ export class AnswerService {
     };
   }
 
+  async findOne(idAnswer: string) {
+    const data = await this.databaseService.answer.findUnique({
+      where: {
+        idAnswer,
+      },
+    });
+
+    return {
+      message: 'Answer retrieved successfully',
+      data,
+      status: 200,
+    };
+  }
+
   async updateAnswer(idAnswer: string, updateAnswerDto: UpdateAnswerDto) {
     const { idCauHoi, idOption, answer_text, matching_key, matching_value } =
       updateAnswerDto;
@@ -65,11 +80,9 @@ export class AnswerService {
       },
     });
 
-    console.log(idAnswer);
-
     const existingAnswer = await this.databaseService.answer.findUnique({
       where: {
-        idAnswer, // Use the id from the parameter
+        idAnswer,
       },
     });
 

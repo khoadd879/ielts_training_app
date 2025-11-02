@@ -27,6 +27,11 @@ export class AnswerController {
     return this.answerService.findByIdQuestion(idCauhoi);
   }
 
+  @Get('get-by-id-answer/:idAnswer')
+  findOne(@Param('idAnswer') idAnswer: string) {
+    return this.answerService.findOne(idAnswer);
+  }
+
   @Patch('update-answer/:idAnswer')
   updateAnswer(
     @Param('idAnswer') idAnswer: string,
