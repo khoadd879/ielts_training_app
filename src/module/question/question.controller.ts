@@ -34,9 +34,9 @@ export class QuestionController {
     return this.questionService.findById(idGroupOfQuestions);
   }
 
-  @Patch('update-questiong/:idGroupOfQuestions')
+  @Patch('update-question/:idQuestion')
   update(
-    @Param('idGroupOfQuestions') id: string,
+    @Param('idQuestion') id: string,
     @Body() updateQuestionDto: UpdateQuestionDto,
   ) {
     return this.questionService.updateQuestion(id, updateQuestionDto);

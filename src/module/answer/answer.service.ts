@@ -65,6 +65,18 @@ export class AnswerService {
       },
     });
 
+    console.log(idAnswer);
+
+    const existingAnswer = await this.databaseService.answer.findUnique({
+      where: {
+        idAnswer, // Use the id from the parameter
+      },
+    });
+
+    if (!existingAnswer) {
+      throw new BadRequestException('Answer not found');
+    }
+
     if (!existingQuestion) throw new BadRequestException('Question not found');
 
     const data = await this.databaseService.answer.update({

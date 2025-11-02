@@ -22,12 +22,12 @@ export class AnswerController {
     return this.answerService.createAnswer(createAnswerDto);
   }
 
-  @Get('get-by-id-question/:idAnswer')
-  findByIdQuestion(@Param('idAnswer') idAnswer: string) {
-    return this.answerService.findByIdQuestion(idAnswer);
+  @Get('get-by-id-question/:idCauhoi')
+  findByIdQuestion(@Param('idCauhoi') idCauhoi: string) {
+    return this.answerService.findByIdQuestion(idCauhoi);
   }
 
-  @Patch(':id')
+  @Patch('update-answer/:idAnswer')
   updateAnswer(
     @Param('idAnswer') idAnswer: string,
     @Body() updateAnswerDto: UpdateAnswerDto,
@@ -35,7 +35,7 @@ export class AnswerController {
     return this.answerService.updateAnswer(idAnswer, updateAnswerDto);
   }
 
-  @Delete(':id')
+  @Delete('delete-answer/:idAnswer')
   removeAnswer(@Param('idAnswer') idAnswer: string) {
     return this.answerService.removeAnswer(idAnswer);
   }

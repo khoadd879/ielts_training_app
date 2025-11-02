@@ -20,3 +20,12 @@ export const comparePasswordHelper = async (
     return false;
   }
 };
+
+// src/utils/string.utils.ts
+export function sentenceCase(text: string): string {
+  if (!text) {
+    return '';
+  }
+  const lowercasedText = text.toLowerCase();
+  return lowercasedText.charAt(0).toUpperCase() + lowercasedText.slice(1);
+}

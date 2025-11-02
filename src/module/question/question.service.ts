@@ -60,6 +60,9 @@ export class QuestionService {
       where: {
         idNhomCauHoi: idGroupOfQuestions,
       },
+      orderBy: {
+        numberQuestion: 'asc',
+      },
     });
 
     return {
