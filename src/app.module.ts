@@ -116,7 +116,7 @@ import * as redisStore from 'cache-manager-redis-store';
 
     ChatBotModule,
 
-    //RecommendTestModule,
+    RecommendTestModule,
 
     SpeakingTaskModule,
 
