@@ -22,7 +22,7 @@ export class ForumThreadsController {
     return this.forumThreadsService.createForumThread(createForumThreadDto);
   }
 
-  @Get('get-forum-threads-by-idForumThreads')
+  @Get('get-all-forum-threads')
   findAll() {
     return this.forumThreadsService.findAllForumThreads();
   }

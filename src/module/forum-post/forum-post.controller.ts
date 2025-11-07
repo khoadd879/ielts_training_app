@@ -41,9 +41,12 @@ export class ForumPostController {
     return this.forumPostService.createForumPost(createForumPostDto, file);
   }
 
-  @Get('get-all-forum-post-byIdForumThread/:idForumThreads')
-  findAll(@Param('idForumThreads') idForumThreads: string) {
-    return this.forumPostService.findAllByIdForumThread(idForumThreads);
+  @Get('get-all-forum-post-byIdForumThread/:idForumThreads/:idUser')
+  findAll(
+    @Param('idForumThreads') idForumThreads: string,
+    @Param('idUser') idUser: string,
+  ) {
+    return this.forumPostService.findAllByIdForumThread(idForumThreads, idUser);
   }
 
   @Get('get-forum-post/:idForumPost')
