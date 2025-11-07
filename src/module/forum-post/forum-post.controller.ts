@@ -50,8 +50,11 @@ export class ForumPostController {
   }
 
   @Get('get-forum-post/:idForumPost')
-  findOne(@Param('idForumPost') idForumPost: string) {
-    return this.forumPostService.findForumPost(idForumPost);
+  findOne(
+    @Param('idForumPost') idForumPost: string,
+    @Param('idUser') idUser: string,
+  ) {
+    return this.forumPostService.findForumPost(idForumPost, idUser);
   }
 
   @Patch('update-forum-post/:idForumPost')

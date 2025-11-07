@@ -149,7 +149,9 @@ export class ForumPostService {
     };
   }
 
-  async findForumPost(idForumPost: string) {
+  async findForumPost(idForumPost: string, idUser: string) {
+    await this.existingUser(idUser);
+
     const data = await this.databaseService.forumPost.findUnique({
       where: { idForumPost },
       include: {
@@ -160,14 +162,77 @@ export class ForumPostService {
             avatar: true,
           },
         },
+        forumComment: {
+          orderBy: {
+            created_at: 'asc',
+          },
+          include: {
+            user: {
+              select: {
+                idUser: true,
+                nameUser: true,
+                avatar: true,
+              },
+            },
+            _count: {
+              select: {
+                forumCommentLikes: true,
+              },
+            },
+            forumCommentLikes: {
+              where: {
+                idUser,
+              },
+              select: {
+                idUser: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            forumPostLikes: true,
+          },
+        },
+        forumPostLikes: {
+          where: {
+            idUser,
+          },
+          select: {
+            idUser: true,
+          },
+        },
       },
     });
 
     if (!data) throw new BadRequestException('Forum post not found');
 
+    const { _count, forumPostLikes, forumComment, ...restOfPost } = data;
+
+    const transformedComments = forumComment.map((comment) => {
+      const {
+        _count: commentCount,
+        forumCommentLikes: commentLikes,
+        ...restOfComment
+      } = comment;
+
+      return {
+        ...restOfComment,
+        commentLikeCount: commentCount.forumCommentLikes,
+        isCommentLikedByCurrentUser: commentLikes.length > 0,
+      };
+    });
+
+    const transformedPost = {
+      ...restOfPost,
+      likeCount: _count.forumPostLikes,
+      isLikedByCurrentUser: forumPostLikes.length > 0,
+      forumComment: transformedComments,
+    };
+
     return {
       message: 'Forum post retrieved successfully',
-      data,
+      data: transformedPost,
       status: 200,
     };
   }
