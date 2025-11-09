@@ -49,7 +49,7 @@ export class ForumPostController {
     return this.forumPostService.findAllByIdForumThread(idForumThreads, idUser);
   }
 
-  @Get('get-forum-post/:idForumPost')
+  @Get('get-forum-post/:idForumPost/:idUser')
   findOne(
     @Param('idForumPost') idForumPost: string,
     @Param('idUser') idUser: string,
