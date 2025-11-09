@@ -51,6 +51,14 @@ export class ForumPostService {
         content,
         file: fileUrl,
       },
+      include: {
+        user: {
+          select: {
+            nameUser: true,
+            avatar: true,
+          },
+        },
+      },
     });
 
     return {

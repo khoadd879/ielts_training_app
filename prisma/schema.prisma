@@ -195,10 +195,16 @@ model Option {
 model Answer {
   idAnswer       String   @id @default(uuid())
   idQuestion       String
-  idOption       String?
-  answer_text    String?
-  matching_key   String?
-  matching_value String?
+  idOption       String? //nếu câu hỏi là Multiple Choice (MCQ)
+  answer_text    String? // Dành cho dạng câu hỏi không có lựa chọn như: FillBlank, ShortAnswer, Other
+  matching_key   String? //A , B , C
+  matching_value String? // Dành cho dạng câu hỏi Matching (Nối cặp).
+  // Ví dụ: bạn có 2 cột cần nối: A: Country, B: Capital 
+  //| matching_key | matching_value |
+//| ------------ | -------------- |
+//| "France"     | "Paris"        |
+//| "Japan"      | "Tokyo"        |
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   question         Question   @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
