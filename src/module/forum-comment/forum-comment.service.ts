@@ -98,6 +98,14 @@ export class ForumCommentService {
         idUser,
         content,
       },
+      include: {
+        user: {
+          select: {
+            nameUser: true,
+            avatar: true,
+          },
+        },
+      },
     });
 
     return {

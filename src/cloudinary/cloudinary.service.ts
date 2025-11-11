@@ -11,7 +11,7 @@ export class CloudinaryService {
   uploadFile(
     file: Express.Multer.File,
     folder: string = 'tests',
-    type: 'image' | 'audio' | 'auto' = 'auto',
+    type: 'image' | 'audio' | 'auto' | 'raw' = 'auto',
   ): Promise<UploadApiResponse> {
     return new Promise<UploadApiResponse>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
