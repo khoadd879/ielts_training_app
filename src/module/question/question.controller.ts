@@ -27,7 +27,7 @@ export class QuestionController {
   @ApiBody({ type: createManyQuestionsDto })
   createMany(@Body() createQuestionsDto: createManyQuestionsDto) {
     return this.questionService.createManyQuestions(
-      createQuestionsDto.question,
+      createQuestionsDto.questions,
     );
   }
 

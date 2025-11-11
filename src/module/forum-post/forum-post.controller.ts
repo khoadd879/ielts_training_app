@@ -41,14 +41,20 @@ export class ForumPostController {
     return this.forumPostService.createForumPost(createForumPostDto, file);
   }
 
-  @Get('get-all-forum-post-byIdForumThread/:idForumThreads')
-  findAll(@Param('idForumThreads') idForumThreads: string) {
-    return this.forumPostService.findAllByIdForumThread(idForumThreads);
+  @Get('get-all-forum-post-byIdForumThread/:idForumThreads/:idUser')
+  findAll(
+    @Param('idForumThreads') idForumThreads: string,
+    @Param('idUser') idUser: string,
+  ) {
+    return this.forumPostService.findAllByIdForumThread(idForumThreads, idUser);
   }
 
-  @Get('get-forum-post/:idForumPost')
-  findOne(@Param('idForumPost') idForumPost: string) {
-    return this.forumPostService.findForumPost(idForumPost);
+  @Get('get-forum-post/:idForumPost/:idUser')
+  findOne(
+    @Param('idForumPost') idForumPost: string,
+    @Param('idUser') idUser: string,
+  ) {
+    return this.forumPostService.findForumPost(idForumPost, idUser);
   }
 
   @Patch('update-forum-post/:idForumPost')

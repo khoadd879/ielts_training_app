@@ -3,6 +3,7 @@ import { CreateForumPostDto } from './dto/create-forum-post.dto';
 import { UpdateForumPostDto } from './dto/update-forum-post.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { dmmfToRuntimeDataModel } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class ForumPostService {
@@ -27,7 +28,6 @@ export class ForumPostService {
       throw new BadRequestException('Forum thread not found');
   }
 
-  /** ------------------ 🧩 CREATE ------------------ */
   async createForumPost(
     createForumPostDto: CreateForumPostDto,
     file?: Express.Multer.File,
@@ -39,7 +39,6 @@ export class ForumPostService {
 
     let fileUrl: string | null = null;
 
-    // 🖼 Upload hình lên Cloudinary nếu có file
     if (file) {
       const uploadResult = await this.cloudinaryService.uploadFile(file);
       fileUrl = uploadResult.secure_url;
@@ -52,6 +51,14 @@ export class ForumPostService {
         content,
         file: fileUrl,
       },
+      include: {
+        user: {
+          select: {
+            nameUser: true,
+            avatar: true,
+          },
+        },
+      },
     });
 
     return {
@@ -61,8 +68,7 @@ export class ForumPostService {
     };
   }
 
-  /** ------------------ 📋 FIND ALL ------------------ */
-  async findAllByIdForumThread(idForumThreads: string) {
+  async findAllByIdForumThread(idForumThreads: string, idUser: string) {
     await this.existingForumThreads(idForumThreads);
 
     const data = await this.databaseService.forumPost.findMany({
@@ -76,18 +82,84 @@ export class ForumPostService {
             avatar: true,
           },
         },
+        forumComment: {
+          orderBy: {
+            created_at: 'asc',
+          },
+          include: {
+            user: {
+              select: {
+                idUser: true,
+                nameUser: true,
+                avatar: true,
+              },
+            },
+            _count: {
+              select: {
+                forumCommentLikes: true,
+              },
+            },
+            forumCommentLikes: {
+              where: {
+                idUser,
+              },
+              select: {
+                idUser: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            forumPostLikes: true,
+          },
+        },
+        forumPostLikes: {
+          where: {
+            idUser,
+          },
+          select: {
+            idUser: true,
+          },
+        },
       },
+    });
+
+    const transformedPosts = data.map((post) => {
+      const { _count, forumPostLikes, forumComment, ...restOfPost } = post;
+
+      const transformedComments = forumComment.map((comment) => {
+        const {
+          _count: commentCount,
+          forumCommentLikes: commentLikes,
+          ...restOfComment
+        } = comment;
+
+        return {
+          ...restOfComment,
+          commentLikeCount: commentCount.forumCommentLikes,
+          isCommentLikedByCurrentUser: commentLikes.length > 0,
+        };
+      });
+
+      return {
+        ...restOfPost,
+        likeCount: _count.forumPostLikes,
+        isLikedByCurrentUser: forumPostLikes.length > 0,
+        forumComment: transformedComments,
+      };
     });
 
     return {
       message: 'Forum posts retrieved successfully',
-      data,
+      data: transformedPosts,
       status: 200,
     };
   }
 
-  /** ------------------ 🔍 FIND ONE ------------------ */
-  async findForumPost(idForumPost: string) {
+  async findForumPost(idForumPost: string, idUser: string) {
+    await this.existingUser(idUser);
+
     const data = await this.databaseService.forumPost.findUnique({
       where: { idForumPost },
       include: {
@@ -98,19 +170,81 @@ export class ForumPostService {
             avatar: true,
           },
         },
+        forumComment: {
+          orderBy: {
+            created_at: 'asc',
+          },
+          include: {
+            user: {
+              select: {
+                idUser: true,
+                nameUser: true,
+                avatar: true,
+              },
+            },
+            _count: {
+              select: {
+                forumCommentLikes: true,
+              },
+            },
+            forumCommentLikes: {
+              where: {
+                idUser,
+              },
+              select: {
+                idUser: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            forumPostLikes: true,
+          },
+        },
+        forumPostLikes: {
+          where: {
+            idUser,
+          },
+          select: {
+            idUser: true,
+          },
+        },
       },
     });
 
     if (!data) throw new BadRequestException('Forum post not found');
 
+    const { _count, forumPostLikes, forumComment, ...restOfPost } = data;
+
+    const transformedComments = forumComment.map((comment) => {
+      const {
+        _count: commentCount,
+        forumCommentLikes: commentLikes,
+        ...restOfComment
+      } = comment;
+
+      return {
+        ...restOfComment,
+        commentLikeCount: commentCount.forumCommentLikes,
+        isCommentLikedByCurrentUser: commentLikes.length > 0,
+      };
+    });
+
+    const transformedPost = {
+      ...restOfPost,
+      likeCount: _count.forumPostLikes,
+      isLikedByCurrentUser: forumPostLikes.length > 0,
+      forumComment: transformedComments,
+    };
+
     return {
       message: 'Forum post retrieved successfully',
-      data,
+      data: transformedPost,
       status: 200,
     };
   }
 
-  /** ------------------ ✏️ UPDATE ------------------ */
   async updateForumPost(
     idForumPost: string,
     updateForumPostDto: UpdateForumPostDto,
@@ -123,7 +257,6 @@ export class ForumPostService {
 
     let fileUrl = updateForumPostDto.file;
 
-    // 🖼 Nếu có file upload, thì upload lên Cloudinary
     if (file) {
       const uploadResult = await this.cloudinaryService.uploadFile(file);
       fileUrl = uploadResult.secure_url;
@@ -154,7 +287,6 @@ export class ForumPostService {
     };
   }
 
-  /** ------------------ 🗑️ DELETE ------------------ */
   async removeForumPost(idForumPost: string) {
     const existing = await this.databaseService.forumPost.findUnique({
       where: { idForumPost },
