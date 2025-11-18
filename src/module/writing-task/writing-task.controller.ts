@@ -45,9 +45,9 @@ export class WritingTaskController {
     );
   }
 
-  @Get('get-all-writing-task')
-  findAll() {
-    return this.writingTaskService.findAll();
+  @Get('get-all-writing-task/:idTest')
+  findAll(@Param('idTest') idTest: string) {
+    return this.writingTaskService.findAll(idTest);
   }
 
   @Get('get-writing-task/:idWritingTask')

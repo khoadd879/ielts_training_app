@@ -48,8 +48,20 @@ export class WritingTaskService {
     };
   }
 
-  async findAll() {
-    const data = await this.databaseService.writingTask.findMany();
+  async findAll(idTest: string) {
+    const existingTest = await this.databaseService.test.findUnique({
+      where: {
+        idTest,
+      },
+    });
+
+    if (!existingTest) throw new BadRequestException('Test not found');
+
+    const data = await this.databaseService.writingTask.findMany({
+      where: {
+        idTest,
+      },
+    });
 
     return {
       message: 'Writing task retrieved successfully',
