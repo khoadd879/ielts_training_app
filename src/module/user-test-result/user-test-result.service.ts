@@ -255,4 +255,24 @@ export class UserTestResultService {
         return 'High';
     }
   }
+
+  async findAllTestResults() {
+    const data = await this.databaseService.userTestResult.findMany({
+      include: {
+        user: {
+          select: {
+            idUser: true,
+            nameUser: true,
+            avatar: true,
+          },
+        },
+        test: true,
+      },
+    });
+    return {
+      message: 'Test results retrieved successfully',
+      data,
+      status: 200,
+    };
+  }
 }

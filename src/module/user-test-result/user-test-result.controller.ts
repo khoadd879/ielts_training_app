@@ -28,6 +28,11 @@ export class UserTestResultController {
     return this.userTestResultService.findOne(idTestResult);
   }
 
+  @Get('get-all-test-results')
+  findAllTestResults() {
+    return this.userTestResultService.findAllTestResults();
+  }
+
   @Delete('delete-test-result/:idTestResult')
   deleteTestResult(@Param('idTestResult') idTestResult: string) {
     return this.userTestResultService.deleteTestResult(idTestResult);
