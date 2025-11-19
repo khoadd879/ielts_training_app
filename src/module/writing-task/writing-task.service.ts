@@ -45,6 +45,22 @@ export class WritingTaskService {
       image = uploadResult.secure_url;
     }
 
+    // Kiểm tra nếu đã có 1 writing task, task type mới phải khác
+    if (numberWritingTasks === 1) {
+      const existingWritingTask =
+        await this.databaseService.writingTask.findFirst({
+          where: { idTest },
+          orderBy: { createdAt: 'asc' },
+        });
+
+      // Nếu task_type của task mới giống với task cũ thì báo lỗi
+      if (existingWritingTask && existingWritingTask.task_type === task_type) {
+        throw new BadRequestException(
+          `The second writing task must have a different type. First task is ${existingWritingTask.task_type}, cannot create another ${task_type}`,
+        );
+      }
+    }
+
     const data = await this.databaseService.writingTask.create({
       data: {
         idTest,
@@ -105,6 +121,16 @@ export class WritingTaskService {
   ) {
     const { idTest, task_type, title, time_limit } = updateWritingTaskDto;
 
+    const existingWritingTask =
+      await this.databaseService.writingTask.findUnique({
+        where: {
+          idWritingTask,
+        },
+      });
+
+    if (!existingWritingTask)
+      throw new BadRequestException('Writing task not found');
+
     const existingTest = await this.databaseService.test.findUnique({
       where: {
         idTest,
@@ -112,6 +138,32 @@ export class WritingTaskService {
     });
 
     if (!existingTest) throw new BadRequestException('Test not found');
+
+    // Kiểm tra nếu task_type thay đổi thì phải khác với task khác trong cùng test
+    if (existingWritingTask.task_type !== task_type) {
+      // Lấy các writing tasks khác trong cùng test (trừ task đang update)
+      const otherWritingTasks = await this.databaseService.writingTask.findMany(
+        {
+          where: {
+            idTest,
+            NOT: {
+              idWritingTask, // Loại trừ task đang update
+            },
+          },
+        },
+      );
+
+      // Kiểm tra xem task_type mới có trùng với task khác không
+      const hasSameTaskType = otherWritingTasks.some(
+        (task) => task.task_type === task_type,
+      );
+
+      if (hasSameTaskType) {
+        throw new BadRequestException(
+          `Cannot update task type to ${task_type}. Another writing task in this test already has this type`,
+        );
+      }
+    }
 
     let image = updateWritingTaskDto.image;
 
