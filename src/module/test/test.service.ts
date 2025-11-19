@@ -72,6 +72,18 @@ export class TestService {
       await Promise.all(uploadTasks);
     }
 
+    if (testType === 'LISTENING' || testType === 'READING') {
+      if (numberQuestion > 40)
+        throw new BadRequestException(
+          'Number of questions cannot be more than 40 for LISTENING or READING tests',
+        );
+    } else if (testType === 'WRITING' || testType === 'SPEAKING') {
+      if (numberQuestion > 2)
+        throw new BadRequestException(
+          'Number of questions cannot be more than 2 for WRITING or SPEAKING tests',
+        );
+    }
+
     // Tạo test trong DB
     const data = await this.databaseService.test.create({
       data: {
