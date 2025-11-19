@@ -24,6 +24,20 @@ export class WritingTaskService {
 
     if (!existingTest) throw new BadRequestException('Test not found');
 
+    const numberWritingTasks = await this.databaseService.writingTask.count({
+      where: { idTest },
+    });
+
+    if (existingTest.numberQuestion < numberWritingTasks + 1) {
+      throw new BadRequestException(
+        'Cannot add more writing tasks than the number of questions in the test',
+      );
+    } else if (numberWritingTasks >= 2) {
+      throw new BadRequestException(
+        'A test can have a maximum of 2 writing tasks',
+      );
+    }
+
     let image = createWritingTaskDto.image;
 
     if (file) {
