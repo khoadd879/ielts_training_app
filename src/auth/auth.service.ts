@@ -222,7 +222,7 @@ export class AuthService {
         status: 200,
       };
     } catch (e) {
-      throw new UnauthorizedException('Refresh token is invalid or expired');
+      throw new BadRequestException('Refresh token is invalid or expired');
     }
   }
 
