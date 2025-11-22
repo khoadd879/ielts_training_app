@@ -126,7 +126,7 @@ export class UserWritingSubmissionService {
     const cachedData = await this.cacheManager.get<AIFeedbackResult>(cacheKey);
 
     if (cachedData) {
-      console.log('⚡️ Cache HIT!');
+      console.log('Cache HIT!');
       return cachedData;
     }
 
@@ -169,15 +169,75 @@ export class UserWritingSubmissionService {
     });
     if (!user) throw new BadRequestException('User not found');
 
-    const data = await this.databaseService.userWritingSubmission.findMany({
+    const submissions = await this.databaseService.userWritingSubmission.findMany({
       where: { idUser },
       include: {
-        writingTask: true,
+        writingTask: {
+          include: {
+            test: {
+              select: { idTest: true },
+},
+          },
+        },
         feedback: {
           orderBy: { gradedAt: 'desc' },
           take: 1,
         },
       },
+    });
+
+    const testIds = submissions
+      .map((s) => s.writingTask?.test?.idTest)
+      .filter((id): id is string => !!id);
+
+    if (testIds.length === 0) {
+      return {
+        message: 'User writing submissions retrieved successfully',
+        data: submissions.map((s) => ({ ...s, band_score: null })), // ensure consistent response shape
+        status: 200,
+      };
+    }
+
+    const testResults = await this.databaseService.userTestResult.findMany({
+      where: {
+        idUser,
+        idTest: {
+          in: testIds,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        idTest: true,
+        band_score: true,
+      },
+    });
+
+    const scoresMap = new Map<string, number | null>();
+    for (const result of testResults) {
+      if (!scoresMap.has(result.idTest)) {
+        scoresMap.set(result.idTest, result.band_score);
+      }
+    }
+
+    const data = submissions.map((submission) => {
+      const testId = submission.writingTask?.test?.idTest;
+      const band_score = testId ? scoresMap.get(testId) ?? null : null;
+      const { 
+        idWritingSubmission, 
+        idUser, 
+        idWritingTask, 
+        ...rest 
+      } = submission;
+
+      return {
+        idWritingSubmission,
+        idUser,
+        idWritingTask,
+        band_score: band_score ?? 0, 
+        ...rest,
+      };
     });
 
     return {
@@ -189,12 +249,74 @@ export class UserWritingSubmissionService {
 
   // Lấy chi tiết submission
   async findOne(idWritingSubmission: string) {
-    const data = await this.databaseService.userWritingSubmission.findUnique({
+    const submission = await this.databaseService.userWritingSubmission.findUnique({
       where: { idWritingSubmission },
-      include: { writingTask: true, user: true },
+      include: {
+        writingTask: {
+          include: {
+            test: {
+              select:{
+                idTest: true,
+              }
+            },
+          },
+        },
+        user: {
+          select:{
+            idUser: true,
+            nameUser: true,
+          }
+        },
+        feedback: {
+          orderBy: {
+            gradedAt: 'desc',
+          },
+        },
+      },
     });
-    if (!data)
+
+    if (!submission) {
       throw new BadRequestException('User writing submission not found');
+    }
+
+    let band_score = 0;
+    if (submission.writingTask?.test) {
+      const testResult = await this.databaseService.userTestResult.findFirst({
+        where: {
+          idTest: submission.writingTask.test.idTest,
+          idUser: submission.idUser,
+        },
+        select: {
+          band_score: true,
+        },
+        orderBy: {
+          createdAt: 'desc', 
+        },
+      });
+
+
+      if (testResult) {
+        band_score = testResult.band_score;
+      }
+    }
+
+    const data = {
+      idWritingSubmission: submission.idWritingSubmission,
+      idUser: submission.idUser,
+      idWritingTask: submission.idWritingTask,
+      band_score: band_score, 
+
+      // Các trường còn lại
+      submission_text: submission.submission_text,
+      submitted_at: submission.submitted_at,
+      status: submission.status,
+      
+      // Các relation objects
+      writingTask: submission.writingTask,
+      user: submission.user,
+      feedback: submission.feedback,
+  
+    };
 
     return {
       message: 'User writing submission retrieved successfully',
