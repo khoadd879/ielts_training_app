@@ -21,8 +21,7 @@ import { JwtRefreshStrategy } from './passport/jwt-refresh.stategy';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: (configService.get('JWT_ACCESS_TOKEN_EXPIRED') ??
-            '30m') as `${number}${'s' | 'm' | 'h' | 'd'}`,
+          expiresIn: configService.get('JWT_ACCESS_TOKEN_EXPIRED') ?? '30m',
         },
       }),
       inject: [ConfigService],

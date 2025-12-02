@@ -8,41 +8,40 @@ datasource db {
 }
 
 model User {
-  idUser                 String                  @id @default(uuid())
-  nameUser               String?
-  email                  String                  @unique
-  password               String
-  phoneNumber            String?
-  address                String?
-  role                   Role                    @default(USER)
-  avatar                 String?
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
-  accountType            accountType             @default(LOCAL)
-  isActive               Boolean                 @default(false)
-  gender                 Gender                  @default(Male)
-  level                  Level?
-   xp          Int      @default(0)
-    xpToNext Int     @default(100) // ngưỡng để lên level tiếp theo
-currentStreak       Int       @default(0) // Chuỗi hiện tại
-  longestStreak       Int       @default(0) // Chuỗi dài nhất từng đạt được
-  lastStudiedAt       DateTime? // Ngày cuối cùng có hoạt động học
+  idUser        String      @id @default(uuid())
+  nameUser      String?
+  email         String      @unique
+  password      String
+  phoneNumber   String?
+  address       String?
+  role          Role        @default(USER)
+  avatar        String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  accountType   accountType @default(LOCAL)
+  isActive      Boolean     @default(false)
+  gender        Gender      @default(Male)
+  level         Level?
+  xp            Int         @default(0)
+  xpToNext      Int         @default(100) // ngưỡng để lên level tiếp theo
+  currentStreak Int         @default(0) // Chuỗi hiện tại
+  longestStreak Int         @default(0) // Chuỗi dài nhất từng đạt được
+  lastStudiedAt DateTime? // Ngày cuối cùng có hoạt động học
 
-
-  test                    Test[]
+  test                   Test[]
   forumComment           ForumComment[]
   forumCommentLikes      ForumCommentLikes[]
   forumPosts             ForumPost[]
   forumPostLikes         ForumPostLikes[]
   forumThreads           ForumThreads[]
   Topic                  Topic[]
-  Vocabulary                Vocabulary[]
+  Vocabulary             Vocabulary[]
   userAnswers            UserAnswer[]
   userTestResults        UserTestResult[]
   userWritingSubmissions UserWritingSubmission[]
   verificationCodes      VerificationCode[]
-  grammarCategories     GrammarCategory[]
-  speaking              UserSpeakingSubmission[]
+  grammarCategories      GrammarCategory[]
+  speaking               UserSpeakingSubmission[]
 }
 
 model VerificationCode {
@@ -58,7 +57,7 @@ model VerificationCode {
 model UserTestResult {
   idTestResult    String       @id @default(uuid())
   idUser          String
-  idTest            String
+  idTest          String
   score           Int?         @default(0) //score theo thang 40
   total_correct   Int?         @default(0)
   total_questions Int?         @default(0)
@@ -72,70 +71,70 @@ model UserTestResult {
   status          TestStatus   @default(IN_PROGRESS)
   level           Level        @default(Low)
   userAnswer      UserAnswer[]
-  test              Test           @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  test            Test         @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
   user            User         @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 }
 
 model Vocabulary {
-  idVocab      String     @id @default(uuid())
+  idVocab       String    @id @default(uuid())
   word          String
   phonetic      String?
   meaning       String
   example       String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   idUser        String
   idTopic       String?
-  VocabType    VocabType
+  VocabType     VocabType
   level         Level?
-  correctStreak Int        @default(0)
+  correctStreak Int       @default(0)
   lastReviewed  DateTime?
-  xp            Int        @default(0)
-  topic         Topic?     @relation(fields: [idTopic], references: [idTopic], onDelete: Cascade)
-  user          User       @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  xp            Int       @default(0)
+  topic         Topic?    @relation(fields: [idTopic], references: [idTopic], onDelete: Cascade)
+  user          User      @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 }
 
 model Topic {
-  idTopic   String   @id @default(uuid())
-  nameTopic String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  idUser    String
-  user      User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  vocabulary   Vocabulary[]
+  idTopic    String       @id @default(uuid())
+  nameTopic  String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  idUser     String
+  user       User         @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  vocabulary Vocabulary[]
 }
 
 model Test {
-  idTest            String           @id @default(uuid())
-  idUser          String
-  title           String
-  duration        Int
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  testType          TestType
-  img             String?
-  description     String?
-  numberQuestion  Int
-  audioUrl        String?
-  level           Level            @default(Low)
-  user            User             @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  groupOfQuestions     GroupOfQuestions[]
-  parts           Part[]
-  userTestResults UserTestResult[]
-  writingTasks    WritingTask[]
-  speakingTasks   SpeakingTask[]
+  idTest           String             @id @default(uuid())
+  idUser           String
+  title            String
+  duration         Int
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  testType         TestType
+  img              String?
+  description      String?
+  numberQuestion   Int
+  audioUrl         String?
+  level            Level              @default(Low)
+  user             User               @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  groupOfQuestions GroupOfQuestions[]
+  parts            Part[]
+  userTestResults  UserTestResult[]
+  writingTasks     WritingTask[]
+  speakingTasks    SpeakingTask[]
 }
 
 model Part {
-  idPart      String       @id @default(uuid())
-  idTest        String
-  namePart    String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  question     Question[]
-  passage    Passage?
+  idPart           String             @id @default(uuid())
+  idTest           String
+  namePart         String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  question         Question[]
+  passage          Passage?
   groupOfQuestions GroupOfQuestions[]
-  test          Test           @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  test             Test               @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
 }
 
 model Passage {
@@ -152,68 +151,68 @@ model Passage {
 }
 
 model GroupOfQuestions {
-  idGroupOfQuestions  String       @id @default(uuid())
-  idTest          String
-  idPart        String
-  title         String
-  quantity Int
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  typeQuestion  QuestionType
-  question       Question[]
-  test            Test           @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
-  part          Part         @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
+  idGroupOfQuestions String       @id @default(uuid())
+  idTest             String
+  idPart             String
+  title              String
+  quantity           Int
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  typeQuestion       QuestionType
+  question           Question[]
+  test               Test         @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  part               Part         @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
 }
 
 model Question {
-  idQuestion       String       @id @default(uuid())
-  idGroupOfQuestions   String
-  idPart         String
-  numberQuestion Int
-  content        String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  answers        Answer[]
-  groupOfQuestions     GroupOfQuestions   @relation(fields: [idGroupOfQuestions], references: [idGroupOfQuestions], onDelete: Cascade)
-  part           Part         @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
-  options        Option[]
-  userAnswers    UserAnswer[]
+  idQuestion         String           @id @default(uuid())
+  idGroupOfQuestions String
+  idPart             String
+  numberQuestion     Int
+  content            String
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  answers            Answer[]
+  groupOfQuestions   GroupOfQuestions @relation(fields: [idGroupOfQuestions], references: [idGroupOfQuestions], onDelete: Cascade)
+  part               Part             @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
+  options            Option[]
+  userAnswers        UserAnswer[]
 }
 
 model Option {
   idOption       String       @id @default(uuid())
-  idQuestion       String
+  idQuestion     String
   option_label   String
   option_content String
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   answers        Answer[]
-  question         Question       @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
+  question       Question     @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
   userAnswers    UserAnswer[]
 }
 
 model Answer {
-  idAnswer       String   @id @default(uuid())
-  idQuestion       String
+  idAnswer       String  @id @default(uuid())
+  idQuestion     String
   idOption       String? //nếu câu hỏi là Multiple Choice (MCQ)
   answer_text    String? // Dành cho dạng câu hỏi không có lựa chọn như: FillBlank, ShortAnswer, Other
   matching_key   String? //A , B , C
   matching_value String? // Dành cho dạng câu hỏi Matching (Nối cặp).
   // Ví dụ: bạn có 2 cột cần nối: A: Country, B: Capital 
   //| matching_key | matching_value |
-//| ------------ | -------------- |
-//| "France"     | "Paris"        |
-//| "Japan"      | "Tokyo"        |
+  //| ------------ | -------------- |
+  //| "France"     | "Paris"        |
+  //| "Japan"      | "Tokyo"        |
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  question         Question   @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
-  option         Option?  @relation(fields: [idOption], references: [idOption], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  question  Question @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
+  option    Option?  @relation(fields: [idOption], references: [idOption], onDelete: Cascade)
 }
 
 model UserAnswer {
-  idUserAnswer       String         @id @default(uuid())
-  idQuestion       String
+  idUserAnswer   String         @id @default(uuid())
+  idQuestion     String
   idUser         String
   idOption       String?
   answerText     String?
@@ -223,7 +222,7 @@ model UserAnswer {
   matching_key   String?
   matching_value String?
   userAnswerType QuestionType
-  question         Question         @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
+  question       Question       @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
   option         Option?        @relation(fields: [idOption], references: [idOption], onDelete: Cascade)
   testResult     UserTestResult @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
   user           User           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
@@ -233,57 +232,55 @@ model UserAnswer {
 
 model WritingTask {
   idWritingTask          String                  @id @default(uuid())
-  idTest                   String
-  title                 String
+  idTest                 String
+  title                  String
   time_limit             Int
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
   task_type              WritingTaskType
   image                  String?
   userWritingSubmissions UserWritingSubmission[]
-  test                     Test                      @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  test                   Test                    @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
 }
 
 model UserWritingSubmission {
- idWritingSubmission String  @id @default(uuid())
- idUser String
- idWritingTask  String
- submission_text  String
- submitted_at DateTime @default(now())
- status WritingStatus @default(SUBMITTED)
+  idWritingSubmission String        @id @default(uuid())
+  idUser              String
+  idWritingTask       String
+  submission_text     String
+  submitted_at        DateTime      @default(now())
+  status              WritingStatus @default(SUBMITTED)
 
- user User @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
- writingTask  WritingTask  @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
-  
-  feedback          Feedback[]
+  user        User        @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  writingTask WritingTask @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
+
+  feedback Feedback[]
 }
 
-
 model Feedback {
-  idFeedback              String @id @default(uuid())
-  idWritingSubmission     String 
-  taskResponse            String @db.Text
-  coherenceAndCohesion    String @db.Text
-  lexicalResource         String @db.Text
+  idFeedback                  String @id @default(uuid())
+  idWritingSubmission         String
+  taskResponse                String @db.Text
+  coherenceAndCohesion        String @db.Text
+  lexicalResource             String @db.Text
   grammaticalRangeAndAccuracy String @db.Text
-  generalFeedback         String @db.Text
+  generalFeedback             String @db.Text
   detailedCorrections         Json? //Lưu lỗi chi tiết
-  
-  gradedAt                DateTime @default(now())
+
+  gradedAt DateTime @default(now())
 
   submission UserWritingSubmission @relation(fields: [idWritingSubmission], references: [idWritingSubmission], onDelete: Cascade)
 }
 
-
 model ForumThreads {
-  idForumThreads    String          @id @default(uuid())
-  idUser            String
-  title             String
-  content           String
-  created_at        DateTime        @default(now())
-  updated_at        DateTime        @updatedAt
-  forumPost         ForumPost[]
-  user              User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  idForumThreads String      @id @default(uuid())
+  idUser         String
+  title          String
+  content        String
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+  forumPost      ForumPost[]
+  user           User        @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 }
 
 model ForumPost {
@@ -338,6 +335,7 @@ enum Level {
   Low
   Mid
   High
+  Great
 }
 
 enum Gender {
@@ -409,63 +407,57 @@ enum WritingStatus {
 }
 
 model GrammarCategory {
-  idGrammarCategory String    @id @default(uuid())
+  idGrammarCategory String   @id @default(uuid())
   name              String
   description       String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  
-  idUser            String?   // null cho hệ thống, có giá trị cho user
-  user              User?     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
- 
-  grammars          GrammarsOnCategories[]
+  idUser String? // null cho hệ thống, có giá trị cho user
+  user   User?   @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+
+  grammars GrammarsOnCategories[]
 
   @@unique([idUser, name])
 }
 
-
 model Grammar {
-  idGrammar         String    @id @default(uuid())
-  title             String
-  explanation       String
-  level             Level     @default(Low)
-  commonMistakes    Json?
-  examples          Json?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  order             Int       @default(0)
+  idGrammar      String   @id @default(uuid())
+  title          String
+  explanation    String
+  level          Level    @default(Low)
+  commonMistakes Json?
+  examples       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  order          Int      @default(0)
 
-  
-  categories        GrammarsOnCategories[]
+  categories GrammarsOnCategories[]
 }
 
 model GrammarsOnCategories {
-  
   idGrammarCategory String
   idGrammar         String
 
-  assignedAt        DateTime @default(now())
-  assignedBy        String 
+  assignedAt DateTime @default(now())
+  assignedBy String
 
-  
-  category          GrammarCategory @relation(fields: [idGrammarCategory], references: [idGrammarCategory], onDelete: Cascade)
-  grammar           Grammar         @relation(fields: [idGrammar], references: [idGrammar], onDelete: Cascade)
+  category GrammarCategory @relation(fields: [idGrammarCategory], references: [idGrammarCategory], onDelete: Cascade)
+  grammar  Grammar         @relation(fields: [idGrammar], references: [idGrammar], onDelete: Cascade)
 
-  
   @@id([idGrammarCategory, idGrammar])
 }
 
 model SpeakingTask {
-  idSpeakingTask String  @id @default(uuid())
-  idTest           String
+  idSpeakingTask String   @id @default(uuid())
+  idTest         String
   title          String // Ví dụ: "Speaking Test 1 - Topic: Travel"
   audioPromptUrl String? // Có thể là file audio của giám khảo
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   test            Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
-  questions     SpeakingQuestion[]     // Các câu hỏi cho Part 1, 2, 3
+  questions       SpeakingQuestion[] // Các câu hỏi cho Part 1, 2, 3
   userSubmissions UserSpeakingSubmission[] // Các bài nộp của user
 
   @@unique([idTest]) // Đảm bảo mỗi 'De' (loại SPEAKING) chỉ có 1 SpeakingTask
@@ -474,10 +466,10 @@ model SpeakingTask {
 model SpeakingQuestion {
   idSpeakingQuestion String           @id @default(uuid())
   idSpeakingTask     String
-  part               SpeakingPartType 
-  topic              String?         
-  prompt             String?           @db.Text // Câu hỏi chính, hoặc nội dung cue card
-  subPrompts         Json?            // Các gạch đầu dòng cho Part 2 (You should say...)
+  part               SpeakingPartType
+  topic              String?
+  prompt             String?          @db.Text // Câu hỏi chính, hoặc nội dung cue card
+  subPrompts         Json? // Các gạch đầu dòng cho Part 2 (You should say...)
   preparationTime    Int              @default(0) // Thời gian chuẩn bị (giây), vd: 60 cho Part 2
   speakingTime       Int              @default(120) // Thời gian nói (giây)
   order              Int              @default(0) // Để sắp xếp thứ tự câu hỏi
@@ -486,31 +478,31 @@ model SpeakingQuestion {
 }
 
 model UserSpeakingSubmission {
-  idSpeakingSubmission String   @id @default(uuid())
+  idSpeakingSubmission String         @id @default(uuid())
   idUser               String
   idSpeakingTask       String
-  audioUrl             String   // URL tới file audio user đã ghi
-  transcript           String?  @db.Text
-  submittedAt          DateTime @default(now())
+  audioUrl             String // URL tới file audio user đã ghi
+  transcript           String?        @db.Text
+  submittedAt          DateTime       @default(now())
   status               SpeakingStatus @default(SUBMITTED)
 
-  user         User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  speakingTask SpeakingTask    @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
+  user         User               @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  speakingTask SpeakingTask       @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
   feedback     SpeakingFeedback[] // Phản hồi cho bài nộp này
 }
 
 model SpeakingFeedback {
-  idSpeakingFeedback            String @id @default(uuid())
-  idSpeakingSubmission          String @unique // 1 bài nộp chỉ có 1 feedback tổng thể
-  
-  fluencyAndCoherence           String @db.Text
-  lexicalResource               String @db.Text
-  grammaticalRangeAndAccuracy   String @db.Text
-  pronunciation                 String @db.Text
-  
-  generalFeedback               String @db.Text
-  detailedCorrections           Json? // Lưu các lỗi chi tiết (phát âm, ngữ pháp)
-  gradedAt                      DateTime @default(now())
+  idSpeakingFeedback   String @id @default(uuid())
+  idSpeakingSubmission String @unique // 1 bài nộp chỉ có 1 feedback tổng thể
+
+  fluencyAndCoherence         String @db.Text
+  lexicalResource             String @db.Text
+  grammaticalRangeAndAccuracy String @db.Text
+  pronunciation               String @db.Text
+
+  generalFeedback     String   @db.Text
+  detailedCorrections Json? // Lưu các lỗi chi tiết (phát âm, ngữ pháp)
+  gradedAt            DateTime @default(now())
 
   submission UserSpeakingSubmission @relation(fields: [idSpeakingSubmission], references: [idSpeakingSubmission], onDelete: Cascade)
 }
@@ -525,4 +517,3 @@ enum SpeakingStatus {
   SUBMITTED
   GRADED
 }
-

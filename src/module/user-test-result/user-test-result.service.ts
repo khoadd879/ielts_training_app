@@ -205,7 +205,10 @@ export class UserTestResultService {
    * - Mid: hệ số 1.5
    * - High: hệ số 2.0
    */
-  private calculateXp(level: 'Low' | 'Mid' | 'High', band: number): number {
+  private calculateXp(
+    level: 'Low' | 'Mid' | 'High' | 'Great',
+    band: number,
+  ): number {
     const levelMultiplier = level === 'Low' ? 1 : level === 'Mid' ? 1.5 : 2.0;
 
     const xp = Math.max(0, (band - 5) * 10 * levelMultiplier);
@@ -245,14 +248,16 @@ export class UserTestResultService {
   /**
    * Trả về level tiếp theo
    */
-  private getNextLevel(level: 'Low' | 'Mid' | 'High') {
+  private getNextLevel(level: 'Low' | 'Mid' | 'High' | 'Great') {
     switch (level) {
       case 'Low':
         return 'Mid';
       case 'Mid':
         return 'High';
+      case 'High':
+        return 'Great';
       default:
-        return 'High';
+        return 'Great';
     }
   }
 

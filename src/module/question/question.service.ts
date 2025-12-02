@@ -2,9 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { DatabaseService } from 'src/database/database.service';
-import { AnswerService } from '../answer/answer.service';
-import { createManyQuestionsDto } from './dto/create-many-question.dto';
 import { CreateQuestionAndAnswerDto } from './dto/create-question-and-answer.dto';
+import { UpdateManyQuestionsDto } from './dto/update-many-questions.dto';
+
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class QuestionService {
@@ -238,6 +239,141 @@ export class QuestionService {
     return {
       message: 'Questions created successfully',
       data: createdRecords,
+      status: 200,
+    };
+  }
+
+  async updateManyQuestions(updateManyQuestionsDto: UpdateManyQuestionsDto) {
+    const questionsToUpdate = updateManyQuestionsDto.questions;
+
+    if (!Array.isArray(questionsToUpdate) || questionsToUpdate.length === 0) {
+      throw new BadRequestException(
+        'Payload must be a non-empty array of questions',
+      );
+    }
+
+    const questionIds = Array.from(
+      new Set(questionsToUpdate.map((q) => q.idQuestion)),
+    );
+    const groupIds = Array.from(
+      new Set(questionsToUpdate.map((q) => q.idGroupOfQuestions)),
+    ).filter(Boolean) as string[];
+    const partIds = Array.from(
+      new Set(questionsToUpdate.map((q) => q.idPart)),
+    ).filter(Boolean) as string[];
+
+    // Validate existence of questions
+    const existingQuestions = await this.databaseService.question.findMany({
+      where: { idQuestion: { in: questionIds } },
+      select: { idQuestion: true },
+    });
+    const foundQuestionIds = new Set(
+      existingQuestions.map((q) => q.idQuestion),
+    );
+    const missingQuestion = questionIds.find((id) => !foundQuestionIds.has(id));
+    if (missingQuestion) {
+      throw new BadRequestException(`Question not found: ${missingQuestion}`);
+    }
+
+    // Validate groups (only if groupIds are provided in the update payload)
+    if (groupIds.length > 0) {
+      const groups = await this.databaseService.groupOfQuestions.findMany({
+        where: { idGroupOfQuestions: { in: groupIds } },
+        select: { idGroupOfQuestions: true },
+      });
+      const foundGroupIds = new Set(groups.map((g) => g.idGroupOfQuestions));
+      const missingGroup = groupIds.find((id) => !foundGroupIds.has(id));
+      if (missingGroup) {
+        throw new BadRequestException(
+          `Group of questions not found: ${missingGroup}`,
+        );
+      }
+    }
+
+    // Validate parts (only if partIds are provided in the update payload)
+    if (partIds.length > 0) {
+      const parts = await this.databaseService.part.findMany({
+        where: { idPart: { in: partIds } },
+        select: { idPart: true },
+      });
+      const foundPartIds = new Set(parts.map((p) => p.idPart));
+      const missingPart = partIds.find((id) => !foundPartIds.has(id));
+      if (missingPart) {
+        throw new BadRequestException(`Part not found: ${missingPart}`);
+      }
+    }
+
+    // Check for duplicate numberQuestion within input per group
+    const seenNumberQuestionInGroup = new Set<string>();
+    for (const q of questionsToUpdate) {
+      if (q.idGroupOfQuestions && q.numberQuestion !== undefined) {
+        const key = `${q.idGroupOfQuestions}:${q.numberQuestion}`;
+        if (seenNumberQuestionInGroup.has(key)) {
+          throw new BadRequestException(
+            `Duplicate numberQuestion ${q.numberQuestion} for group ${q.idGroupOfQuestions} in the update payload.`,
+          );
+        }
+        seenNumberQuestionInGroup.add(key);
+      }
+    }
+
+    await this.databaseService.$transaction(async (tx) => {
+      for (const q of questionsToUpdate) {
+        const questionData: Prisma.QuestionUpdateInput = {};
+        if (q.idGroupOfQuestions !== undefined)
+          questionData.groupOfQuestions = {
+            connect: { idGroupOfQuestions: q.idGroupOfQuestions },
+          };
+        if (q.idPart !== undefined)
+          questionData.part = { connect: { idPart: q.idPart } };
+        if (q.numberQuestion !== undefined)
+          questionData.numberQuestion = q.numberQuestion;
+        if (q.content !== undefined) questionData.content = q.content;
+
+        // If answers are provided, delete existing and create new ones
+        if (q.answers !== undefined) {
+          // Delete existing answers for this question
+          await tx.answer.deleteMany({
+            where: { idQuestion: q.idQuestion },
+          });
+
+          // Create new answers
+          if (q.answers.length > 0) {
+            const answerData = q.answers.map((a) => ({
+              idQuestion: q.idQuestion,
+              idOption: a.idOption,
+              answer_text: a.answer_text?.toUpperCase(),
+              matching_key: a.matching_key?.toUpperCase(),
+              matching_value: a.matching_value?.toUpperCase(),
+            }));
+            await tx.answer.createMany({
+              data: answerData,
+            });
+          }
+        }
+
+        // Update the question itself
+        await tx.question.update({
+          where: { idQuestion: q.idQuestion },
+          data: questionData,
+        });
+      }
+    });
+
+    const updatedRecords = await this.databaseService.question.findMany({
+      where: {
+        idQuestion: {
+          in: questionIds,
+        },
+      },
+      include: {
+        answers: true,
+      },
+    });
+
+    return {
+      message: 'Questions updated successfully',
+      data: updatedRecords,
       status: 200,
     };
   }
