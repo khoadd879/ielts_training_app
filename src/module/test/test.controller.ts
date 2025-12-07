@@ -115,6 +115,11 @@ export class TestController {
     return this.testService.findAll();
   }
 
+  @Get('get-detail-in-test/:idTest')
+  getTest(@Param('idTest') idTest: string){
+    return this.testService.getTest(idTest)
+  }
+
   @Delete('delete-test/:idTest')
   remove(@Param('idTest') idTest: string) {
     return this.testService.remove(idTest);

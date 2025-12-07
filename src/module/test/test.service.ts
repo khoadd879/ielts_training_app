@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTestDto } from './dto/create-test.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -298,6 +298,40 @@ export class TestService {
     await this.cache.set(cacheKey, data, 600); // cache 10 phút
     return {
       message: 'Part retrieved successfully',
+      data,
+      status: 200,
+    };
+  }
+
+  async getTest(idTest: string){
+      const existingTest = await this.databaseService.test.findUnique({
+      where: { idTest },
+    });
+    if (!existingTest) {
+      throw new BadRequestException('Test not found');
+    }
+
+    const data = await this.databaseService.test.findUnique({
+      where: {idTest},
+      include:{
+        parts: {
+          include:{
+            groupOfQuestions: {
+              include:{
+                question: true
+              }
+            },
+          }
+        },
+        writingTasks: true,
+        speakingTasks: true
+      }
+    })
+
+    if (!data) throw new NotFoundException('Test not found')
+
+    return {
+      message: 'Test retrieved successfully',
       data,
       status: 200,
     };
