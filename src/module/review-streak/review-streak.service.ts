@@ -49,6 +49,26 @@ export class ReviewStreakService {
               },
             },
           });
+
+          const xpVocab = await prisma.vocabulary.findMany({
+            where:{
+              idUser
+            },
+            select:{
+              xp: true
+            }
+          })
+
+          const totalXp = xpVocab.reduce((sum, item) => sum + item.xp, 0);
+
+          await prisma.user.update({
+            where:{
+              idUser
+            },
+            data:{
+              xp: totalXp
+            }
+          })
         }
       });
     } catch (error) {
@@ -67,7 +87,6 @@ export class ReviewStreakService {
         `Failed to update streak for user ${idUser} after review`,
         error,
       );
-      // Không ném lỗi ra ngoài vì hành động chính đã thành công
     }
 
     return { message: 'Review session completed successfully!' };

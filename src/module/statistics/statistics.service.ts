@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateStatisticDto } from './dto/create-statistic.dto';
 import { UpdateStatisticDto } from './dto/update-statistic.dto';
 import { startOfWeek, endOfWeek, addDays, format } from 'date-fns';
@@ -68,4 +68,60 @@ export class StatisticsService {
 
     return result;
   }
+
+  async OverAllScore(idUser: string){
+    const existingUser = await this.prisma.user.findUnique({
+      where:{idUser}
+    })
+
+    if(!existingUser) throw new BadRequestException('User not found')
+      
+    const testResult = await this.prisma.userTestResult.findMany({
+      where:{idUser, status: 'FINISHED'},
+      select:{
+        band_score: true,
+        test : {
+          select: {
+            testType: true
+          }
+        },
+      }
+    })
+
+    const roundToIeltsScore = (score: number): number => {
+    return Math.round(score * 2) / 2;
+  };
+
+    const groupTest = {
+    READING: testResult.filter((t) => t.test.testType === 'READING'),
+    LISTENING: testResult.filter((t) => t.test.testType === 'LISTENING'),
+    WRITING: testResult.filter((t) => t.test.testType === 'WRITING'),
+    SPEAKING: testResult.filter((t) => t.test.testType === 'SPEAKING'), 
+  };
+
+    const averages = Object.entries(groupTest).map(([type, tests]) =>{
+    const scores = (tests as typeof testResult).map((t) => t.band_score);
+    
+    const rawAvg = scores.length
+      ? scores.reduce((a, b) => a + b, 0) / scores.length
+      : 0;
+
+    return { 
+      type, 
+      avg: roundToIeltsScore(rawAvg)
+    };
+  });
+
+  const totalScore = averages.reduce((sum, item) => sum + item.avg, 0);
+
+  const rawOverall = averages.length > 0 ? totalScore / averages.length : 0;
+
+
+  return {
+    message: "Overall score is retrieved successfully",
+    overall: roundToIeltsScore(rawOverall),
+    details: averages,
+    status: 200
+  };
+}
 }

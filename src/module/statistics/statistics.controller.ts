@@ -21,4 +21,9 @@ export class StatisticsController {
   getWeeklyStats(@Param('idUser') idUser: string) {
     return this.statisticsService.getWeeklyScores(idUser);
   }
+
+  @Get('overall-score/:idUser')
+  getOverAllScore(@Param('idUser') idUser: string){
+    return this.statisticsService.OverAllScore(idUser)
+  }
 }
