@@ -6,26 +6,29 @@ import {
   IsUUID,
   ValidateNested,
 } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
-// DTO này định nghĩa cấu trúc của một câu trả lời duy nhất
 class VocabularyAnswerDto {
+  @ApiProperty({ example: '456' })
   @IsUUID('4')
   @IsNotEmpty()
-  idTuVung: string;
+  idVocab: string;
 
+  @ApiProperty({ example: true })
   @IsBoolean()
   @IsNotEmpty()
   isCorrect: boolean;
 }
 
-// DTO chính cho toàn bộ request body
 export class SubmitReviewDto {
+  @ApiProperty({ example: '123' })
   @IsUUID('4')
   @IsNotEmpty()
   idUser: string;
 
+  @ApiProperty({ type: [VocabularyAnswerDto] })
   @IsArray()
-  @ValidateNested({ each: true }) // Kiểm tra từng phần tử trong mảng
-  @Type(() => VocabularyAnswerDto) // Chỉ định class cho mỗi phần tử
+  @ValidateNested({ each: true })
+  @Type(() => VocabularyAnswerDto)
   answers: VocabularyAnswerDto[];
 }

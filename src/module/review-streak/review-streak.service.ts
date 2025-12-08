@@ -21,13 +21,13 @@ export class ReviewStreakService {
         for (const answer of answers) {
           // Lấy thông tin hiện tại của từ vựng
           const tuVung = await prisma.vocabulary.findUnique({
-            where: { idVocab: answer.idTuVung, idUser: idUser }, // Đảm bảo từ vựng thuộc về user
+            where: { idVocab: answer.idVocab, idUser: idUser }, // Đảm bảo từ vựng thuộc về user
           });
 
           if (!tuVung) {
             // Nếu từ vựng không tồn tại hoặc không phải của user, bỏ qua hoặc báo lỗi
             console.warn(
-              `TuVung with id ${answer.idTuVung} not found for user ${idUser}`,
+              `TuVung with id ${answer.idVocab} not found for user ${idUser}`,
             );
             continue; // Bỏ qua và xử lý từ tiếp theo
           }
@@ -40,7 +40,7 @@ export class ReviewStreakService {
 
           // Cập nhật lại từ vựng trong database
           await prisma.vocabulary.update({
-            where: { idVocab: answer.idTuVung },
+            where: { idVocab: answer.idVocab },
             data: {
               lastReviewed: new Date(),
               correctStreak: newCorrectStreak,
