@@ -318,7 +318,11 @@ export class TestService {
           include:{
             groupOfQuestions: {
               include:{
-                question: true
+                question: {
+                  include:{
+                    answers: true
+                  }
+                }
               }
             },
           }
