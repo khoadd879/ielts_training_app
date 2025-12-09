@@ -8,25 +8,27 @@ datasource db {
 }
 
 model User {
-  idUser        String      @id @default(uuid())
-  nameUser      String?
-  email         String      @unique
-  password      String
-  phoneNumber   String?
-  address       String?
-  role          Role        @default(USER)
-  avatar        String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  accountType   accountType @default(LOCAL)
-  isActive      Boolean     @default(false)
-  gender        Gender      @default(Male)
-  level         Level?
-  xp            Int         @default(0)
-  xpToNext      Int         @default(100) // ngưỡng để lên level tiếp theo
-  currentStreak Int         @default(0) // Chuỗi hiện tại
-  longestStreak Int         @default(0) // Chuỗi dài nhất từng đạt được
-  lastStudiedAt DateTime? // Ngày cuối cùng có hoạt động học
+  idUser          String      @id @default(uuid())
+  nameUser        String?
+  email           String      @unique
+  password        String
+  phoneNumber     String?
+  address         String?
+  role            Role        @default(USER)
+  avatar          String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  accountType     accountType @default(LOCAL)
+  isActive        Boolean     @default(false)
+  gender          Gender      @default(Male)
+  level           Level?
+  xp              Int         @default(0)
+  xpToNext        Int         @default(100) // ngưỡng để lên level tiếp theo
+  currentStreak   Int         @default(0) // Chuỗi hiện tại
+  longestStreak   Int         @default(0) // Chuỗi dài nhất từng đạt được
+  lastStudiedAt   DateTime? // Ngày cuối cùng có hoạt động học
+  targetExamDate  DateTime? // Ngày dự định thi IELTS
+  targetBandScore Float? // Điểm mục tiêu (VD: 6.5, 7.0)
 
   test                   Test[]
   forumComment           ForumComment[]

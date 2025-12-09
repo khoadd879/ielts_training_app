@@ -1,8 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateStatisticDto } from './dto/create-statistic.dto';
-import { UpdateStatisticDto } from './dto/update-statistic.dto';
-import { startOfWeek, endOfWeek, addDays, format } from 'date-fns';
+import { differenceInDays, format } from 'date-fns';
 import { DatabaseService } from 'src/database/database.service';
+import { CreateTargetExam } from './dto/create-target-exam.dto';
 
 @Injectable()
 export class StatisticsService {
@@ -145,6 +144,49 @@ export class StatisticsService {
       message: 'Statistics retrieved successfully',
       data: statistics,
       status: 200,
+    };
+  }
+
+  async addTargetExam(idUser: string, createTargetExam: CreateTargetExam){
+     const existingUser = await this.prisma.user.findUnique({
+      where:{idUser}
+    })
+
+    if(!existingUser) throw new BadRequestException('User not found')
+
+      const {targetExamDate, targetBandScore} = createTargetExam;
+      
+      const data = await this.prisma.user.update({
+        where:{idUser},
+        data:{
+          ...(targetExamDate && { targetExamDate: new Date(targetExamDate) }),
+        ...(targetBandScore && { targetBandScore: targetBandScore }),
+        },
+        select: {
+        targetExamDate: true,
+        targetBandScore: true,
+      }
+      })
+
+      let daysRemaining = 0;
+
+      if (data.targetExamDate) {
+      const today = new Date();
+      // differenceInDays trả về số nguyên (ngày đích - ngày hiện tại)
+      const diff = differenceInDays(data.targetExamDate, today);
+      
+      // Nếu kết quả > 0 thì lấy, nếu âm (đã qua ngày thi) thì trả về 0
+      daysRemaining = diff > 0 ? diff : 0;
+    }
+
+    return {
+      message: "Target updated successfully",
+      data: {
+        targetBandScore: data.targetBandScore,
+        targetExamDate: data.targetExamDate,
+        daysRemaining: daysRemaining
+      },
+      status: 200
     };
   }
 }
