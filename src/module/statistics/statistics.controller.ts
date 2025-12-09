@@ -8,8 +8,6 @@ import {
   Delete,
 } from '@nestjs/common';
 import { StatisticsService } from './statistics.service';
-import { CreateStatisticDto } from './dto/create-statistic.dto';
-import { UpdateStatisticDto } from './dto/update-statistic.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiBearerAuth()
@@ -17,13 +15,13 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 export class StatisticsController {
   constructor(private readonly statisticsService: StatisticsService) {}
 
-  @Get(':idUser/weekly')
-  getWeeklyStats(@Param('idUser') idUser: string) {
-    return this.statisticsService.getWeeklyScores(idUser);
-  }
-
   @Get('overall-score/:idUser')
   getOverAllScore(@Param('idUser') idUser: string){
     return this.statisticsService.OverAllScore(idUser)
+  }
+
+  @Get('get-avg-score-by-day/:idUser')
+  getAvgScoreByDay(@Param('idUser') idUser: string){
+    return this.statisticsService.statistic(idUser)
   }
 }

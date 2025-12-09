@@ -8,67 +8,6 @@ import { DatabaseService } from 'src/database/database.service';
 export class StatisticsService {
   constructor(private readonly prisma: DatabaseService) {}
 
-  async getWeeklyScores(idUser: string) {
-    // Tính ngày bắt đầu (thứ Hai) và ngày kết thúc (Chủ Nhật) của tuần hiện tại
-    const start = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const end = endOfWeek(new Date(), { weekStartsOn: 1 });
-
-    // Lấy tất cả các bài làm trong tuần
-    const tests = await this.prisma.userTestResult.findMany({
-      where: {
-        idUser,
-        createdAt: { gte: start, lte: end },
-        status: 'FINISHED',
-      },
-      select: {
-        createdAt: true,
-        band_score: true,
-        test: { select: { testType: true } },
-      },
-    });
-
-    // Tạo danh sách các ngày trong tuần (thứ Hai -> Chủ Nhật)
-    const days: Date[] = [];
-    for (let i = 0; i < 7; i++) {
-      days.push(addDays(start, i));
-    }
-
-    // Nhóm dữ liệu theo ngày và loại đề
-    const result = days.map((day) => {
-      const dateKey = format(day, 'yyyy-MM-dd');
-
-      // Lọc các bài làm trong ngày hiện tại
-      const dailyTests = tests.filter(
-        (test) => format(test.createdAt, 'yyyy-MM-dd') === dateKey,
-      );
-
-      // Nhóm bài làm theo loại đề
-      const groupedByType = {
-        READING: dailyTests.filter((test) => test.test.testType === 'READING'),
-        LISTENING: dailyTests.filter(
-          (test) => test.test.testType === 'LISTENING',
-        ),
-        WRITING: dailyTests.filter((test) => test.test.testType === 'WRITING'),
-      };
-
-      // Tính điểm trung bình cho từng loại đề
-      const averages = Object.entries(groupedByType).map(([type, tests]) => {
-        const scores = tests.map((test) => test.band_score);
-        const avg = scores.length
-          ? scores.reduce((a, b) => a + b, 0) / scores.length
-          : 0;
-        return { type, avg };
-      });
-
-      return {
-        date: dateKey,
-        averages,
-      };
-    });
-
-    return result;
-  }
-
   async OverAllScore(idUser: string){
     const existingUser = await this.prisma.user.findUnique({
       where:{idUser}
@@ -124,4 +63,88 @@ export class StatisticsService {
     status: 200
   };
 }
+
+  async statistic(idUser: string){
+    const existingUser = await this.prisma.user.findUnique({
+      where:{idUser}
+    })
+
+    if(!existingUser) throw new BadRequestException('User not found')
+
+    const testResults = await this.prisma.userTestResult.findMany({
+      where:{idUser, status: 'FINISHED'},
+      select:{
+        band_score: true,
+        test : {
+          select: {
+            testType: true
+          }
+        },
+        createdAt: true,
+      },
+      orderBy:{
+        createdAt: 'asc'
+      }
+    })
+
+    type SkillStats = { total: number; count: number };
+    type DayData = {
+      [key in 'READING' | 'LISTENING' | 'WRITING' | 'SPEAKING']?: SkillStats;
+    };
+
+    const roundToIeltsScore = (score: number): number => {
+    return Math.round(score * 2) / 2;
+    };
+
+    const groupedByDate: Record<string, DayData> = {};
+
+    testResults.forEach((result) => {
+      const dateKey = format(result.createdAt, 'yyyy-MM-dd');
+      const type = result.test.testType;
+
+      if (!groupedByDate[dateKey]) {
+        groupedByDate[dateKey] = {};
+      }
+
+      // Nếu chưa có dữ liệu cho kỹ năng này trong ngày thì khởi tạo
+      if (!groupedByDate[dateKey][type]) {
+        groupedByDate[dateKey][type] = { total: 0, count: 0 };
+      }
+
+      // Cộng dồn điểm và số lượng
+      groupedByDate[dateKey][type]!.total += result.band_score;
+      groupedByDate[dateKey][type]!.count += 1;
+    });
+
+    const statistics = Object.entries(groupedByDate).map(([date, skills]) => {
+      // Hàm tính trung bình nhỏ gọn
+      const calculateAvg = (skillData?: SkillStats) => 
+        skillData ? parseFloat((skillData.total / skillData.count).toFixed(2)) : 0;
+
+      let dayTotalScore = 0;
+      
+
+      Object.values(skills).forEach((skill) => {
+        dayTotalScore += skill.total;
+      });
+
+      const dailyOverall = dayTotalScore > 0 
+        ? parseFloat((dayTotalScore / 4).toFixed(2)) 
+        : 0;
+
+      return {
+        date,
+        OVERALL: roundToIeltsScore(dailyOverall),
+        READING: roundToIeltsScore(calculateAvg(skills['READING'])),
+        LISTENING: roundToIeltsScore(calculateAvg(skills['LISTENING'])),
+        WRITING: roundToIeltsScore(calculateAvg(skills['WRITING'])),
+        SPEAKING: roundToIeltsScore(calculateAvg(skills['SPEAKING'])),
+      };
+    });
+    return {
+      message: 'Statistics retrieved successfully',
+      data: statistics,
+      status: 200,
+    };
+  }
 }
