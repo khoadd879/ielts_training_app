@@ -116,6 +116,12 @@ export class UserTestResultService {
   }
 
   async finishTest(idTestResult: string, idUser: string) {
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+    if (!existingUser) throw new BadRequestException('User not found');
+
+
     const testResult = await this.databaseService.userTestResult.findFirst({
       where: {
         idTestResult: idTestResult,
@@ -225,9 +231,12 @@ export class UserTestResultService {
 
   await Promise.all(updatePromises);
 
-  const total_questions = testResult.test.numberQuestion;
-  const band_score = this.calculateIELTSBandScore(total_correct, total_questions);
-
+  const actualTotalQuestions = allQuestions.length;
+    
+    const band_score = this.calculateIELTSBandScore(
+      total_correct,
+      actualTotalQuestions,
+    );
 
     const xpGained = this.calculateXp(testResult.test.level, band_score);
     await this.updateUserXpAndLevel(idUser, xpGained);
@@ -240,13 +249,14 @@ export class UserTestResultService {
         error,
       );
     }
+    
     await this.databaseService.userTestResult.update({
       where: { idTestResult: idTestResult },
       data: {
         status: 'FINISHED',
         finishedAt: new Date(),
         total_correct: total_correct,
-        total_questions: total_questions,
+        total_questions: actualTotalQuestions,
         band_score: band_score,
         score: total_correct, 
       },
