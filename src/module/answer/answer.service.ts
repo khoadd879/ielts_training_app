@@ -8,7 +8,7 @@ import { timeStamp } from 'console';
 export class AnswerService {
   constructor(private readonly databaseService: DatabaseService) {}
   async createAnswer(createAnswerDto: CreateAnswerDto) {
-    const { idQuestion, idOption, answer_text, matching_key, matching_value } =
+    const { idQuestion, answer_text, matching_key, matching_value } =
       createAnswerDto;
     const existingQuestion = await this.databaseService.question.findUnique({
       where: {
@@ -21,7 +21,6 @@ export class AnswerService {
     const data = await this.databaseService.answer.create({
       data: {
         idQuestion,
-        idOption: idOption ? idOption : null,
         answer_text: answer_text ? answer_text : null,
         matching_key: matching_key ? matching_key : null,
         matching_value: matching_value ? matching_value : null,
@@ -72,7 +71,7 @@ export class AnswerService {
   }
 
   async updateAnswer(idAnswer: string, updateAnswerDto: UpdateAnswerDto) {
-    const { idQuestion, idOption, answer_text, matching_key, matching_value } =
+    const { idQuestion, answer_text, matching_key, matching_value } =
       updateAnswerDto;
     const existingQuestion = await this.databaseService.question.findUnique({
       where: {
@@ -98,7 +97,6 @@ export class AnswerService {
       },
       data: {
         idQuestion,
-        idOption: idOption ? idOption : null,
         answer_text: answer_text ? answer_text : null,
         matching_key: matching_key ? matching_key : null,
         matching_value: matching_value ? matching_value : null,

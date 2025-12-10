@@ -214,7 +214,6 @@ export class QuestionService {
       };
 
       const answerData = q.answers?.map((a) => ({
-        idOption: a.idOption,
         answer_text: a.answer_text?.toUpperCase(),
         matching_key: a.matching_key?.toUpperCase(),
         matching_value: a.matching_value?.toUpperCase(),
@@ -341,7 +340,6 @@ export class QuestionService {
           if (q.answers.length > 0) {
             const answerData = q.answers.map((a) => ({
               idQuestion: q.idQuestion,
-              idOption: a.idOption,
               answer_text: a.answer_text?.toUpperCase(),
               matching_key: a.matching_key?.toUpperCase(),
               matching_value: a.matching_value?.toUpperCase(),

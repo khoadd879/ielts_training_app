@@ -16,10 +16,10 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 export class UserAnswerController {
   constructor(private readonly userAnswerService: UserAnswerService) {}
 
-  @Post('upsert-user-answer')
-  UpsertCreateUserAnswer(@Body() createUserAnswerDto: CreateUserAnswerDto) {
-    return this.userAnswerService.UpsertCreateUserAnswer(createUserAnswerDto);
-  }
+  // @Post('upsert-user-answer')
+  // UpsertCreateUserAnswer(@Body() createUserAnswerDto: CreateUserAnswerDto) {
+  //   return this.userAnswerService.UpsertCreateUserAnswer(createUserAnswerDto);
+  // }
 
   @Get('get-answer/:idTestResult')
   getAnswers(@Param('idTestResult') idTestResult: string) {

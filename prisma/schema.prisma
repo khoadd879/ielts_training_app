@@ -177,26 +177,12 @@ model Question {
   answers            Answer[]
   groupOfQuestions   GroupOfQuestions @relation(fields: [idGroupOfQuestions], references: [idGroupOfQuestions], onDelete: Cascade)
   part               Part             @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
-  options            Option[]
   userAnswers        UserAnswer[]
-}
-
-model Option {
-  idOption       String       @id @default(uuid())
-  idQuestion     String
-  option_label   String
-  option_content String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  answers        Answer[]
-  question       Question     @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
-  userAnswers    UserAnswer[]
 }
 
 model Answer {
   idAnswer       String  @id @default(uuid())
   idQuestion     String
-  idOption       String? //nếu câu hỏi là Multiple Choice (MCQ)
   answer_text    String? // Dành cho dạng câu hỏi không có lựa chọn như: FillBlank, ShortAnswer, Other
   matching_key   String? //A , B , C
   matching_value String? // Dành cho dạng câu hỏi Matching (Nối cặp).
@@ -209,14 +195,12 @@ model Answer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   question  Question @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
-  option    Option?  @relation(fields: [idOption], references: [idOption], onDelete: Cascade)
 }
 
 model UserAnswer {
   idUserAnswer   String         @id @default(uuid())
   idQuestion     String
   idUser         String
-  idOption       String?
   answerText     String?
   submitted_at   DateTime       @default(now())
   isCorrect      Boolean        @default(false)
@@ -225,7 +209,6 @@ model UserAnswer {
   matching_value String?
   userAnswerType QuestionType
   question       Question       @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
-  option         Option?        @relation(fields: [idOption], references: [idOption], onDelete: Cascade)
   testResult     UserTestResult @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
   user           User           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 

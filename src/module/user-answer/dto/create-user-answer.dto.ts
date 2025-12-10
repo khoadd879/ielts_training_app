@@ -7,14 +7,6 @@ export class CreateUserAnswerDto {
   @ApiProperty({ example: '123' })
   idQuestion: string;
 
-  @IsNotEmpty()
-  @ApiProperty({ example: '123' })
-  idUser: string;
-
-  @ValidateIf((o) => o.userAnswerType === QuestionType.MCQ)
-  @ApiProperty({ example: '123' })
-  idOption?: string;
-
   @ValidateIf((o) =>
     [
       QuestionType.TFNG,
@@ -30,7 +22,6 @@ export class CreateUserAnswerDto {
   @IsEnum(QuestionType)
   @ApiProperty({
     enum: QuestionType,
-    enumName: 'QuestionType', // để Swagger hiện tên enum
     description: 'Loại câu trả lời (MCQ, TEXT, MATCHING)',
   })
   userAnswerType: QuestionType;
@@ -42,10 +33,6 @@ export class CreateUserAnswerDto {
   @ValidateIf((o) => o.userAnswerType === QuestionType.MATCHING)
   @ApiProperty({ example: '1' })
   matching_value?: string;
-
-  @IsNotEmpty()
-  @ApiProperty({ example: '123' })
-  idTestResult: string;
 
   @ApiProperty({ example: '30' })
   timeSpent: number;

@@ -17,7 +17,6 @@ import { PartModule } from './module/part/part.module';
 import { PassageModule } from './module/passage/passage.module';
 import { GroupOfQuestionsModule } from './module/group-of-questions/group-of-questions.module';
 import { QuestionModule } from './module/question/question.module';
-import { OptionModule } from './module/option/option.module';
 
 import { AnswerModule } from './module/answer/answer.module';
 import { UserAnswerModule } from './module/user-answer/user-answer.module';
@@ -86,7 +85,6 @@ import * as redisStore from 'cache-manager-redis-store';
     PassageModule,
     GroupOfQuestionsModule,
     QuestionModule,
-    OptionModule,
     AnswerModule,
     UserAnswerModule,
     UserTestResultModule,
