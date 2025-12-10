@@ -33,10 +33,4 @@ export class CreateUserAnswerDto {
   @ValidateIf((o) => o.userAnswerType === QuestionType.MATCHING)
   @ApiProperty({ example: '1' })
   matching_value?: string;
-
-  @ApiProperty({ example: '30' })
-  timeSpent: number;
-
-  @ApiProperty({ example: '30' })
-  timeRemaining: number;
 }

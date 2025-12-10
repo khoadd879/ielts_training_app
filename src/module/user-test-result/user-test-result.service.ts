@@ -175,7 +175,7 @@ export class UserTestResultService {
         // (Giả sử bạn quy định matching_value = 'CORRECT' là đúng)
         const correctAnswersInDB = questionData.answers
             .filter(a => a.matching_value === 'CORRECT')
-            .map(a => a.answer_text); // Lấy ra mảng ['A', 'C']
+            .map(a => a.matching_key); // Lấy ra mảng ['A', 'C']
 
         // 2. Lấy đáp án User gửi lên
         // Giả sử user gửi "A,C" -> tách thành mảng ['A', 'C']
@@ -240,6 +240,17 @@ export class UserTestResultService {
         error,
       );
     }
+    await this.databaseService.userTestResult.update({
+      where: { idTestResult: idTestResult },
+      data: {
+        status: 'FINISHED',
+        finishedAt: new Date(),
+        total_correct: total_correct,
+        total_questions: total_questions,
+        band_score: band_score,
+        score: total_correct, 
+      },
+    });
 
     return {
       message: 'Test finished successfully!',
@@ -276,13 +287,13 @@ export class UserTestResultService {
     if (!user) return;
 
     let newXp = user.xp + xpGained;
-    let currentLevel = user.level ?? 'Low'; // xử lý null
-    let xpToNext = user.xpToNext ?? 100; // fallback an toàn
+    let currentLevel = user.level ?? 'Low';
+    let xpToNext = user.xpToNext ?? 100;
 
     while (newXp >= xpToNext) {
       newXp -= xpToNext;
       currentLevel = this.getNextLevel(currentLevel);
-      xpToNext = Math.floor(xpToNext * 1.5); // tăng ngưỡng khó hơn mỗi lần
+      xpToNext = Math.floor(xpToNext * 1.5);
     }
 
     await this.databaseService.user.update({

@@ -44,9 +44,8 @@ export class UserTestResultController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch('finish-test/:idTestResult')
-  finishTest(@Param('idTestResult') idTestResult: string, @Req() req) {
-    const idUser = req.user.id;
+  @Patch('finish-test/:idTestResult/:idUser')
+  finishTest(@Param('idTestResult') idTestResult: string, @Param('idUser') idUser: string) {
     return this.userTestResultService.finishTest(idTestResult, idUser);
   }
 
