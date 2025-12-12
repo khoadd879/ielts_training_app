@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { StreakService } from '../streak-service/streak-service.service';
 import { SubmitReviewDto } from './dto/submit-review.dto';
@@ -51,24 +55,24 @@ export class ReviewStreakService {
           });
 
           const xpVocab = await prisma.vocabulary.findMany({
-            where:{
-              idUser
+            where: {
+              idUser,
             },
-            select:{
-              xp: true
-            }
-          })
+            select: {
+              xp: true,
+            },
+          });
 
           const totalXp = xpVocab.reduce((sum, item) => sum + item.xp, 0);
 
           await prisma.user.update({
-            where:{
-              idUser
+            where: {
+              idUser,
             },
-            data:{
-              xp: totalXp
-            }
-          })
+            data: {
+              xp: totalXp,
+            },
+          });
         }
       });
     } catch (error) {
@@ -90,5 +94,23 @@ export class ReviewStreakService {
     }
 
     return { message: 'Review session completed successfully!' };
+  }
+
+  async getStreak(idUser: string) {
+    const data = await this.databaseService.user.findUnique({
+      where: { idUser },
+      select: {
+        lastStudiedAt: true,
+        longestStreak: true,
+        currentStreak: true,
+      },
+    });
+    if (!data) throw new NotFoundException('User not found');
+
+    return {
+      message: 'Streak retrieved successfully',
+      data,
+      status: 200,
+    };
   }
 }
