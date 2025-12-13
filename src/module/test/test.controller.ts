@@ -120,6 +120,11 @@ export class TestController {
     return this.testService.getTest(idTest)
   }
 
+  @Get('get-answers-in-test/:idTest')
+  getAnswerInTest(@Param('idTest') idTest: string){
+    return this.testService.getAnswerInTest(idTest)
+  }
+
   @Delete('delete-test/:idTest')
   remove(@Param('idTest') idTest: string) {
     return this.testService.remove(idTest);

@@ -189,4 +189,22 @@ export class StatisticsService {
       status: 200
     };
   }
+
+  async getTargetExam(idUser: string){
+     const data = await this.prisma.user.findUnique({
+      where:{idUser},
+      select:{
+        targetBandScore: true,
+        targetExamDate: true
+      }
+    })
+
+    if(!data) throw new BadRequestException('User not found')
+
+    return {
+      message: "Target exam retrieved successfully",
+      data,
+      status: 200
+    }
+  }
 }

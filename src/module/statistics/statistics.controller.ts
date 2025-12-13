@@ -26,8 +26,14 @@ export class StatisticsController {
     return this.statisticsService.statistic(idUser)
   }
 
-  @Patch('create-target/:idUser')
+  @Get('get-target/:idUser')
+  getTargetByIdUser(@Param('idUser') idUser: string){
+    return this.statisticsService.getTargetExam(idUser)
+  }
+
+  @Patch('target/:idUser')
   createTarget(@Param('idUser') idUser: string, @Body()createTarget: CreateTargetExam){
     return this.statisticsService.addTargetExam(idUser, createTarget)
   }
+
 }

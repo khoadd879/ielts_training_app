@@ -340,4 +340,57 @@ export class TestService {
       status: 200,
     };
   }
+
+  async getAnswerInTest(idTest: string) {
+    // 1. Kiểm tra Test có tồn tại không
+    const existingTest = await this.databaseService.test.findUnique({
+      where: { idTest },
+    });
+    if (!existingTest) throw new NotFoundException('Test not found');
+
+    const data = await this.databaseService.test.findUnique({
+      where: { idTest },
+      select: {
+        idTest: true,
+        title: true,
+        parts: {
+          select: {
+            idPart: true,
+            namePart: true,
+            groupOfQuestions: {
+              select: {
+                idGroupOfQuestions: true,
+                title: true,
+                typeQuestion: true, // Quan trọng để biết logic check đáp án (MCQ hay FillBlank...)
+                question: {
+                  orderBy: {
+                    numberQuestion: 'asc', // Sắp xếp theo thứ tự câu hỏi
+                  },
+                  select: {
+                    idQuestion: true,
+                    numberQuestion: true,
+                    // Chỉ lấy các field quan trọng của Answer
+                    answers: {
+                      select: {
+                        idAnswer: true,
+                        answer_text: true,   // Cho dạng điền từ
+                        matching_key: true,  // Cho dạng MCQ (A,B,C) hoặc Matching
+                        matching_value: true // Cho dạng Matching
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      message: 'Test answers retrieved successfully',
+      data,
+      status: 200,
+    };
+  }
 }
