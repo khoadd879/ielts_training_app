@@ -342,13 +342,7 @@ export class TestService {
   }
 
   async getAnswerInTest(idTest: string) {
-    // 1. Kiểm tra Test có tồn tại không
-    const existingTest = await this.databaseService.test.findUnique({
-      where: { idTest },
-    });
-    if (!existingTest) throw new NotFoundException('Test not found');
-
-    const data = await this.databaseService.test.findUnique({
+    const testData = await this.databaseService.test.findUnique({
       where: { idTest },
       select: {
         idTest: true,
@@ -361,21 +355,19 @@ export class TestService {
               select: {
                 idGroupOfQuestions: true,
                 title: true,
-                typeQuestion: true, // Quan trọng để biết logic check đáp án (MCQ hay FillBlank...)
+                typeQuestion: true, 
                 question: {
-                  orderBy: {
-                    numberQuestion: 'asc', // Sắp xếp theo thứ tự câu hỏi
-                  },
+                  orderBy: { numberQuestion: 'asc' },
                   select: {
                     idQuestion: true,
                     numberQuestion: true,
-                    // Chỉ lấy các field quan trọng của Answer
+                    content: true, // Lấy thêm content để dễ đối chiếu
                     answers: {
                       select: {
                         idAnswer: true,
-                        answer_text: true,   // Cho dạng điền từ
-                        matching_key: true,  // Cho dạng MCQ (A,B,C) hoặc Matching
-                        matching_value: true // Cho dạng Matching
+                        answer_text: true,   // Đáp án text (cho FillBlank, ShortAnswer)
+                        matching_key: true,  // Key nối (A, B, C...)
+                        matching_value: true // Chứa "CORRECT"/"INCORRECT" (MCQ) hoặc giá trị nối (Matching)
                       },
                     },
                   },
@@ -386,10 +378,46 @@ export class TestService {
         },
       },
     });
+    
+    if(!testData) throw new NotFoundException('Test not found')
+    // 3. Xử lý logic lọc đáp án đúng (Answer Key)
+    const processedParts = testData.parts.map((part) => ({
+      ...part,
+      groupOfQuestions: part.groupOfQuestions.map((group) => ({
+        ...group,
+        question: group.question.map((q) => {
+          let correctAnswers = q.answers;
+
+          // Nếu là MCQ, TFNG, YESNO: Chỉ lấy đáp án có value khác "INCORRECT"
+          // (Hoặc check === "CORRECT" tùy vào cách bạn lưu chính xác string nào)
+          if (
+            ['MCQ', 'TFNG', 'YES_NO_NOTGIVEN'].includes(group.typeQuestion)
+          ) {
+            correctAnswers = q.answers.filter(
+              (a) => a.matching_value !== 'INCORRECT', 
+            );
+          }
+          
+          // Với dạng MATCHING: Lấy tất cả (vì cặp nào cũng là đáp án đúng của cặp đó)
+          // Với dạng FILL_BLANK/SHORT_ANSWER: Lấy tất cả (vì answer_text chính là đáp án đúng)
+
+          return {
+            idQuestion: q.idQuestion,
+            numberQuestion: q.numberQuestion,
+            content: q.content,
+            correctAnswers: correctAnswers, // Trả về list đáp án đúng đã lọc
+          };
+        }),
+      })),
+    }));
 
     return {
-      message: 'Test answers retrieved successfully',
-      data,
+      message: 'Test answer key retrieved successfully',
+      data: {
+        idTest: testData.idTest,
+        title: testData.title,
+        parts: processedParts,
+      },
       status: 200,
     };
   }
