@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateTestDto } from './dto/create-test.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -303,8 +308,8 @@ export class TestService {
     };
   }
 
-  async getTest(idTest: string){
-      const existingTest = await this.databaseService.test.findUnique({
+  async getTest(idTest: string) {
+    const existingTest = await this.databaseService.test.findUnique({
       where: { idTest },
     });
     if (!existingTest) {
@@ -312,27 +317,27 @@ export class TestService {
     }
 
     const data = await this.databaseService.test.findUnique({
-      where: {idTest},
-      include:{
+      where: { idTest },
+      include: {
         parts: {
-          include:{
+          include: {
             groupOfQuestions: {
-              include:{
+              include: {
                 question: {
-                  include:{
-                    answers: true
-                  }
-                }
-              }
+                  include: {
+                    answers: true,
+                  },
+                },
+              },
             },
-          }
+          },
         },
         writingTasks: true,
-        speakingTasks: true
-      }
-    })
+        speakingTasks: true,
+      },
+    });
 
-    if (!data) throw new NotFoundException('Test not found')
+    if (!data) throw new NotFoundException('Test not found');
 
     return {
       message: 'Test retrieved successfully',
@@ -355,7 +360,7 @@ export class TestService {
               select: {
                 idGroupOfQuestions: true,
                 title: true,
-                typeQuestion: true, 
+                typeQuestion: true,
                 question: {
                   orderBy: { numberQuestion: 'asc' },
                   select: {
@@ -365,9 +370,9 @@ export class TestService {
                     answers: {
                       select: {
                         idAnswer: true,
-                        answer_text: true,   // Đáp án text (cho FillBlank, ShortAnswer)
-                        matching_key: true,  // Key nối (A, B, C...)
-                        matching_value: true // Chứa "CORRECT"/"INCORRECT" (MCQ) hoặc giá trị nối (Matching)
+                        answer_text: true, // Đáp án text (cho FillBlank, ShortAnswer)
+                        matching_key: true, // Key nối (A, B, C...)
+                        matching_value: true, // Chứa "CORRECT"/"INCORRECT" (MCQ) hoặc giá trị nối (Matching)
                       },
                     },
                   },
@@ -378,8 +383,8 @@ export class TestService {
         },
       },
     });
-    
-    if(!testData) throw new NotFoundException('Test not found')
+
+    if (!testData) throw new NotFoundException('Test not found');
     // 3. Xử lý logic lọc đáp án đúng (Answer Key)
     const processedParts = testData.parts.map((part) => ({
       ...part,
@@ -390,14 +395,12 @@ export class TestService {
 
           // Nếu là MCQ, TFNG, YESNO: Chỉ lấy đáp án có value khác "INCORRECT"
           // (Hoặc check === "CORRECT" tùy vào cách bạn lưu chính xác string nào)
-          if (
-            ['MCQ', 'TFNG', 'YES_NO_NOTGIVEN'].includes(group.typeQuestion)
-          ) {
+          if (['MCQ', 'TFNG', 'YES_NO_NOTGIVEN'].includes(group.typeQuestion)) {
             correctAnswers = q.answers.filter(
-              (a) => a.matching_value !== 'INCORRECT', 
+              (a) => a.matching_value !== 'INCORRECT',
             );
           }
-          
+
           // Với dạng MATCHING: Lấy tất cả (vì cặp nào cũng là đáp án đúng của cặp đó)
           // Với dạng FILL_BLANK/SHORT_ANSWER: Lấy tất cả (vì answer_text chính là đáp án đúng)
 

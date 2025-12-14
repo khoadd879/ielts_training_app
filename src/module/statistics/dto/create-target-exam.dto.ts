@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import { IsDateString, IsNotEmpty, IsNumber, IsOptional, Max, Min } from "class-validator";
 
 export class CreateTargetExam{
@@ -8,6 +9,7 @@ export class CreateTargetExam{
     targetExamDate?: string
 
     @ApiProperty({example: 5.0})
+    @Type(() => Number)
     @IsNumber()
     @IsOptional()
     @Min(0)
