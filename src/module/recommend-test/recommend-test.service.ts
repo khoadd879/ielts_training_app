@@ -2,7 +2,6 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { Level, Test, TestType } from '@prisma/client';
 
-// Map Level sang giá trị số để dễ so sánh
 const LevelWeight = {
   [Level.Low]: 1,
   [Level.Mid]: 2,
@@ -12,11 +11,15 @@ const LevelWeight = {
 
 @Injectable()
 export class RecommendTestService {
+  private readonly logger = new Logger(RecommendTestService.name);
 
   constructor(private readonly databaseService: DatabaseService) {}
 
   async getSimpleRecommendations(idUser: string, limit = 2): Promise<Test[]> {
-    // 1. Lấy lịch sử làm bài
+    const existingUser = await this.databaseService.user.findUnique({where:{idUser}})
+    
+    if(!existingUser) throw new NotFoundException('User not found')
+    // 1. Lấy lịch sử & Phân tích profile (Giữ nguyên)
     const userHistory = await this.databaseService.userTestResult.findMany({
       where: { idUser, status: 'FINISHED' },
       select: {
@@ -26,90 +29,87 @@ export class RecommendTestService {
     });
 
     const completedTestIds = userHistory.map((h) => h.test.idTest);
-
-    // 2. Phân tích Profile người dùng (Level hiện tại & Kỹ năng yếu nhất)
     const userProfile = this.analyzeUserProfile(userHistory);
     
-    // 3. Lấy danh sách bài test CÓ SẴN (trừ bài đã làm)
-    // Tối ưu: Chỉ lấy những field cần thiết để tính toán
+    // 2. Lấy TOÀN BỘ bài test chưa làm
     const availableTests = await this.databaseService.test.findMany({
       where: {
         idTest: { notIn: completedTestIds },
-        // Có thể filter thêm: chỉ lấy những bài có level loanh quanh level user
-        // level: { in: [userProfile.currentLevel, this.getNextLevel(userProfile.currentLevel)] } 
       },
     });
 
-    if (availableTests.length === 0) {
-      // Fallback nếu hết bài: Trả về bài cũ làm điểm thấp để cải thiện
-      return []; 
-    }
+    if (availableTests.length === 0) return [];
 
-    // 4. Thuật toán Scoring (Tính điểm phù hợp)
+    // 3. Tính điểm (Scoring)
     const scoredTests = availableTests.map((test) => {
       let score = 0;
 
-      // Tiêu chí 1: Ưu tiên kỹ năng yếu (Quan trọng nhất)
-      if (test.testType === userProfile.weakestSkill) {
-        score += 50;
-      }
+      // -- Logic tính điểm (Giữ nguyên hoặc tinh chỉnh nhẹ) --
+      if (test.testType === userProfile.weakestSkill) score += 50;
 
-      // Tiêu chí 2: Độ phù hợp Level
-      const testLevelVal = LevelWeight[test.level];
-      const userLevelVal = LevelWeight[userProfile.currentLevel];
+      const diff = LevelWeight[test.level] - LevelWeight[userProfile.currentLevel];
+      if (diff === 0) score += 30;       // Vừa sức
+      else if (diff === 1) score += 15;  // Thử thách 1 chút
+      else if (diff === -1) score += 5;  // Ôn tập
+      else score -= 20;                  // Quá khó hoặc quá dễ
 
-      if (testLevelVal === userLevelVal) {
-        score += 30; // Vừa sức
-      } else if (testLevelVal === userLevelVal + 1) {
-        score += 15; // Thử thách (cao hơn 1 bậc)
-      } else if (testLevelVal < userLevelVal) {
-        score += 5; // Ôn tập lại (thấp hơn)
-      } else {
-        score -= 20; // Quá khó (cao hơn > 1 bậc)
-      }
-
-      // Tiêu chí 3: Random factor (tránh việc lúc nào cũng gợi ý y chang nhau nếu chưa làm)
-      score += Math.random() * 5;
+      // Tăng tính ngẫu nhiên tại đây (Random từ 0 -> 10 điểm thay vì 5)
+      // Để các bài xêm xêm nhau có cơ hội tráo đổi vị trí
+      score += Math.random() * 10; 
 
       return { test, score };
     });
 
-    // 5. Sắp xếp giảm dần theo điểm score và lấy top
+    // 4. Sắp xếp giảm dần theo điểm
     scoredTests.sort((a, b) => b.score - a.score);
 
-    return scoredTests.slice(0, limit).map((item) => item.test);
+    // --- THAY ĐỔI QUAN TRỌNG Ở ĐÂY ---
+    
+    // Quy tắc: Tạo Pool ứng viên. 
+    // Nếu cần lấy 'limit' (ví dụ 2), ta sẽ xét trong Top 'poolSize' (ví dụ 6 hoặc 10)
+    // Công thức: Lấy gấp 3 lần số lượng cần thiết, hoặc tối thiểu 5 bài.
+    const poolSize = Math.max(limit * 3, 5);
+    
+    // Lấy ra nhóm "Top Tier" (Những bài điểm cao nhất)
+    const topCandidates = scoredTests.slice(0, poolSize);
+
+    // Trộn ngẫu nhiên nhóm này (Shuffle)
+    const shuffledCandidates = this.shuffleArray(topCandidates);
+
+    // Lấy ra số lượng cần thiết cuối cùng
+    return shuffledCandidates.slice(0, limit).map((item) => item.test);
   }
 
-  // --- Helper Logic ---
+  // --- Helper: Hàm trộn mảng (Fisher-Yates Shuffle) ---
+  private shuffleArray(array: any[]) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
 
+  // ... (Các hàm analyzeUserProfile, mapBandToLevel giữ nguyên như cũ)
   private analyzeUserProfile(history: any[]) {
-    // Mặc định cho user mới (Cold start)
-    if (!history || history.length === 0) {
+     if (!history || history.length === 0) {
       return {
         currentLevel: Level.Low,
         weakestSkill: this.getRandomTestType(),
         averageBand: 0,
       };
     }
-
-    // Tính điểm trung bình theo từng Skill
     const skillStats: Record<string, { total: number; count: number }> = {};
     let totalBand = 0;
-
     for (const record of history) {
       const type = record.test.testType;
       const score = record.band_score || 0;
-
       if (!skillStats[type]) skillStats[type] = { total: 0, count: 0 };
       skillStats[type].total += score;
       skillStats[type].count += 1;
       totalBand += score;
     }
-
-    // Tìm skill có điểm trung bình thấp nhất
     let weakestSkill: TestType | null = null;
-    let minAvgScore = 10.0; // Max IELTS is 9.0
-
+    let minAvgScore = 10.0;
     Object.keys(skillStats).forEach((key) => {
       const avg = skillStats[key].total / skillStats[key].count;
       if (avg < minAvgScore) {
@@ -117,11 +117,8 @@ export class RecommendTestService {
         weakestSkill = key as TestType;
       }
     });
-
-    // Tính Level tổng quan của user
     const overallAvg = totalBand / history.length;
     const currentLevel = this.mapBandToLevel(overallAvg);
-
     return {
       currentLevel,
       weakestSkill: weakestSkill || this.getRandomTestType(),
