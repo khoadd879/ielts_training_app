@@ -116,28 +116,29 @@ export class UserTestResultService {
   }
 
   async finishTest(idTestResult: string, idUser: string) {
-    const existingUser = await this.databaseService.user.findUnique({
-      where: { idUser },
-    });
-    if (!existingUser) throw new BadRequestException('User not found');
+  // 1. Kiểm tra User tồn tại
+  const existingUser = await this.databaseService.user.findUnique({
+    where: { idUser },
+  });
+  if (!existingUser) throw new BadRequestException('User not found');
 
-    const testResult = await this.databaseService.userTestResult.findFirst({
-      where: {
-        idTestResult: idTestResult,
-        idUser: idUser,
-      },
-      include: {
-        userAnswer: true,
-        test: {
-          include: {
-            parts: {
-              include: {
-                groupOfQuestions: {
-                  include: {
-                    question: {
-                      include: {
-                        answers: true,
-                      },
+  // 2. Lấy thông tin bài test và câu trả lời của user
+  const testResult = await this.databaseService.userTestResult.findFirst({
+    where: {
+      idTestResult: idTestResult,
+      idUser: idUser,
+    },
+    include: {
+      userAnswer: true,
+      test: {
+        include: {
+          parts: {
+            include: {
+              groupOfQuestions: {
+                include: {
+                  question: {
+                    include: {
+                      answers: true,
                     },
                   },
                 },
@@ -146,133 +147,128 @@ export class UserTestResultService {
           },
         },
       },
-    });
+    },
+  });
 
-    if (!testResult) {
-      throw new NotFoundException(
-        'Test result not found or you do not have permission.',
-      );
-    }
+  if (!testResult) {
+    throw new NotFoundException('Test result not found or you do not have permission.');
+  }
 
-    if (testResult.status !== 'IN_PROGRESS') {
-      throw new BadRequestException('This test is not in progress.');
-    }
+  if (testResult.status !== 'IN_PROGRESS') {
+    throw new BadRequestException('This test is not in progress.');
+  }
 
-    const allQuestions = testResult.test.parts
-      .flatMap((p) => p.groupOfQuestions)
-      .flatMap((g) => g.question);
+  // 3. Gom tất cả câu hỏi của bài test vào một mảng để dễ tìm kiếm
+  const allQuestions = testResult.test.parts
+    .flatMap((p) => p.groupOfQuestions)
+    .flatMap((g) => g.question);
 
-    let total_correct = 0;
-
-    // Hàm tính band score ví dụ, bạn có thể thay đổi công thức
-    const updatePromises = testResult.userAnswer.map(async (uAnswer) => {
+  // 4. Chấm điểm từng câu trả lời
+  const gradingResults = await Promise.all(
+    testResult.userAnswer.map(async (uAnswer) => {
       const questionData = allQuestions.find(
         (q) => q.idQuestion === uAnswer.idQuestion,
       );
 
-      // Nếu không tìm thấy câu hỏi hoặc user không trả lời -> bỏ qua (sai)
-      if (!questionData || !uAnswer.answerText) return;
+      // Nếu không có dữ liệu câu hỏi hoặc user không trả lời -> Sai (0 điểm)
+      if (!questionData || !uAnswer.answerText) return 0;
 
       let isCorrect = false;
       const userTextRaw = uAnswer.answerText.trim();
       const userTextNormalized = userTextRaw.toLowerCase();
 
+      // --- LOGIC CHẤM ĐIỂM ---
       if (uAnswer.userAnswerType === 'MCQ') {
-        // 1. Lấy tất cả đáp án ĐÚNG từ DB của câu hỏi này
-        // (Giả sử bạn quy định matching_value = 'CORRECT' là đúng)
-        const correctAnswersInDB = questionData.answers
+        // Lấy danh sách các KEY đúng trong DB (ví dụ: ['A', 'D'])
+        const correctKeys = questionData.answers
           .filter((a) => a.matching_value === 'CORRECT')
-          .map((a) => a.matching_key); // Lấy ra mảng ['A', 'C']
+          .map((a) => a.matching_key?.trim().toUpperCase());
 
-        // 2. Lấy đáp án User gửi lên
-        // Giả sử user gửi "A,C" -> tách thành mảng ['A', 'C']
-        // Nếu user chỉ gửi "A" -> tách thành ['A']
-        const userSelectedAnswers = userTextRaw.split(',').map((s) => s.trim());
-
-        // 3. So sánh 2 mảng này
-        // Cách chấm: User phải chọn ĐÚNG và ĐỦ tất cả các đáp án (Strict Grading)
-        if (correctAnswersInDB.length > 0) {
-          // Kiểm tra số lượng phải khớp
-          const isSameLength =
-            correctAnswersInDB.length === userSelectedAnswers.length;
-
-          // Kiểm tra từng đáp án user chọn có nằm trong list đúng không
-          const hasAllCorrect = userSelectedAnswers.every((val) =>
-            correctAnswersInDB.includes(val),
-          );
-
-          if (isSameLength && hasAllCorrect) {
-            isCorrect = true;
-          }
+        // Lấy đáp án User chọn (Ưu tiên dùng matching_key nếu FE gửi, không thì tách từ answerText)
+        let userSelectedKeys: string[] = [];
+        if (uAnswer.matching_key) {
+          userSelectedKeys = [uAnswer.matching_key.trim().toUpperCase()];
+        } else {
+          // Trường hợp FE gửi "A, B" vào answerText
+          userSelectedKeys = userTextRaw.split(',').map((s) => s.trim().toUpperCase());
         }
-      }
 
-      // CASE B: TFNG / YES_NO / FILL_BLANK / SHORT_ANSWER (Nhập text hoặc chọn nút)
-      else {
-        // Loại này trong DB thường chỉ lưu đáp án ĐÚNG.
-        // Ví dụ: DB lưu "TRUE", User gửi "TRUE" -> Đúng.
-        // Ví dụ: DB lưu "chicken", User gửi "Chicken" -> Đúng.
-
-        const isMatch = questionData.answers.some((a) => {
-          // So sánh text (chấp nhận chữ hoa thường)
-          if (!a.answer_text) return false;
-          return a.answer_text.trim().toLowerCase() === userTextNormalized;
+        // So sánh: Phải đúng và đủ (Strict Grading)
+        if (correctKeys.length > 0) {
+          isCorrect =
+            correctKeys.length === userSelectedKeys.length &&
+            userSelectedKeys.every((key) => correctKeys.includes(key));
+        }
+      } else {
+        // CASE: YES_NO_NOTGIVEN, FILL_BLANK, SHORT_ANSWER
+        // So sánh chuỗi text (không phân biệt hoa thường)
+        isCorrect = questionData.answers.some((a) => {
+          const dbAnswerText = a.answer_text?.trim().toLowerCase();
+          const dbMatchingValue = a.matching_value?.trim().toLowerCase();
+          
+          // Kiểm tra cả answer_text hoặc matching_value (tùy cách bạn lưu DB)
+          return dbAnswerText === userTextNormalized || dbMatchingValue === userTextNormalized;
         });
-
-        if (isMatch) isCorrect = true;
       }
 
-      if (isCorrect) total_correct++;
-
-      // Update trạng thái đúng sai vào từng câu trả lời của user (để hiện màu xanh/đỏ ở frontend)
+      // 5. Cập nhật trạng thái đúng/sai vào DB cho từng câu nếu có thay đổi
       if (uAnswer.isCorrect !== isCorrect) {
-        return this.databaseService.userAnswer.update({
+        await this.databaseService.userAnswer.update({
           where: { idUserAnswer: uAnswer.idUserAnswer },
           data: { isCorrect: isCorrect },
         });
       }
-    });
 
-    await Promise.all(updatePromises);
+      return isCorrect ? 1 : 0;
+    }),
+  );
 
-    const actualTotalQuestions = allQuestions.length;
+  // 6. Tổng kết điểm số
+  const total_correct = gradingResults.reduce((sum, val) => sum + val, 0);
+  const actualTotalQuestions = allQuestions.length;
 
-    const band_score = this.calculateIELTSBandScore(
-      total_correct,
-      actualTotalQuestions,
-    );
+  // Tính IELTS Band Score (Ví dụ: 30/40 -> 7.0)
+  const band_score = this.calculateIELTSBandScore(
+    total_correct,
+    actualTotalQuestions,
+  );
 
-    const xpGained = this.calculateXp(testResult.test.level, band_score);
-    await this.updateUserXpAndLevel(idUser, xpGained);
+  // 7. Cập nhật XP và Level
+  const xpGained = this.calculateXp(testResult.test.level, band_score);
+  await this.updateUserXpAndLevel(idUser, xpGained);
 
-    try {
-      await this.streakService.updateStreak(idUser);
-    } catch (error) {
-      console.error(
-        `Failed to update streak for user ${idUser} after finishing test`,
-        error,
-      );
-    }
-
-    await this.databaseService.userTestResult.update({
-      where: { idTestResult: idTestResult },
-      data: {
-        status: 'FINISHED',
-        finishedAt: new Date(),
-        total_correct: total_correct,
-        total_questions: actualTotalQuestions,
-        band_score: band_score,
-        score: total_correct,
-      },
-    });
-
-    return {
-      message: 'Test finished successfully!',
-      xpGained: xpGained,
-      band_score: band_score,
-      status: 200,
-    };
+  // 8. Cập nhật Streak
+  try {
+    await this.streakService.updateStreak(idUser);
+  } catch (error) {
+    console.error(`Failed to update streak for user ${idUser}`, error);
   }
+
+  // 9. Cập nhật kết quả cuối cùng vào UserTestResult
+  const updatedResult = await this.databaseService.userTestResult.update({
+    where: { idTestResult: idTestResult },
+    data: {
+      status: 'FINISHED',
+      finishedAt: new Date(),
+      total_correct: total_correct,
+      total_questions: actualTotalQuestions,
+      band_score: band_score,
+      score: total_correct, // raw score
+    },
+  });
+
+  return {
+    message: 'Test finished successfully!',
+    data: {
+      xpGained,
+      band_score,
+      total_correct,
+      total_questions: actualTotalQuestions,
+      finishedAt: updatedResult.finishedAt,
+    },
+    status: 200,
+  };
+}
 
   /**
    * Hàm tính XP dựa trên level và band score
