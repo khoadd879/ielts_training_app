@@ -79,22 +79,22 @@ export class UserAnswerService {
   //   };
   // }
 
-  async getAnswers(idTestResult: string) {
-    const testResult = await this.databaseService.userTestResult.findUnique({
-      where: { idTestResult },
-      include: {
-        userAnswer: true, // lấy tất cả UserAnswer liên kết
-      },
-    });
+  // async getAnswers(idTestResult: string) {
+  //   const testResult = await this.databaseService.userTestResult.findUnique({
+  //     where: { idTestResult },
+  //     include: {
+  //       userAnswer: true, // lấy tất cả UserAnswer liên kết
+  //     },
+  //   });
 
-    if (!testResult) throw new BadRequestException('Test result not found');
+  //   if (!testResult) throw new BadRequestException('Test result not found');
 
-    return {
-      message: 'Fetched answers successfully',
-      status: 200,
-      data: testResult.userAnswer,
-    };
-  }
+  //   return {
+  //     message: 'Fetched answers successfully',
+  //     status: 200,
+  //     data: testResult.userAnswer,
+  //   };
+  // }
 
   async createManyUserAnswers(idUser: string, idTestResult: string, createManyUserAnswerDto: CreateManyUserAnswerDto){
     const testResult = await this.databaseService.userTestResult.findUnique({
@@ -118,8 +118,6 @@ export class UserAnswerService {
     throw new BadRequestException('Answer list is empty');
   }
 
-  const sample = answers[0];
-
   try {
     const result = await this.databaseService.$transaction(
       answers.map((answer) => {
@@ -140,14 +138,14 @@ export class UserAnswerService {
           },
           create: {
             idUser,           
-    idTestResult,
-    idQuestion: answer.idQuestion,     
-    
-    answerText: answer.answerText ?? null,
-    userAnswerType: answer.userAnswerType,
-    matching_key: answer.matching_key ?? null,
-    matching_value: answer.matching_value ?? null,
-    submitted_at: new Date(),
+            idTestResult,
+            idQuestion: answer.idQuestion,     
+            
+            answerText: answer.answerText ?? null,
+            userAnswerType: answer.userAnswerType,
+            matching_key: answer.matching_key ?? null,
+            matching_value: answer.matching_value ?? null,
+            submitted_at: new Date(),
           },
         });
       }),
