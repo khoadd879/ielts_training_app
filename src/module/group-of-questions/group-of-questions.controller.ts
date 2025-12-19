@@ -6,11 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { GroupOfQuestionsService } from './group-of-questions.service';
 import { CreateGroupOfQuestionDto } from './dto/create-group-of-question.dto';
 import { UpdateGroupOfQuestionDto } from './dto/update-group-of-question.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiBearerAuth()
 @Controller('group-of-questions')
@@ -20,9 +23,28 @@ export class GroupOfQuestionsController {
   ) {}
 
   @Post('create-group-question')
-  create(@Body() createGroupOfQuestionDto: CreateGroupOfQuestionDto) {
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        idTest: { type: 'string', example: '123' },
+        idPart: { type: 'string', example: 'a@gmail.com' },
+        typeQuestion: { type: 'string', example: 'MCQ' },
+        title: { type: 'string', example: 'example' },
+        quantity: { type: 'number', example: '40' },
+        img: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  create(
+    @Body() createGroupOfQuestionDto: CreateGroupOfQuestionDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
     return this.groupOfQuestionsService.createGroupOfQuestions(
       createGroupOfQuestionDto,
+      file,
     );
   }
 
@@ -37,6 +59,21 @@ export class GroupOfQuestionsController {
   }
 
   @Patch('update-group-of-questions/:idGroupOfQuestions')
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        idTest: { type: 'string', example: '123' },
+        idPart: { type: 'string', example: 'a@gmail.com' },
+        typeQuestion: { type: 'string', example: 'MCQ' },
+        title: { type: 'string', example: 'example' },
+        quantity: { type: 'number', example: '40' },
+        img: { type: 'string', format: 'binary' },
+      },
+    },
+  })
   update(
     @Param('idGroupOfQuestions') idGroupOfQuestions: string,
     @Body() updateGroupOfQuestionDto: UpdateGroupOfQuestionDto,

@@ -6,14 +6,19 @@ import {
 import { CreateGroupOfQuestionDto } from './dto/create-group-of-question.dto';
 import { UpdateGroupOfQuestionDto } from './dto/update-group-of-question.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class GroupOfQuestionsService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
   async createGroupOfQuestions(
     createGroupOfQuestionDto: CreateGroupOfQuestionDto,
+    file?: Express.Multer.File,
   ) {
-    const { idTest, idPart, typeQuestion, title, quantity } =
+    const { idTest, idPart, typeQuestion, title, quantity, img } =
       createGroupOfQuestionDto;
     const existingDe = await this.databaseService.test.findUnique({
       where: {
@@ -29,6 +34,13 @@ export class GroupOfQuestionsService {
 
     if (!existingDe) throw new BadRequestException('Test not found');
     if (!existingPart) throw new BadRequestException('Part not found');
+
+    let imgUrl = img;
+
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      imgUrl = uploadResult.secure_url;
+    }
 
     // kiểm tra quantity không lớn hơn số câu của test và không quá 40
     if (quantity > existingDe.numberQuestion)
@@ -108,8 +120,9 @@ export class GroupOfQuestionsService {
   async updateGroupOfQuestion(
     idGroupOfQuestions: string,
     updateGroupOfQuestionDto: UpdateGroupOfQuestionDto,
+    file?: Express.Multer.File,
   ) {
-    const { idTest, idPart, typeQuestion, title, quantity } =
+    const { idTest, idPart, typeQuestion, title, quantity, img } =
       updateGroupOfQuestionDto;
     const existingDe = await this.databaseService.test.findUnique({
       where: {
@@ -134,6 +147,13 @@ export class GroupOfQuestionsService {
 
     if (quantity > 40)
       throw new BadRequestException('The maximum numberQuestion is 40');
+
+    let imgUrl = img;
+
+    if (file) {
+      const uploadResult = await this.cloudinaryService.uploadFile(file);
+      imgUrl = uploadResult.secure_url;
+    }
 
     // kiểm tra tổng quantity các nhóm hiện có trong test (đã sử dụng) + quantity mới không vượt quá số câu của test
     const sumResult = await this.databaseService.groupOfQuestions.aggregate({
