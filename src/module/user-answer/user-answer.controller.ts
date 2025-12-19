@@ -23,12 +23,20 @@ export class UserAnswerController {
   // }
 
   @Post('create-many-user-answers/:idUser/:idTestResult')
-  CreateManyUserAnswers(@Body() createManyQuestionsDto: CreateManyUserAnswerDto, @Param('idUser') idUser: string, @Param('idTestResult') idTestResult: string){
-    return this.userAnswerService.createManyUserAnswers(idUser, idTestResult, createManyQuestionsDto)
+  CreateManyUserAnswers(
+    @Body() createManyQuestionsDto: CreateManyUserAnswerDto,
+    @Param('idUser') idUser: string,
+    @Param('idTestResult') idTestResult: string,
+  ) {
+    return this.userAnswerService.createManyUserAnswers(
+      idUser,
+      idTestResult,
+      createManyQuestionsDto,
+    );
   }
 
-  @Get('get-answer/:idTestResult')
-  getAnswers(@Param('idTestResult') idTestResult: string) {
-    return this.userAnswerService.getAnswers(idTestResult);
-  }
+  // @Get('get-answer/:idTestResult')
+  // getAnswers(@Param('idTestResult') idTestResult: string) {
+  //   return this.userAnswerService.getAnswers(idTestResult);
+  // }
 }

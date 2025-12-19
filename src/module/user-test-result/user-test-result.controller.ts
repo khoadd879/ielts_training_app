@@ -33,6 +33,11 @@ export class UserTestResultController {
     return this.userTestResultService.findAllTestResults();
   }
 
+  @Get('get-test-result-and-answers/:idTestResult')
+  findALlTestResultAndAnswers(@Param('idTestResult') idTestResult: string) {
+    return this.userTestResultService.getAllAnswerInTestResult(idTestResult);
+  }
+
   @Delete('delete-test-result/:idTestResult')
   deleteTestResult(@Param('idTestResult') idTestResult: string) {
     return this.userTestResultService.deleteTestResult(idTestResult);
@@ -45,7 +50,10 @@ export class UserTestResultController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('finish-test/:idTestResult/:idUser')
-  finishTest(@Param('idTestResult') idTestResult: string, @Param('idUser') idUser: string) {
+  finishTest(
+    @Param('idTestResult') idTestResult: string,
+    @Param('idUser') idUser: string,
+  ) {
     return this.userTestResultService.finishTest(idTestResult, idUser);
   }
 
