@@ -69,6 +69,7 @@ export class GroupOfQuestionsService {
         typeQuestion,
         title,
         quantity,
+        img: imgUrl,
       },
     });
 
@@ -176,6 +177,7 @@ export class GroupOfQuestionsService {
         typeQuestion,
         title,
         quantity,
+        img: imgUrl,
       },
     });
 

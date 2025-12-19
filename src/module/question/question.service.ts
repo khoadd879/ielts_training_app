@@ -214,9 +214,9 @@ export class QuestionService {
       };
 
       const answerData = q.answers?.map((a) => ({
-        answer_text: a.answer_text?.toUpperCase(),
-        matching_key: a.matching_key?.toUpperCase(),
-        matching_value: a.matching_value?.toUpperCase(),
+        answer_text: a.answer_text,
+        matching_key: a.matching_key,
+        matching_value: a.matching_value,
       }));
 
       return this.databaseService.question.create({
