@@ -24,6 +24,9 @@ export class UserTestResultService {
 
     const data = await this.databaseService.userTestResult.findMany({
       where: { idUser },
+      orderBy:{
+        createdAt: 'desc'
+      },
       include: {
         test: true,
         userAnswer: true,
@@ -59,7 +62,7 @@ export class UserTestResultService {
         },
       });
 
-    if (!existingTestResult) throw new BadRequestException('User not found');
+    if (!existingTestResult) throw new BadRequestException('Test result not found');
 
     await this.databaseService.userTestResult.delete({
       where: {
@@ -377,6 +380,9 @@ export class UserTestResultService {
     const data = await this.databaseService.userTestResult.findFirst({
       where: {
         idTestResult: idTestResult,
+      },
+      orderBy:{
+        updatedAt: 'desc'
       },
       include: {
         userAnswer: true,
