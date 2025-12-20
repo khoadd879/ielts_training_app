@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { differenceInDays, format } from 'date-fns';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateTargetExam } from './dto/create-target-exam.dto';
+import { TestType } from '@prisma/client';
 
 @Injectable()
 export class StatisticsService {
@@ -63,83 +64,83 @@ export class StatisticsService {
   };
 }
 
-  async statistic(idUser: string){
+  async statistic(idUser: string) {
+    // 1. Kiểm tra User tồn tại
     const existingUser = await this.prisma.user.findUnique({
-      where:{idUser}
-    })
+      where: { idUser },
+    });
 
-    if(!existingUser) throw new BadRequestException('User not found')
+    if (!existingUser) throw new BadRequestException('User not found');
 
+    // 2. Lấy danh sách kết quả (chỉ lấy các trường cần thiết)
     const testResults = await this.prisma.userTestResult.findMany({
-      where:{idUser, status: 'FINISHED'},
-      select:{
-        band_score: true,
-        test : {
-          select: {
-            testType: true
-          }
-        },
-        createdAt: true,
+      where: { 
+        idUser, 
+        status: 'FINISHED' 
       },
-      orderBy:{
-        createdAt: 'asc'
-      }
-    })
+      select: {
+        band_score: true,
+        createdAt: true,
+        test: {
+          select: {
+            testType: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
 
-    type SkillStats = { total: number; count: number };
-    type DayData = {
-      [key in 'READING' | 'LISTENING' | 'WRITING' | 'SPEAKING']?: SkillStats;
-    };
+    // 3. Định nghĩa kiểu dữ liệu cho việc nhóm
+    type SkillData = { totalScore: number; count: number };
+    type DayGroup = Record<string, SkillData>; 
 
-    const roundToIeltsScore = (score: number): number => {
-    return Math.round(score * 2) / 2;
-    };
+    const groupedByDate: Record<string, DayGroup> = {};
 
-    const groupedByDate: Record<string, DayData> = {};
-
+    // 4. Nhóm dữ liệu theo ngày và theo kỹ năng
     testResults.forEach((result) => {
-      const dateKey = format(result.createdAt, 'yyyy-MM-dd');
+      const dateKey = result.createdAt.toISOString().split('T')[0]; // Lấy định dạng YYYY-MM-DD
       const type = result.test.testType;
 
       if (!groupedByDate[dateKey]) {
         groupedByDate[dateKey] = {};
       }
 
-      // Nếu chưa có dữ liệu cho kỹ năng này trong ngày thì khởi tạo
       if (!groupedByDate[dateKey][type]) {
-        groupedByDate[dateKey][type] = { total: 0, count: 0 };
+        groupedByDate[dateKey][type] = { totalScore: 0, count: 0 };
       }
 
-      // Cộng dồn điểm và số lượng
-      groupedByDate[dateKey][type]!.total += result.band_score;
-      groupedByDate[dateKey][type]!.count += 1;
+      groupedByDate[dateKey][type].totalScore += result.band_score;
+      groupedByDate[dateKey][type].count += 1;
     });
 
+    // 5. Hàm làm tròn chuẩn IELTS (0.25 -> 0.5, 0.75 -> 1.0)
+    const roundToIelts = (score: number): number => {
+      return Math.round(score * 2) / 2;
+    };
+
+    // 6. Tính toán kết quả cuối cùng
     const statistics = Object.entries(groupedByDate).map(([date, skills]) => {
-      // Hàm tính trung bình nhỏ gọn
-      const calculateAvg = (skillData?: SkillStats) => 
-        skillData ? parseFloat((skillData.total / skillData.count).toFixed(2)) : 0;
+      // Tính trung bình từng kỹ năng trong ngày đó
+      const readingAvg = skills[TestType.READING] ? skills[TestType.READING].totalScore / skills[TestType.READING].count : 0;
+      const listeningAvg = skills[TestType.LISTENING] ? skills[TestType.LISTENING].totalScore / skills[TestType.LISTENING].count : 0;
+      const writingAvg = skills[TestType.WRITING] ? skills[TestType.WRITING].totalScore / skills[TestType.WRITING].count : 0;
+      const speakingAvg = skills[TestType.SPEAKING] ? skills[TestType.SPEAKING].totalScore / skills[TestType.SPEAKING].count : 0;
 
-      let dayTotalScore = 0;
-      
-
-      Object.values(skills).forEach((skill) => {
-        dayTotalScore += skill.total;
-      });
-
-      const dailyOverall = dayTotalScore > 0 
-        ? parseFloat((dayTotalScore / 4).toFixed(2)) 
-        : 0;
+      // Tính Overall chuẩn: (Trung bình R + Trung bình L + Trung bình W + Trung bình S) / 4
+      const dailyOverall = (readingAvg + listeningAvg + writingAvg + speakingAvg) / 4;
 
       return {
         date,
-        OVERALL: roundToIeltsScore(dailyOverall),
-        READING: roundToIeltsScore(calculateAvg(skills['READING'])),
-        LISTENING: roundToIeltsScore(calculateAvg(skills['LISTENING'])),
-        WRITING: roundToIeltsScore(calculateAvg(skills['WRITING'])),
-        SPEAKING: roundToIeltsScore(calculateAvg(skills['SPEAKING'])),
+        OVERALL: roundToIelts(dailyOverall),
+        READING: roundToIelts(readingAvg),
+        LISTENING: roundToIelts(listeningAvg),
+        WRITING: roundToIelts(writingAvg),
+        SPEAKING: roundToIelts(speakingAvg),
       };
     });
+
     return {
       message: 'Statistics retrieved successfully',
       data: statistics,

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { StreakService } from '../streak-service/streak-service.service';
+import { TestStatus } from '@prisma/client';
 
 @Injectable()
 export class UserTestResultService {
@@ -380,16 +381,19 @@ export class UserTestResultService {
     const data = await this.databaseService.userTestResult.findFirst({
       where: {
         idTestResult: idTestResult,
+        status: TestStatus.FINISHED,
       },
       orderBy:{
         updatedAt: 'desc'
       },
+      
       include: {
         userAnswer: true,
         test: {
           include: {
             parts: {
               include: {
+                passage: true,
                 groupOfQuestions: {
                   include: {
                     question: {
