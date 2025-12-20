@@ -24,7 +24,7 @@ export class UserTestResultService {
     if (!existingUser) throw new BadRequestException('User not found');
 
     const data = await this.databaseService.userTestResult.findMany({
-      where: { idUser },
+      where: { idUser, status: TestStatus.FINISHED },
       orderBy:{
         createdAt: 'desc'
       },
@@ -197,11 +197,11 @@ export class UserTestResultService {
           userSelectedKeys = userTextRaw.split(',').map((s) => s.trim().toUpperCase());
         }
 
-        // So sánh: Phải đúng và đủ (Strict Grading)
-        if (correctKeys.length > 0) {
-          isCorrect =
-            correctKeys.length === userSelectedKeys.length &&
-            userSelectedKeys.every((key) => correctKeys.includes(key));
+        // So sánh: Đúng 1 trong 2 là được
+        if (correctKeys.length > 0 && userSelectedKeys.length > 0) {
+          // Chỉ cần tất cả những gì user chọn ĐỀU NẰM TRONG tập đáp án đúng
+          // Ví dụ: Đúng là [A, B]. User chọn [A] -> correctKeys.includes('A') -> True.
+          isCorrect = userSelectedKeys.every((key) => correctKeys.includes(key));
         }
       } else {
         // CASE: YES_NO_NOTGIVEN, FILL_BLANK, SHORT_ANSWER
