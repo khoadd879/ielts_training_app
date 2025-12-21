@@ -37,11 +37,27 @@ export class ReviewStreakService {
             continue; // Bỏ qua và xử lý từ tiếp theo
           }
 
-          // Cập nhật chuỗi trả lời đúng và điểm kinh nghiệm
+          // ====== CHỐNG SPAM: Kiểm tra xem từ vựng đã được ôn tập hôm nay chưa ======
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // Đầu ngày hôm nay
+
+          const lastReviewedDate = tuVung.lastReviewed
+            ? new Date(tuVung.lastReviewed)
+            : null;
+
+          let alreadyReviewedToday = false;
+          if (lastReviewedDate) {
+            lastReviewedDate.setHours(0, 0, 0, 0);
+            alreadyReviewedToday = lastReviewedDate.getTime() === today.getTime();
+          }
+
+          // Cập nhật chuỗi trả lời đúng
           const newCorrectStreak = answer.isCorrect
             ? tuVung.correctStreak + 1
             : 0;
-          const xpGained = answer.isCorrect ? xpPerCorrectAnswer : 0;
+
+          // Chỉ được nhận XP nếu CHƯA ôn tập từ này hôm nay
+          const xpGained = answer.isCorrect && !alreadyReviewedToday ? xpPerCorrectAnswer : 0;
 
           // Cập nhật lại từ vựng trong database
           await prisma.vocabulary.update({
@@ -50,12 +66,12 @@ export class ReviewStreakService {
               lastReviewed: new Date(),
               correctStreak: newCorrectStreak,
               xp: {
-                increment: xpGained, // Cộng thêm điểm kinh nghiệm cho từ vựng
+                increment: xpGained, // Chỉ cộng XP nếu chưa ôn hôm nay
               },
             },
           });
 
-          // Chỉ cộng XP cho user nếu trả lời đúng
+          // Chỉ cộng XP cho user nếu trả lời đúng VÀ chưa ôn từ này hôm nay
           if (xpGained > 0) {
             // Lấy thông tin user hiện tại để kiểm tra level up
             const currentUser = await prisma.user.findUnique({
