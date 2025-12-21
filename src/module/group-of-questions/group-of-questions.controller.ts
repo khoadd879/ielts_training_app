@@ -20,10 +20,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class GroupOfQuestionsController {
   constructor(
     private readonly groupOfQuestionsService: GroupOfQuestionsService,
-  ) {}
+  ) { }
 
   @Post('create-group-question')
-  @UseInterceptors(FileInterceptor('avatar'))
+  @UseInterceptors(FileInterceptor('img'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -59,7 +59,7 @@ export class GroupOfQuestionsController {
   }
 
   @Patch('update-group-of-questions/:idGroupOfQuestions')
-  @UseInterceptors(FileInterceptor('avatar'))
+  @UseInterceptors(FileInterceptor('img'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -77,10 +77,12 @@ export class GroupOfQuestionsController {
   update(
     @Param('idGroupOfQuestions') idGroupOfQuestions: string,
     @Body() updateGroupOfQuestionDto: UpdateGroupOfQuestionDto,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
     return this.groupOfQuestionsService.updateGroupOfQuestion(
       idGroupOfQuestions,
       updateGroupOfQuestionDto,
+      file,
     );
   }
 
