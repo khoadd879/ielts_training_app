@@ -4,7 +4,7 @@ import { DatabaseService } from 'src/database/database.service';
 // src/streak/streak.service.ts
 @Injectable()
 export class StreakService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(private readonly databaseService: DatabaseService) { }
 
   async updateStreak(idUser: string): Promise<void> {
     const user = await this.databaseService.user.findUnique({

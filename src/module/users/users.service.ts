@@ -5,7 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { hashPasswordHelper } from 'src/helpers/utils';
 import { CreateAuthDto } from 'src/auth/dto/create-auth.dto';
 import { VerificationService } from 'src/auth/verification/verification.service';
-import { OTPType } from '@prisma/client';
+import { Level, OTPType } from '@prisma/client';
 import { MailerService } from '@nestjs-modules/mailer';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 import { CreateUserGoogleDto } from './dto/create-user-google.dto';
@@ -17,7 +17,7 @@ export class UsersService {
     private readonly verificationService: VerificationService,
     private readonly mailerService: MailerService,
     private readonly cloudinaryService: CloudinaryService,
-  ) {}
+  ) { }
 
   async create(createUserDto: CreateUserDto, file?: Express.Multer.File) {
     const {
@@ -50,6 +50,11 @@ export class UsersService {
     // Hash the password before storing it
     const hashedPassword = await hashPasswordHelper(password);
 
+
+    if (!level) throw new BadRequestException('Level not found');
+
+    const xpUpdate = this.updateXpToNext(level);
+
     const data = await this.databaseService.user.create({
       data: {
         nameUser,
@@ -62,6 +67,7 @@ export class UsersService {
         gender,
         accountType,
         level,
+        xpToNext: xpUpdate
       },
     });
     return {
@@ -167,6 +173,10 @@ export class UsersService {
       avatar = uploadResult.secure_url;
     }
 
+    if (!level) throw new BadRequestException('Level not found');
+
+    const xpUpdate = this.updateXpToNext(level);
+
     const user = await this.databaseService.user.update({
       where: { idUser: id },
       data: {
@@ -179,6 +189,7 @@ export class UsersService {
         avatar,
         gender,
         level,
+        xpToNext: xpUpdate,
       },
     });
     return {
@@ -351,5 +362,18 @@ export class UsersService {
       },
     });
     return count;
+  }
+
+  private updateXpToNext(level: Level): number {
+    switch (level) {
+      case Level.Low:
+        return 100;
+      case Level.Mid:
+        return 350;
+      case Level.High:
+        return 1000;
+      default:
+        return 100;
+    }
   }
 }

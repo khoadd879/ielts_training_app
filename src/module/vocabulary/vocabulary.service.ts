@@ -19,7 +19,7 @@ const vocabCache = new Map<
 
 @Injectable()
 export class VocabularyService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(private readonly databaseService: DatabaseService) { }
 
   //Vocabulary
   async createVocabulary(createVocabularyDto: CreateVocabularyDto) {
@@ -256,7 +256,7 @@ Yêu cầu:
 - "meaning": giải thích nghĩa tiếng Việt ngắn gọn, dễ hiểu.
 - "example": 1 câu ví dụ đơn giản minh họa.
 - "phonetic": phiên âm theo chuẩn IPA nếu có.
-- "loaiTuVung": xác định chính xác loại từ tiếng Anh.
+- "loaiTuVung": xác định loại từ tiếng Anh.
 - "level": đánh giá độ khó của từ (Low: cơ bản, Mid: trung bình, High: nâng cao).
 `;
 

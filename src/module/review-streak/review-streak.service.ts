@@ -3,6 +3,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { Level } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 import { StreakService } from '../streak-service/streak-service.service';
 import { SubmitReviewDto } from './dto/submit-review.dto';
@@ -12,7 +13,7 @@ export class ReviewStreakService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly streakService: StreakService,
-  ) {}
+  ) { }
 
   async submitVocabularyReview(submitReviewDto: SubmitReviewDto) {
     const { idUser, answers } = submitReviewDto;
@@ -49,30 +50,42 @@ export class ReviewStreakService {
               lastReviewed: new Date(),
               correctStreak: newCorrectStreak,
               xp: {
-                increment: xpGained, // Cộng thêm điểm kinh nghiệm
+                increment: xpGained, // Cộng thêm điểm kinh nghiệm cho từ vựng
               },
             },
           });
 
-          const xpVocab = await prisma.vocabulary.findMany({
-            where: {
-              idUser,
-            },
-            select: {
-              xp: true,
-            },
-          });
+          // Chỉ cộng XP cho user nếu trả lời đúng
+          if (xpGained > 0) {
+            // Lấy thông tin user hiện tại để kiểm tra level up
+            const currentUser = await prisma.user.findUnique({
+              where: { idUser },
+              select: { xp: true, level: true, xpToNext: true },
+            });
 
-          const totalXp = xpVocab.reduce((sum, item) => sum + item.xp, 0);
+            if (currentUser) {
+              // Cộng XP mới vào XP hiện tại của user
+              let newXp = (currentUser.xp ?? 0) + xpGained;
+              let currentLevel = currentUser.level ?? Level.Low;
+              let xpToNext = currentUser.xpToNext ?? 100;
 
-          await prisma.user.update({
-            where: {
-              idUser,
-            },
-            data: {
-              xp: totalXp,
-            },
-          });
+              // Kiểm tra và xử lý level up
+              while (newXp >= xpToNext) {
+                newXp -= xpToNext;
+                currentLevel = this.getNextLevel(currentLevel);
+                xpToNext = this.updateXpToNext(currentLevel);
+              }
+
+              await prisma.user.update({
+                where: { idUser },
+                data: {
+                  xp: newXp,
+                  level: currentLevel,
+                  xpToNext: xpToNext,
+                },
+              });
+            }
+          }
         }
       });
     } catch (error) {
@@ -93,7 +106,19 @@ export class ReviewStreakService {
       );
     }
 
-    return { message: 'Review session completed successfully!' };
+    const user = await this.databaseService.user.findUnique({
+      where: { idUser },
+      select: { xp: true, level: true, xpToNext: true },
+    });
+
+    return {
+      message: 'Review session completed successfully!',
+      data: {
+        xp: user?.xp,
+        level: user?.level,
+        xpToNext: user?.xpToNext,
+      }
+    };
   }
 
   async getStreak(idUser: string) {
@@ -112,5 +137,34 @@ export class ReviewStreakService {
       data,
       status: 200,
     };
+  }
+
+  /**
+   * Trả về level tiếp theo
+   */
+  private getNextLevel(level: Level): Level {
+    switch (level) {
+      case Level.Low:
+        return Level.Mid;
+      case Level.Mid:
+        return Level.High;
+      case Level.High:
+        return Level.Great;
+      default:
+        return Level.Great;
+    }
+  }
+
+  private updateXpToNext(level: Level): number {
+    switch (level) {
+      case Level.Low:
+        return 100;
+      case Level.Mid:
+        return 350;
+      case Level.High:
+        return 1000;
+      default:
+        return 100;
+    }
   }
 }
