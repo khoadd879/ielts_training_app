@@ -119,208 +119,95 @@ export class UserTestResultService {
     };
   }
 
-  // async finishTest(idTestResult: string, idUser: string) {
-  //   // 1. Kiểm tra User tồn tại
-  //   const existingUser = await this.databaseService.user.findUnique({
-  //     where: { idUser },
-  //   });
-  //   if (!existingUser) throw new BadRequestException('User not found');
-
-  //   // 2. Lấy thông tin bài test và câu trả lời của user
-  //   const testResult = await this.databaseService.userTestResult.findFirst({
-  //     where: {
-  //       idTestResult: idTestResult,
-  //       idUser: idUser,
-  //     },
-  //     include: {
-  //       userAnswer: true,
-  //       test: {
-  //         include: {
-  //           parts: {
-  //             include: {
-  //               groupOfQuestions: {
-  //                 include: {
-  //                   question: {
-  //                     include: {
-  //                       answers: true,
-  //                     },
-  //                   },
-  //                 },
-  //               },
-  //             },
-  //           },
-  //         },
-  //       },
-  //     },
-  //   });
-
-  //   if (!testResult) {
-  //     throw new NotFoundException('Test result not found or you do not have permission.');
-  //   }
-
-  //   if (testResult.status !== 'IN_PROGRESS') {
-  //     throw new BadRequestException('This test is not in progress.');
-  //   }
-
-  //   // 3. Gom tất cả câu hỏi của bài test vào một mảng để dễ tìm kiếm
-  //   const allQuestions = testResult.test.parts
-  //     .flatMap((p) => p.groupOfQuestions)
-  //     .flatMap((g) => g.question);
-
-  //   // 4. Chấm điểm từng câu trả lời
-  //   const gradingResults = await Promise.all(
-  //     testResult.userAnswer.map(async (uAnswer) => {
-  //       const questionData = allQuestions.find(
-  //         (q) => q.idQuestion === uAnswer.idQuestion,
-  //       );
-
-  //       // Nếu không có dữ liệu câu hỏi hoặc user không trả lời -> Sai (0 điểm)
-  //       if (!questionData || !uAnswer.answerText) return 0;
-
-  //       let isCorrect = false;
-  //       const userTextRaw = uAnswer.answerText.trim();
-  //       const userTextNormalized = userTextRaw.toLowerCase();
-
-  //       // --- LOGIC CHẤM ĐIỂM ---
-  //       if (uAnswer.userAnswerType === 'MCQ') {
-  //         // Lấy danh sách các KEY đúng trong DB (ví dụ: ['A', 'D'])
-  //         const correctKeys = questionData.answers
-  //           .filter((a) => a.matching_value === 'CORRECT')
-  //           .map((a) => a.matching_key?.trim().toUpperCase());
-
-  //         // Lấy đáp án User chọn (Ưu tiên dùng matching_key nếu FE gửi, không thì tách từ answerText)
-  //         let userSelectedKeys: string[] = [];
-  //         if (uAnswer.matching_key) {
-  //           userSelectedKeys = [uAnswer.matching_key.trim().toUpperCase()];
-  //         } else {
-  //           // Trường hợp FE gửi "A, B" vào answerText
-  //           userSelectedKeys = userTextRaw.split(',').map((s) => s.trim().toUpperCase());
-  //         }
-
-  //         // So sánh: Đúng 1 trong 2 là được
-  //         if (correctKeys.length > 0 && userSelectedKeys.length > 0) {
-  //           // Chỉ cần tất cả những gì user chọn ĐỀU NẰM TRONG tập đáp án đúng
-  //           // Ví dụ: Đúng là [A, B]. User chọn [A] -> correctKeys.includes('A') -> True.
-  //           isCorrect = userSelectedKeys.every((key) => correctKeys.includes(key));
-  //         }
-  //       } else {
-  //         // CASE: YES_NO_NOTGIVEN, FILL_BLANK, SHORT_ANSWER
-  //         // So sánh chuỗi text (không phân biệt hoa thường)
-  //         isCorrect = questionData.answers.some((a) => {
-  //           const dbAnswerText = a.answer_text?.trim().toLowerCase();
-  //           const dbMatchingValue = a.matching_value?.trim().toLowerCase();
-
-  //           // Kiểm tra cả answer_text hoặc matching_value (tùy cách bạn lưu DB)
-  //           return dbAnswerText === userTextNormalized || dbMatchingValue === userTextNormalized;
-  //         });
-  //       }
-
-  //       // 5. Cập nhật trạng thái đúng/sai vào DB cho từng câu nếu có thay đổi
-  //       if (uAnswer.isCorrect !== isCorrect) {
-  //         await this.databaseService.userAnswer.update({
-  //           where: { idUserAnswer: uAnswer.idUserAnswer },
-  //           data: { isCorrect: isCorrect },
-  //         });
-  //       }
-
-  //       return isCorrect ? 1 : 0;
-  //     }),
-  //   );
-
-  //   // 6. Tổng kết điểm số
-  //   const total_correct = gradingResults.reduce((sum, val) => sum + val, 0);
-  //   const actualTotalQuestions = allQuestions.length;
-
-  //   // Tính IELTS Band Score (Ví dụ: 30/40 -> 7.0)
-  //   const band_score = this.calculateIELTSBandScore(
-  //     total_correct,
-  //     actualTotalQuestions,
-  //   );
-
-  //   // 7. ====== CHỐNG SPAM: Kiểm xem user đã hoàn thành đề này hôm nay chưa ======
-  //   const today = new Date();
-  //   today.setHours(0, 0, 0, 0);
-
-  //   const alreadyCompletedToday = await this.databaseService.userTestResult.findFirst({
-  //     where: {
-  //       idUser: idUser,
-  //       idTest: testResult.idTest,
-  //       status: 'FINISHED',
-  //       finishedAt: {
-  //         gte: today, // Đã hoàn thành từ đầu ngày hôm nay
-  //       },
-  //       idTestResult: {
-  //         not: idTestResult, // Không tính chính lần làm này
-  //       },
-  //     },
-  //   });
-
-  //   // Chỉ nhận XP nếu CHƯA hoàn thành đề này hôm nay
-  //   const xpGained = alreadyCompletedToday
-  //     ? 0
-  //     : this.calculateXp(testResult.test.level, band_score);
-
-  //   if (xpGained > 0) {
-  //     await this.updateUserXpAndLevel(idUser, xpGained);
-  //   }
-
-  //   // 8. Cập nhật Streak
-  //   try {
-  //     await this.streakService.updateStreak(idUser);
-  //   } catch (error) {
-  //     console.error(`Failed to update streak for user ${idUser}`, error);
-  //   }
-
-  //   // 9. Cập nhật kết quả cuối cùng vào UserTestResult
-  //   const updatedResult = await this.databaseService.userTestResult.update({
-  //     where: { idTestResult: idTestResult },
-  //     data: {
-  //       status: 'FINISHED',
-  //       finishedAt: new Date(),
-  //       total_correct: total_correct,
-  //       total_questions: actualTotalQuestions,
-  //       band_score: band_score,
-  //       score: total_correct, // raw score
-  //     },
-  //   });
-
-  //   return {
-  //     message: 'Test finished successfully!',
-  //     data: {
-  //       xpGained,
-  //       band_score,
-  //       total_correct,
-  //       total_questions: actualTotalQuestions,
-  //       finishedAt: updatedResult.finishedAt,
-  //     },
-  //     status: 200,
-  //   };
-  // }
-
   async finishTest(idTestResult: string, idUser: string) {
-  // 1. Kiểm tra User tồn tại
-  const existingUser = await this.databaseService.user.findUnique({
-    where: { idUser },
-  });
-  if (!existingUser) throw new BadRequestException('User not found');
+    // 1. Validate user exists
+    await this.validateUser(idUser);
 
-  // 2. Lấy thông tin bài test và câu trả lời của user kèm cấu trúc đề thi
-  const testResult = await this.databaseService.userTestResult.findFirst({
-    where: {
-      idTestResult: idTestResult,
-      idUser: idUser,
-    },
-    include: {
-      userAnswer: true,
-      test: {
-        include: {
-          parts: {
-            include: {
-              groupOfQuestions: {
-                include: {
-                  question: {
-                    include: {
-                      answers: true,
+    // 2. Get test result with all related data
+    const testResult = await this.getTestResultWithDetails(idTestResult, idUser);
+
+    // 3. Validate test is in progress
+    this.validateTestInProgress(testResult);
+
+    // 4. Get all questions from the test
+    const allQuestions = this.extractAllQuestions(testResult);
+
+    // 5. Grade all user answers
+    const gradingResults = await this.gradeAllAnswers(
+      testResult.userAnswer,
+      allQuestions,
+    );
+
+    // 6. Calculate scores
+    const { total_correct, band_score } = this.calculateScores(
+      gradingResults,
+      allQuestions.length,
+    );
+
+    // 7. Calculate XP (with anti-spam check)
+    const xpGained = await this.calculateXpGained(
+      idUser,
+      testResult.idTest,
+      idTestResult,
+      testResult.test.level,
+      band_score,
+    );
+
+    // 8. Update user XP and streak
+    await this.handleXpAndStreak(idUser, xpGained);
+
+    // 9. Update test completion
+    const updatedResult = await this.updateTestCompletion(
+      idTestResult,
+      total_correct,
+      allQuestions.length,
+      band_score,
+    );
+
+    return {
+      message: 'Test finished successfully!',
+      data: {
+        xpGained,
+        band_score,
+        total_correct,
+        total_questions: allQuestions.length,
+        finishedAt: updatedResult.finishedAt,
+      },
+      status: 200,
+    };
+  }
+
+  /**
+   * Validate that user exists
+   */
+  private async validateUser(idUser: string) {
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+    if (!existingUser) throw new BadRequestException('User not found');
+  }
+
+  /**
+   * Get test result with all question and answer details
+   */
+  private async getTestResultWithDetails(idTestResult: string, idUser: string) {
+    const testResult = await this.databaseService.userTestResult.findFirst({
+      where: {
+        idTestResult: idTestResult,
+        idUser: idUser,
+      },
+      include: {
+        userAnswer: true,
+        test: {
+          include: {
+            parts: {
+              include: {
+                groupOfQuestions: {
+                  include: {
+                    question: {
+                      include: {
+                        answers: true,
+                      },
                     },
                   },
                 },
@@ -329,160 +216,259 @@ export class UserTestResultService {
           },
         },
       },
-    },
-  });
+    });
 
-  if (!testResult) {
-    throw new NotFoundException('Test result not found or you do not have permission.');
-  }
-
-  if (testResult.status !== 'IN_PROGRESS') {
-    throw new BadRequestException('This test is not in progress.');
-  }
-
-  // 3. Gom tất cả câu hỏi của bài test vào một mảng phẳng để dễ truy vấn
-  const allQuestions = testResult.test.parts
-    .flatMap((p) => p.groupOfQuestions)
-    .flatMap((g) => g.question);
-
-  // 4. Chấm điểm từng câu trả lời
-  const gradingResults = await Promise.all(
-    testResult.userAnswer.map(async (uAnswer) => {
-      const questionData = allQuestions.find(
-        (q) => q.idQuestion === uAnswer.idQuestion,
+    if (!testResult) {
+      throw new NotFoundException(
+        'Test result not found or you do not have permission.',
       );
+    }
 
-      // Nếu không tìm thấy dữ liệu câu hỏi -> 0 điểm
-      if (!questionData) return 0;
+    return testResult;
+  }
 
-      let isCorrect = false;
+  /**
+   * Validate test is in progress
+   */
+  private validateTestInProgress(testResult: any) {
+    if (testResult.status !== 'IN_PROGRESS') {
+      throw new BadRequestException('This test is not in progress.');
+    }
+  }
 
-      // --- LOGIC CHẤM ĐIỂM CHI TIẾT ---
-      
-      // CASE 1: Multiple Choice Question (MCQ)
-      if (uAnswer.userAnswerType === 'MCQ') {
-        const correctKeys = questionData.answers
-          .filter((a) => a.matching_value === 'CORRECT')
-          .map((a) => a.matching_key?.trim().toUpperCase());
+  /**
+   * Extract all questions from test into a flat array
+   */
+  private extractAllQuestions(testResult: any) {
+    return testResult.test.parts
+      .flatMap((p) => p.groupOfQuestions)
+      .flatMap((g) => g.question);
+  }
 
-        let userSelectedKeys: string[] = [];
-        if (uAnswer.matching_key) {
-          userSelectedKeys = [uAnswer.matching_key.trim().toUpperCase()];
-        } else if (uAnswer.answerText) {
-          userSelectedKeys = uAnswer.answerText.split(',').map((s) => s.trim().toUpperCase());
-        }
-
-        if (correctKeys.length > 0 && userSelectedKeys.length > 0) {
-          // Đúng nếu tất cả lựa chọn của user đều nằm trong danh sách đáp án đúng
-          isCorrect = userSelectedKeys.every((key) => correctKeys.includes(key));
-        }
-      } 
-      
-      // CASE 2: Labeling (Bản đồ / Gán nhãn) - Fix lỗi dựa trên JSON của bạn
-      else if (uAnswer.userAnswerType === 'LABELING') {
-        const userKey = uAnswer.matching_key?.trim().toUpperCase();
-        
-        // Kiểm tra xem matching_key user chọn có tồn tại trong DB với matching_value là 'CORRECT' không
-        isCorrect = questionData.answers.some(
-          (a) => a.matching_key?.trim().toUpperCase() === userKey && 
-                 a.matching_value === 'CORRECT'
+  /**
+   * Grade all user answers
+   */
+  private async gradeAllAnswers(userAnswers: any[], allQuestions: any[]) {
+    return await Promise.all(
+      userAnswers.map(async (uAnswer) => {
+        const questionData = allQuestions.find(
+          (q) => q.idQuestion === uAnswer.idQuestion,
         );
-      }
-      
-      // CASE 3: Fill in the blank, Short Answer, Yes/No/Not Given
-      else {
-        // Nếu user bỏ trống câu trả lời
-        if (!uAnswer.answerText || uAnswer.answerText.trim() === "") {
-          isCorrect = false;
-        } else {
-          const userTextNormalized = uAnswer.answerText.trim().toLowerCase();
-          
-          isCorrect = questionData.answers.some((a) => {
-            const dbAnswerText = a.answer_text?.trim().toLowerCase();
-            const dbMatchingValue = a.matching_value?.trim().toLowerCase();
-            
-            // So khớp với một trong hai trường answer_text hoặc matching_value trong DB
-            return dbAnswerText === userTextNormalized || dbMatchingValue === userTextNormalized;
-          });
-        }
-      }
 
-      // 5. Cập nhật kết quả isCorrect vào database cho từng câu trả lời
-      if (uAnswer.isCorrect !== isCorrect) {
-        await this.databaseService.userAnswer.update({
-          where: { idUserAnswer: uAnswer.idUserAnswer },
-          data: { isCorrect: isCorrect },
-        });
-      }
+        // If question not found -> 0 points
+        if (!questionData) return 0;
 
-      return isCorrect ? 1 : 0;
-    }),
-  );
+        // Grade the answer
+        const isCorrect = this.gradeUserAnswer(uAnswer, questionData);
 
-  // 6. Tổng kết điểm số
-  const total_correct = gradingResults.reduce((sum, val) => sum + val, 0);
-  const actualTotalQuestions = allQuestions.length;
+        // Update correctness in database
+        await this.updateAnswerCorrectness(uAnswer, isCorrect);
 
-  // Tính IELTS Band Score
-  const band_score = this.calculateIELTSBandScore(
-    total_correct,
-    actualTotalQuestions,
-  );
-
-  // 7. Chống spam: Chỉ nhận XP nếu đây là lần đầu hoàn thành đề này trong ngày
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const alreadyCompletedToday = await this.databaseService.userTestResult.findFirst({
-    where: {
-      idUser: idUser,
-      idTest: testResult.idTest,
-      status: 'FINISHED',
-      finishedAt: { gte: today },
-      idTestResult: { not: idTestResult },
-    },
-  });
-
-  const xpGained = alreadyCompletedToday
-    ? 0
-    : this.calculateXp(testResult.test.level, band_score);
-
-  if (xpGained > 0) {
-    await this.updateUserXpAndLevel(idUser, xpGained);
+        return isCorrect ? 1 : 0;
+      }),
+    );
   }
 
-  // 8. Cập nhật Streak người dùng
-  try {
-    await this.streakService.updateStreak(idUser);
-  } catch (error) {
-    console.error(`Failed to update streak for user ${idUser}`, error);
+  /**
+   * Grade a single user answer based on question type
+   */
+  private gradeUserAnswer(uAnswer: any, questionData: any): boolean {
+    const answerType = uAnswer.userAnswerType;
+
+    switch (answerType) {
+      case 'MCQ':
+        return this.gradeMCQ(uAnswer, questionData);
+
+      case 'MATCHING':
+        return this.gradeMatching(uAnswer, questionData);
+
+      case 'LABELING':
+        return this.gradeLabeling(uAnswer, questionData);
+
+      case 'SHORT_ANSWER':
+      case 'FILL_BLANK':
+      case 'YES_NO_NOTGIVEN':
+        return this.gradeTextAnswer(uAnswer, questionData);
+
+      default:
+        // Default to text comparison for unknown types
+        return this.gradeTextAnswer(uAnswer, questionData);
+    }
   }
 
-  // 9. Cập nhật trạng thái hoàn thành bài test
-  const updatedResult = await this.databaseService.userTestResult.update({
-    where: { idTestResult: idTestResult },
-    data: {
-      status: 'FINISHED',
-      finishedAt: new Date(),
-      total_correct: total_correct,
-      total_questions: actualTotalQuestions,
-      band_score: band_score,
-      score: total_correct, 
-    },
-  });
+  /**
+   * Grade Multiple Choice Question (MCQ)
+   */
+  private gradeMCQ(uAnswer: any, questionData: any): boolean {
+    const correctKeys = questionData.answers
+      .filter((a) => a.matching_value === 'CORRECT')
+      .map((a) => a.matching_key?.trim().toUpperCase());
 
-  return {
-    message: 'Test finished successfully!',
-    data: {
-      xpGained,
-      band_score,
-      total_correct,
-      total_questions: actualTotalQuestions,
-      finishedAt: updatedResult.finishedAt,
-    },
-    status: 200,
-  };
-}
+    let userSelectedKeys: string[] = [];
+    if (uAnswer.matching_key) {
+      userSelectedKeys = [uAnswer.matching_key.trim().toUpperCase()];
+    } else if (uAnswer.answerText) {
+      userSelectedKeys = uAnswer.answerText
+        .split(',')
+        .map((s) => s.trim().toUpperCase());
+    }
+
+    if (correctKeys.length > 0 && userSelectedKeys.length > 0) {
+      // All user selections must be in correct answers
+      return userSelectedKeys.every((key) => correctKeys.includes(key));
+    }
+
+    return false;
+  }
+
+  /**
+   * Grade MATCHING type question
+   * For matching questions, we compare the matching_key from user with correct answers
+   */
+  private gradeMatching(uAnswer: any, questionData: any): boolean {
+    // User's selected matching key (e.g., "ix", "iii", "vii")
+    const userKey = uAnswer.matching_key?.trim().toLowerCase();
+
+    // If user didn't select anything, it's wrong
+    if (!userKey) return false;
+
+    // Find the correct answer by checking which answer has matching_value = 'CORRECT'
+    const correctAnswer = questionData.answers.find(
+      (a) => a.matching_value === 'CORRECT'
+    );
+
+    if (!correctAnswer || !correctAnswer.matching_key) return false;
+
+    // Compare user's key with the correct answer's key
+    return userKey === correctAnswer.matching_key.trim().toLowerCase();
+  }
+
+  /**
+   * Grade LABELING type question
+   */
+  private gradeLabeling(uAnswer: any, questionData: any): boolean {
+    const userKey = uAnswer.matching_key?.trim().toUpperCase();
+
+    // Check if user's matching_key exists in DB with matching_value = 'CORRECT'
+    return questionData.answers.some(
+      (a) =>
+        a.matching_key?.trim().toUpperCase() === userKey &&
+        a.matching_value === 'CORRECT',
+    );
+  }
+
+  /**
+   * Grade text-based answers (SHORT_ANSWER, FILL_BLANK, YES_NO_NOTGIVEN)
+   */
+  private gradeTextAnswer(uAnswer: any, questionData: any): boolean {
+    // If user left answer blank
+    if (!uAnswer.answerText || uAnswer.answerText.trim() === '') {
+      return false;
+    }
+
+    const userTextNormalized = uAnswer.answerText.trim().toLowerCase();
+
+    // Check if user's text matches any correct answer
+    return questionData.answers.some((a) => {
+      const dbAnswerText = a.answer_text?.trim().toLowerCase();
+      const dbMatchingValue = a.matching_value?.trim().toLowerCase();
+
+      // Match with either answer_text or matching_value in DB
+      return (
+        dbAnswerText === userTextNormalized ||
+        dbMatchingValue === userTextNormalized
+      );
+    });
+  }
+
+  /**
+   * Update answer correctness in database if changed
+   */
+  private async updateAnswerCorrectness(uAnswer: any, isCorrect: boolean) {
+    if (uAnswer.isCorrect !== isCorrect) {
+      await this.databaseService.userAnswer.update({
+        where: { idUserAnswer: uAnswer.idUserAnswer },
+        data: { isCorrect: isCorrect },
+      });
+    }
+  }
+
+  /**
+   * Calculate total correct and band score
+   */
+  private calculateScores(gradingResults: number[], totalQuestions: number) {
+    const total_correct = gradingResults.reduce((sum, val) => sum + val, 0);
+    const band_score = this.calculateIELTSBandScore(total_correct, totalQuestions);
+
+    return { total_correct, band_score };
+  }
+
+  /**
+   * Calculate XP with anti-spam check
+   */
+  private async calculateXpGained(
+    idUser: string,
+    idTest: string,
+    currentTestResultId: string,
+    level: 'Low' | 'Mid' | 'High' | 'Great',
+    band_score: number,
+  ): Promise<number> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const alreadyCompletedToday =
+      await this.databaseService.userTestResult.findFirst({
+        where: {
+          idUser: idUser,
+          idTest: idTest,
+          status: 'FINISHED',
+          finishedAt: { gte: today },
+          idTestResult: { not: currentTestResultId },
+        },
+      });
+
+    // Only award XP if this is the first completion today
+    return alreadyCompletedToday ? 0 : this.calculateXp(level, band_score);
+  }
+
+  /**
+   * Handle XP and streak updates
+   */
+  private async handleXpAndStreak(idUser: string, xpGained: number) {
+    // Update XP if gained
+    if (xpGained > 0) {
+      await this.updateUserXpAndLevel(idUser, xpGained);
+    }
+
+    // Update streak
+    try {
+      await this.streakService.updateStreak(idUser);
+    } catch (error) {
+      console.error(`Failed to update streak for user ${idUser}`, error);
+    }
+  }
+
+  /**
+   * Update test completion status
+   */
+  private async updateTestCompletion(
+    idTestResult: string,
+    total_correct: number,
+    total_questions: number,
+    band_score: number,
+  ) {
+    return await this.databaseService.userTestResult.update({
+      where: { idTestResult: idTestResult },
+      data: {
+        status: 'FINISHED',
+        finishedAt: new Date(),
+        total_correct: total_correct,
+        total_questions: total_questions,
+        band_score: band_score,
+        score: total_correct,
+      },
+    });
+  }
 
   /**
    * Hàm tính XP dựa trên level và band score
