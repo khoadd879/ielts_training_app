@@ -41,7 +41,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         accountType: accountType.GOOGLE,
         isActive: true,
         gender: 'Male',
-        level: 'Mid',
+        level: 'Low',
         phoneNumber: '', // fix thêm field
         address: '', // fix thêm field
       });
