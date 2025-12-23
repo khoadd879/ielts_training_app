@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { accountType, Gender, Level, Role } from '@prisma/client';
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsNumberString,
+  IsOptional,
+  Length,
+} from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'John Doe' })
@@ -34,6 +41,10 @@ export class CreateUserDto {
 
   @ApiProperty({ example: '1234567890' })
   @IsOptional()
+  @IsNumberString({}, { message: 'Số điện thoại chỉ được chứa các chữ số' })
+  @Length(10, 12, {
+    message: 'Số điện thoại phải có độ dài từ 10 đến 12 ký tự',
+  })
   phoneNumber: string;
 
   @ApiProperty({ example: '123 Main St, City, Country' })
