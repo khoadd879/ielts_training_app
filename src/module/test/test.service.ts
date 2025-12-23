@@ -321,6 +321,7 @@ export class TestService {
       include: {
         parts: {
           include: {
+            passage: true,
             groupOfQuestions: {
               include: {
                 question: {
