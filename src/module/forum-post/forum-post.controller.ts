@@ -18,10 +18,19 @@ import { FileInterceptor } from '@nestjs/platform-express';
 @ApiBearerAuth()
 @Controller('forum-post')
 export class ForumPostController {
-  constructor(private readonly forumPostService: ForumPostService) {}
+  constructor(private readonly forumPostService: ForumPostService) { }
 
   @Post('create-forum-post')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (req, file, callback) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          return callback(new Error('Only image files are allowed!'), false);
+        }
+        callback(null, true);
+      },
+    }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -58,7 +67,16 @@ export class ForumPostController {
   }
 
   @Patch('update-forum-post/:idForumPost')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (req, file, callback) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          return callback(new Error('Only image files are allowed!'), false);
+        }
+        callback(null, true);
+      },
+    }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
