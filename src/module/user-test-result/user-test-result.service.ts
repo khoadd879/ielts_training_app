@@ -22,8 +22,7 @@ export class UserTestResultService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly streakService: StreakService,
-    private readonly writingService: UserWritingSubmissionService,
-  ) {}
+  ) { }
 
   async findAllTestResultByIdUser(idUser: string) {
     const existingUser = await this.databaseService.user.findUnique({
@@ -578,14 +577,13 @@ export class UserTestResultService {
       orderBy: {
         updatedAt: 'desc',
       },
-
       include: {
         userAnswer: true,
-        UserWritingSubmission: {
+        writingSubmission: {
           include: {
             writingTask: true,
             feedback: true,
-          },
+          }
         },
         test: {
           include: {

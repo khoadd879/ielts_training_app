@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserWritingSubmissionDto } from './dto/create-user-writing-submission.dto';
 import { UpdateUserWritingSubmissionDto } from './dto/update-user-writing-submission.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -36,7 +31,7 @@ export class UserWritingSubmissionService {
     private readonly databaseService: DatabaseService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   private getAIInstance(): GoogleGenAI {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
@@ -57,13 +52,7 @@ export class UserWritingSubmissionService {
 
     const [user, writingTask, testRestult] = await Promise.all([
       this.databaseService.user.findUnique({ where: { idUser } }),
-      this.databaseService.writingTask.findUnique({
-        where: { idWritingTask },
-        include: { test: true },
-      }),
-      this.databaseService.userTestResult.findUnique({
-        where: { idTestResult },
-      }),
+      this.databaseService.writingTask.findUnique({ where: { idWritingTask }, include: { test: true } }),
     ]);
 
     if (!user) throw new NotFoundException('User not found');
@@ -83,11 +72,21 @@ export class UserWritingSubmissionService {
     }
 
     const data = await this.databaseService.$transaction(async (tx) => {
+      const testResult = await tx.userTestResult.create({
+        data: {
+          idUser,
+          idTest: writingTask.test.idTest,
+          band_score: aiResult.score,
+          level: writingTask.test.level,
+          status: 'FINISHED',
+        }
+      })
+
       const submission = await tx.userWritingSubmission.create({
         data: {
           idUser,
           idWritingTask,
-          idTestResult,
+          idTestResult: testResult.idTestResult,
           submission_text,
           status: 'GRADED',
         },
@@ -195,37 +194,34 @@ export class UserWritingSubmissionService {
 
   // Lấy toàn bộ submissions theo user
   async findAllByIdUser(idUser: string) {
-    const submissions =
-      await this.databaseService.userWritingSubmission.findMany({
-        where: { idUser },
-        orderBy: { submitted_at: 'desc' },
-        include: {
-          writingTask: {
-            select: { title: true, task_type: true }, // Chỉ lấy field cần thiết
-          },
-          UserTestResult: {
-            // JOIN trực tiếp để lấy điểm
-            select: {
-              band_score: true,
-              idTest: true,
-            },
-          },
-          feedback: {
-            orderBy: { gradedAt: 'desc' },
-            take: 1,
-            select: { generalFeedback: true }, // Lấy tóm tắt feedback nếu cần
-          },
+    const submissions = await this.databaseService.userWritingSubmission.findMany({
+      where: { idUser },
+      orderBy: { submitted_at: 'desc' },
+      include: {
+        writingTask: {
+          select: { title: true, task_type: true }
         },
-      });
+        userTestResults: {
+          select: {
+            band_score: true,
+            idTest: true
+          }
+        },
+        feedback: {
+          orderBy: { gradedAt: 'desc' },
+          take: 1,
+          select: { generalFeedback: true }
+        },
+      },
+    });
 
-    // Map lại dữ liệu cho đẹp (nếu cần làm phẳng object)
-    const data = submissions.map((sub) => ({
+    const data = submissions.map(sub => ({
       idWritingSubmission: sub.idWritingSubmission,
       taskTitle: sub.writingTask?.title,
       submittedAt: sub.submitted_at,
       status: sub.status,
-      bandScore: sub.UserTestResult?.band_score ?? 0, // Lấy điểm trực tiếp
-      generalFeedback: sub.feedback[0]?.generalFeedback,
+      bandScore: sub.userTestResults?.band_score ?? 0, // <--- ĐÃ SỬA
+      generalFeedback: sub.feedback[0]?.generalFeedback
     }));
 
     return {
@@ -235,21 +231,18 @@ export class UserWritingSubmissionService {
     };
   }
 
-  // Lấy chi tiết submission
   async findOne(idWritingSubmission: string) {
-    const submission =
-      await this.databaseService.userWritingSubmission.findUnique({
-        where: { idWritingSubmission },
-        include: {
-          writingTask: true,
-          user: { select: { idUser: true, nameUser: true, avatar: true } },
-          feedback: { orderBy: { gradedAt: 'desc' } },
-          UserTestResult: {
-            // JOIN lấy điểm
-            select: { band_score: true },
-          },
-        },
-      });
+    const submission = await this.databaseService.userWritingSubmission.findUnique({
+      where: { idWritingSubmission },
+      include: {
+        writingTask: true,
+        user: { select: { idUser: true, nameUser: true, avatar: true } },
+        feedback: { orderBy: { gradedAt: 'desc' } },
+        userTestResults: {
+          select: { band_score: true }
+        }
+      },
+    });
 
     if (!submission) throw new BadRequestException('Submission not found');
 
@@ -257,7 +250,7 @@ export class UserWritingSubmissionService {
       message: 'Details retrieved successfully',
       data: {
         ...submission,
-        band_score: submission.UserTestResult?.band_score ?? 0,
+        band_score: submission.userTestResults?.band_score ?? 0
       },
       status: 200,
     };

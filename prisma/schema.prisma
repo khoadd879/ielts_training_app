@@ -56,25 +56,25 @@ model VerificationCode {
 }
 
 model UserTestResult {
-  idTestResult          String                  @id @default(uuid())
-  idUser                String
-  score                 Int?                    @default(0)
-  total_correct         Int?                    @default(0)
-  total_questions       Int?                    @default(0)
-  raw_score             Int?                    @default(0)
-  band_score            Float                   @default(0)
-  duration              Int                     @default(0)
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  finishedAt            DateTime?
-  startedAt             DateTime                @default(now())
-  status                TestStatus              @default(IN_PROGRESS)
-  level                 Level                   @default(Low)
-  idTest                String
-  userAnswer            UserAnswer[]
-  test                  Test                    @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
-  user                  User                    @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  UserWritingSubmission UserWritingSubmission[]
+  idTestResult      String                  @id @default(uuid())
+  idUser            String
+  idTest            String
+  score             Int?                    @default(0) //score theo thang 40
+  total_correct     Int?                    @default(0)
+  total_questions   Int?                    @default(0)
+  raw_score         Int?                    @default(0)
+  band_score        Float                   @default(0)
+  duration          Int                     @default(0)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  finishedAt        DateTime?
+  startedAt         DateTime                @default(now())
+  status            TestStatus              @default(IN_PROGRESS)
+  level             Level                   @default(Low)
+  userAnswer        UserAnswer[]
+  test              Test                    @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  user              User                    @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  writingSubmission UserWritingSubmission[]
 }
 
 model Vocabulary {
@@ -227,14 +227,16 @@ model UserWritingSubmission {
   idWritingSubmission String          @id @default(uuid())
   idUser              String
   idWritingTask       String
-  submission_text     String
-  submitted_at        DateTime        @default(now())
-  status              WritingStatus   @default(SUBMITTED)
   idTestResult        String?
-  feedback            Feedback[]
-  UserTestResult      UserTestResult? @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
-  user                User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  writingTask         WritingTask     @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
+  submission_text     String
+  submitted_at        DateTime      @default(now())
+  status              WritingStatus @default(SUBMITTED)
+
+  user        User        @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  writingTask WritingTask @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
+
+  feedback        Feedback[]
+  userTestResults UserTestResult? @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
 }
 
 model Feedback {
