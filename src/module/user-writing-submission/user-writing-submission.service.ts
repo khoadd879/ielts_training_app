@@ -50,7 +50,7 @@ export class UserWritingSubmissionService {
     const { idUser, idWritingTask, submission_text } =
       createUserWritingSubmissionDto;
 
-    const [user, writingTask, testRestult] = await Promise.all([
+    const [user, writingTask, testResult] = await Promise.all([
       this.databaseService.user.findUnique({ where: { idUser } }),
       this.databaseService.writingTask.findUnique({ where: { idWritingTask }, include: { test: true } }),
       this.databaseService.userTestResult.findUnique({ where: { idTestResult } })
@@ -58,7 +58,7 @@ export class UserWritingSubmissionService {
 
     if (!user) throw new NotFoundException('User not found');
     if (!writingTask) throw new NotFoundException('Writing task not found');
-    if (!testRestult) throw new NotFoundException('Test result not found');
+    if (!testResult) throw new NotFoundException('Test result not found');
 
     let aiResult: AIFeedbackResult;
 
@@ -73,21 +73,12 @@ export class UserWritingSubmissionService {
     }
 
     const data = await this.databaseService.$transaction(async (tx) => {
-      const testResult = await tx.userTestResult.create({
-        data: {
-          idUser,
-          idTest: writingTask.test.idTest,
-          band_score: aiResult.score,
-          level: writingTask.test.level,
-          status: 'FINISHED',
-        }
-      })
-
+      // ✅ USE the existing idTestResult instead of creating a new one
       const submission = await tx.userWritingSubmission.create({
         data: {
           idUser,
           idWritingTask,
-          idTestResult: testResult.idTestResult,
+          idTestResult: idTestResult, // ✅ Use the parameter!
           submission_text,
           status: 'GRADED',
         },
