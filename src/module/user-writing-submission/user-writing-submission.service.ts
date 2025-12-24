@@ -53,6 +53,7 @@ export class UserWritingSubmissionService {
     const [user, writingTask, testRestult] = await Promise.all([
       this.databaseService.user.findUnique({ where: { idUser } }),
       this.databaseService.writingTask.findUnique({ where: { idWritingTask }, include: { test: true } }),
+      this.databaseService.userTestResult.findUnique({ where: { idTestResult } })
     ]);
 
     if (!user) throw new NotFoundException('User not found');

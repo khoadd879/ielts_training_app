@@ -22,6 +22,7 @@ export class UserTestResultService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly streakService: StreakService,
+    private readonly writingService: UserWritingSubmissionService,
   ) { }
 
   async findAllTestResultByIdUser(idUser: string) {

@@ -348,53 +348,89 @@ model GrammarsOnCategories {
   @@id([idGrammarCategory, idGrammar])
 }
 
+// 1. Cái vỏ bao bọc bài thi Nói (Giữ nguyên, không bỏ)
 model SpeakingTask {
-  idSpeakingTask  String                   @id @default(uuid())
-  title           String
-  audioPromptUrl  String?
-  createdAt       DateTime                 @default(now())
-  updatedAt       DateTime                 @updatedAt
-  idTest          String                   @unique
+  idSpeakingTask  String   @id @default(uuid())
+  title           String   // Ví dụ: "IELTS Speaking Cam 18 - Test 1"
+  
+  // Audio này có thể dùng làm "Lời chào mừng" hoặc "Hướng dẫn chung"
+  audioPromptUrl  String?  
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  idTest          String   @unique
+  test            Test     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  
+  // Relation xuống các câu hỏi con
   questions       SpeakingQuestion[]
-  test            Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  
+  // Relation xuống bài nộp của user
   userSubmissions UserSpeakingSubmission[]
 }
 
+// 2. Chi tiết từng câu hỏi (Part 1, 2, 3)
 model SpeakingQuestion {
   idSpeakingQuestion String           @id @default(uuid())
   idSpeakingTask     String
-  part               SpeakingPartType
-  topic              String?
-  prompt             String?
-  subPrompts         Json?
-  preparationTime    Int              @default(0)
-  speakingTime       Int              @default(120)
-  order              Int              @default(0)
+  
+  part               SpeakingPartType // PART1, PART2, PART3
+  
+  topic              String?          // Ví dụ: "Hometown", "Work/Study"
+  prompt             String?          // Nội dung text câu hỏi
+  subPrompts         Json?            // Các gợi ý (đặc biệt cho Part 2 Cue Card)
+  
+  // [MỚI] Audio giọng đọc riêng cho từng câu hỏi (để App phát lần lượt)
+  audioQuestionUrl   String?          
+
+  preparationTime    Int              @default(0) 
+  speakingTime       Int              @default(120) 
+  order              Int              @default(0) // Thứ tự câu hỏi 1, 2, 3...
+  
   speakingTask       SpeakingTask     @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
 }
 
+// 3. Bài nộp của User
 model UserSpeakingSubmission {
   idSpeakingSubmission String            @id @default(uuid())
   idUser               String
   idSpeakingTask       String
-  audioUrl             String
+  
+  audioUrl             String            // File ghi âm user gửi lên
   submittedAt          DateTime          @default(now())
   status               SpeakingStatus    @default(SUBMITTED)
-  transcript           String?
-  feedback             SpeakingFeedback?
+  
+  transcript           String?           // Text chuyển từ Audio (Speech-to-Text)
+
+  // [MỚI] Xác định file này là nộp cho Part nào (PART1, PART2 hay PART3)
+  part                 SpeakingPartType?  
+
+  feedback             SpeakingFeedback? // Kết quả chấm
+  
   speakingTask         SpeakingTask      @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
   user                 User              @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 }
 
+// 4. Kết quả chấm điểm chi tiết
 model SpeakingFeedback {
   idSpeakingFeedback          String                 @id @default(uuid())
   idSpeakingSubmission        String                 @unique
-  fluencyAndCoherence         String
-  lexicalResource             String
-  grammaticalRangeAndAccuracy String
-  pronunciation               String
-  generalFeedback             String
-  detailedCorrections         Json?
+  
+  // [MỚI] Điểm số cụ thể (để tính toán và vẽ biểu đồ)
+  scoreFluency                Float?   
+  scoreLexical                Float?
+  scoreGrammar                Float?
+  scorePronunciation          Float?
+  overallScore                Float?   // Điểm trung bình
+
+  // Nhận xét text (như cũ)
+  commentFluency              String? 
+  commentLexical              String?
+  commentGrammar              String?
+  commentPronunciation        String?
+  generalFeedback             String   
+  detailedCorrections         Json?    
+
   gradedAt                    DateTime               @default(now())
   submission                  UserSpeakingSubmission @relation(fields: [idSpeakingSubmission], references: [idSpeakingSubmission], onDelete: Cascade)
 }

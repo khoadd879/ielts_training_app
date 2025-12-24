@@ -14,10 +14,15 @@ type CorrectionDetail = {
 };
 
 type AIFeedbackResult = {
-  fluencyAndCoherence: string;
-  lexicalResource: string;
-  grammaticalRangeAndAccuracy: string;
-  pronunciation: string;
+  scoreFluency?: number;
+  scoreLexical?: number;
+  scoreGrammar?: number;
+  scorePronunciation?: number;
+  overallScore?: number;
+  commentFluency?: string;
+  commentLexical?: string;
+  commentGrammar?: string;
+  commentPronunciation?: string;
   generalFeedback: string;
   detailedCorrections: CorrectionDetail[];
 };
@@ -27,7 +32,7 @@ export class UserSpeakingSubmissionService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly databaseService: DatabaseService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   private getAIInstance(): GoogleGenAI {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
@@ -94,18 +99,29 @@ Sub Prompts: ${subs}`;
     }
 
     // ==================== GỘP FEEDBACK ==================== //
+    const partResults = Object.values(aiResults);
+    const validParts = partResults.length || 1;
+
     const combinedFeedback: AIFeedbackResult = {
-      fluencyAndCoherence: Object.entries(aiResults)
-        .map(([part, r]) => `--- ${part} ---\n${r.fluencyAndCoherence}`)
+      // Calculate average scores
+      scoreFluency: partResults.reduce((sum, r) => sum + (r.scoreFluency || 0), 0) / validParts,
+      scoreLexical: partResults.reduce((sum, r) => sum + (r.scoreLexical || 0), 0) / validParts,
+      scoreGrammar: partResults.reduce((sum, r) => sum + (r.scoreGrammar || 0), 0) / validParts,
+      scorePronunciation: partResults.reduce((sum, r) => sum + (r.scorePronunciation || 0), 0) / validParts,
+      overallScore: partResults.reduce((sum, r) => sum + (r.overallScore || 0), 0) / validParts,
+
+      // Combine comments
+      commentFluency: Object.entries(aiResults)
+        .map(([part, r]) => `--- ${part} ---\n${r.commentFluency || ''}`)
         .join('\n\n'),
-      lexicalResource: Object.entries(aiResults)
-        .map(([part, r]) => `--- ${part} ---\n${r.lexicalResource}`)
+      commentLexical: Object.entries(aiResults)
+        .map(([part, r]) => `--- ${part} ---\n${r.commentLexical || ''}`)
         .join('\n\n'),
-      grammaticalRangeAndAccuracy: Object.entries(aiResults)
-        .map(([part, r]) => `--- ${part} ---\n${r.grammaticalRangeAndAccuracy}`)
+      commentGrammar: Object.entries(aiResults)
+        .map(([part, r]) => `--- ${part} ---\n${r.commentGrammar || ''}`)
         .join('\n\n'),
-      pronunciation: Object.entries(aiResults)
-        .map(([part, r]) => `--- ${part} ---\n${r.pronunciation}`)
+      commentPronunciation: Object.entries(aiResults)
+        .map(([part, r]) => `--- ${part} ---\n${r.commentPronunciation || ''}`)
         .join('\n\n'),
       generalFeedback: Object.entries(aiResults)
         .map(([part, r]) => `--- ${part} ---\n${r.generalFeedback}`)
@@ -129,11 +145,15 @@ Sub Prompts: ${subs}`;
       const feedback = await tx.speakingFeedback.create({
         data: {
           idSpeakingSubmission: submission.idSpeakingSubmission,
-          fluencyAndCoherence: combinedFeedback.fluencyAndCoherence,
-          lexicalResource: combinedFeedback.lexicalResource,
-          grammaticalRangeAndAccuracy:
-            combinedFeedback.grammaticalRangeAndAccuracy,
-          pronunciation: combinedFeedback.pronunciation,
+          scoreFluency: combinedFeedback.scoreFluency,
+          scoreLexical: combinedFeedback.scoreLexical,
+          scoreGrammar: combinedFeedback.scoreGrammar,
+          scorePronunciation: combinedFeedback.scorePronunciation,
+          overallScore: combinedFeedback.overallScore,
+          commentFluency: combinedFeedback.commentFluency,
+          commentLexical: combinedFeedback.commentLexical,
+          commentGrammar: combinedFeedback.commentGrammar,
+          commentPronunciation: combinedFeedback.commentPronunciation,
           generalFeedback: combinedFeedback.generalFeedback,
           detailedCorrections: combinedFeedback.detailedCorrections || [],
         },
@@ -260,10 +280,15 @@ Sub Prompts: ${subs}`;
       const parsed = JSON.parse(clean);
 
       return {
-        fluencyAndCoherence: parsed.fluency_and_coherence,
-        lexicalResource: parsed.lexical_resource,
-        grammaticalRangeAndAccuracy: parsed.grammatical_range_and_accuracy,
-        pronunciation: parsed.pronunciation,
+        scoreFluency: parsed.score_fluency,
+        scoreLexical: parsed.score_lexical,
+        scoreGrammar: parsed.score_grammar,
+        scorePronunciation: parsed.score_pronunciation,
+        overallScore: parsed.overall_score,
+        commentFluency: parsed.comment_fluency,
+        commentLexical: parsed.comment_lexical,
+        commentGrammar: parsed.comment_grammar,
+        commentPronunciation: parsed.comment_pronunciation,
         generalFeedback: parsed.general_feedback,
         detailedCorrections: parsed.detailed_corrections || [],
       };
@@ -288,14 +313,22 @@ Task: ${taskTitle}
 ### Speaking Questions:
 ${questionContext}
 
-Return feedback in JSON only:
+Return feedback in JSON only with the following structure.
+- Provide numeric scores (0-9 scale, can use decimals like 6.5, 7.0, etc.) for each criterion.
+- Provide detailed text comments for each criterion.
+- Calculate the overall_score as the average of the four scores.
 
 {
-  "fluency_and_coherence": "text",
-  "lexical_resource": "text",
-  "grammatical_range_and_accuracy": "text",
-  "pronunciation": "text",
-  "general_feedback": "text",
+  "score_fluency": 0.0,
+  "score_lexical": 0.0,
+  "score_grammar": 0.0,
+  "score_pronunciation": 0.0,
+  "overall_score": 0.0,
+  "comment_fluency": "detailed feedback on fluency and coherence",
+  "comment_lexical": "detailed feedback on lexical resource",
+  "comment_grammar": "detailed feedback on grammatical range and accuracy",
+  "comment_pronunciation": "detailed feedback on pronunciation",
+  "general_feedback": "overall assessment and suggestions",
   "detailed_corrections": [
     {
       "mistake": "string",
