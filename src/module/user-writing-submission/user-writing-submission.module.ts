@@ -14,5 +14,6 @@ import { CacheModule } from '@nestjs/cache-manager';
   ],
   controllers: [UserWritingSubmissionController],
   providers: [UserWritingSubmissionService],
+  exports: [UserWritingSubmissionService],
 })
 export class UserWritingSubmissionModule {}

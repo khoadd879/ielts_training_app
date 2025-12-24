@@ -19,11 +19,13 @@ export class UserWritingSubmissionController {
     private readonly userWritingSubmissionService: UserWritingSubmissionService,
   ) {}
 
-  @Post('create-writing-submission')
+  @Post('create-writing-submission/:idTestResult')
   create(
+    @Param('idTestResult') idTestResult: string,
     @Body() createUserWritingSubmissionDto: CreateUserWritingSubmissionDto,
   ) {
     return this.userWritingSubmissionService.createUserWritingSubmission(
+      idTestResult,
       createUserWritingSubmissionDto,
     );
   }

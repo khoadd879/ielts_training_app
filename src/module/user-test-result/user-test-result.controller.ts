@@ -12,6 +12,7 @@ import {
 import { UserTestResultService } from './user-test-result.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
+import { FinishTestWritingDto } from './dto/finish-test-writing.dto';
 
 @ApiBearerAuth()
 @Controller('user-test-result')
@@ -55,6 +56,19 @@ export class UserTestResultController {
     @Param('idUser') idUser: string,
   ) {
     return this.userTestResultService.finishTest(idTestResult, idUser);
+  }
+
+  @Patch('finish-test-writing/:idTestResult/:idUser')
+  finishTestWriting(
+    @Param('idTestResult') idTestResult: string,
+    @Param('idUser') idUser: string,
+    @Body() finishTestWritingDto: FinishTestWritingDto,
+  ) {
+    return this.userTestResultService.finishTestWriting(
+      idTestResult,
+      idUser,
+      finishTestWritingDto,
+    );
   }
 
   @Delete('reset-test/:idTestResult')

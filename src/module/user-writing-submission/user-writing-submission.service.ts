@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserWritingSubmissionDto } from './dto/create-user-writing-submission.dto';
 import { UpdateUserWritingSubmissionDto } from './dto/update-user-writing-submission.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -6,6 +11,7 @@ import { GoogleGenAI } from '@google/genai';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 
 type CorrectionDetail = {
   mistake: string;
@@ -43,30 +49,45 @@ export class UserWritingSubmissionService {
 
   //Tạo submission + gọi AI chấm điểm
   async createUserWritingSubmission(
+    idTestResult: string,
     createUserWritingSubmissionDto: CreateUserWritingSubmissionDto,
   ) {
     const { idUser, idWritingTask, submission_text } =
       createUserWritingSubmissionDto;
 
-    const [user, writingTask] = await Promise.all([
+    const [user, writingTask, testRestult] = await Promise.all([
       this.databaseService.user.findUnique({ where: { idUser } }),
-      this.databaseService.writingTask.findUnique({ where: { idWritingTask } }),
+      this.databaseService.writingTask.findUnique({
+        where: { idWritingTask },
+        include: { test: true },
+      }),
+      this.databaseService.userTestResult.findUnique({
+        where: { idTestResult },
+      }),
     ]);
 
-    if (!user) throw new BadRequestException('User not found');
-    if (!writingTask) throw new BadRequestException('Writing task not found');
+    if (!user) throw new NotFoundException('User not found');
+    if (!writingTask) throw new NotFoundException('Writing task not found');
+    if (!testRestult) throw new NotFoundException('Test result not found');
 
-    // Gọi AI chấm điểm
-    const aiResult = await this.evaluateWriting(
-      submission_text,
-      writingTask.title,
-    );
+    let aiResult: AIFeedbackResult;
+
+    if (writingTask.image) {
+      aiResult = await this.evaluateWriting(
+        submission_text,
+        writingTask.title,
+        writingTask.image,
+      );
+    } else {
+      aiResult = await this.evaluateWriting(submission_text, writingTask.title);
+    }
 
     const data = await this.databaseService.$transaction(async (tx) => {
       const submission = await tx.userWritingSubmission.create({
         data: {
           idUser,
           idWritingTask,
+          idTestResult,
           submission_text,
           status: 'GRADED',
         },
@@ -87,32 +108,11 @@ export class UserWritingSubmissionService {
       return { ...submission, feedback };
     });
 
-    const idTest = await this.databaseService.writingTask.findUnique({
-      where: {
-        idWritingTask,
-      },
-      include: {
-        test: true,
-      },
-    });
-
-    if (!idTest?.test?.idTest) {
-      throw new BadRequestException('Invalid test or missing "de" reference');
-    }
-
-    await this.databaseService.userTestResult.create({
-      data: {
-        idUser,
-        idTest: idTest.test.idTest,
-        band_score: aiResult.score,
-        level: idTest.test.level,
-        status: 'FINISHED',
-      },
-    });
-
     return {
-      message: 'Writing submission created and graded successfully',
-      data,
+      submissionId: data.idWritingSubmission,
+      score: aiResult.score,
+      submission_text: data.submission_text,
+      feedback: data.feedback,
       status: 200,
     };
   }
@@ -121,8 +121,9 @@ export class UserWritingSubmissionService {
   async evaluateWriting(
     submissionText: string,
     writingPrompt: string,
+    imageUrl?: string,
   ): Promise<AIFeedbackResult> {
-    const cacheKey = `writing-feedback:${submissionText.trim()}:${writingPrompt.trim()}`;
+    const cacheKey = `writing-feedback:${submissionText.trim()}:${writingPrompt.trim()}:${imageUrl ?? 'no-image'}`;
     const cachedData = await this.cacheManager.get<AIFeedbackResult>(cacheKey);
 
     if (cachedData) {
@@ -130,13 +131,25 @@ export class UserWritingSubmissionService {
       return cachedData;
     }
 
-    const prompt = this.buildPrompt(submissionText, writingPrompt);
+    const prompt = this.buildPrompt(submissionText, writingPrompt, !!imageUrl);
     const ai = this.getAIInstance();
 
     try {
+      const parts: any[] = [{ text: prompt }];
+
+      if (imageUrl) {
+        const imagePart = await this.fileToGenerativePart(imageUrl);
+        if (imagePart) parts.push(imagePart);
+      }
+
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: prompt,
+        contents: [
+          {
+            role: 'user',
+            parts,
+          },
+        ],
       });
 
       const rawText = response.text?.trim() ?? '';
@@ -162,83 +175,58 @@ export class UserWritingSubmissionService {
     }
   }
 
+  private async fileToGenerativePart(url: string) {
+    try {
+      const response = await axios.get(url, { responseType: 'arraybuffer' });
+      const b64 = Buffer.from(response.data).toString('base64');
+      const mimeType = response.headers['content-type'] || 'image/jpeg';
+
+      return {
+        inlineData: {
+          data: b64,
+          mimeType,
+        },
+      };
+    } catch (error) {
+      console.error('Failed to fetch image from URL:', url);
+      return null;
+    }
+  }
+
   // Lấy toàn bộ submissions theo user
   async findAllByIdUser(idUser: string) {
-    const user = await this.databaseService.user.findUnique({
-      where: { idUser },
-    });
-    if (!user) throw new BadRequestException('User not found');
-
-    const submissions = await this.databaseService.userWritingSubmission.findMany({
-      where: { idUser },
-      include: {
-        writingTask: {
-          include: {
-            test: {
-              select: { idTest: true },
-},
+    const submissions =
+      await this.databaseService.userWritingSubmission.findMany({
+        where: { idUser },
+        orderBy: { submitted_at: 'desc' },
+        include: {
+          writingTask: {
+            select: { title: true, task_type: true }, // Chỉ lấy field cần thiết
+          },
+          UserTestResult: {
+            // JOIN trực tiếp để lấy điểm
+            select: {
+              band_score: true,
+              idTest: true,
+            },
+          },
+          feedback: {
+            orderBy: { gradedAt: 'desc' },
+            take: 1,
+            select: { generalFeedback: true }, // Lấy tóm tắt feedback nếu cần
           },
         },
-        feedback: {
-          orderBy: { gradedAt: 'desc' },
-          take: 1,
-        },
-      },
-    });
+      });
 
-    const testIds = submissions
-      .map((s) => s.writingTask?.test?.idTest)
-      .filter((id): id is string => !!id);
-
-    if (testIds.length === 0) {
-      return {
-        message: 'User writing submissions retrieved successfully',
-        data: submissions.map((s) => ({ ...s, band_score: null })), // ensure consistent response shape
-        status: 200,
-      };
-    }
-
-    const testResults = await this.databaseService.userTestResult.findMany({
-      where: {
-        idUser,
-        idTest: {
-          in: testIds,
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      select: {
-        idTest: true,
-        band_score: true,
-      },
-    });
-
-    const scoresMap = new Map<string, number | null>();
-    for (const result of testResults) {
-      if (!scoresMap.has(result.idTest)) {
-        scoresMap.set(result.idTest, result.band_score);
-      }
-    }
-
-    const data = submissions.map((submission) => {
-      const testId = submission.writingTask?.test?.idTest;
-      const band_score = testId ? scoresMap.get(testId) ?? null : null;
-      const { 
-        idWritingSubmission, 
-        idUser, 
-        idWritingTask, 
-        ...rest 
-      } = submission;
-
-      return {
-        idWritingSubmission,
-        idUser,
-        idWritingTask,
-        band_score: band_score ?? 0, 
-        ...rest,
-      };
-    });
+    // Map lại dữ liệu cho đẹp (nếu cần làm phẳng object)
+    const data = submissions.map((sub) => ({
+      idWritingSubmission: sub.idWritingSubmission,
+      taskTitle: sub.writingTask?.title,
+      submittedAt: sub.submitted_at,
+      status: sub.status,
+      bandScore: sub.UserTestResult?.band_score ?? 0, // Lấy điểm trực tiếp
+      generalFeedback: sub.feedback[0]?.generalFeedback,
+    }));
 
     return {
       message: 'User writing submissions retrieved successfully',
@@ -249,78 +237,28 @@ export class UserWritingSubmissionService {
 
   // Lấy chi tiết submission
   async findOne(idWritingSubmission: string) {
-    const submission = await this.databaseService.userWritingSubmission.findUnique({
-      where: { idWritingSubmission },
-      include: {
-        writingTask: {
-          include: {
-            test: {
-              select:{
-                idTest: true,
-              }
-            },
+    const submission =
+      await this.databaseService.userWritingSubmission.findUnique({
+        where: { idWritingSubmission },
+        include: {
+          writingTask: true,
+          user: { select: { idUser: true, nameUser: true, avatar: true } },
+          feedback: { orderBy: { gradedAt: 'desc' } },
+          UserTestResult: {
+            // JOIN lấy điểm
+            select: { band_score: true },
           },
-        },
-        user: {
-          select:{
-            idUser: true,
-            nameUser: true,
-          }
-        },
-        feedback: {
-          orderBy: {
-            gradedAt: 'desc',
-          },
-        },
-      },
-    });
-
-    if (!submission) {
-      throw new BadRequestException('User writing submission not found');
-    }
-
-    let band_score = 0;
-    if (submission.writingTask?.test) {
-      const testResult = await this.databaseService.userTestResult.findFirst({
-        where: {
-          idTest: submission.writingTask.test.idTest,
-          idUser: submission.idUser,
-        },
-        select: {
-          band_score: true,
-        },
-        orderBy: {
-          createdAt: 'desc', 
         },
       });
 
-
-      if (testResult) {
-        band_score = testResult.band_score;
-      }
-    }
-
-    const data = {
-      idWritingSubmission: submission.idWritingSubmission,
-      idUser: submission.idUser,
-      idWritingTask: submission.idWritingTask,
-      band_score: band_score, 
-
-      // Các trường còn lại
-      submission_text: submission.submission_text,
-      submitted_at: submission.submitted_at,
-      status: submission.status,
-      
-      // Các relation objects
-      writingTask: submission.writingTask,
-      user: submission.user,
-      feedback: submission.feedback,
-  
-    };
+    if (!submission) throw new BadRequestException('Submission not found');
 
     return {
-      message: 'User writing submission retrieved successfully',
-      data,
+      message: 'Details retrieved successfully',
+      data: {
+        ...submission,
+        band_score: submission.UserTestResult?.band_score ?? 0,
+      },
       status: 200,
     };
   }
@@ -406,38 +344,46 @@ export class UserWritingSubmissionService {
   // Prompt AI
   // Trong class UserWritingSubmissionService
 
-  private buildPrompt(submissionText: string, writingPrompt: string): string {
+  private buildPrompt(
+    submissionText: string,
+    writingPrompt: string,
+    hasImage: boolean,
+  ): string {
+    const taskTypeNote = hasImage
+      ? 'This is an IELTS Writing Task 1 (Report). Use the provided image (chart/graph/map) to verify the data accuracy in the essay.'
+      : 'This is an IELTS Writing Task 2 (Essay). Evaluate the arguments and ideas.';
+
     return `
-You are a certified IELTS Writing examiner with deep knowledge of the official IELTS Writing Band Descriptors. 
-Your task is to objectively evaluate the candidate’s essay and provide detailed, constructive feedback.
+You are a certified IELTS Writing examiner. 
+${taskTypeNote}
 
 RULES:
-1.  Act as a strict but fair IELTS examiner.
-2.  Follow IELTS public band descriptors.
-3.  For each of the 4 criteria (TR, CC, LR, GRA), provide detailed feedback (3-5 sentences).
-4.  Crucially, identify specific mistakes in the essay. For each mistake, provide the original text, the correction, a brief explanation, and classify the error type.
-5.  Return ONLY pure JSON (no markdown, no surrounding text).
+1. Act as a strict but fair IELTS examiner.
+2. Follow IELTS public band descriptors.
+3. For each of the 4 criteria (TR/TA, CC, LR, GRA), provide detailed feedback.
+4. Identify specific mistakes. Provide: original text, correction, and explanation.
+5. Return ONLY pure JSON.
 
 JSON OUTPUT FORMAT:
 {
-  "score": number, // Overall band score (e.g., 6.0, 6.5, 7.0)
-  "task_response": string, // Detailed feedback on Task Response
-  "coherence_and_cohesion": string, // Detailed feedback on Coherence and Cohesion
-  "lexical_resource": string, // Detailed feedback on Lexical Resource
-  "grammatical_range_and_accuracy": string, // Detailed feedback on Grammatical Range and Accuracy
-  "general_feedback": string, // A general summary and tips for improvement
+  "score": number,
+  "task_response": string,
+  "coherence_and_cohesion": string,
+  "lexical_resource": string,
+  "grammatical_range_and_accuracy": string,
+  "general_feedback": string,
   "detailed_corrections": [
     {
-      "mistake": "The original text snippet with the error.",
-      "correction": "The corrected text snippet.",
-      "explanation": "Brief explanation of why it was wrong.",
+      "mistake": "string",
+      "correct": "string",
+      "explanation": "string",
       "type": "Grammar | Lexis | Spelling | Cohesion"
     }
   ]
 }
 
-### Writing Prompt (Task):
-${writingPrompt ?? '(No prompt provided)'}
+### Writing Prompt:
+${writingPrompt}
 
 ### Candidate's Essay:
 ${submissionText}

@@ -5,14 +5,25 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { StreakService } from '../streak-service/streak-service.service';
-import { Level, TestStatus } from '@prisma/client';
+import { Level, TestStatus, TestType, WritingTaskType } from '@prisma/client';
+import { UserWritingSubmissionService } from '../user-writing-submission/user-writing-submission.service';
+import { FinishTestWritingDto } from './dto/finish-test-writing.dto';
+
+export interface SubmissionDetail {
+  idWritingTask: string;
+  task_type: string;
+  submission_text: string;
+  feedback: any; // Bạn có thể thay any bằng type Feedback cụ thể nếu muốn chuẩn hơn
+  score: number;
+}
 
 @Injectable()
 export class UserTestResultService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly streakService: StreakService,
-  ) { }
+    private readonly writingService: UserWritingSubmissionService,
+  ) {}
 
   async findAllTestResultByIdUser(idUser: string) {
     const existingUser = await this.databaseService.user.findUnique({
@@ -26,7 +37,7 @@ export class UserTestResultService {
     const data = await this.databaseService.userTestResult.findMany({
       where: { idUser, status: TestStatus.FINISHED },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'desc',
       },
       include: {
         test: true,
@@ -63,7 +74,8 @@ export class UserTestResultService {
         },
       });
 
-    if (!existingTestResult) throw new BadRequestException('Test result not found');
+    if (!existingTestResult)
+      throw new BadRequestException('Test result not found');
 
     await this.databaseService.userTestResult.delete({
       where: {
@@ -124,7 +136,10 @@ export class UserTestResultService {
     await this.validateUser(idUser);
 
     // 2. Get test result with all related data
-    const testResult = await this.getTestResultWithDetails(idTestResult, idUser);
+    const testResult = await this.getTestResultWithDetails(
+      idTestResult,
+      idUser,
+    );
 
     // 3. Validate test is in progress
     this.validateTestInProgress(testResult);
@@ -177,9 +192,6 @@ export class UserTestResultService {
     };
   }
 
-  /**
-   * Validate that user exists
-   */
   private async validateUser(idUser: string) {
     const existingUser = await this.databaseService.user.findUnique({
       where: { idUser },
@@ -187,9 +199,6 @@ export class UserTestResultService {
     if (!existingUser) throw new BadRequestException('User not found');
   }
 
-  /**
-   * Get test result with all question and answer details
-   */
   private async getTestResultWithDetails(idTestResult: string, idUser: string) {
     const testResult = await this.databaseService.userTestResult.findFirst({
       where: {
@@ -227,27 +236,18 @@ export class UserTestResultService {
     return testResult;
   }
 
-  /**
-   * Validate test is in progress
-   */
   private validateTestInProgress(testResult: any) {
     if (testResult.status !== 'IN_PROGRESS') {
       throw new BadRequestException('This test is not in progress.');
     }
   }
 
-  /**
-   * Extract all questions from test into a flat array
-   */
   private extractAllQuestions(testResult: any) {
     return testResult.test.parts
       .flatMap((p) => p.groupOfQuestions)
       .flatMap((g) => g.question);
   }
 
-  /**
-   * Grade all user answers
-   */
   private async gradeAllAnswers(userAnswers: any[], allQuestions: any[]) {
     return await Promise.all(
       userAnswers.map(async (uAnswer) => {
@@ -255,13 +255,10 @@ export class UserTestResultService {
           (q) => q.idQuestion === uAnswer.idQuestion,
         );
 
-        // If question not found -> 0 points
         if (!questionData) return 0;
 
-        // Grade the answer
         const isCorrect = this.gradeUserAnswer(uAnswer, questionData);
 
-        // Update correctness in database
         await this.updateAnswerCorrectness(uAnswer, isCorrect);
 
         return isCorrect ? 1 : 0;
@@ -269,9 +266,6 @@ export class UserTestResultService {
     );
   }
 
-  /**
-   * Grade a single user answer based on question type
-   */
   private gradeUserAnswer(uAnswer: any, questionData: any): boolean {
     const answerType = uAnswer.userAnswerType;
 
@@ -296,9 +290,6 @@ export class UserTestResultService {
     }
   }
 
-  /**
-   * Grade Multiple Choice Question (MCQ)
-   */
   private gradeMCQ(uAnswer: any, questionData: any): boolean {
     const correctKeys = questionData.answers
       .filter((a) => a.matching_value === 'CORRECT')
@@ -314,17 +305,12 @@ export class UserTestResultService {
     }
 
     if (correctKeys.length > 0 && userSelectedKeys.length > 0) {
-      // All user selections must be in correct answers
       return userSelectedKeys.every((key) => correctKeys.includes(key));
     }
 
     return false;
   }
 
-  /**
-   * Grade MATCHING type question
-   * For matching questions, we compare the matching_key from user with correct answers
-   */
   private gradeMatching(uAnswer: any, questionData: any): boolean {
     // User's selected matching key (e.g., "ix", "iii", "vii")
     const userKey = uAnswer.matching_key?.trim().toLowerCase();
@@ -334,7 +320,7 @@ export class UserTestResultService {
 
     // Find the correct answer by checking which answer has matching_value = 'CORRECT'
     const correctAnswer = questionData.answers.find(
-      (a) => a.matching_value === 'CORRECT'
+      (a) => a.matching_value === 'CORRECT',
     );
 
     if (!correctAnswer || !correctAnswer.matching_key) return false;
@@ -343,9 +329,6 @@ export class UserTestResultService {
     return userKey === correctAnswer.matching_key.trim().toLowerCase();
   }
 
-  /**
-   * Grade LABELING type question
-   */
   private gradeLabeling(uAnswer: any, questionData: any): boolean {
     const userKey = uAnswer.matching_key?.trim().toUpperCase();
 
@@ -357,9 +340,6 @@ export class UserTestResultService {
     );
   }
 
-  /**
-   * Grade text-based answers (SHORT_ANSWER, FILL_BLANK, YES_NO_NOTGIVEN)
-   */
   private gradeTextAnswer(uAnswer: any, questionData: any): boolean {
     // If user left answer blank
     if (!uAnswer.answerText || uAnswer.answerText.trim() === '') {
@@ -398,7 +378,10 @@ export class UserTestResultService {
    */
   private calculateScores(gradingResults: number[], totalQuestions: number) {
     const total_correct = gradingResults.reduce((sum, val) => sum + val, 0);
-    const band_score = this.calculateIELTSBandScore(total_correct, totalQuestions);
+    const band_score = this.calculateIELTSBandScore(
+      total_correct,
+      totalQuestions,
+    );
 
     return { total_correct, band_score };
   }
@@ -593,11 +576,17 @@ export class UserTestResultService {
         status: TestStatus.FINISHED,
       },
       orderBy: {
-        updatedAt: 'desc'
+        updatedAt: 'desc',
       },
 
       include: {
         userAnswer: true,
+        UserWritingSubmission: {
+          include: {
+            writingTask: true,
+            feedback: true,
+          },
+        },
         test: {
           include: {
             parts: {
@@ -624,6 +613,121 @@ export class UserTestResultService {
     return {
       message: 'Test result and answers retrieved successfully',
       data,
+      status: 200,
+    };
+  }
+
+  async finishTestWriting(
+    idTestResult: string,
+    idUser: string,
+    body?: FinishTestWritingDto,
+  ) {
+    const testResult = await this.databaseService.userTestResult.findUnique({
+      where: { idTestResult },
+      include: { test: true },
+    });
+
+    if (!testResult) throw new NotFoundException('Test result not found');
+    if (testResult.idUser !== idUser) {
+      throw new BadRequestException(
+        'You do not have permission to finish this test',
+      );
+    }
+    if (testResult.status !== 'IN_PROGRESS') {
+      throw new BadRequestException('This test is not in progress.');
+    }
+    if (testResult.test.testType !== TestType.WRITING) {
+      throw new BadRequestException('This endpoint is for Writing tests only.');
+    }
+
+    let scoreTask1 = 0;
+    let scoreTask2 = 0;
+    let submittedCount = 0;
+    const submissionsDetails: SubmissionDetail[] = [];
+
+    if (body?.writingSubmissions && body.writingSubmissions.length > 0) {
+      for (const submission of body.writingSubmissions) {
+        if (
+          !submission.submission_text ||
+          submission.submission_text.trim() === ''
+        ) {
+          continue;
+        }
+
+        const taskInfo = await this.databaseService.writingTask.findUnique({
+          where: { idWritingTask: submission.idWritingTask },
+          select: { task_type: true },
+        });
+
+        if (!taskInfo) continue;
+
+        // Gọi AI chấm điểm
+        const result = await this.writingService.createUserWritingSubmission(
+          idTestResult,
+          {
+            idUser: idUser,
+            idWritingTask: submission.idWritingTask,
+            submission_text: submission.submission_text,
+          },
+        );
+
+        submittedCount++;
+
+        submissionsDetails.push({
+          idWritingTask: submission.idWritingTask,
+          task_type: taskInfo.task_type,
+          submission_text: result.submission_text,
+          feedback: result.feedback,
+          score: result.score,
+        });
+
+        if (taskInfo.task_type === WritingTaskType.TASK1) {
+          scoreTask1 = result.score;
+        } else if (taskInfo.task_type === WritingTaskType.TASK2) {
+          scoreTask2 = result.score;
+        } else {
+          scoreTask1 += result.score;
+        }
+      }
+    }
+
+    let rawScore = (scoreTask1 + scoreTask2 * 2) / 3;
+
+    let band_score = Math.round(rawScore * 2) / 2;
+
+    const xpGained = await this.calculateXpGained(
+      idUser,
+      testResult.idTest,
+      idTestResult,
+      testResult.test.level,
+      band_score,
+    );
+
+    await this.handleXpAndStreak(idUser, xpGained);
+
+    const updatedResult = await this.databaseService.userTestResult.update({
+      where: { idTestResult },
+      data: {
+        status: 'FINISHED',
+        finishedAt: new Date(),
+        band_score: band_score,
+        total_questions: submittedCount,
+      },
+    });
+
+    return {
+      message: 'Writing test finished and graded successfully!',
+      data: {
+        xpGained,
+        band_score,
+        breakdown: {
+          task1_score: scoreTask1,
+          task2_score: scoreTask2,
+        },
+        submissions: submissionsDetails,
+        finishedAt: updatedResult.finishedAt,
+        submissions_count: submittedCount,
+      },
       status: 200,
     };
   }
