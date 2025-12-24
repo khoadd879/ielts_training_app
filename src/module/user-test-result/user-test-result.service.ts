@@ -718,6 +718,7 @@ export class UserTestResultService {
     return {
       message: 'Writing test finished and graded successfully!',
       data: {
+        idTestResult,
         xpGained,
         band_score,
         breakdown: {
