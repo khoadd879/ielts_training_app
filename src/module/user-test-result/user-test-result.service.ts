@@ -738,7 +738,11 @@ export class UserTestResultService {
   async finishTestSpeaking(
     idTestResult: string,
     idUser: string,
-    files: Express.Multer.File[],
+    files: {
+      part1Audio?: Express.Multer.File[],
+      part2Audio?: Express.Multer.File[],
+      part3Audio?: Express.Multer.File[],
+    },
     body?: FinishTestSpeakingDto,
   ) {
     // 1. Validate test result
@@ -770,49 +774,79 @@ export class UserTestResultService {
       throw new BadRequestException('This test does not have speaking tasks.');
     }
 
-    const idSpeakingTask = testResult.test.speakingTasks.idSpeakingTask;
+    const idSpeakingTask = body?.idSpeakingTask || testResult.test.speakingTasks.idSpeakingTask;
 
-    // 2. Process speaking submissions
+    // 2. Process speaking submissions for each part
     const partScores: { part: SpeakingPartType; score: number }[] = [];
     const submissionsDetails: any[] = [];
 
-    if (body?.speakingSubmissions && body.speakingSubmissions.length > 0) {
-      for (let i = 0; i < body.speakingSubmissions.length; i++) {
-        const submission = body.speakingSubmissions[i];
-        const audioFile = files[i]; // Lấy file tương ứng
+    // Process PART1
+    if (files.part1Audio && files.part1Audio.length > 0) {
+      const result = await this.speakingService.create(
+        {
+          idUser,
+          idSpeakingTask,
+          audioUrl: '', // Sẽ được set bởi service khi upload
+        },
+        files.part1Audio[0],
+        'PART1',
+      );
 
-        if (!audioFile) {
-          console.warn(`No audio file for submission ${i} (${submission.part})`);
-          continue;
-        }
+      const score = result.data?.feedback?.overallScore || 0;
+      partScores.push({ part: 'PART1', score });
+      submissionsDetails.push({
+        part: 'PART1',
+        audioUrl: result.data?.audioUrl,
+        transcript: result.data?.transcript,
+        feedback: result.data?.feedback,
+        score,
+      });
+    }
 
-        // 3. Gọi service để upload + chấm điểm
-        const result = await this.speakingService.create(
-          {
-            idUser,
-            idSpeakingTask: submission.idSpeakingTask || idSpeakingTask,
-            audioUrl: '', // Sẽ được set bởi service khi upload
-          },
-          audioFile,
-          submission.part, // Truyền part vào
-        );
+    // Process PART2
+    if (files.part2Audio && files.part2Audio.length > 0) {
+      const result = await this.speakingService.create(
+        {
+          idUser,
+          idSpeakingTask,
+          audioUrl: '',
+        },
+        files.part2Audio[0],
+        'PART2',
+      );
 
-        // Lấy điểm từ feedback
-        const score = result.data?.feedback?.overallScore || 0;
+      const score = result.data?.feedback?.overallScore || 0;
+      partScores.push({ part: 'PART2', score });
+      submissionsDetails.push({
+        part: 'PART2',
+        audioUrl: result.data?.audioUrl,
+        transcript: result.data?.transcript,
+        feedback: result.data?.feedback,
+        score,
+      });
+    }
 
-        partScores.push({
-          part: submission.part,
-          score: score,
-        });
+    // Process PART3
+    if (files.part3Audio && files.part3Audio.length > 0) {
+      const result = await this.speakingService.create(
+        {
+          idUser,
+          idSpeakingTask,
+          audioUrl: '',
+        },
+        files.part3Audio[0],
+        'PART3',
+      );
 
-        submissionsDetails.push({
-          part: submission.part,
-          audioUrl: result.data?.audioUrl,
-          transcript: result.data?.transcript,
-          feedback: result.data?.feedback,
-          score: score,
-        });
-      }
+      const score = result.data?.feedback?.overallScore || 0;
+      partScores.push({ part: 'PART3', score });
+      submissionsDetails.push({
+        part: 'PART3',
+        audioUrl: result.data?.audioUrl,
+        transcript: result.data?.transcript,
+        feedback: result.data?.feedback,
+        score,
+      });
     }
 
     // 4. Calculate band score (average of all parts)
