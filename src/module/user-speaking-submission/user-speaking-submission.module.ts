@@ -8,5 +8,6 @@ import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
   imports: [DatabaseModule, CloudinaryModule],
   controllers: [UserSpeakingSubmissionController],
   providers: [UserSpeakingSubmissionService],
+  exports: [UserSpeakingSubmissionService], // Export để dùng ở module khác
 })
-export class UserSpeakingSubmissionModule {}
+export class UserSpeakingSubmissionModule { }

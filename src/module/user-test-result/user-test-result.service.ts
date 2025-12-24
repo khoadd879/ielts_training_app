@@ -5,9 +5,11 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { StreakService } from '../streak-service/streak-service.service';
-import { Level, TestStatus, TestType, WritingTaskType } from '@prisma/client';
+import { Level, TestStatus, TestType, WritingTaskType, SpeakingPartType } from '@prisma/client';
 import { UserWritingSubmissionService } from '../user-writing-submission/user-writing-submission.service';
+import { UserSpeakingSubmissionService } from '../user-speaking-submission/user-speaking-submission.service';
 import { FinishTestWritingDto } from './dto/finish-test-writing.dto';
+import { FinishTestSpeakingDto } from './dto/finish-test-speaking.dto';
 
 export interface SubmissionDetail {
   idWritingTask: string;
@@ -23,6 +25,7 @@ export class UserTestResultService {
     private readonly databaseService: DatabaseService,
     private readonly streakService: StreakService,
     private readonly writingService: UserWritingSubmissionService,
+    private readonly speakingService: UserSpeakingSubmissionService,
   ) { }
 
   async findAllTestResultByIdUser(idUser: string) {
@@ -727,6 +730,133 @@ export class UserTestResultService {
         submissions: submissionsDetails,
         finishedAt: updatedResult.finishedAt,
         submissions_count: submittedCount,
+      },
+      status: 200,
+    };
+  }
+
+  async finishTestSpeaking(
+    idTestResult: string,
+    idUser: string,
+    files: Express.Multer.File[],
+    body?: FinishTestSpeakingDto,
+  ) {
+    // 1. Validate test result
+    const testResult = await this.databaseService.userTestResult.findUnique({
+      where: { idTestResult },
+      include: {
+        test: {
+          include: {
+            speakingTasks: true
+          }
+        }
+      },
+    });
+
+    if (!testResult) throw new NotFoundException('Test result not found');
+    if (testResult.idUser !== idUser) {
+      throw new BadRequestException(
+        'You do not have permission to finish this test',
+      );
+    }
+    if (testResult.status !== 'IN_PROGRESS') {
+      throw new BadRequestException('This test is not in progress.');
+    }
+    if (testResult.test.testType !== TestType.SPEAKING) {
+      throw new BadRequestException('This endpoint is for Speaking tests only.');
+    }
+
+    if (!testResult.test.speakingTasks) {
+      throw new BadRequestException('This test does not have speaking tasks.');
+    }
+
+    const idSpeakingTask = testResult.test.speakingTasks.idSpeakingTask;
+
+    // 2. Process speaking submissions
+    const partScores: { part: SpeakingPartType; score: number }[] = [];
+    const submissionsDetails: any[] = [];
+
+    if (body?.speakingSubmissions && body.speakingSubmissions.length > 0) {
+      for (let i = 0; i < body.speakingSubmissions.length; i++) {
+        const submission = body.speakingSubmissions[i];
+        const audioFile = files[i]; // Lấy file tương ứng
+
+        if (!audioFile) {
+          console.warn(`No audio file for submission ${i} (${submission.part})`);
+          continue;
+        }
+
+        // 3. Gọi service để upload + chấm điểm
+        const result = await this.speakingService.create(
+          {
+            idUser,
+            idSpeakingTask: submission.idSpeakingTask || idSpeakingTask,
+            audioUrl: '', // Sẽ được set bởi service khi upload
+          },
+          audioFile,
+          submission.part, // Truyền part vào
+        );
+
+        // Lấy điểm từ feedback
+        const score = result.data?.feedback?.overallScore || 0;
+
+        partScores.push({
+          part: submission.part,
+          score: score,
+        });
+
+        submissionsDetails.push({
+          part: submission.part,
+          audioUrl: result.data?.audioUrl,
+          transcript: result.data?.transcript,
+          feedback: result.data?.feedback,
+          score: score,
+        });
+      }
+    }
+
+    // 4. Calculate band score (average of all parts)
+    const totalScore = partScores.reduce((sum, p) => sum + p.score, 0);
+    const band_score = partScores.length > 0
+      ? Math.round((totalScore / partScores.length) * 2) / 2
+      : 0;
+
+    // 5. Calculate XP
+    const xpGained = await this.calculateXpGained(
+      idUser,
+      testResult.idTest,
+      idTestResult,
+      testResult.test.level,
+      band_score,
+    );
+
+    // 6. Update streak and XP
+    await this.handleXpAndStreak(idUser, xpGained);
+
+    // 7. Update test result
+    const updatedResult = await this.databaseService.userTestResult.update({
+      where: { idTestResult },
+      data: {
+        status: 'FINISHED',
+        finishedAt: new Date(),
+        band_score: band_score,
+        total_questions: partScores.length,
+      },
+    });
+
+    return {
+      message: 'Speaking test finished and graded successfully!',
+      data: {
+        idTestResult,
+        xpGained,
+        band_score,
+        breakdown: partScores.reduce((acc, p) => {
+          acc[p.part] = p.score;
+          return acc;
+        }, {} as Record<string, number>),
+        submissions: submissionsDetails,
+        finishedAt: updatedResult.finishedAt,
+        submissions_count: partScores.length,
       },
       status: 200,
     };
