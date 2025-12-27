@@ -10,6 +10,12 @@ from .base_transformer import (
     TransformerFactory,
 )
 
+from .schema_transformer import (
+    transform_to_exam_import_schema,
+    save_normalized_exam,
+    transform_and_save,
+)
+
 __all__ = [
     'BaseTransformer',
     'MCQTransformer',
@@ -20,4 +26,9 @@ __all__ = [
     'ShortAnswerTransformer',
     'LabelingTransformer',
     'TransformerFactory',
+    # Schema transformer
+    'transform_to_exam_import_schema',
+    'save_normalized_exam',
+    'transform_and_save',
 ]
+

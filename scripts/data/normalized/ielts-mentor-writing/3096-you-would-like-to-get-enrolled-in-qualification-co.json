@@ -1,0 +1,32 @@
+{
+  "id": "3096-you-would-like-to-get-enrolled-in-qualification-co",
+  "source": "ielts-mentor-writing",
+  "url": "https://www.ielts-mentor.com/writing-sample/gt-writing-task-1/3096-you-would-like-to-get-enrolled-in-qualification-course",
+  "slug": "ielts-mentor-writing-3096-you-would-like-to-get-enrolled-in-qualification-co",
+  "title": "You Would Like To Get Enrolled In Qualification Course",
+  "type": "WRITING_TASK_1",
+  "category": "IELTS_WRITING",
+  "level": "B2",
+  "durationMin": 20,
+  "sections": [
+    {
+      "idx": 1,
+      "title": "GT Writing Task 1",
+      "passage_md": null,
+      "instruction_md": "You should spend about 20 minutes on this task.",
+      "questions": [
+        {
+          "idx": 1,
+          "type": "ESSAY",
+          "prompt_md": "You should spend about\n20\nminutes on this task.\nYou would like to get enrolled in a qualification course. Write a letter to the person in charge of the course and ask for detailed information regarding the course, fees and prerequisites.\nWrite at least\n150\nwords.\nYou do\nNOT\nneed to write any addresses.\nBegin your letter as follows:\nDear Sir or Madam\n,",
+          "model_answers": [
+            "Dear Sir or Madam,\nI am John Parkinson writing in regard to getting enrolled in a diploma course that your institution has recently invited candidates to apply to. I am hoping that you would provide me with some further details regarding this.\nI have learned about the course from a website, and I require more details to apply to this course. I have recently earned a Bachelor of Arts degree from the University of Edinburgh and hold a diploma in Basic Computing. I would like to enhance my skills in this arena and your course 'Advanced Diploma in Computing' seems a fitting one to me.\nCould you please write back to me with details about the course, particularly about what topics it will cover and how long it will take? I would also like to know the admission process and course fee. So kindly mention all the costs this course includes and also inform me how should I apply.\nIf there is a special requirement to apply to the course, I should know it beforehand. I would be much obliged if you can provide me with the details at your earliest as I am looking forward to getting enrolled in this course soon.\nYours faithfully,\nJohn Parkinson\nModel\nAnswer 2:\nDear Sir or Madam,\nI am Caroline Norton, writing to request some information about the two-year diploma program in architectural design that your institute offers. I am keen to get registered in this course and that is why require further information regarding it.\nIn relation to the course, I learned about the course from an advertisement published in a local newspaper, but sadly, I did not find all the details. Firstly, I would like to ask if this is a full-time or a part-time course and which subjects of architecture are included in it? Furthermore, does it provide practical training to the participants? And, can you please inform me of the total cost of the course? Lastly, is there any previous qualification related to the architecture required for eligibility?\nI will be very grateful to you if you kindly send me these details as I am really hoping to get enrolled in it. I hope to hear from you soon.\nYours faithfully,\nCaroline Norton\n["
+          ],
+          "correct_answers": [],
+          "options": [],
+          "matchPairs": null
+        }
+      ]
+    }
+  ]
+}

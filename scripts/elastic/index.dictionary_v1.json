@@ -1,0 +1,20 @@
+{
+  "settings": {
+    "index": {
+      "mapping": {
+        "total_fields": { "limit": 2000 }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": false,
+    "properties": {
+      "id": { "type": "long" },
+      "word": { "type": "keyword" },
+      "wordNorm": { "type": "search_as_you_type" },
+      "pos": { "type": "keyword" },
+      "importedAt": { "type": "date" },
+      "data": { "type": "object", "enabled": false }
+    }
+  }
+}

@@ -11,6 +11,7 @@ class TestType(str, Enum):
 
 
 class QuestionType(str, Enum):
+    """OLD question types - kept for backward compatibility"""
     MCQ = "MCQ"
     TFNG = "TFNG"
     YES_NO_NOTGIVEN = "YES_NO_NOTGIVEN"
@@ -19,6 +20,108 @@ class QuestionType(str, Enum):
     LABELING = "LABELING"
     SHORT_ANSWER = "SHORT_ANSWER"
     OTHER = "OTHER"
+
+
+class NewQuestionType(str, Enum):
+    """NEW question types matching exam-import.schema.json"""
+    # Multiple Choice
+    MULTIPLE_CHOICE_SINGLE = "MULTIPLE_CHOICE_SINGLE"
+    MULTIPLE_CHOICE_MULTIPLE = "MULTIPLE_CHOICE_MULTIPLE"
+    MULTIPLE_CHOICE_SINGLE_IMAGE = "MULTIPLE_CHOICE_SINGLE_IMAGE"
+    
+    # True/False/Yes/No
+    TRUE_FALSE_NOT_GIVEN = "TRUE_FALSE_NOT_GIVEN"
+    YES_NO_NOT_GIVEN = "YES_NO_NOT_GIVEN"
+    
+    # Completion types
+    SUMMARY_COMPLETION = "SUMMARY_COMPLETION"
+    TABLE_COMPLETION = "TABLE_COMPLETION"
+    NOTE_COMPLETION = "NOTE_COMPLETION"
+    FORM_COMPLETION = "FORM_COMPLETION"
+    SENTENCE_COMPLETION = "SENTENCE_COMPLETION"
+    SHORT_ANSWER = "SHORT_ANSWER"
+    
+    # Label types
+    DIAGRAM_LABEL = "DIAGRAM_LABEL"
+    MAP_LABEL = "MAP_LABEL"
+    
+    # Matching types
+    MATCHING_HEADING = "MATCHING_HEADING"
+    MATCHING_INFORMATION = "MATCHING_INFORMATION"
+    MATCHING_FEATURES = "MATCHING_FEATURES"
+    MATCHING_ENDINGS = "MATCHING_ENDINGS"
+    CLASSIFICATION = "CLASSIFICATION"
+    
+    # Flow chart
+    FLOW_CHART = "FLOW_CHART"
+
+
+def map_old_to_new_type(old_type: QuestionType, context: dict = None) -> NewQuestionType:
+    """
+    Map old question types to new schema types.
+    
+    Args:
+        old_type: Old QuestionType enum value
+        context: Optional context dict with 'instruction' or 'title' for better mapping
+    
+    Returns:
+        NewQuestionType enum value
+    """
+    # Default mapping
+    default_mapping = {
+        QuestionType.MCQ: NewQuestionType.MULTIPLE_CHOICE_SINGLE,
+        QuestionType.TFNG: NewQuestionType.TRUE_FALSE_NOT_GIVEN,
+        QuestionType.YES_NO_NOTGIVEN: NewQuestionType.YES_NO_NOT_GIVEN,
+        QuestionType.FILL_BLANK: NewQuestionType.SUMMARY_COMPLETION,
+        QuestionType.SHORT_ANSWER: NewQuestionType.SHORT_ANSWER,
+        QuestionType.LABELING: NewQuestionType.DIAGRAM_LABEL,
+        QuestionType.MATCHING: NewQuestionType.MATCHING_INFORMATION,
+        QuestionType.OTHER: NewQuestionType.SHORT_ANSWER,
+    }
+    
+    # Context-aware mapping for ambiguous types
+    if context:
+        instruction = context.get("instruction", "").lower()
+        title = context.get("title", "").lower()
+        combined = instruction + " " + title
+        
+        # MATCHING type disambiguation
+        if old_type == QuestionType.MATCHING:
+            if "heading" in combined:
+                return NewQuestionType.MATCHING_HEADING
+            elif "feature" in combined or "writer" in combined or "person" in combined:
+                return NewQuestionType.MATCHING_FEATURES
+            elif "ending" in combined or "sentence ending" in combined:
+                return NewQuestionType.MATCHING_ENDINGS
+            else:
+                return NewQuestionType.MATCHING_INFORMATION
+        
+        # FILL_BLANK type disambiguation
+        if old_type == QuestionType.FILL_BLANK:
+            if "table" in combined:
+                return NewQuestionType.TABLE_COMPLETION
+            elif "note" in combined:
+                return NewQuestionType.NOTE_COMPLETION
+            elif "form" in combined:
+                return NewQuestionType.FORM_COMPLETION
+            elif "sentence" in combined:
+                return NewQuestionType.SENTENCE_COMPLETION
+            else:
+                return NewQuestionType.SUMMARY_COMPLETION
+        
+        # LABELING type disambiguation
+        if old_type == QuestionType.LABELING:
+            if "map" in combined:
+                return NewQuestionType.MAP_LABEL
+            else:
+                return NewQuestionType.DIAGRAM_LABEL
+        
+        # MCQ type disambiguation
+        if old_type == QuestionType.MCQ:
+            if "choose two" in combined or "choose three" in combined:
+                return NewQuestionType.MULTIPLE_CHOICE_MULTIPLE
+    
+    return default_mapping.get(old_type, NewQuestionType.SHORT_ANSWER)
 
 
 class Level(str, Enum):

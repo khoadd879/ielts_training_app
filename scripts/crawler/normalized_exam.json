@@ -1,0 +1,272 @@
+{
+  "schemaVersion": "1.0.0",
+  "exams": [
+    {
+      "id": "2022af23-36df-4b36-8760-e896e6114aef",
+      "slug": "ielts-reading-the-importance-of-law",
+      "title": "The importance of law",
+      "descriptionMd": "IELTS Reading Practice Test: The importance of law",
+      "category": "IELTS",
+      "level": "B2",
+      "status": "PUBLISHED",
+      "durationMin": 20,
+      "sections": [
+        {
+          "id": "d4ce79e7-f54e-41ee-b66d-c67b54ed2a25",
+          "idx": 1,
+          "title": "Reading Passage - The importance of law",
+          "instructionsMd": "# Passage\n\nA The law influences all of us virtually all the time, it governs almost all aspects of our behavior, and even what happens to us when we are no longer alive. It affects us from the embryo onwards. It governs the air we breathe, the food and drink we consume, our travel, family relationships, and our property. It applies at the bottom of the ocean and in space.\n\nEach time we examine a label on a food product, engage in work as an employee or employer, travel on the roads, go to school to learn or to teach, stay in a hotel, borrow a library book, create or dissolve a commercial company, play sports, or engage the services of someone for anything from plumbing a sink to planning a city, we are in the world of law.\n\nB Law has also become much more widely recognised as the standard by which behavior needs to be judged. A very telling development in recent history is the way in which the idea of law has permeated all parts of social life. The universal standard of whether something is socially tolerated is progressively becoming whether it is legal, rather than something that has always been considered acceptable. In earlier times, most people were illiterate.\n\nToday, by contrast, a vast number of people can read, and it is becoming easier for people to take an interest in law, and for the general population to help actually shape the law in many countries. However, law is a versatile instrument that can be used equally well for the improvement or the degradation of humanity.\n\nC This, of course, puts law in a very significant position. In our rapidly developing world, all sorts of skills and knowledge are valuable. Those people, for example, with knowledge of computers, the internet, and communications technology are relied upon by the rest of us.\n\nThere is now someone with IT skills or an IT help desk in every UK school, every company, every hospital, every local and central government office. Without their knowledge, many parts of commercial and social life today would seize up in minutes. But legal understanding is just as vital and as universally needed. The American comedian Jerry Seinfeld put it like this, 'We are all throwing the dice, playing the game, moving our pieces around the board, but if there is a problem, the lawyer is the only person who has read the inside of the top of the box.' In other words, the lawyer is the only person who has read and made sense of the rules.\n\nD The number of laws has never been greater. In the UK alone, about 35 new Acts of Parliament are produced every year, thereby delivering thousands of new rules. The legislative output of the British Parliament has more than doubled in recent times from 1,100 pages a year in the early 1970s,to over 2,500 pages a year today. Between 1997 and\n\n2006,the legislature passed 365 Acts of Parliament and more than 32,000 legally binding statutory instruments. In a system with so much law, lawyers do a great deal not just to vindicate the rights of citizens and organizations but also to help develop the law through legal arguments, some of which are adapted by judges to become laws. Law courts can and do produce new law and revise old law, but they do so having heard the arguments of lawyers.\n\nE However, despite their important role in developing the rules, lawyers are not universally admired. Anti-lawyer jokes have a long history going back to the ancient Greeks.\n\nMore recently the son of a famous Hollywood actor was asked at his junior school what his father did for a living, to which he replied,'My daddy is a movie actor, and sometimes he plays the good guy, and sometimes he plays the lawyer. For balance, though, it Is worth remembering that there are and have been many heroic and revered lawyers such as the Roman philosopher and politician Cicero and Mahatma Gandi, the Indian campaigner for independence.\n\nF People sometimes make comments that characterise lawyers as professionals whose concerns put personal reward above truth, or who gain financially from misfortune. There are undoubtedly lawyers that would fit that bill, Just as there are some scientists, Journalists and others In that category, But, In general, it is no more Just to say that lawyers are bad because they make a living from people's problems than it is to make the same accusation In respect of nurses or IT consultants, A great many lawyers are involved in public law work, such as that Involving civil liberties, housing and other Issues. Such work Is not lavishly remunerated and the quality of the service provided by these lawyers relies on considerable professional dedication, Moreover, much legal work has nothing to do with conflict or misfortune, but is primarily concerned with drafting documents, Another source of social disaffection for lawyers, and disaffection for the law, is a limited public understanding of how law works and how It could be changed. Greater clarity about these issues, maybe as a result of better public relations, would reduce many aspects of public dissatisfaction with the law.\n",
+          "audioUrl": null,
+          "transcriptMd": null,
+          "questions": [
+            {
+              "id": "4d7410a4-ba1a-42ca-9c53-e7a15583dc2d",
+              "idx": 1,
+              "type": "MATCHING_HEADING",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Paragraph A",
+              "explanationMd": "Read Paragraph A carefully and identify its main idea. Match it with the most suitable heading from the list.",
+              "options": [],
+              "blankAcceptTexts": {},
+              "blankAcceptRegex": {},
+              "matchPairs": {
+                "paragraph-q1": []
+              },
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            },
+            {
+              "id": "496e7905-21ed-453a-b097-54872ad21c35",
+              "idx": 2,
+              "type": "MATCHING_HEADING",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Paragraph B",
+              "explanationMd": "Read Paragraph B carefully and identify its main idea. Match it with the most suitable heading from the list.",
+              "options": [],
+              "blankAcceptTexts": {},
+              "blankAcceptRegex": {},
+              "matchPairs": {
+                "paragraph-q2": []
+              },
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            },
+            {
+              "id": "b941ad8d-aa68-404a-8cea-c2e304039334",
+              "idx": 3,
+              "type": "MATCHING_HEADING",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Paragraph C",
+              "explanationMd": "Read Paragraph C carefully and identify its main idea. Match it with the most suitable heading from the list.",
+              "options": [],
+              "blankAcceptTexts": {},
+              "blankAcceptRegex": {},
+              "matchPairs": {
+                "paragraph-q3": []
+              },
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            },
+            {
+              "id": "8c9c1add-124f-4a61-b0cb-b824ee23f369",
+              "idx": 4,
+              "type": "MATCHING_HEADING",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Paragraph D",
+              "explanationMd": "Read Paragraph D carefully and identify its main idea. Match it with the most suitable heading from the list.",
+              "options": [],
+              "blankAcceptTexts": {},
+              "blankAcceptRegex": {},
+              "matchPairs": {
+                "paragraph-q4": []
+              },
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            },
+            {
+              "id": "564529e8-1ae6-4882-81f1-6dc0a10fa807",
+              "idx": 5,
+              "type": "MATCHING_HEADING",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Paragraph E",
+              "explanationMd": "Read Paragraph E carefully and identify its main idea. Match it with the most suitable heading from the list.",
+              "options": [],
+              "blankAcceptTexts": {},
+              "blankAcceptRegex": {},
+              "matchPairs": {
+                "paragraph-q5": []
+              },
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            },
+            {
+              "id": "fbee8c50-bf4a-4fa5-8770-6c26710f17a9",
+              "idx": 6,
+              "type": "MATCHING_HEADING",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Paragraph F",
+              "explanationMd": "Read Paragraph F carefully and identify its main idea. Match it with the most suitable heading from the list.",
+              "options": [],
+              "blankAcceptTexts": {},
+              "blankAcceptRegex": {},
+              "matchPairs": {
+                "paragraph-q6": []
+              },
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            },
+            {
+              "id": "1451244f-b6ea-45dc-b0a7-6a487cede3e7",
+              "idx": 9,
+              "type": "SUMMARY_COMPLETION",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Lawyers as professionals People sometimes say that _______ is of little interest to lawyers, who are more concerned with making money. This may well be the case with some individuals, in the same way that some (...) . or scientific experts may also be driven purely by financial greed. However, criticising lawyers because their work is concerned with people's problems would be similar to attacking IT staff or (...) for the same reason. In fact, many lawyers focus on questions relating, for example, to housing or civil liberties, which requires them to have (...) to their work. What's more, a lot of lawyers' time is spent writing (...) rather than dealing with people's misfortunes.",
+              "explanationMd": "Use NO MORE THAN THREE WORDS from the passage to complete the blank. The answer must fit grammatically.",
+              "options": [],
+              "blankAcceptTexts": {
+                "blank-q9": []
+              },
+              "blankAcceptRegex": {},
+              "matchPairs": {},
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            },
+            {
+              "id": "daab34e8-ab02-47ef-9669-15e1820b7f84",
+              "idx": 10,
+              "type": "SUMMARY_COMPLETION",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Lawyers as professionals People sometimes say that (...) is of little interest to lawyers, who are more concerned with making money. This may well be the case with some individuals, in the same way that some _______ . or scientific experts may also be driven purely by financial greed. However, criticising lawyers because their work is concerned with people's problems would be similar to attacking IT staff or (...) for the same reason. In fact, many lawyers focus on questions relating, for example, to housing or civil liberties, which requires them to have (...) to their work. What's more, a lot of lawyers' time is spent writing (...) rather than dealing with people's misfortunes.",
+              "explanationMd": "Use NO MORE THAN THREE WORDS from the passage to complete the blank. The answer must fit grammatically.",
+              "options": [],
+              "blankAcceptTexts": {
+                "blank-q10": []
+              },
+              "blankAcceptRegex": {},
+              "matchPairs": {},
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            },
+            {
+              "id": "7a7a0ca0-3119-488c-bb97-f5a6b351f814",
+              "idx": 11,
+              "type": "SUMMARY_COMPLETION",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Lawyers as professionals People sometimes say that (...) is of little interest to lawyers, who are more concerned with making money. This may well be the case with some individuals, in the same way that some (...) . or scientific experts may also be driven purely by financial greed. However, criticising lawyers because their work is concerned with people's problems would be similar to attacking IT staff or _______ for the same reason. In fact, many lawyers focus on questions relating, for example, to housing or civil liberties, which requires them to have (...) to their work. What's more, a lot of lawyers' time is spent writing (...) rather than dealing with people's misfortunes.",
+              "explanationMd": "Use NO MORE THAN THREE WORDS from the passage to complete the blank. The answer must fit grammatically.",
+              "options": [],
+              "blankAcceptTexts": {
+                "blank-q11": []
+              },
+              "blankAcceptRegex": {},
+              "matchPairs": {},
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            },
+            {
+              "id": "2c614cb5-7bb0-49fd-8358-711083e0fb9c",
+              "idx": 12,
+              "type": "SUMMARY_COMPLETION",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Lawyers as professionals People sometimes say that (...) is of little interest to lawyers, who are more concerned with making money. This may well be the case with some individuals, in the same way that some (...) . or scientific experts may also be driven purely by financial greed. However, criticising lawyers because their work is concerned with people's problems would be similar to attacking IT staff or (...) for the same reason. In fact, many lawyers focus on questions relating, for example, to housing or civil liberties, which requires them to have _______ to their work. What's more, a lot of lawyers' time is spent writing (...) rather than dealing with people's misfortunes.",
+              "explanationMd": "Use NO MORE THAN THREE WORDS from the passage to complete the blank. The answer must fit grammatically.",
+              "options": [],
+              "blankAcceptTexts": {
+                "blank-q12": []
+              },
+              "blankAcceptRegex": {},
+              "matchPairs": {},
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            },
+            {
+              "id": "d1ff0dce-7e76-43f3-86da-b43b8a684849",
+              "idx": 12,
+              "type": "MULTIPLE_CHOICE_MULTIPLE",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Choose TWO letters, A-E.",
+              "explanationMd": "Select 2 correct options. Order doesn't matter.",
+              "options": [
+                {
+                  "id": "d2791afd-b6f8-41f4-84b6-e23c310533d7",
+                  "idx": 1,
+                  "contentMd": "A. There should be a person with legal training in every hospital.",
+                  "isCorrect": false
+                },
+                {
+                  "id": "2060a539-1049-4af6-9c9b-f41ab68eae7b",
+                  "idx": 2,
+                  "contentMd": "B. Lawyers with experience in commercial law are the most in demand.",
+                  "isCorrect": false
+                },
+                {
+                  "id": "8e383df6-2ab7-4bfc-b574-9c0d171744c4",
+                  "idx": 3,
+                  "contentMd": "C. Knowledge of the law is as important as having computer skills.",
+                  "isCorrect": false
+                },
+                {
+                  "id": "ecce38e9-3e0b-416f-a9d3-d2d0a0994bcb",
+                  "idx": 4,
+                  "contentMd": "D. Society could not function effectively without legal experts.",
+                  "isCorrect": false
+                },
+                {
+                  "id": "64a60e45-25c9-4140-abd1-6e5981cce452",
+                  "idx": 5,
+                  "contentMd": "E. Schools should teach students about the law.",
+                  "isCorrect": false
+                }
+              ],
+              "blankAcceptTexts": {},
+              "blankAcceptRegex": {},
+              "matchPairs": {},
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            },
+            {
+              "id": "1544eda3-91a7-446e-b423-69f6061897ba",
+              "idx": 13,
+              "type": "SUMMARY_COMPLETION",
+              "skill": "READING",
+              "difficulty": 2,
+              "promptMd": "Lawyers as professionals People sometimes say that (...) is of little interest to lawyers, who are more concerned with making money. This may well be the case with some individuals, in the same way that some (...) . or scientific experts may also be driven purely by financial greed. However, criticising lawyers because their work is concerned with people's problems would be similar to attacking IT staff or (...) for the same reason. In fact, many lawyers focus on questions relating, for example, to housing or civil liberties, which requires them to have (...) to their work. What's more, a lot of lawyers' time is spent writing _______ rather than dealing with people's misfortunes.",
+              "explanationMd": "Use NO MORE THAN THREE WORDS from the passage to complete the blank. The answer must fit grammatically.",
+              "options": [],
+              "blankAcceptTexts": {
+                "blank-q13": []
+              },
+              "blankAcceptRegex": {},
+              "matchPairs": {},
+              "orderCorrects": [],
+              "shortAnswerAcceptTexts": [],
+              "shortAnswerAcceptRegex": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

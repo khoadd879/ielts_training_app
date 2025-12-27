@@ -1,0 +1,200 @@
+{
+  "url": "https://mini-ielts.com/1529/reading/fear-of-the-unknown",
+  "crawled_at": "2025-12-21T13:47:02.019214",
+  "title": "Fear of the Unknown",
+  "passage": [
+    {
+      "text": "American companies fear that innovation is the secret of success-and that they cannot innovate"
+    },
+    {
+      "text": "In the small Umagic office in midtown Manhattan, a team of 30 computer programmers are working on setting up websites that will allow subscribers to feed in details about themselves and their problems and to receive advice from ‘virtual’ versions of personalities regarded as experts in their fields: for example, a well-known dietician, a celebrity fitness trainer, a psychologist well known in the media for here work on parent-child relationships . Umagic Systems is a young firm and it’s hard to predict how far they’ll go .hl ten years’ time, consulting a computer about your diet problems might seem natural or it might seem absurd. But the company and others like it are beginning to seriously worry large American firms, who see such half-crazy new and innovative ideas as a threat to their own future success."
+    },
+    {
+      "text": "Innovation hasbecomeamajor concern of American management. Firms have foundthat it is increasinglydifficult to redesign existing products or to produce them more economically.The stars ofAmerican business tend today to be innovators such as Amazon (the internetbookstore) and Wal-Mart(the supermarket chain) which have produced completely new ideas orproducts that have changedtheir industries."
+    },
+    {
+      "text": "Over the past15 years, the firms which have achieved the greatest profits have beenthe ones which have had themost innovations. But such profits aren’t easy to come by .Oneofthereasons for the increasingnumber of mergers between companies is a desperate search for new ideas.And a fortune isspent nowadays on identifying and protecting intellectual property: otherpeople’s ideas."
+    },
+    {
+      "text": "According tothe Pasadena-based Patent & License Exchange in the United States , tradingin intangibleassets such as intellectual property rose from$15 billion in 1990 to $ 100billion in 1998,with anincreasing proportion of the rewards going to small firms and individuals."
+    },
+    {
+      "text": "And therein lies the terror for big companies : that innovation seems to work best outside them. Many of the large established companies have been struggling to come up with new products recently.' In the management of creativity ,size is your enemy,’ argues Peter Chemin ,who runs Fox TV and film empire for News Corporation. \"One person managing 20 movies is never going to be as involved as one doing five movies .'He has thus tried to break down the studio into smaller units ,even at the risk of incurring higher costs."
+    },
+    {
+      "text": "It is easier for ideas to develop outside big firms these days. In the past, if a clever scientist had an idea he wanted to commercialise ,he would take it first to a big company. Now, with the banks encouraging individuals to set up new businesses through offering special loans, innovators are more likely to set up on their own. Umagic has already raised $5 million and is about to raise $25 million more. Even in capital-intensive businesses such as pharmaceuticals, entrepreneurs can conduct profitable, early- stage research,selling out to the big firms when they reach expensive,risky clinical trials."
+    },
+    {
+      "text": "Some giants, including General Electric and Cisco, have been remarkably successful at buying up and integrating scores of small companies. But many others worry about the prices they have to pay and the difficulty in keeping hold of the people who dreamt up the ideas . Everybody would like to develop more ideas in-house. Procter & Gamble is now changing the entire direction of its business from global expansion to product development; one of its new aims is to get innovations accepted across the company .Elsewhere ,the search for innovation had led to a craze for ' intrapreneurship ’ -giving more power to individuals in the company and setting up internal ideas -factories so that talents staff will not leave."
+    },
+    {
+      "text": "And yet innovation does not happen just because the chief executive wills it. Indeed ,it is extremely difficult to come up with new ideas year in, year out, especially brilliant ones. Underneath all experts' diagrams , lists and charts ,most of the available answers seem to focus on two strengths that are difficult to impose: a culture that looks for new ideas, and leaders who know which ones to back. Companies have to discredit the widespread view that jobs working on new products are for ‘those who can't cope in the real business'. They have to change the culture by introducing hard incentives, such as giving more generous bonuses to those who come up with successful new ideas and, particularly ,not punishing those whose experiments fail."
+    },
+    {
+      "text": "Will all this reorganization and culture tweaking make big firms more creative? David Post, the founder of Umagic, isn't so sure:’ He also recalls with glee the looks of total incomprehension when he tried to sell his 'virtual experts ' idea three years ago to firms such IBM , though ,as he cheerfully adds,’ of course, they could have been right'. Apparently, innovation -unlike diet,fitness and parenting -is one area where a computer cannot tell you what to do."
+    }
+  ],
+  "questions": [
+    {
+      "idx": 1,
+      "type": "MATCHING_INFORMATION",
+      "prompt": "the methods some companies use to try to keep their most creative employees",
+      "correct_answer": "",
+      "explanation": "Scan paragraphs A-J to find where this specific information is mentioned. Look for keywords related to the statement."
+    },
+    {
+      "idx": 2,
+      "type": "MATCHING_INFORMATION",
+      "prompt": "a new way of getting help with your personal difficulties",
+      "correct_answer": "",
+      "explanation": "Scan paragraphs A-J to find where this specific information is mentioned. Look for keywords related to the statement."
+    },
+    {
+      "idx": 3,
+      "type": "MATCHING_INFORMATION",
+      "prompt": "how much investment goes into safeguarding the ideas of individuals",
+      "correct_answer": "",
+      "explanation": "Scan paragraphs A-J to find where this specific information is mentioned. Look for keywords related to the statement."
+    },
+    {
+      "idx": 4,
+      "type": "MATCHING_INFORMATION",
+      "prompt": "two examples of companies which have succeeded through being innovative",
+      "correct_answer": "",
+      "explanation": "Scan paragraphs A-J to find where this specific information is mentioned. Look for keywords related to the statement."
+    },
+    {
+      "idx": 5,
+      "type": "MATCHING_INFORMATION",
+      "prompt": "how some innovators manage to avoid spending large sums of money ontesting outtheir ideas",
+      "correct_answer": "",
+      "explanation": "Scan paragraphs A-J to find where this specific information is mentioned. Look for keywords related to the statement."
+    },
+    {
+      "idx": 6,
+      "type": "MATCHING_INFORMATION",
+      "prompt": "acommonly held opinion about product designers that needs to be provedwrong",
+      "correct_answer": "",
+      "explanation": "Scan paragraphs A-J to find where this specific information is mentioned. Look for keywords related to the statement."
+    },
+    {
+      "idx": 7,
+      "type": "MATCHING_INFORMATION",
+      "prompt": "thetargetofone large company that has changed its business focus",
+      "correct_answer": "",
+      "explanation": "Scan paragraphs A-J to find where this specific information is mentioned. Look for keywords related to the statement."
+    },
+    {
+      "idx": 8,
+      "type": "TRUE_FALSE_NOT_GIVEN",
+      "prompt": "UmagicSystems is an example of a new innovative company.",
+      "correct_answer": "",
+      "explanation": "Compare this statement with the passage. TRUE if it matches exactly, FALSE if it contradicts, NOT GIVEN if the information is not in the passage."
+    },
+    {
+      "idx": 9,
+      "type": "TRUE_FALSE_NOT_GIVEN",
+      "prompt": "Amazonand Wal-Mart have exchangedsuccessfulideas on innovation.",
+      "correct_answer": "",
+      "explanation": "Compare this statement with the passage. TRUE if it matches exactly, FALSE if it contradicts, NOT GIVEN if the information is not in the passage."
+    },
+    {
+      "idx": 10,
+      "type": "TRUE_FALSE_NOT_GIVEN",
+      "prompt": "Usingfinancial rewards to encourage innovation is an outdated practice.",
+      "correct_answer": "",
+      "explanation": "Compare this statement with the passage. TRUE if it matches exactly, FALSE if it contradicts, NOT GIVEN if the information is not in the passage."
+    },
+    {
+      "idx": 11,
+      "type": "TRUE_FALSE_NOT_GIVEN",
+      "prompt": "M failed to understand David Post's 'virtual experts’ idea.",
+      "correct_answer": "",
+      "explanation": "Compare this statement with the passage. TRUE if it matches exactly, FALSE if it contradicts, NOT GIVEN if the information is not in the passage."
+    },
+    {
+      "idx": 12,
+      "type": "MULTIPLE_CHOICE_SINGLE",
+      "prompt": "What point does the writer make about intellectual property?",
+      "explanation": "Choose the correct answer.",
+      "options": [
+        {
+          "label": "A",
+          "text": "It can be lost when firms merge.",
+          "is_correct": false
+        },
+        {
+          "label": "B",
+          "text": "It tends to belong to companies rather than individuals.",
+          "is_correct": false
+        },
+        {
+          "label": "C",
+          "text": "It is valued more than it used to be.",
+          "is_correct": false
+        },
+        {
+          "label": "D",
+          "text": "It is not usually owned by small companies.",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "idx": 13,
+      "type": "MULTIPLE_CHOICE_SINGLE",
+      "prompt": "Peter Chemin is an example of someone who has realized that",
+      "explanation": "Choose the correct answer.",
+      "options": [
+        {
+          "label": "A",
+          "text": "large companies are less innovative than small ones.",
+          "is_correct": false
+        },
+        {
+          "label": "B",
+          "text": "other businesses are more innovative than the film business,",
+          "is_correct": false
+        },
+        {
+          "label": "C",
+          "text": "his employees need more experience of innovation.",
+          "is_correct": false
+        },
+        {
+          "label": "D",
+          "text": "he is the best person to encourage innovation.",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "idx": 14,
+      "type": "MULTIPLE_CHOICE_SINGLE",
+      "prompt": "In conclusion, the writer suggests that",
+      "explanation": "Choose the correct answer.",
+      "options": [
+        {
+          "label": "A",
+          "text": "computer-based industries cannot be innovative.",
+          "is_correct": false
+        },
+        {
+          "label": "B",
+          "text": "big firms are right to be cautious about innovation,",
+          "is_correct": false
+        },
+        {
+          "label": "C",
+          "text": "small firms should not worryabout early failures.",
+          "is_correct": false
+        },
+        {
+          "label": "D",
+          "text": "innovation will always involve some uncertainty.",
+          "is_correct": false
+        }
+      ]
+    }
+  ]
+}
