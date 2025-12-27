@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSpeakingTaskDto } from './dto/create-speaking-task.dto';
 import { UpdateSpeakingTaskDto } from './dto/update-speaking-task.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -13,9 +13,8 @@ export class SpeakingTaskService {
 
   async create(
     createSpeakingTaskDto: CreateSpeakingTaskDto,
-    file?: Express.Multer.File,
   ) {
-    const { idTest, title, audioPromptUrl } = createSpeakingTaskDto;
+    const { idTest, title, part } = createSpeakingTaskDto;
 
     const existingTest = await this.databaseService.test.findUnique({
       where: {
@@ -25,16 +24,12 @@ export class SpeakingTaskService {
 
     if (!existingTest) throw new BadRequestException('Test not found');
 
-    if (file) {
-      const uploadResult = await this.cloudinaryService.uploadFile(file);
-      createSpeakingTaskDto.audioPromptUrl = uploadResult.secure_url;
-    }
 
     const data = await this.databaseService.speakingTask.create({
       data: {
         idTest,
         title,
-        audioPromptUrl: createSpeakingTaskDto.audioPromptUrl ?? null,
+        part
       },
     });
 
@@ -45,8 +40,22 @@ export class SpeakingTaskService {
     };
   }
 
-  async findAll() {
-    const data = await this.databaseService.speakingTask.findMany();
+  async findAllSpeakingTaskInTest(idTest: string) {
+    const data = await this.databaseService.speakingTask.findMany({where: {idTest}});
+
+    if(!data) throw new NotFoundException('Test not found')
+
+    return {
+      message: 'Speaking tasks retrieved successfully',
+      data,
+      status: 200,
+    };
+  }
+
+  async findOne(idSpeakingTask: string){
+    const data = await this.databaseService.speakingTask.findUnique({where:{idSpeakingTask}})
+
+     if(!data) throw new NotFoundException('Speaking task not found')
 
     return {
       message: 'Speaking tasks retrieved successfully',
@@ -58,9 +67,8 @@ export class SpeakingTaskService {
   async update(
     idSpeakingTask: string,
     updateSpeakingTaskDto: UpdateSpeakingTaskDto,
-    file?: Express.Multer.File,
   ) {
-    const { idTest, title, audioPromptUrl } = updateSpeakingTaskDto;
+    const { idTest, title, part} = updateSpeakingTaskDto;
 
     const existingTest = await this.databaseService.test.findUnique({
       where: {
@@ -80,11 +88,6 @@ export class SpeakingTaskService {
     if (!existingSpeakingTask)
       throw new BadRequestException('Speaking task not found');
 
-    if (file) {
-      const uploadResult = await this.cloudinaryService.uploadFile(file);
-      updateSpeakingTaskDto.audioPromptUrl = uploadResult.secure_url;
-    }
-
     const data = await this.databaseService.speakingTask.update({
       where: {
         idSpeakingTask,
@@ -92,10 +95,8 @@ export class SpeakingTaskService {
       data: {
         idTest,
         title,
-        audioPromptUrl:
-          updateSpeakingTaskDto.audioPromptUrl ??
-          existingSpeakingTask.audioPromptUrl,
-      },
+        part
+      }
     });
 
     return {

@@ -11,7 +11,6 @@ export class SpeakingQuestionService {
   async create(createSpeakingQuestionDto: CreateSpeakingQuestionDto) {
     const {
       idSpeakingTask,
-      part,
       topic,
       prompt,
       subPrompts,
@@ -39,11 +38,10 @@ export class SpeakingQuestionService {
     const data = await this.databaseService.speakingQuestion.create({
       data: {
         idSpeakingTask,
-        part,
         topic: topic ?? prompt,
         prompt: prompt ?? null,
         subPrompts: parsedSubPrompts,
-        preparationTime: preparationTime ?? 0,
+        preparationTime: preparationTime ?? 2,
         speakingTime: speakingTime ?? 120,
         order,
       },

@@ -3,7 +3,6 @@ import { CreateForumPostDto } from './dto/create-forum-post.dto';
 import { UpdateForumPostDto } from './dto/update-forum-post.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
-import { dmmfToRuntimeDataModel } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class ForumPostService {

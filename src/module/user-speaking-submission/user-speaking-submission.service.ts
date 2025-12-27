@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserSpeakingSubmissionDto } from './dto/create-user-speaking-submission.dto';
 import { UpdateUserSpeakingSubmissionDto } from './dto/update-user-speaking-submission.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -37,12 +37,10 @@ export class UserSpeakingSubmissionService {
     private readonly databaseService: DatabaseService,
     private readonly configService: ConfigService,
   ) {
-    // Cấu hình Google Cloud (Load từ ENV hoặc File Key)
     const projectId = this.configService.get<string>('GOOGLE_PROJECT_ID');
     const clientEmail = this.configService.get<string>('GOOGLE_CLIENT_EMAIL');
     const privateKeyRaw = this.configService.get<string>('GOOGLE_PRIVATE_KEY');
 
-    // Nếu bạn dùng file key JSON thì chỉ cần new SpeechClient() và set biến môi trường GOOGLE_APPLICATION_CREDENTIALS
     this.speechClient = new SpeechClient({
       projectId,
       credentials: {
@@ -58,7 +56,6 @@ export class UserSpeakingSubmissionService {
     return new GoogleGenAI({ apiKey });
   }
 
-  // [PHẦN BỊ THIẾU 1] Hàm chuyển Audio -> Text
   private async transcribeAudio(buffer: Buffer): Promise<string> {
     try {
       const audioBytes = buffer.toString('base64');
@@ -67,7 +64,7 @@ export class UserSpeakingSubmissionService {
         config: {
           languageCode: 'en-US',
           enableAutomaticPunctuation: true,
-          model: 'latest_long', // Model tốt cho audio dài
+          model: 'latest_long',
         },
       };
 
@@ -78,33 +75,37 @@ export class UserSpeakingSubmissionService {
       return transcription;
     } catch (error) {
       console.error('Google STT Error:', error);
-      return ''; // Nếu lỗi vẫn trả về rỗng để code chạy tiếp
+      return '';
     }
   }
 
   async create(
     createUserSpeakingSubmissionDto: CreateUserSpeakingSubmissionDto,
     file?: Express.Multer.File,
-    part?: 'PART1' | 'PART2' | 'PART3', // [MỚI] Part nào đang nộp
   ) {
-    const { idUser, idSpeakingTask } = createUserSpeakingSubmissionDto;
+    const { idUser, idSpeakingTask, idTestResult } = createUserSpeakingSubmissionDto;
 
-    const [user, speakingTask] = await Promise.all([
+    const [user, speakingTask,] = await Promise.all([
       this.databaseService.user.findUnique({ where: { idUser } }),
       this.databaseService.speakingTask.findUnique({
         where: { idSpeakingTask },
         include: { questions: true },
       }),
+
     ]);
 
-    if (!user) throw new BadRequestException('User not found');
-    if (!speakingTask) throw new BadRequestException('Speaking task not found');
+    if (!user) throw new NotFoundException('User not found');
+    if (!speakingTask) throw new NotFoundException('Speaking task not found');
+    if (idTestResult) {
+      const tr = await this.databaseService.userTestResult.findUnique({ where: { idTestResult, idUser } });
+      if (!tr) throw new NotFoundException('Test result not found');
+    }
 
     let audioUrl = createUserSpeakingSubmissionDto.audioUrl;
-    let transcript = ''; // [QUAN TRỌNG] Biến lưu text
+    let transcript = '';
+
 
     if (file) {
-      // [PHẦN BỊ THIẾU 2] Chạy song song Upload và Transcribe
       const [cloudinaryRes, transcriptRes] = await Promise.all([
         this.cloudinaryService.uploadFile(file),
         this.transcribeAudio(file.buffer),
@@ -113,117 +114,73 @@ export class UserSpeakingSubmissionService {
       transcript = transcriptRes;
     }
 
-    // ==================== TÁCH THEO PART ==================== //
-    const groupedQuestions = speakingTask.questions.reduce(
-      (acc, q) => {
-        acc[q.part] = acc[q.part] || [];
-        acc[q.part].push(q);
-        return acc;
-      },
-      {} as Record<string, typeof speakingTask.questions>,
+    if (!audioUrl) {
+      throw new BadRequestException('Audio is required');
+    }
+    const currentPart = speakingTask.part;
+
+    const questionsText = speakingTask.questions
+      .sort((a, b) => a.order - b.order)
+      .map((q) => {
+        const subs = q.subPrompts ? JSON.stringify(q.subPrompts, null, 2) : '';
+        return `Topic: ${q.topic ?? 'N/A'}\nMain Prompt: ${q.prompt}\nSub Prompts: ${subs}`;
+      })
+      .join('\n\n');
+
+    const aiResult = await this.evaluateSpeaking(
+      audioUrl,
+      transcript,
+      `${speakingTask.title} - ${currentPart}`,
+      questionsText,
     );
 
-    // ==================== GỌI AI TỪNG PART ==================== //
-    const aiResults: Record<string, AIFeedbackResult> = {};
-
-    for (const part of Object.keys(groupedQuestions)) {
-      const questions = groupedQuestions[part]
-        .sort((a, b) => a.order - b.order)
-        .map((q) => {
-          const subs = q.subPrompts ? JSON.stringify(q.subPrompts, null, 2) : '';
-          return `Topic: ${q.topic ?? 'N/A'}\nMain Prompt: ${q.prompt}\nSub Prompts: ${subs}`;
-        })
-        .join('\n\n');
-
-      aiResults[part] = await this.evaluateSpeaking(
-        audioUrl,
-        transcript, // [QUAN TRỌNG] Truyền transcript vào để chấm điểm chuẩn hơn
-        `${speakingTask.title} - ${part}`,
-        questions,
-      );
-    }
-
-    // ==================== GỘP FEEDBACK & ĐIỂM SỐ ==================== //
-    const partResults = Object.values(aiResults);
-    const validParts = partResults.length || 1;
-
-    // Tính điểm trung bình cộng
-    const avg = (key: keyof AIFeedbackResult) =>
-      partResults.reduce((sum, r) => sum + ((r[key] as number) || 0), 0) / validParts;
-
-    const combinedFeedback: AIFeedbackResult = {
-      scoreFluency: avg('scoreFluency'),
-      scoreLexical: avg('scoreLexical'),
-      scoreGrammar: avg('scoreGrammar'),
-      scorePronunciation: avg('scorePronunciation'),
-      overallScore: avg('overallScore'),
-
-      commentFluency: Object.entries(aiResults).map(([p, r]) => `--- ${p} ---\n${r.commentFluency}`).join('\n\n'),
-      commentLexical: Object.entries(aiResults).map(([p, r]) => `--- ${p} ---\n${r.commentLexical}`).join('\n\n'),
-      commentGrammar: Object.entries(aiResults).map(([p, r]) => `--- ${p} ---\n${r.commentGrammar}`).join('\n\n'),
-      commentPronunciation: Object.entries(aiResults).map(([p, r]) => `--- ${p} ---\n${r.commentPronunciation}`).join('\n\n'),
-
-      generalFeedback: Object.entries(aiResults).map(([p, r]) => `--- ${p} ---\n${r.generalFeedback}`).join('\n\n'),
-      detailedCorrections: Object.values(aiResults).flatMap(r => r.detailedCorrections || []),
-    };
-
-    // ==================== LƯU DATABASE ==================== //
     const data = await this.databaseService.$transaction(async (tx) => {
       const submission = await tx.userSpeakingSubmission.create({
         data: {
           idUser,
           idSpeakingTask,
-          audioUrl,
-          transcript: transcript || null, // Lưu transcript
-          part: part || null, // [MỚI] Lưu part nào
-          status: 'GRADED',
+          audioUrl: audioUrl!,
+          idTestResult: idTestResult || null,
+          transcript: transcript || null,
+          status: 'GRADED'
         },
       });
 
       const feedback = await tx.speakingFeedback.create({
         data: {
           idSpeakingSubmission: submission.idSpeakingSubmission,
-          // Lưu điểm số
-          scoreFluency: combinedFeedback.scoreFluency,
-          scoreLexical: combinedFeedback.scoreLexical,
-          scoreGrammar: combinedFeedback.scoreGrammar,
-          scorePronunciation: combinedFeedback.scorePronunciation,
-          overallScore: combinedFeedback.overallScore,
-          // Lưu nhận xét
-          commentFluency: combinedFeedback.commentFluency,
-          commentLexical: combinedFeedback.commentLexical,
-          commentGrammar: combinedFeedback.commentGrammar,
-          commentPronunciation: combinedFeedback.commentPronunciation,
-          generalFeedback: combinedFeedback.generalFeedback,
-          detailedCorrections: combinedFeedback.detailedCorrections || [],
+          scoreFluency: aiResult.scoreFluency,
+          scoreLexical: aiResult.scoreLexical,
+          scoreGrammar: aiResult.scoreGrammar,
+          scorePronunciation: aiResult.scorePronunciation,
+          overallScore: aiResult.overallScore,
+          commentFluency: aiResult.commentFluency,
+          commentLexical: aiResult.commentLexical,
+          commentGrammar: aiResult.commentGrammar,
+          commentPronunciation: aiResult.commentPronunciation,
+          generalFeedback: aiResult.generalFeedback,
+          detailedCorrections: aiResult.detailedCorrections || [],
         },
       });
 
       return { ...submission, feedback };
     });
 
-    return { message: 'User speaking submission created successfully', data, status: 200 };
+    return { message: 'Submission created successfully', data, status: 200 };
   }
 
-  // ... (Giữ nguyên findAllByIdSpeakingTask, update, remove) ...
-  async findAllByIdSpeakingTask(idSpeakingTask: string) { /* ... code cũ ... */ return { data: [], message: "", status: 200 }; }
-  async update(id: string, dto: UpdateUserSpeakingSubmissionDto, file?: Express.Multer.File) { /* ... code cũ ... */ return { data: null, message: "", status: 200 }; }
-  async remove(id: string) { /* ... code cũ ... */ return { message: "", status: 200 }; }
-
-  // [PHẦN CẬP NHẬT 3] Hàm chấm điểm nhận thêm transcript
   private async evaluateSpeaking(
     audioUrl: string,
-    transcript: string, // [MỚI]
+    transcript: string,
     title: string,
     questionsText: string,
   ): Promise<AIFeedbackResult> {
     const ai = this.getAIInstance();
-    // Truyền transcript vào prompt
     const promptText = this.buildPrompt(title, questionsText, audioUrl, transcript);
 
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp', // Dùng bản Flash cho nhanh và rẻ
+        model: 'gemini-2.0-flash-exp',
         contents: promptText,
       });
 
@@ -246,7 +203,6 @@ export class UserSpeakingSubmissionService {
       };
     } catch (error) {
       console.error('AI evaluation failed:', error);
-      // Trả về điểm 0 nếu lỗi để không crash app
       return {
         scoreFluency: 0, scoreLexical: 0, scoreGrammar: 0, scorePronunciation: 0, overallScore: 0,
         commentFluency: "Error", commentLexical: "Error", commentGrammar: "Error", commentPronunciation: "Error",
@@ -255,12 +211,11 @@ export class UserSpeakingSubmissionService {
     }
   }
 
-  // [PHẦN CẬP NHẬT 4] Prompt dùng Transcript để chấm điểm
   private buildPrompt(
     taskTitle: string,
     questionContext: string,
     audioUrl: string,
-    transcript: string, // [MỚI]
+    transcript: string,
   ): string {
     return `
 You are a strict IELTS Speaking examiner.

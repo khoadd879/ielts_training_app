@@ -7,11 +7,6 @@ export class CreateSpeakingQuestionDto {
   @ApiProperty({ example: '123' })
   idSpeakingTask: string;
 
-  @IsNotEmpty()
-  @IsEnum(SpeakingPartType)
-  @ApiProperty({ example: 'PART1', enum: SpeakingPartType })
-  part: SpeakingPartType;
-
   @IsOptional()
   @ApiPropertyOptional({ example: 'Describe your hometown' })
   topic?: string;
@@ -27,7 +22,7 @@ export class CreateSpeakingQuestionDto {
   @IsOptional()
   subPrompts?: string[];
 
-  @ApiProperty({ example: 30 })
+  @ApiProperty({ example: 2 })
   preparationTime?: number;
 
   @ApiProperty({ example: 60 })

@@ -13,11 +13,7 @@ import { CreateSpeakingTaskDto } from './dto/create-speaking-task.dto';
 import { UpdateSpeakingTaskDto } from './dto/update-speaking-task.dto';
 import {
   ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-  ApiProperty,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiBearerAuth()
 @Controller('speaking-task')
@@ -25,55 +21,31 @@ export class SpeakingTaskController {
   constructor(private readonly speakingTaskService: SpeakingTaskService) {}
 
   @Post('create-speaking-task')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        idDe: { type: 'string', example: '123' },
-        title: { type: 'string', example: 'Sample Speaking Task' },
-        audioPromptUrl: { type: 'string', format: 'binary' },
-      },
-    },
-  })
   create(
-    @Body() createSpeakingTaskDto: CreateSpeakingTaskDto,
-    audioPromptUrl?: Express.Multer.File,
+    @Body() createSpeakingTaskDto: CreateSpeakingTaskDto
   ) {
     return this.speakingTaskService.create(
       createSpeakingTaskDto,
-      audioPromptUrl,
     );
   }
 
-  @Get('find-all-speaking-tasks')
-  findAll() {
-    return this.speakingTaskService.findAll();
+  @Get('find-all-speaking-tasks-in-test/:idTest')
+  findAll(@Param('idTest') idTest: string) {
+    return this.speakingTaskService.findAllSpeakingTaskInTest(idTest);
   }
 
-  @Patch('update-speaking-task/:idSpeakingTask')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        idDe: { type: 'string', example: '123' },
-        title: { type: 'string', example: 'Updated Speaking Task' },
-        audioPromptUrl: { type: 'string', format: 'binary' },
-      },
-    },
-  })
+  @Get('find-speaking-task/:idSpeakingTask')
+  findOne(@Param('idSpeakingTask') idSpeakingTask: string){
+    return this.speakingTaskService.findOne(idSpeakingTask)
+  }
+
+  @Patch('update-speaking-task/:idSpeakingTask') 
   update(
     @Param('idSpeakingTask') idSpeakingTask: string,
-    @Body() updateSpeakingTaskDto: UpdateSpeakingTaskDto,
-    audioPromptUrl?: Express.Multer.File,
-  ) {
+    @Body() updateSpeakingTaskDto: UpdateSpeakingTaskDto) {
     return this.speakingTaskService.update(
       idSpeakingTask,
-      updateSpeakingTaskDto,
-      audioPromptUrl,
+      updateSpeakingTaskDto 
     );
   }
 

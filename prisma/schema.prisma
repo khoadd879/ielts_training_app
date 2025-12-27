@@ -56,25 +56,26 @@ model VerificationCode {
 }
 
 model UserTestResult {
-  idTestResult      String                  @id @default(uuid())
-  idUser            String
-  idTest            String
-  score             Int?                    @default(0) //score theo thang 40
-  total_correct     Int?                    @default(0)
-  total_questions   Int?                    @default(0)
-  raw_score         Int?                    @default(0)
-  band_score        Float                   @default(0)
-  duration          Int                     @default(0)
-  createdAt         DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
-  finishedAt        DateTime?
-  startedAt         DateTime                @default(now())
-  status            TestStatus              @default(IN_PROGRESS)
-  level             Level                   @default(Low)
-  userAnswer        UserAnswer[]
-  test              Test                    @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
-  user              User                    @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  writingSubmission UserWritingSubmission[]
+  idTestResult       String                   @id @default(uuid())
+  idUser             String
+  idTest             String
+  score              Int?                     @default(0) //score theo thang 40
+  total_correct      Int?                     @default(0)
+  total_questions    Int?                     @default(0)
+  raw_score          Int?                     @default(0)
+  band_score         Float                    @default(0)
+  duration           Int                      @default(0)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  finishedAt         DateTime?
+  startedAt          DateTime                 @default(now())
+  status             TestStatus               @default(IN_PROGRESS)
+  level              Level                    @default(Low)
+  userAnswer         UserAnswer[]
+  test               Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  user               User                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  writingSubmission  UserWritingSubmission[]
+  speakingSubmission UserSpeakingSubmission[]
 }
 
 model Vocabulary {
@@ -121,7 +122,7 @@ model Test {
   level            Level              @default(Low)
   groupOfQuestions GroupOfQuestions[]
   parts            Part[]
-  speakingTasks    SpeakingTask?
+  speakingTasks    SpeakingTask[]
   user             User               @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   userTestResults  UserTestResult[]
   writingTasks     WritingTask[]
@@ -224,7 +225,7 @@ model WritingTask {
 }
 
 model UserWritingSubmission {
-  idWritingSubmission String          @id @default(uuid())
+  idWritingSubmission String        @id @default(uuid())
   idUser              String
   idWritingTask       String
   idTestResult        String?
@@ -348,91 +349,77 @@ model GrammarsOnCategories {
   @@id([idGrammarCategory, idGrammar])
 }
 
-// 1. Cái vỏ bao bọc bài thi Nói (Giữ nguyên, không bỏ)
 model SpeakingTask {
-  idSpeakingTask  String   @id @default(uuid())
-  title           String   // Ví dụ: "IELTS Speaking Cam 18 - Test 1"
-  
-  // Audio này có thể dùng làm "Lời chào mừng" hoặc "Hướng dẫn chung"
-  audioPromptUrl  String?  
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  idTest          String   @unique
-  test            Test     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
-  
-  // Relation xuống các câu hỏi con
-  questions       SpeakingQuestion[]
-  
-  // Relation xuống bài nộp của user
+  idSpeakingTask String           @id @default(uuid())
+  title          String
+  part           SpeakingPartType
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  idTest String
+  test   Test   @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+
+  questions SpeakingQuestion[]
+
   userSubmissions UserSpeakingSubmission[]
+
+  @@unique([idTest, part])
 }
 
-// 2. Chi tiết từng câu hỏi (Part 1, 2, 3)
 model SpeakingQuestion {
-  idSpeakingQuestion String           @id @default(uuid())
+  idSpeakingQuestion String @id @default(uuid())
   idSpeakingTask     String
-  
-  part               SpeakingPartType // PART1, PART2, PART3
-  
-  topic              String?          // Ví dụ: "Hometown", "Work/Study"
-  prompt             String?          // Nội dung text câu hỏi
-  subPrompts         Json?            // Các gợi ý (đặc biệt cho Part 2 Cue Card)
-  
-  // [MỚI] Audio giọng đọc riêng cho từng câu hỏi (để App phát lần lượt)
-  audioQuestionUrl   String?          
 
-  preparationTime    Int              @default(0) 
-  speakingTime       Int              @default(120) 
-  order              Int              @default(0) // Thứ tự câu hỏi 1, 2, 3...
-  
-  speakingTask       SpeakingTask     @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
+  topic      String? // Ví dụ: "Hometown", "Work/Study"
+  prompt     String? // Nội dung text câu hỏi
+  subPrompts Json? // Các gợi ý (đặc biệt cho Part 2 Cue Card)
+
+  preparationTime Int @default(0)
+  speakingTime    Int @default(120)
+  order           Int @default(0)
+
+  speakingTask SpeakingTask @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
 }
 
-// 3. Bài nộp của User
 model UserSpeakingSubmission {
-  idSpeakingSubmission String            @id @default(uuid())
+  idSpeakingSubmission String  @id @default(uuid())
   idUser               String
   idSpeakingTask       String
-  
-  audioUrl             String            // File ghi âm user gửi lên
-  submittedAt          DateTime          @default(now())
-  status               SpeakingStatus    @default(SUBMITTED)
-  
-  transcript           String?           // Text chuyển từ Audio (Speech-to-Text)
+  idTestResult         String?
 
-  // [MỚI] Xác định file này là nộp cho Part nào (PART1, PART2 hay PART3)
-  part                 SpeakingPartType?  
+  audioUrl    String
+  submittedAt DateTime       @default(now())
+  status      SpeakingStatus @default(SUBMITTED)
 
-  feedback             SpeakingFeedback? // Kết quả chấm
-  
-  speakingTask         SpeakingTask      @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
-  user                 User              @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  transcript String?
+
+  feedback SpeakingFeedback?
+
+  speakingTask    SpeakingTask    @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
+  userTestResults UserTestResult? @relation(fields: [idTestResult], references: [idTestResult])
+  user            User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 }
 
-// 4. Kết quả chấm điểm chi tiết
 model SpeakingFeedback {
-  idSpeakingFeedback          String                 @id @default(uuid())
-  idSpeakingSubmission        String                 @unique
-  
-  // [MỚI] Điểm số cụ thể (để tính toán và vẽ biểu đồ)
-  scoreFluency                Float?   
-  scoreLexical                Float?
-  scoreGrammar                Float?
-  scorePronunciation          Float?
-  overallScore                Float?   // Điểm trung bình
+  idSpeakingFeedback   String @id @default(uuid())
+  idSpeakingSubmission String @unique
 
-  // Nhận xét text (như cũ)
-  commentFluency              String? 
-  commentLexical              String?
-  commentGrammar              String?
-  commentPronunciation        String?
-  generalFeedback             String   
-  detailedCorrections         Json?    
+  scoreFluency       Float?
+  scoreLexical       Float?
+  scoreGrammar       Float?
+  scorePronunciation Float?
+  overallScore       Float?
 
-  gradedAt                    DateTime               @default(now())
-  submission                  UserSpeakingSubmission @relation(fields: [idSpeakingSubmission], references: [idSpeakingSubmission], onDelete: Cascade)
+  commentFluency       String?
+  commentLexical       String?
+  commentGrammar       String?
+  commentPronunciation String?
+  generalFeedback      String
+  detailedCorrections  Json?
+
+  gradedAt   DateTime               @default(now())
+  submission UserSpeakingSubmission @relation(fields: [idSpeakingSubmission], references: [idSpeakingSubmission], onDelete: Cascade)
 }
 
 enum Level {

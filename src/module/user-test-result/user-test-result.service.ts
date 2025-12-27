@@ -739,29 +739,27 @@ export class UserTestResultService {
     idTestResult: string,
     idUser: string,
     files: {
-      part1Audio?: Express.Multer.File[],
-      part2Audio?: Express.Multer.File[],
-      part3Audio?: Express.Multer.File[],
+      part1Audio?: Express.Multer.File[];
+      part2Audio?: Express.Multer.File[];
+      part3Audio?: Express.Multer.File[];
     },
-    body?: FinishTestSpeakingDto,
+    body?: FinishTestSpeakingDto, // Nếu có logic gì thêm từ body
   ) {
-    // 1. Validate test result
+    // 1. Validate và lấy thông tin Test kèm theo SpeakingTasks
     const testResult = await this.databaseService.userTestResult.findUnique({
       where: { idTestResult },
       include: {
         test: {
           include: {
-            speakingTasks: true
-          }
-        }
+            speakingTasks: true, // Lấy danh sách task để map ID
+          },
+        },
       },
     });
 
     if (!testResult) throw new NotFoundException('Test result not found');
     if (testResult.idUser !== idUser) {
-      throw new BadRequestException(
-        'You do not have permission to finish this test',
-      );
+      throw new BadRequestException('You do not have permission to finish this test');
     }
     if (testResult.status !== 'IN_PROGRESS') {
       throw new BadRequestException('This test is not in progress.');
@@ -770,92 +768,75 @@ export class UserTestResultService {
       throw new BadRequestException('This endpoint is for Speaking tests only.');
     }
 
-    if (!testResult.test.speakingTasks) {
-      throw new BadRequestException('This test does not have speaking tasks.');
+    const tasks = testResult.test.speakingTasks;
+    if (!tasks || tasks.length === 0) {
+      throw new BadRequestException('This test configuration is missing speaking tasks.');
     }
 
-    const idSpeakingTask = body?.idSpeakingTask || testResult.test.speakingTasks.idSpeakingTask;
-
-    // 2. Process speaking submissions for each part
-    const partScores: { part: SpeakingPartType; score: number }[] = [];
+    // ✅ FIX BUG 1: Khởi tạo 3 phần với điểm 0, phần nào user không nộp sẽ giữ nguyên 0 điểm
+    const partScores = [
+      { part: SpeakingPartType.PART1, score: 0 },
+      { part: SpeakingPartType.PART2, score: 0 },
+      { part: SpeakingPartType.PART3, score: 0 },
+    ];
     const submissionsDetails: any[] = [];
 
-    // Process PART1
-    if (files.part1Audio && files.part1Audio.length > 0) {
-      const result = await this.speakingService.create(
-        {
-          idUser,
-          idSpeakingTask,
-          audioUrl: '', // Sẽ được set bởi service khi upload
-        },
-        files.part1Audio[0],
-        'PART1',
-      );
+    // Helper function để xử lý lặp lại logic cho từng Part
+    const processPart = async (
+      partType: SpeakingPartType,
+      audioFiles?: Express.Multer.File[]
+    ) => {
+      // Tìm Task ID tương ứng với Part
+      const task = tasks.find((t) => t.part === partType);
 
-      const score = result.data?.feedback?.overallScore || 0;
-      partScores.push({ part: 'PART1', score });
-      submissionsDetails.push({
-        part: 'PART1',
-        audioUrl: result.data?.audioUrl,
-        transcript: result.data?.transcript,
-        feedback: result.data?.feedback,
-        score,
-      });
-    }
+      // Nếu có file audio và tìm thấy task trong DB
+      if (audioFiles && audioFiles.length > 0 && task) {
+        const result = await this.speakingService.create(
+          {
+            idUser,
+            idSpeakingTask: task.idSpeakingTask,
+            idTestResult,
+            audioUrl: '', // Service upload sẽ xử lý cái này
+          },
+          audioFiles[0], // File audio
+        );
 
-    // Process PART2
-    if (files.part2Audio && files.part2Audio.length > 0) {
-      const result = await this.speakingService.create(
-        {
-          idUser,
-          idSpeakingTask,
-          audioUrl: '',
-        },
-        files.part2Audio[0],
-        'PART2',
-      );
+        const score = result.data?.feedback?.overallScore || 0;
 
-      const score = result.data?.feedback?.overallScore || 0;
-      partScores.push({ part: 'PART2', score });
-      submissionsDetails.push({
-        part: 'PART2',
-        audioUrl: result.data?.audioUrl,
-        transcript: result.data?.transcript,
-        feedback: result.data?.feedback,
-        score,
-      });
-    }
+        const partIndex = partScores.findIndex((p) => p.part === partType);
+        if (partIndex !== -1) {
+          partScores[partIndex].score = score;
+        }
 
-    // Process PART3
-    if (files.part3Audio && files.part3Audio.length > 0) {
-      const result = await this.speakingService.create(
-        {
-          idUser,
-          idSpeakingTask,
-          audioUrl: '',
-        },
-        files.part3Audio[0],
-        'PART3',
-      );
+        submissionsDetails.push({
+          part: partType,
+          idSpeakingSubmission: result.data?.idSpeakingSubmission,
+          audioUrl: result.data?.audioUrl,
+          transcript: result.data?.transcript,
+          feedback: result.data?.feedback,
+          score,
+        });
+      }
+    };
 
-      const score = result.data?.feedback?.overallScore || 0;
-      partScores.push({ part: 'PART3', score });
-      submissionsDetails.push({
-        part: 'PART3',
-        audioUrl: result.data?.audioUrl,
-        transcript: result.data?.transcript,
-        feedback: result.data?.feedback,
-        score,
-      });
-    }
 
-    // 4. Calculate band score (average of all parts)
+    await Promise.all([
+      processPart('PART1', files.part1Audio),
+      processPart('PART2', files.part2Audio),
+      processPart('PART3', files.part3Audio),
+    ]);
+
+    // ✅ FIX BUG 1: Tính điểm Band Score theo chuẩn IELTS
+    // Luôn tính trung bình 3 phần, phần nào không nộp = 0 điểm
     const totalScore = partScores.reduce((sum, p) => sum + p.score, 0);
-    const band_score = partScores.length > 0
-      ? Math.round((totalScore / partScores.length) * 2) / 2
-      : 0;
+    const submittedPartsCount = submissionsDetails.length; // Số phần thực sự nộp (để hiển thị)
 
-    // 5. Calculate XP
+    // Luôn chia 3 (trung bình 3 phần), làm tròn 0.5
+    const band_score = Math.round((totalScore / 3) * 2) / 2;
+
+    // Nếu bạn muốn chia cho số phần user thực sự làm: (totalScore / submittedPartsCount)
+
+    // 4. Calculate XP
     const xpGained = await this.calculateXpGained(
       idUser,
       testResult.idTest,
@@ -864,17 +845,17 @@ export class UserTestResultService {
       band_score,
     );
 
-    // 6. Update streak and XP
+    // 5. Update Streak & XP
     await this.handleXpAndStreak(idUser, xpGained);
 
-    // 7. Update test result
+    // 6. Update Test Result Status
     const updatedResult = await this.databaseService.userTestResult.update({
       where: { idTestResult },
       data: {
         status: 'FINISHED',
         finishedAt: new Date(),
         band_score: band_score,
-        total_questions: partScores.length,
+        total_questions: submittedPartsCount, // Số phần đã nộp
       },
     });
 
@@ -890,7 +871,7 @@ export class UserTestResultService {
         }, {} as Record<string, number>),
         submissions: submissionsDetails,
         finishedAt: updatedResult.finishedAt,
-        submissions_count: partScores.length,
+        submissions_count: submittedPartsCount,
       },
       status: 200,
     };

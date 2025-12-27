@@ -1,4 +1,5 @@
-import { IsNotEmpty } from 'class-validator';
+import { SpeakingPartType } from '@prisma/client';
+import { IsEnum, IsNotEmpty } from 'class-validator';
 
 export class CreateSpeakingTaskDto {
   @IsNotEmpty()
@@ -7,5 +8,7 @@ export class CreateSpeakingTaskDto {
   @IsNotEmpty()
   title: string;
 
-  audioPromptUrl?: string;
+  @IsNotEmpty()
+  @IsEnum(SpeakingPartType)
+  part: SpeakingPartType
 }
