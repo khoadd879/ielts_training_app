@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SpeakingPartType } from '@prisma/client';
+import { Type } from 'class-transformer';
 import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateSpeakingQuestionDto {
@@ -23,10 +24,14 @@ export class CreateSpeakingQuestionDto {
   subPrompts?: string[];
 
   @ApiProperty({ example: 2 })
-  preparationTime?: number;
+  @IsNotEmpty()
+  @Type(() => Number)
+  preparationTime: number;
 
   @ApiProperty({ example: 60 })
-  speakingTime?: number;
+  @IsNotEmpty()
+  @Type(() => Number)
+  speakingTime: number;
 
   @IsNotEmpty()
   @ApiProperty({ example: 1 })
