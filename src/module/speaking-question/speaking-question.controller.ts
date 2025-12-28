@@ -11,6 +11,7 @@ import { SpeakingQuestionService } from './speaking-question.service';
 import { CreateSpeakingQuestionDto } from './dto/create-speaking-question.dto';
 import { UpdateSpeakingQuestionDto } from './dto/update-speaking-question.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { CreateBulkSpeakingQuestionDto } from './dto/create-bulk-speaking.dto';
 
 @ApiBearerAuth()
 @Controller('speaking-question')
@@ -20,10 +21,10 @@ export class SpeakingQuestionController {
   ) {}
 
   @Post('create-speaking-question')
-  create(@Body() createSpeakingQuestionDto: CreateSpeakingQuestionDto) {
-    return this.speakingQuestionService.create(createSpeakingQuestionDto);
+  createBulk(@Body() createSpeakingQuestionDto: CreateBulkSpeakingQuestionDto) {
+    return this.speakingQuestionService.createBulk(createSpeakingQuestionDto);
   }
-
+  
   @Get('find-all-speaking-questions-by-id-speaking-task/:idSpeakingTask')
   findAll(@Param('idSpeakingTask') idSpeakingTask: string) {
     return this.speakingQuestionService.findAllbyIdSpeakingTask(idSpeakingTask);

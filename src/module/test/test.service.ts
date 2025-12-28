@@ -11,6 +11,7 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { UsersService } from '../users/users.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
+import { TestType } from '@prisma/client';
 
 @Injectable()
 export class TestService {
@@ -309,14 +310,40 @@ export class TestService {
   }
 
   async getTest(idTest: string) {
-    const existingTest = await this.databaseService.test.findUnique({
-      where: { idTest },
-    });
-    if (!existingTest) {
-      throw new BadRequestException('Test not found');
-    }
+  const testInfo = await this.databaseService.test.findUnique({
+    where: { idTest },
+    select: { testType: true }, 
+  });
 
-    const data = await this.databaseService.test.findUnique({
+  if (!testInfo) {
+    throw new BadRequestException('Test not found');
+  }
+
+  let data: any;
+
+
+  if (testInfo.testType === TestType.SPEAKING) {
+    data = await this.databaseService.test.findUnique({
+      where: { idTest },
+      include: {
+        speakingTasks: {
+          include: {
+            questions: {
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
+      },
+    });
+  } else if(testInfo.testType === TestType.WRITING){
+    data = await this.databaseService.test.findUnique({
+      where:{idTest},
+      include:{
+        writingTasks: true
+      }
+    })
+  }else{
+    data = await this.databaseService.test.findUnique({
       where: { idTest },
       include: {
         parts: {
@@ -334,18 +361,16 @@ export class TestService {
           },
         },
         writingTasks: true,
-        speakingTasks: true,
       },
     });
-
-    if (!data) throw new NotFoundException('Test not found');
-
-    return {
-      message: 'Test retrieved successfully',
-      data,
-      status: 200,
-    };
   }
+
+  return {
+    message: 'Test retrieved successfully',
+    data,
+    status: 200,
+  };
+}
 
   async getAnswerInTest(idTest: string) {
     const testData = await this.databaseService.test.findUnique({
