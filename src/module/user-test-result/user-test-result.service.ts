@@ -648,35 +648,57 @@ export class UserTestResultService {
     const submissionsDetails: SubmissionDetail[] = [];
 
     if (body?.writingSubmissions && body.writingSubmissions.length > 0) {
-      for (const submission of body.writingSubmissions) {
-        if (
-          !submission.submission_text ||
-          submission.submission_text.trim() === ''
-        ) {
-          continue;
-        }
+      // ✅ OPTIMIZATION 1: Prefetch all writing tasks in one query (avoid N+1)
+      const taskIds = body.writingSubmissions
+        .filter(s => s.submission_text?.trim())
+        .map(s => s.idWritingTask);
 
-        const taskInfo = await this.databaseService.writingTask.findUnique({
-          where: { idWritingTask: submission.idWritingTask },
-          select: { task_type: true },
+      const tasks = await this.databaseService.writingTask.findMany({
+        where: { idWritingTask: { in: taskIds } },
+        select: { idWritingTask: true, task_type: true },
+      });
+      const taskMap = new Map(tasks.map(t => [t.idWritingTask, t]));
+
+      // ✅ OPTIMIZATION 2: Parallel AI grading (instead of sequential)
+      const gradingPromises = body.writingSubmissions
+        .filter(s => s.submission_text?.trim())
+        .map(async (submission) => {
+          const taskInfo = taskMap.get(submission.idWritingTask);
+          if (!taskInfo) return null;
+
+          try {
+            // Gọi AI chấm điểm
+            const result = await this.writingService.createUserWritingSubmission(
+              idTestResult,
+              {
+                idUser: idUser,
+                idWritingTask: submission.idWritingTask,
+                submission_text: submission.submission_text,
+              },
+            );
+
+            return {
+              taskInfo,
+              result,
+            };
+          } catch (error) {
+            console.error(`Failed to grade task ${submission.idWritingTask}:`, error);
+            throw error; // Re-throw to fail the entire submission if one task fails
+          }
         });
 
-        if (!taskInfo) continue;
+      // Wait for all AI grading to complete in parallel
+      const gradedResults = await Promise.all(gradingPromises);
 
-        // Gọi AI chấm điểm
-        const result = await this.writingService.createUserWritingSubmission(
-          idTestResult,
-          {
-            idUser: idUser,
-            idWritingTask: submission.idWritingTask,
-            submission_text: submission.submission_text,
-          },
-        );
+      // ✅ OPTIMIZATION 3: Process results efficiently
+      for (const item of gradedResults) {
+        if (!item) continue;
+        const { taskInfo, result } = item;
 
         submittedCount++;
 
         submissionsDetails.push({
-          idWritingTask: submission.idWritingTask,
+          idWritingTask: taskInfo.idWritingTask,
           task_type: taskInfo.task_type,
           submission_text: result.submission_text,
           feedback: result.feedback,
@@ -773,7 +795,6 @@ export class UserTestResultService {
       throw new BadRequestException('This test configuration is missing speaking tasks.');
     }
 
-    // ✅ FIX BUG 1: Khởi tạo 3 phần với điểm 0, phần nào user không nộp sẽ giữ nguyên 0 điểm
     const partScores = [
       { part: SpeakingPartType.PART1, score: 0 },
       { part: SpeakingPartType.PART2, score: 0 },
@@ -781,15 +802,12 @@ export class UserTestResultService {
     ];
     const submissionsDetails: any[] = [];
 
-    // Helper function để xử lý lặp lại logic cho từng Part
     const processPart = async (
       partType: SpeakingPartType,
       audioFiles?: Express.Multer.File[]
     ) => {
-      // Tìm Task ID tương ứng với Part
       const task = tasks.find((t) => t.part === partType);
 
-      // Nếu có file audio và tìm thấy task trong DB
       if (audioFiles && audioFiles.length > 0 && task) {
         const result = await this.speakingService.create(
           {
