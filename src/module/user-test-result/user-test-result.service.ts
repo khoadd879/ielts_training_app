@@ -573,32 +573,89 @@ export class UserTestResultService {
   }
 
   async getAllAnswerInTestResult(idTestResult: string) {
-    const data = await this.databaseService.userTestResult.findFirst({
-      where: {
-        idTestResult: idTestResult,
-        status: TestStatus.FINISHED,
-      },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-      include: {
-        userAnswer: true,
-        writingSubmission: {
-          include: {
-            writingTask: true,
-            feedback: true,
-          }
-        },
+
+    const testInfo = await this.databaseService.userTestResult.findUnique({
+      where: { idTestResult },
+      select: {
         test: {
-          include: {
-            parts: {
-              include: {
-                passage: true,
-                groupOfQuestions: {
-                  include: {
-                    question: {
-                      include: {
-                        answers: true,
+          select: {
+            testType: true
+          }
+        }
+      }
+    })
+
+    let data: any;
+
+    if (testInfo?.test.testType === TestType.WRITING) {
+      data = await this.databaseService.userTestResult.findUnique({
+        where: { idTestResult, status: TestStatus.FINISHED, },
+        include: {
+          test: {
+            include: {
+              writingTasks: {
+                orderBy: {
+                  task_type: 'asc'
+                }
+              },
+
+            },
+          },
+          writingSubmission: {
+            include: {
+              feedback: true
+            }
+          }
+        }
+      })
+    } else if (testInfo?.test.testType === TestType.SPEAKING) {
+      data = await this.databaseService.userTestResult.findUnique({
+        where: {
+          idTestResult,
+          status: TestStatus.FINISHED,
+        },
+        include: {
+          test: {
+            include: {
+              speakingTasks: {
+                include: {
+                  questions: true
+                },
+                orderBy: {
+                  part: 'asc'
+                }
+              }
+            }
+          },
+          speakingSubmission: {
+            include: {
+              feedback: true
+            }
+          }
+        }
+      })
+    } else {
+      data = await this.databaseService.userTestResult.findFirst({
+        where: {
+          idTestResult: idTestResult,
+          status: TestStatus.FINISHED,
+        },
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        include: {
+          userAnswer: true,
+          test: {
+            include: {
+              parts: {
+                include: {
+                  passage: true,
+                  groupOfQuestions: {
+                    include: {
+                      question: {
+                        include: {
+                          answers: true,
+                        },
                       },
                     },
                   },
@@ -607,9 +664,8 @@ export class UserTestResultService {
             },
           },
         },
-      },
-    });
-
+      });
+    }
     if (!data) throw new NotFoundException('Test result not found');
 
     return {
