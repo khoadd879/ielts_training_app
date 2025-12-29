@@ -19,7 +19,7 @@ export class AuthService {
     private jwtService: JwtService,
     private readonly verificationService: VerificationService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
@@ -137,7 +137,7 @@ export class AuthService {
     );
     // Gửi mail cho user
     await this.usersService.sendResetPasswordMail(user.email, otp);
-    return { message: 'OTP sent to email', data: otp, status: 200 };
+    return { message: 'Reset password link sent to email', status: 200 };
   }
 
   async checkOTP(email: string, otp: string) {

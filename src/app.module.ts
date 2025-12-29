@@ -43,9 +43,16 @@ import { SpeakingQuestionModule } from './module/speaking-question/speaking-ques
 import { UserSpeakingSubmissionModule } from './module/user-speaking-submission/user-speaking-submission.module';
 
 import * as redisStore from 'cache-manager-redis-store';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     UsersModule,
     DatabaseModule,
     ConfigModule.forRoot({ isGlobal: true }),
@@ -60,24 +67,14 @@ import * as redisStore from 'cache-manager-redis-store';
         transport: {
           host: 'smtp.gmail.com',
           port: 587,
-          // ignoreTLS: true,
-          //secure: true,
           auth: {
-            user: configService.get<string>('MAILER_USER'), // generated ethereal user
-            pass: configService.get<string>('MAILER_PASSWORD'), // generated ethereal password
+            user: configService.get<string>('MAILER_USER'),
+            pass: configService.get<string>('MAILER_PASSWORD'),
           },
         },
         defaults: {
           from: '"No Reply" <no-reply@localhost>',
         },
-        // preview: true,
-        // template: {
-        //   dir: process.cwd() + '/template/',
-        //   adapter: new HandlebarsAdapter(), // or new PugAdapter() or new EjsAdapter()
-        //   options: {
-        //     strict: true,
-        //   },
-        // },
       }),
       inject: [ConfigService],
     }),
@@ -129,6 +126,11 @@ import * as redisStore from 'cache-manager-redis-store';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
-export class AppModule {}
+export class AppModule { }
+

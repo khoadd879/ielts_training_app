@@ -76,6 +76,9 @@ model UserTestResult {
   user               User                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   writingSubmission  UserWritingSubmission[]
   speakingSubmission UserSpeakingSubmission[]
+
+  @@index([idUser, status, finishedAt])
+  @@index([idTest, createdAt])
 }
 
 model Vocabulary {
@@ -209,6 +212,7 @@ model UserAnswer {
   user           User           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@unique([idQuestion, idUser, idTestResult])
+  @@index([idTestResult, isCorrect])
 }
 
 model WritingTask {
@@ -238,6 +242,8 @@ model UserWritingSubmission {
 
   feedback        Feedback[]
   userTestResults UserTestResult? @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
+
+  @@index([idUser, status, submitted_at])
 }
 
 model Feedback {
@@ -276,6 +282,8 @@ model ForumPost {
   forumThreads   ForumThreads     @relation(fields: [idForumThreads], references: [idForumThreads], onDelete: Cascade)
   user           User             @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   forumPostLikes ForumPostLikes[]
+
+  @@index([idForumThreads, created_at])
 }
 
 model ForumComment {
