@@ -164,7 +164,7 @@ model GroupOfQuestions {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   typeQuestion       QuestionType
-  quantity           Int
+  quantity           Int?         // Made optional - will be deprecated in favor of counting questions
   img                String?
   part               Part         @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
   test               Test         @relation(fields: [idTest], references: [idTest], onDelete: Cascade)

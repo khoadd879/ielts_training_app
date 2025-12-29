@@ -13,7 +13,7 @@ export class GroupOfQuestionsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly cloudinaryService: CloudinaryService,
-  ) {}
+  ) { }
   async createGroupOfQuestions(
     createGroupOfQuestionDto: CreateGroupOfQuestionDto,
     file?: Express.Multer.File,
@@ -51,16 +51,27 @@ export class GroupOfQuestionsService {
     if (quantity > 40)
       throw new BadRequestException('The maximum numberQuestion is 40');
 
-    // kiểm tra tổng quantity các nhóm hiện có trong test (đã sử dụng) + quantity mới không vượt quá số câu của test
-    const sumResult = await this.databaseService.groupOfQuestions.aggregate({
-      _sum: { quantity: true },
+    // ✅ NEW: Validate using actual question count, not hardcoded quantity
+    // Get actual question count for all groups in this test
+    const existingGroups = await this.databaseService.groupOfQuestions.findMany({
       where: { idTest },
+      include: {
+        _count: {
+          select: { question: true },
+        },
+      },
     });
-    const existingTotal = sumResult._sum.quantity ?? 0;
-    if (existingTotal + quantity > existingDe.numberQuestion)
+
+    const existingTotal = existingGroups.reduce(
+      (sum, g) => sum + g._count.question,
+      0,
+    );
+
+    if (existingTotal + quantity > existingDe.numberQuestion) {
       throw new BadRequestException(
-        'Sum of questions cant be greater than numberQuestion test',
+        `Cannot create group. Current questions: ${existingTotal}, trying to add: ${quantity}, test limit: ${existingDe.numberQuestion}`,
       );
+    }
 
     const data = await this.databaseService.groupOfQuestions.create({
       data: {
@@ -71,11 +82,19 @@ export class GroupOfQuestionsService {
         quantity,
         img: imgUrl,
       },
+      include: {
+        _count: {
+          select: { question: true },
+        },
+      },
     });
 
     return {
       message: 'Group of question created successfully',
-      data,
+      data: {
+        ...data,
+        actualQuestionCount: data._count.question,
+      },
       status: 200,
     };
   }
@@ -86,14 +105,29 @@ export class GroupOfQuestionsService {
         idPart,
       },
       include: {
-        groupOfQuestions: true,
+        groupOfQuestions: {
+          include: {
+            _count: {
+              select: { question: true },
+            },
+          },
+        },
       },
     });
 
     if (existingPart) {
+      // Add actualQuestionCount to each group
+      const enhancedGroups = existingPart.groupOfQuestions.map((group) => ({
+        ...group,
+        actualQuestionCount: group._count.question,
+      }));
+
       return {
         message: 'Group of question retrieved successfully',
-        data: existingPart,
+        data: {
+          ...existingPart,
+          groupOfQuestions: enhancedGroups,
+        },
         status: 200,
       };
     } else {
@@ -108,12 +142,21 @@ export class GroupOfQuestionsService {
       },
       include: {
         question: true,
+        _count: {
+          select: { question: true },
+        },
       },
     });
 
+    // Add actualQuestionCount to response
+    const enhancedData = data.map((group) => ({
+      ...group,
+      actualQuestionCount: group._count.question,
+    }));
+
     return {
       message: 'Group of question retrieved successfully',
-      data,
+      data: enhancedData,
       status: 200,
     };
   }
@@ -156,16 +199,45 @@ export class GroupOfQuestionsService {
       imgUrl = uploadResult.secure_url;
     }
 
-    // kiểm tra tổng quantity các nhóm hiện có trong test (đã sử dụng) + quantity mới không vượt quá số câu của test
-    const sumResult = await this.databaseService.groupOfQuestions.aggregate({
-      _sum: { quantity: true },
-      where: { idTest },
+    // ✅ NEW: Validate using actual question count for UPDATE
+    // Get current group to exclude from total count
+    const currentGroup = await this.databaseService.groupOfQuestions.findUnique({
+      where: { idGroupOfQuestions },
+      include: {
+        _count: {
+          select: { question: true },
+        },
+      },
     });
-    const existingTotal = sumResult._sum.quantity ?? 0;
-    if (existingTotal + quantity > existingDe.numberQuestion)
+
+    if (!currentGroup) {
+      throw new BadRequestException('Group of questions not found');
+    }
+
+    // Get all other groups' actual question counts
+    const existingGroups = await this.databaseService.groupOfQuestions.findMany({
+      where: {
+        idTest,
+        idGroupOfQuestions: { not: idGroupOfQuestions }, // Exclude current group
+      },
+      include: {
+        _count: {
+          select: { question: true },
+        },
+      },
+    });
+
+    const otherGroupsTotal = existingGroups.reduce(
+      (sum, g) => sum + g._count.question,
+      0,
+    );
+
+    // Check if new quantity + other groups' actual count exceeds test limit
+    if (otherGroupsTotal + quantity > existingDe.numberQuestion) {
       throw new BadRequestException(
-        'Sum of questions cant be greater than numberQuestion test',
+        `Cannot update. Other groups have ${otherGroupsTotal} questions, trying to set this group to ${quantity}, test limit: ${existingDe.numberQuestion}`,
       );
+    }
 
     const data = await this.databaseService.groupOfQuestions.update({
       where: {
@@ -179,11 +251,19 @@ export class GroupOfQuestionsService {
         quantity,
         img: imgUrl,
       },
+      include: {
+        _count: {
+          select: { question: true },
+        },
+      },
     });
 
     return {
       message: 'Group of question updated successfully',
-      data,
+      data: {
+        ...data,
+        actualQuestionCount: data._count.question,
+      },
       status: 200,
     };
   }

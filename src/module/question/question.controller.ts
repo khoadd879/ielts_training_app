@@ -17,7 +17,7 @@ import { UpdateManyQuestionsDto } from './dto/update-many-questions.dto';
 @ApiBearerAuth()
 @Controller('question')
 export class QuestionController {
-  constructor(private readonly questionService: QuestionService) {}
+  constructor(private readonly questionService: QuestionService) { }
 
   @Post('create-question')
   create(@Body() createQuestionDto: CreateQuestionDto) {
