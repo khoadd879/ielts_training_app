@@ -5,7 +5,13 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { StreakService } from '../streak-service/streak-service.service';
-import { Level, TestStatus, TestType, WritingTaskType, SpeakingPartType } from '@prisma/client';
+import {
+  Level,
+  TestStatus,
+  TestType,
+  WritingTaskType,
+  SpeakingPartType,
+} from '@prisma/client';
 import { UserWritingSubmissionService } from '../user-writing-submission/user-writing-submission.service';
 import { UserSpeakingSubmissionService } from '../user-speaking-submission/user-speaking-submission.service';
 import { FinishTestWritingDto } from './dto/finish-test-writing.dto';
@@ -26,7 +32,7 @@ export class UserTestResultService {
     private readonly streakService: StreakService,
     private readonly writingService: UserWritingSubmissionService,
     private readonly speakingService: UserSpeakingSubmissionService,
-  ) { }
+  ) {}
 
   async findAllTestResultByIdUser(idUser: string) {
     const existingUser = await this.databaseService.user.findUnique({
@@ -573,41 +579,39 @@ export class UserTestResultService {
   }
 
   async getAllAnswerInTestResult(idTestResult: string) {
-
     const testInfo = await this.databaseService.userTestResult.findUnique({
       where: { idTestResult },
       select: {
         test: {
           select: {
-            testType: true
-          }
-        }
-      }
-    })
+            testType: true,
+          },
+        },
+      },
+    });
 
     let data: any;
 
     if (testInfo?.test.testType === TestType.WRITING) {
       data = await this.databaseService.userTestResult.findUnique({
-        where: { idTestResult, status: TestStatus.FINISHED, },
+        where: { idTestResult, status: TestStatus.FINISHED },
         include: {
           test: {
             include: {
               writingTasks: {
                 orderBy: {
-                  task_type: 'asc'
-                }
+                  task_type: 'asc',
+                },
               },
-
             },
           },
           writingSubmission: {
             include: {
-              feedback: true
-            }
-          }
-        }
-      })
+              feedback: true,
+            },
+          },
+        },
+      });
     } else if (testInfo?.test.testType === TestType.SPEAKING) {
       data = await this.databaseService.userTestResult.findUnique({
         where: {
@@ -619,21 +623,21 @@ export class UserTestResultService {
             include: {
               speakingTasks: {
                 include: {
-                  questions: true
+                  questions: true,
                 },
                 orderBy: {
-                  part: 'asc'
-                }
-              }
-            }
+                  part: 'asc',
+                },
+              },
+            },
           },
           speakingSubmission: {
             include: {
-              feedback: true
-            }
-          }
-        }
-      })
+              feedback: true,
+            },
+          },
+        },
+      });
     } else {
       data = await this.databaseService.userTestResult.findFirst({
         where: {
@@ -706,39 +710,43 @@ export class UserTestResultService {
     if (body?.writingSubmissions && body.writingSubmissions.length > 0) {
       // ✅ OPTIMIZATION 1: Prefetch all writing tasks in one query (avoid N+1)
       const taskIds = body.writingSubmissions
-        .filter(s => s.submission_text?.trim())
-        .map(s => s.idWritingTask);
+        .filter((s) => s.submission_text?.trim())
+        .map((s) => s.idWritingTask);
 
       const tasks = await this.databaseService.writingTask.findMany({
         where: { idWritingTask: { in: taskIds } },
         select: { idWritingTask: true, task_type: true },
       });
-      const taskMap = new Map(tasks.map(t => [t.idWritingTask, t]));
+      const taskMap = new Map(tasks.map((t) => [t.idWritingTask, t]));
 
       // ✅ OPTIMIZATION 2: Parallel AI grading (instead of sequential)
       const gradingPromises = body.writingSubmissions
-        .filter(s => s.submission_text?.trim())
+        .filter((s) => s.submission_text?.trim())
         .map(async (submission) => {
           const taskInfo = taskMap.get(submission.idWritingTask);
           if (!taskInfo) return null;
 
           try {
             // Gọi AI chấm điểm
-            const result = await this.writingService.createUserWritingSubmission(
-              idTestResult,
-              {
-                idUser: idUser,
-                idWritingTask: submission.idWritingTask,
-                submission_text: submission.submission_text,
-              },
-            );
+            const result =
+              await this.writingService.createUserWritingSubmission(
+                idTestResult,
+                {
+                  idUser: idUser,
+                  idWritingTask: submission.idWritingTask,
+                  submission_text: submission.submission_text,
+                },
+              );
 
             return {
               taskInfo,
               result,
             };
           } catch (error) {
-            console.error(`Failed to grade task ${submission.idWritingTask}:`, error);
+            console.error(
+              `Failed to grade task ${submission.idWritingTask}:`,
+              error,
+            );
             throw error; // Re-throw to fail the entire submission if one task fails
           }
         });
@@ -829,7 +837,12 @@ export class UserTestResultService {
       include: {
         test: {
           include: {
-            speakingTasks: true, // Lấy danh sách task để map ID
+            speakingTasks: true,
+            _count: {
+              select: {
+                speakingTasks: true,
+              },
+            },
           },
         },
       },
@@ -837,18 +850,24 @@ export class UserTestResultService {
 
     if (!testResult) throw new NotFoundException('Test result not found');
     if (testResult.idUser !== idUser) {
-      throw new BadRequestException('You do not have permission to finish this test');
+      throw new BadRequestException(
+        'You do not have permission to finish this test',
+      );
     }
     if (testResult.status !== 'IN_PROGRESS') {
       throw new BadRequestException('This test is not in progress.');
     }
     if (testResult.test.testType !== TestType.SPEAKING) {
-      throw new BadRequestException('This endpoint is for Speaking tests only.');
+      throw new BadRequestException(
+        'This endpoint is for Speaking tests only.',
+      );
     }
 
     const tasks = testResult.test.speakingTasks;
     if (!tasks || tasks.length === 0) {
-      throw new BadRequestException('This test configuration is missing speaking tasks.');
+      throw new BadRequestException(
+        'This test configuration is missing speaking tasks.',
+      );
     }
 
     const partScores = [
@@ -860,7 +879,7 @@ export class UserTestResultService {
 
     const processPart = async (
       partType: SpeakingPartType,
-      audioFiles?: Express.Multer.File[]
+      audioFiles?: Express.Multer.File[],
     ) => {
       const task = tasks.find((t) => t.part === partType);
 
@@ -893,24 +912,24 @@ export class UserTestResultService {
       }
     };
 
-
     await Promise.all([
       processPart('PART1', files.part1Audio),
       processPart('PART2', files.part2Audio),
       processPart('PART3', files.part3Audio),
     ]);
 
-    // ✅ FIX BUG 1: Tính điểm Band Score theo chuẩn IELTS
-    // Luôn tính trung bình 3 phần, phần nào không nộp = 0 điểm
     const totalScore = partScores.reduce((sum, p) => sum + p.score, 0);
-    const submittedPartsCount = submissionsDetails.length; // Số phần thực sự nộp (để hiển thị)
+    const submittedPartsCount = submissionsDetails.length;
+    let band_score;
 
-    // Luôn chia 3 (trung bình 3 phần), làm tròn 0.5
-    const band_score = Math.round((totalScore / 3) * 2) / 2;
+    const totalTasks = testResult.test._count.speakingTasks;
 
-    // Nếu bạn muốn chia cho số phần user thực sự làm: (totalScore / submittedPartsCount)
+    if (totalTasks > 0) {
+      band_score = Math.round((totalScore / totalTasks) * 2) / 2;
+    } else {
+      band_score = 0;
+    }
 
-    // 4. Calculate XP
     const xpGained = await this.calculateXpGained(
       idUser,
       testResult.idTest,
@@ -929,7 +948,7 @@ export class UserTestResultService {
         status: 'FINISHED',
         finishedAt: new Date(),
         band_score: band_score,
-        total_questions: submittedPartsCount, // Số phần đã nộp
+        total_questions: submittedPartsCount,
       },
     });
 
@@ -939,10 +958,13 @@ export class UserTestResultService {
         idTestResult,
         xpGained,
         band_score,
-        breakdown: partScores.reduce((acc, p) => {
-          acc[p.part] = p.score;
-          return acc;
-        }, {} as Record<string, number>),
+        breakdown: partScores.reduce(
+          (acc, p) => {
+            acc[p.part] = p.score;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
         submissions: submissionsDetails,
         finishedAt: updatedResult.finishedAt,
         submissions_count: submittedPartsCount,
