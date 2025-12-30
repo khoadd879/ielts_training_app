@@ -50,7 +50,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
-        limit: 1000,
+        limit: 100,
       },
     ]),
     UsersModule,

@@ -169,6 +169,8 @@ model GroupOfQuestions {
   part               Part         @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
   test               Test         @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
   question           Question[]
+
+  @@index([idPart, typeQuestion])
 }
 
 model Question {
@@ -183,6 +185,8 @@ model Question {
   groupOfQuestions   GroupOfQuestions @relation(fields: [idGroupOfQuestions], references: [idGroupOfQuestions], onDelete: Cascade)
   part               Part             @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
   userAnswers        UserAnswer[]
+
+  @@index([idGroupOfQuestions, numberQuestion])
 }
 
 model Answer {

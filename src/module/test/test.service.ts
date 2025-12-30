@@ -20,7 +20,7 @@ export class TestService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly userService: UsersService,
     @Inject(CACHE_MANAGER) private cache: Cache,
-  ) {}
+  ) { }
 
   async createTest(
     createTestDto: CreateTestDto,
@@ -88,7 +88,7 @@ export class TestService {
         throw new BadRequestException(
           'Number of questions cannot be more than 2 for WRITING tests',
         );
-    } 
+    }
 
     // Tạo test trong DB
     const data = await this.databaseService.test.create({
@@ -139,7 +139,7 @@ export class TestService {
     const data = await this.databaseService.test.findMany({
       where: { idUser },
     });
-    await this.cache.set(cacheKey, data, 300); // cache 5 phút
+    await this.cache.set(cacheKey, data, 3600); // cache 1 giờ - optimized for static content
     return {
       message: 'Tests retrieved successfully',
       data,
@@ -160,7 +160,7 @@ export class TestService {
 
     const data = await this.databaseService.test.findMany();
 
-    await this.cache.set(cacheKey, data, 300); // cache 5 phút
+    await this.cache.set(cacheKey, data, 3600); // cache 1 giờ
     return {
       message: 'Tests retrieved successfully',
       data,
@@ -301,7 +301,7 @@ export class TestService {
       include: { parts: true },
     });
 
-    await this.cache.set(cacheKey, data, 600); // cache 10 phút
+    await this.cache.set(cacheKey, data, 1800); // cache 30 phút - optimized
     return {
       message: 'Part retrieved successfully',
       data,
@@ -310,67 +310,67 @@ export class TestService {
   }
 
   async getTest(idTest: string) {
-  const testInfo = await this.databaseService.test.findUnique({
-    where: { idTest },
-    select: { testType: true }, 
-  });
-
-  if (!testInfo) {
-    throw new BadRequestException('Test not found');
-  }
-
-  let data: any;
-
-
-  if (testInfo.testType === TestType.SPEAKING) {
-    data = await this.databaseService.test.findUnique({
+    const testInfo = await this.databaseService.test.findUnique({
       where: { idTest },
-      include: {
-        speakingTasks: {
-          include: {
-            questions: {
-              orderBy: { order: 'asc' },
+      select: { testType: true },
+    });
+
+    if (!testInfo) {
+      throw new BadRequestException('Test not found');
+    }
+
+    let data: any;
+
+
+    if (testInfo.testType === TestType.SPEAKING) {
+      data = await this.databaseService.test.findUnique({
+        where: { idTest },
+        include: {
+          speakingTasks: {
+            include: {
+              questions: {
+                orderBy: { order: 'asc' },
+              },
             },
           },
         },
-      },
-    });
-  } else if(testInfo.testType === TestType.WRITING){
-    data = await this.databaseService.test.findUnique({
-      where:{idTest},
-      include:{
-        writingTasks: true
-      }
-    })
-  }else{
-    data = await this.databaseService.test.findUnique({
-      where: { idTest },
-      include: {
-        parts: {
-          include: {
-            passage: true,
-            groupOfQuestions: {
-              include: {
-                question: {
-                  include: {
-                    answers: true,
+      });
+    } else if (testInfo.testType === TestType.WRITING) {
+      data = await this.databaseService.test.findUnique({
+        where: { idTest },
+        include: {
+          writingTasks: true
+        }
+      })
+    } else {
+      data = await this.databaseService.test.findUnique({
+        where: { idTest },
+        include: {
+          parts: {
+            include: {
+              passage: true,
+              groupOfQuestions: {
+                include: {
+                  question: {
+                    include: {
+                      answers: true,
+                    },
                   },
                 },
               },
             },
           },
+          writingTasks: true,
         },
-        writingTasks: true,
-      },
-    });
-  }
+      });
+    }
 
-  return {
-    message: 'Test retrieved successfully',
-    data,
-    status: 200,
-  };
-}
+    return {
+      message: 'Test retrieved successfully',
+      data,
+      status: 200,
+    };
+  }
 
   async getAnswerInTest(idTest: string) {
     const testData = await this.databaseService.test.findUnique({

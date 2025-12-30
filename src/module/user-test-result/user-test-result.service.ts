@@ -32,7 +32,7 @@ export class UserTestResultService {
     private readonly streakService: StreakService,
     private readonly writingService: UserWritingSubmissionService,
     private readonly speakingService: UserSpeakingSubmissionService,
-  ) {}
+  ) { }
 
   async findAllTestResultByIdUser(idUser: string) {
     const existingUser = await this.databaseService.user.findUnique({
@@ -209,22 +209,54 @@ export class UserTestResultService {
   }
 
   private async getTestResultWithDetails(idTestResult: string, idUser: string) {
+    // ✅ OPTIMIZED: Use select instead of include to fetch only needed fields
     const testResult = await this.databaseService.userTestResult.findFirst({
       where: {
         idTestResult: idTestResult,
         idUser: idUser,
       },
-      include: {
-        userAnswer: true,
+      select: {
+        idTestResult: true,
+        idUser: true,
+        idTest: true,
+        status: true,
+        startedAt: true,
+        finishedAt: true,
+        userAnswer: {
+          select: {
+            idUserAnswer: true,
+            idQuestion: true,
+            answerText: true,
+            matching_key: true,
+            matching_value: true,
+            userAnswerType: true,
+            isCorrect: true,
+          },
+        },
         test: {
-          include: {
+          select: {
+            idTest: true,
+            level: true,
             parts: {
-              include: {
+              select: {
+                idPart: true,
                 groupOfQuestions: {
-                  include: {
+                  select: {
+                    idGroupOfQuestions: true,
+                    typeQuestion: true,
                     question: {
-                      include: {
-                        answers: true,
+                      select: {
+                        idQuestion: true,
+                        numberQuestion: true,
+                        content: true,
+                        answers: {
+                          select: {
+                            idAnswer: true,
+                            answer_text: true,
+                            matching_key: true,
+                            matching_value: true,
+                          },
+                        },
                       },
                     },
                   },
@@ -258,21 +290,55 @@ export class UserTestResultService {
   }
 
   private async gradeAllAnswers(userAnswers: any[], allQuestions: any[]) {
-    return await Promise.all(
-      userAnswers.map(async (uAnswer) => {
-        const questionData = allQuestions.find(
-          (q) => q.idQuestion === uAnswer.idQuestion,
-        );
+    // ✅ OPTIMIZED: Collect grading results first, then batch update
+    const gradingResults: Array<{
+      idUserAnswer: string;
+      isCorrect: boolean;
+      score: number;
+      needsUpdate: boolean;
+    }> = [];
 
-        if (!questionData) return 0;
+    // Grade all answers without database updates
+    for (const uAnswer of userAnswers) {
+      const questionData = allQuestions.find(
+        (q) => q.idQuestion === uAnswer.idQuestion,
+      );
 
-        const isCorrect = this.gradeUserAnswer(uAnswer, questionData);
+      if (!questionData) {
+        gradingResults.push({
+          idUserAnswer: uAnswer.idUserAnswer,
+          isCorrect: false,
+          score: 0,
+          needsUpdate: uAnswer.isCorrect !== false,
+        });
+        continue;
+      }
 
-        await this.updateAnswerCorrectness(uAnswer, isCorrect);
+      const isCorrect = this.gradeUserAnswer(uAnswer, questionData);
+      gradingResults.push({
+        idUserAnswer: uAnswer.idUserAnswer,
+        isCorrect,
+        score: isCorrect ? 1 : 0,
+        needsUpdate: uAnswer.isCorrect !== isCorrect,
+      });
+    }
 
-        return isCorrect ? 1 : 0;
-      }),
-    );
+    // ✅ Batch update all answers that need updating in one transaction
+    const answersToUpdate = gradingResults.filter((r) => r.needsUpdate);
+
+    if (answersToUpdate.length > 0) {
+      await this.databaseService.$transaction(
+        answersToUpdate.map((answer) =>
+          this.databaseService.userAnswer.update({
+            where: { idUserAnswer: answer.idUserAnswer },
+            data: { isCorrect: answer.isCorrect },
+          }),
+        ),
+      );
+    }
+
+    // Return scores
+    return gradingResults.map((r) => r.score);
   }
 
   private gradeUserAnswer(uAnswer: any, questionData: any): boolean {
