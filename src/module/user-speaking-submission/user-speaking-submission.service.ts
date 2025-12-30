@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserSpeakingSubmissionDto } from './dto/create-user-speaking-submission.dto';
 import { UpdateUserSpeakingSubmissionDto } from './dto/update-user-speaking-submission.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -37,16 +41,12 @@ export class UserSpeakingSubmissionService {
     private readonly databaseService: DatabaseService,
     private readonly configService: ConfigService,
   ) {
-    const projectId = this.configService.get<string>('GOOGLE_PROJECT_ID');
-    const clientEmail = this.configService.get<string>('GOOGLE_CLIENT_EMAIL');
-    const privateKeyRaw = this.configService.get<string>('GOOGLE_PRIVATE_KEY');
+    const keyPath = this.configService.get<string>(
+      'GOOGLE_APPLICATION_CREDENTIALS',
+    );
 
     this.speechClient = new SpeechClient({
-      projectId,
-      credentials: {
-        client_email: clientEmail,
-        private_key: privateKeyRaw ? privateKeyRaw.replace(/\\n/g, '\n') : undefined,
-      }
+      keyFilename: keyPath,
     });
   }
 
@@ -69,9 +69,10 @@ export class UserSpeakingSubmissionService {
       };
 
       const [response] = await this.speechClient.recognize(request as any);
-      const transcription = response.results
-        ?.map((result) => result.alternatives?.[0]?.transcript)
-        .join('\n') || '';
+      const transcription =
+        response.results
+          ?.map((result) => result.alternatives?.[0]?.transcript)
+          .join('\n') || '';
       return transcription;
     } catch (error) {
       console.error('Google STT Error:', error);
@@ -83,27 +84,28 @@ export class UserSpeakingSubmissionService {
     createUserSpeakingSubmissionDto: CreateUserSpeakingSubmissionDto,
     file?: Express.Multer.File,
   ) {
-    const { idUser, idSpeakingTask, idTestResult } = createUserSpeakingSubmissionDto;
+    const { idUser, idSpeakingTask, idTestResult } =
+      createUserSpeakingSubmissionDto;
 
-    const [user, speakingTask,] = await Promise.all([
+    const [user, speakingTask] = await Promise.all([
       this.databaseService.user.findUnique({ where: { idUser } }),
       this.databaseService.speakingTask.findUnique({
         where: { idSpeakingTask },
         include: { questions: true },
       }),
-
     ]);
 
     if (!user) throw new NotFoundException('User not found');
     if (!speakingTask) throw new NotFoundException('Speaking task not found');
     if (idTestResult) {
-      const tr = await this.databaseService.userTestResult.findUnique({ where: { idTestResult, idUser } });
+      const tr = await this.databaseService.userTestResult.findUnique({
+        where: { idTestResult, idUser },
+      });
       if (!tr) throw new NotFoundException('Test result not found');
     }
 
     let audioUrl = createUserSpeakingSubmissionDto.audioUrl;
     let transcript = '';
-
 
     if (file) {
       const [cloudinaryRes, transcriptRes] = await Promise.all([
@@ -112,6 +114,12 @@ export class UserSpeakingSubmissionService {
       ]);
       audioUrl = cloudinaryRes.secure_url;
       transcript = transcriptRes;
+
+      if (!transcript) {
+        console.warn(
+          'Warning: Transcription is empty. AI might not grade accurately.',
+        );
+      }
     }
 
     if (!audioUrl) {
@@ -142,7 +150,7 @@ export class UserSpeakingSubmissionService {
           audioUrl: audioUrl!,
           idTestResult: idTestResult || null,
           transcript: transcript || null,
-          status: 'GRADED'
+          status: 'GRADED',
         },
       });
 
@@ -176,7 +184,12 @@ export class UserSpeakingSubmissionService {
     questionsText: string,
   ): Promise<AIFeedbackResult> {
     const ai = this.getAIInstance();
-    const promptText = this.buildPrompt(title, questionsText, audioUrl, transcript);
+    const promptText = this.buildPrompt(
+      title,
+      questionsText,
+      audioUrl,
+      transcript,
+    );
 
     try {
       const response = await ai.models.generateContent({
@@ -185,7 +198,10 @@ export class UserSpeakingSubmissionService {
       });
 
       const raw = response.text?.trim() ?? '';
-      const clean = raw.replace(/```json/i, '').replace(/```/g, '').trim();
+      const clean = raw
+        .replace(/```json/i, '')
+        .replace(/```/g, '')
+        .trim();
       const parsed = JSON.parse(clean);
 
       return {
@@ -204,9 +220,17 @@ export class UserSpeakingSubmissionService {
     } catch (error) {
       console.error('AI evaluation failed:', error);
       return {
-        scoreFluency: 0, scoreLexical: 0, scoreGrammar: 0, scorePronunciation: 0, overallScore: 0,
-        commentFluency: "Error", commentLexical: "Error", commentGrammar: "Error", commentPronunciation: "Error",
-        generalFeedback: "AI failed to evaluate.", detailedCorrections: []
+        scoreFluency: 0,
+        scoreLexical: 0,
+        scoreGrammar: 0,
+        scorePronunciation: 0,
+        overallScore: 0,
+        commentFluency: 'Error',
+        commentLexical: 'Error',
+        commentGrammar: 'Error',
+        commentPronunciation: 'Error',
+        generalFeedback: 'AI failed to evaluate.',
+        detailedCorrections: [],
       };
     }
   }
