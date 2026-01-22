@@ -1,0 +1,33 @@
+{
+  "id": "1463-you-are-looking-for-a-full-time-job",
+  "source": "ielts-mentor-writing",
+  "url": "https://www.ielts-mentor.com/writing-sample/gt-writing-task-1/1463-you-are-looking-for-a-full-time-job",
+  "slug": "ielts-mentor-writing-1463-you-are-looking-for-a-full-time-job",
+  "title": "You Are Looking For A Full Time Job",
+  "type": "WRITING_TASK_1",
+  "category": "IELTS_WRITING",
+  "level": "B2",
+  "durationMin": 20,
+  "sections": [
+    {
+      "idx": 1,
+      "title": "GT Writing Task 1",
+      "passage_md": null,
+      "instruction_md": "You should spend about 20 minutes on this task.",
+      "questions": [
+        {
+          "idx": 1,
+          "type": "ESSAY",
+          "prompt_md": "You should spend about\n20\nminutes on this task.\nYou are looking for a full-time job, and recently you saw a job opening in an advertisement.\nWrite a letter to the company. In your letter:\nintroduce yourself\nexplain what sort of job you would like to do\nand say what experience and skills you have\nYou should write at least\n150\nwords.\nYou do\nNOT\nneed to write any addresses.\nBegin your letter as follows:\nDear Sir or Madam,",
+          "model_answers": [
+            "Dear Sir or Madam,\nI am writing to apply for the assistant manager post in your Hotel - The Adventure Inn, that you have advertised in a local newspaper recently. I would really appreciate it if you could spare some of your precious time to further discuss my candidacy in a formal interview.\nI would like to work as an assistant manager that would enable me to work closely with the hotel staff and with the management. This way, I would be able to best serve my position on the one hand and learn valuable experience on the other hand.\nI have completed my graduation from City University in 2023 and my major was Tourism and Hospitality. Afterwards, I have worked for two four-star hotels and my current job as an assistant manager at the Gilbert hotel makes me a suitable candidate for the post. I do not see enough career growth opportunity with my current employer and that's why would like to switch my job.\nI look forward to hearing from you soon. Should you need any further details, please do not hesitate to call me.\nYours sincerely,\nPaul Jenkins",
+            "Dear Sir or Madam,\nI am writing this letter regarding the job opening that you have advertised in a newspaper last week. I would like to apply for the post and I am hoping you would consider me a deserving candidate for the job and let me discuss my suitability for the post in a formal interview.\nI am looking forward to getting a job that would enable me to work on and manage software projects that are developed in Java and Oracle databases. I want to work as a project manager and expect opportunities for my career growth.\nI have completed my graduation in Computer Science and Engineering. Besides, I have 5 years of experience in the software development field and my expertise is in Java programming. Moreover, I have in-depth knowledge of the Oracle Database system.\nThe reason to apply for this job is that I want to work with a software development company that has clients from various parts of the world and offers a great working environment, remuneration and carer growth opportunity. The job responsibilities perfectly suit my experience and skills.\nI have attached my curriculum vitae with this letter for your kind consideration.\nI look forward to hearing from you soon.\nYours  faithfully,\nNamrata Roy\n["
+          ],
+          "correct_answers": [],
+          "options": [],
+          "matchPairs": null
+        }
+      ]
+    }
+  ]
+}

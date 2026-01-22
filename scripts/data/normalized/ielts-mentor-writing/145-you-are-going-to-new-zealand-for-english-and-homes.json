@@ -1,0 +1,34 @@
+{
+  "id": "145-you-are-going-to-new-zealand-for-english-and-homes",
+  "source": "ielts-mentor-writing",
+  "url": "https://www.ielts-mentor.com/writing-sample/gt-writing-task-1/145-you-are-going-to-new-zealand-for-english-and-homestay-program",
+  "slug": "ielts-mentor-writing-145-you-are-going-to-new-zealand-for-english-and-homes",
+  "title": "You Are Going To New Zealand For English And Homestay Program",
+  "type": "WRITING_TASK_1",
+  "category": "IELTS_WRITING",
+  "level": "B2",
+  "durationMin": 20,
+  "sections": [
+    {
+      "idx": 1,
+      "title": "GT Writing Task 1",
+      "passage_md": null,
+      "instruction_md": "You should spend about 20 minutes on this task.",
+      "questions": [
+        {
+          "idx": 1,
+          "type": "ESSAY",
+          "prompt_md": "You should spend about\n20\nminutes on this task.\nYou are going to visit New Zealand for an 'English and Homestay' program. You have just received details of your homestay host family.\nWrite your first letter to the family. In your letter\nintroduce yourself\nask the family some questions to get information that is important to you\ntell the family about your arrival date and time\nWrite at least\n150\nwords.\nYou do\nNOT\nneed to write any addresses.\nBegin your letter as follows:\nDear .................,",
+          "model_answers": [
+            "Dear Mr and Mrs Smith,\nI'm Milad Rahimi from India, have recently registered for a two-week English Homestay programme at your house in New Zealand. I am fascinated to have you as my mentor during the programme. I really appreciate your letter that I received yesterday and writing for some information and to notify you of my arrival date.\nI am really delighted that you have agreed to host me for the programme. This will definitely enable me to fully immerse myself in the English Culture and further enhance my understanding of your tradition and way of life. As I am coming to New Zealand for the first time, I am not familiar with the weather and I don’t know what kind of clothes I should bring with me. Would you please advise me about that? I would also like to inform you that I am a vegetarian. Moreover, I need your suggestion about the things I should bring with me to your house. Finally, I would appreciate your advice on the type of books I should read about New Zealand that might help me understand your culture.\nI will arrive in Auckland on 20th September at around 7:30 pm if my flight makes no delay.\nI look forward to meeting you soon.\nYours Sincerely,\nMilad Rahimi\n[",
+            "Dear Mr Johnson,\nI have just received details of my English Homestay programme at your family and writing to introduce myself and ask for some information. I would like to thank you for agreeing to host me.\nMy name is Anna Ferra, I am 21 and live with my family in Lyon, France, which is my hometown. My native language is French and I am looking forward to improving my English during the trip to New Zealand. I will get enrolled in university soon and I am passionate about computer programming.\nI would be grateful if you could provide me with some information about your house and family. To begin with, I would prefer to live in a single room which has enough natural airflow. Besides, I am a vegetarian and hope that it would not be a big problem for you. Secondly, I would like to learn more about your family’s daily routines, like the games you like to play together, the type of TV programmes you watch and so on. This could help me to participate in all your routines like a relative.\nI am very eager to meet you in person. By the way, I have already bought the plane ticket and would be happy if you could meet me at the airport. This is my first time in New Zealand. I will hopefully arrive on September 18, at 10:00 am, Wellington time.\nI am looking forward to hearing from you soon.\nSincerely yours,\nAnna Ferra",
+            "Dear Mr and Mrs Ericsson,\nI hope you are doing great. I am Eoghan Antonio from Italy, would like to thank you for granting my application to host me for the English and Homestay programme at your house. This is something I have been so eagerly looking forward to and I thank you profoundly for the opportunity. I am writing for some information and to confirm my arrival date.\nI will be your guest for a month as part of the 'English and Homestay' program in Hamilton, New Zealand. I am a fresher at the University of Turin and I speak both Italian and Spanish.\nI am really excited to visit your country and be your humble guest. This would be an excellent opportunity to learn the language, culture and way of life in New Zealand. However, I am curious to know about a few things before my arrival at your house. To start, how can I reach from the airport to your house? Should I take a taxi or request a ride from Uber? I will reach the airport on 9th November 2022 at 11:30 am. Would it be possible for you to come to the airport to receive me? Besides, what is the current weather conditions in your city? What types of clothing are suitable for this season?\nI will be boarding the flight to New Zealand on 8th November at 10:45 am (GST time) and land there the next day around 11:30 am.\nEagerly waiting to meet you in person.\nSincerely yours,\nEoghan Antonio\n["
+          ],
+          "correct_answers": [],
+          "options": [],
+          "matchPairs": null
+        }
+      ]
+    }
+  ]
+}

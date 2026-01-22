@@ -1,0 +1,33 @@
+{
+  "id": "2084-you-need-to-return-to-your-country-before-end-of-s",
+  "source": "ielts-mentor-writing",
+  "url": "https://www.ielts-mentor.com/writing-sample/gt-writing-task-1/2084-you-need-to-return-to-your-country-before-end-of-semester",
+  "slug": "ielts-mentor-writing-2084-you-need-to-return-to-your-country-before-end-of-s",
+  "title": "You Need To Return To Your Country Before End Of Semester",
+  "type": "WRITING_TASK_1",
+  "category": "IELTS_WRITING",
+  "level": "B2",
+  "durationMin": 20,
+  "sections": [
+    {
+      "idx": 1,
+      "title": "GT Writing Task 1",
+      "passage_md": null,
+      "instruction_md": "You should spend about 20 minutes on this task.",
+      "questions": [
+        {
+          "idx": 1,
+          "type": "ESSAY",
+          "prompt_md": "You should spend about\n20\nminutes on this task.\nYou are studying overseas. You need to return to your country before the end of the semester for a family event.\nWrite a letter to your supervisor. In your letter,\n- request some time off\n- explain why you need to leave early\n- reassure him/her that your studies will not suffer\nYou should write at least\n150\nwords.\nYou\ndo NOT\nneed to write any addresses.\nBegin your letter as follows:\nDear ..................\n,",
+          "model_answers": [
+            "Dear Mr Joseph,\nI am a student at your university and my major is finance. I need to visit my home country owing to my sister's marriage ceremony on 22nd November 2025. I am hoping that you would permit me to take a week's leave from 17th to 23rd November.\nInevitably, being the only brother of the bride-to-be, shopping and some important rituals are to be taken care of by me and therefore my family members and relatives are expecting me to arrive a little earlier. I am quite aware that I have my semester exams on 15th December and I assure you that my travel would no way affect my studies. In fact, I have prepared all the subjects well in advance so I could succeed in the assessment tests with good scores.\nI would be grateful if you could approve my leave and pray for my sister.\nLooking forward to hearing from you.\nYours sincerely,\nNivetha Roy\n[",
+            "Dear Ms Corey,\nI am pursuing my graduation in computer science at your college and I am in my fifth semester. I am writing to request some time off classes, so as to ensure my presence in a family event in my home country next month. But I can assure you that I will get back to my classes on time and cover my studies.\nYou would be glad to know that my sister is getting married on 5th September and as the only elder sibling, a major share of responsibilities rests on my shoulders to precede and conduct the programme in a well-appreciated manner. My presence in the rituals is highly expected. Therefore, I would request you to allow me the leave for a week starting from 1st September.\nI can assure you that I will resume my classes on 7th September. It is almost certain that after beholding the functions and post-marriage formalities, I will fly my way back within a week's time. Finally, I pledge to you that, this short period of time, by no means, will hinder my preparation for the semester final. I am quite keen about this and hereby reassure you that my studies will not suffer.\nYours sincerely,\nVineeth Vera\n["
+          ],
+          "correct_answers": [],
+          "options": [],
+          "matchPairs": null
+        }
+      ]
+    }
+  ]
+}

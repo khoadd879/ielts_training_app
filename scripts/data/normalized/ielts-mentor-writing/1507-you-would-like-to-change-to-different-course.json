@@ -1,0 +1,33 @@
+{
+  "id": "1507-you-would-like-to-change-to-different-course",
+  "source": "ielts-mentor-writing",
+  "url": "https://www.ielts-mentor.com/writing-sample/gt-writing-task-1/1507-you-would-like-to-change-to-different-course",
+  "slug": "ielts-mentor-writing-1507-you-would-like-to-change-to-different-course",
+  "title": "You Would Like To Change To Different Course",
+  "type": "WRITING_TASK_1",
+  "category": "IELTS_WRITING",
+  "level": "B2",
+  "durationMin": 20,
+  "sections": [
+    {
+      "idx": 1,
+      "title": "GT Writing Task 1",
+      "passage_md": null,
+      "instruction_md": "You should spend about 20 minutes on this task.",
+      "questions": [
+        {
+          "idx": 1,
+          "type": "ESSAY",
+          "prompt_md": "You should spend about\n20\nminutes on this task.\nYou are not happy with the course you are doing at college and would like to change to a different course.\nWrite a letter to the Head of Department to change your course. In your letter, explain:\nwhat course you are doing now\nwhy you are not satisfied with that course\nwhat course you would like to change to\nWrite at least\n150\nwords.\nYou do\nNOT\nneed to write your own address.\nBegin your letter as follows:\nDear ...................,",
+          "model_answers": [
+            "Dear Mr Cameron,\nI am a first-year student at your college and my major is arts. I am writing to seek your permission to change one of my courses. I am hoping that you would allow me to do so.\nMy student identification number is 254102. During my admission back in January, I took the music course and it has been a month since then. So far I am not happy with my progress and I am confident that I would do better if I take the history curriculum, which I have always felt passionate about. I would not say that I feel negative about my music classes, but I believe I should go with the course I feel more attached to.\nWhen I got admitted to the college, no seat in the history department was available and the music was my second preference. Recently, I talked to the dean of the history department, and he notified me that with your permission, I would be able to intake the history subject.\nI would request you to permit me to intake a history course and drop the music class. I would be always grateful to you for granting me to switch my course.\nYours sincerely,\nCaterina Holmes",
+            "Dear Mr Mallik,\nI am writing this letter to seek your permission to change my major. I believe this will help me become more passionate about my studies and get ready to have a future career about which I have always felt very passionate about. I am hoping you would be kind enough to help me with this matter.\nI am Rathish Raveendran, a first-year bachelor of civil engineering major at your college. I have always wanted to be an architect but due to the unavailability of this course and peer pressure, I enrolled in civil engineering instead. Civil engineering is a great course but I feel more strongly about becoming an architect. Now that the architect department in our college has a few vacant seats, I would like to take the opportunity and pursue my dream.\nI have talked to the head of the architectural engineering department and he will grant my admission to his department if you have no objections regarding it. I will be eagerly waiting for your positive response.\nYours faithfully,\nRathish Raveendran\n["
+          ],
+          "correct_answers": [],
+          "options": [],
+          "matchPairs": null
+        }
+      ]
+    }
+  ]
+}

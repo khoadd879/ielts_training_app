@@ -306,6 +306,63 @@ class IELTSCrawler:
                 'error': str(e)
             }
     
+    def crawl_and_export_json(
+        self,
+        url: str,
+        output_path: Optional[str] = None,
+        test_title: Optional[str] = None,
+        test_type: TestType = TestType.READING,
+        level: Level = Level.Mid
+    ) -> Dict[str, Any]:
+        """
+        Crawl URL and export to exam-import.schema.json format
+        
+        Args:
+            url: URL to crawl
+            output_path: Optional output file path (defaults to output/{slug}.json)
+            test_title: Custom test title
+            test_type: Type of test
+            level: Difficulty level
+            
+        Returns:
+            Dict with success status, output path, and normalized data
+        """
+        from pathlib import Path
+        from transformers.schema_transformer import transform_to_exam_import_schema, save_normalized_exam
+        
+        # Crawl
+        result = self.crawl_url(url, test_title, test_type, level)
+        
+        if not result.success:
+            return {
+                'success': False,
+                'error': result.error_message
+            }
+        
+        # Transform to exam-import schema
+        print("\n📄 Transforming to exam-import.schema.json format...")
+        try:
+            normalized = transform_to_exam_import_schema(result.test_data)
+            
+            # Save to file
+            if output_path:
+                output_file = Path(output_path)
+            else:
+                output_file = None
+            
+            saved_path = save_normalized_exam(normalized, output_file)
+            
+            return {
+                'success': True,
+                'output_path': str(saved_path),
+                'data': normalized
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
     def preview_extraction(self, url: str) -> Dict[str, Any]:
         """
         Preview what would be extracted without uploading
@@ -388,6 +445,8 @@ def main():
     parser.add_argument('--threshold', type=float, default=0.95, help='Accuracy threshold for validation (default: 0.95)')
     parser.add_argument('--compare', '-c', action='store_true', help='Enable visual comparison between web and FE')
     parser.add_argument('--fe-url', type=str, default='http://localhost:3001', help='Frontend URL for visual comparison')
+    parser.add_argument('--export-json', '-j', action='store_true', help='Export to JSON (exam-import.schema.json format) instead of uploading')
+    parser.add_argument('--output', '-o', type=str, default=None, help='Output path for JSON export (used with --export-json)')
     
     args = parser.parse_args()
     
@@ -577,6 +636,22 @@ def main():
         result = crawler.preview_extraction(url)
         print("\n📋 Preview:")
         print(json.dumps(result, indent=2, ensure_ascii=False))
+    elif args.export_json:
+        # Export to JSON (exam-import.schema.json format)
+        result = crawler.crawl_and_export_json(
+            url=url,
+            output_path=args.output,
+            test_title=title,
+            test_type=TestType[args.type],
+            level=level
+        )
+        
+        if result['success']:
+            print(f"\n✅ Exported to: {result['output_path']}")
+            print(f"   Title: {result['data']['exams'][0]['title']}")
+            print(f"   Questions: {sum(len(s['questions']) for s in result['data']['exams'][0]['sections'])}")
+        else:
+            print(f"\n❌ Export failed: {result['error']}")
     elif args.validate:
         # Multi-Agent AI Validation Pipeline Mode
         from ai_pipeline.pipeline import ExtractionPipeline

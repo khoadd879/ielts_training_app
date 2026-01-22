@@ -1,6 +1,8 @@
 from .data_models import (
     TestType,
     QuestionType,
+    NewQuestionType,
+    map_old_to_new_type,
     Level,
     AnswerData,
     QuestionData,
@@ -18,6 +20,8 @@ from .data_models import (
 __all__ = [
     'TestType',
     'QuestionType',
+    'NewQuestionType',
+    'map_old_to_new_type',
     'Level',
     'AnswerData',
     'QuestionData',
@@ -31,3 +35,4 @@ __all__ = [
     'ExtractedQuestionGroup',
     'AIExtractionResult',
 ]
+

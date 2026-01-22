@@ -1,0 +1,378 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://langfens.dev/schemas/exam-import.schema.json",
+  "title": "Langfens Exam Import File",
+  "description": "Schema used to describe exam payloads that can be imported directly into the exam service. Data types and enums follow Shared.PublicContracts and exam-service contracts.",
+  "type": "object",
+  "required": ["schemaVersion", "exams"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "default": "1.0.0",
+      "description": "Version used by the importer to evolve the format without breaking compatibility."
+    },
+    "exams": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/exam"
+      },
+      "description": "List of exam definitions that will be upserted."
+    }
+  },
+  "$defs": {
+    "exam": {
+      "type": "object",
+      "required": [
+        "id",
+        "slug",
+        "title",
+        "category",
+        "level",
+        "durationMin",
+        "sections"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "minLength": 3,
+          "maxLength": 128,
+          "description": "Unique slug for routing. Matches exam_service.Domains.Entities.Exam.Slug."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "descriptionMd": {
+          "type": ["string", "null"],
+          "description": "Optional Markdown instructions rendered to candidates."
+        },
+        "category": {
+          "$ref": "#/$defs/examCategory"
+        },
+        "level": {
+          "$ref": "#/$defs/examLevel"
+        },
+        "status": {
+          "$ref": "#/$defs/examStatus",
+          "default": "DRAFT"
+        },
+        "durationMin": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total time allocation in minutes."
+        },
+        "sections": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/section"
+          }
+        }
+      }
+    },
+    "section": {
+      "type": "object",
+      "required": ["id", "idx", "title", "questions"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "idx": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based order of the section within the exam."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "instructionsMd": {
+          "type": ["string", "null"],
+          "description": "Optional Markdown instructions for the whole section."
+        },
+        "audioUrl": {
+          "type": ["string", "null"],
+          "description": "URL bản audio dùng chung cho section Listening."
+        },
+        "transcriptMd": {
+          "type": ["string", "null"],
+          "description": "Transcript Markdown cho file nghe."
+        },
+        "questions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/question"
+          }
+        }
+      }
+    },
+    "question": {
+      "type": "object",
+      "required": [
+        "id",
+        "idx",
+        "type",
+        "skill",
+        "difficulty",
+        "promptMd",
+        "options",
+        "blankAcceptTexts",
+        "blankAcceptRegex",
+        "matchPairs",
+        "orderCorrects",
+        "shortAnswerAcceptTexts",
+        "shortAnswerAcceptRegex"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "idx": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based order of the question inside the section."
+        },
+        "type": {
+          "$ref": "#/$defs/questionType"
+        },
+        "skill": {
+          "$ref": "#/$defs/questionSkill"
+        },
+        "difficulty": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Relative difficulty (1 = easiest)."
+        },
+        "promptMd": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Markdown prompt shown to candidates."
+        },
+        "explanationMd": {
+          "type": ["string", "null"],
+          "description": "Optional Markdown solution or rationale."
+        },
+        "options": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "$ref": "#/$defs/option"
+          },
+          "description": "Only used for question types that contain selectable options."
+        },
+        "blankAcceptTexts": {
+          "$ref": "#/$defs/textArrayMap"
+        },
+        "blankAcceptRegex": {
+          "$ref": "#/$defs/textArrayMap"
+        },
+        "matchPairs": {
+          "$ref": "#/$defs/textArrayMap"
+        },
+        "orderCorrects": {
+          "$ref": "#/$defs/orderCorrectArray"
+        },
+        "shortAnswerAcceptTexts": {
+          "$ref": "#/$defs/stringArrayOrNull"
+        },
+        "shortAnswerAcceptRegex": {
+          "$ref": "#/$defs/stringArrayOrNull"
+        }
+      }
+    },
+    "option": {
+      "type": "object",
+      "required": ["id", "idx", "contentMd", "isCorrect"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "idx": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "contentMd": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Markdown snippet for the option."
+        },
+        "isCorrect": {
+          "type": "boolean"
+        }
+      }
+    },
+    "uuid": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Matches System.Guid identifiers used across exam entities."
+    },
+    "stringArrayOrNull": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Used for shortAnswerAcceptTexts, shortAnswerAcceptRegex."
+    },
+    "orderCorrectArray": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "default": [],
+      "description": "Used only for FLOW_CHART questions. Canonical node keys in correct order, from first to last. Each entry should be a slug-like lowercase key, e.g. \"warm-intake\", \"evaporator-dome\", \"turbine-hall\", \"condenser-bay\", \"return-line\". The grader will normalize these via NormNode."
+    },
+    "textArrayMap": {
+      "type": ["object", "null"],
+      "additionalProperties": {
+        "type": ["array", "null"],
+        "items": {
+          "type": "string"
+        }
+      },
+      "default": {},
+      "description": "Dictionary<string, string[]?> aligned with BlankAccept*, MatchPairs contracts."
+    },
+    "examCategory": {
+      "type": "string",
+      "enum": ["IELTS", "TOEIC", "VSTEP", "PLACEMENT"],
+      "description": "Shared.ExamDto.Contracts.Exam.Enums.ExamCategory"
+    },
+    "examLevel": {
+      "type": "string",
+      "enum": ["A1", "A2", "B1", "B2", "C1", "C2"],
+      "description": "Shared.ExamDto.Contracts.Exam.Enums.ExamLevel"
+    },
+    "examStatus": {
+      "type": "string",
+      "enum": ["DRAFT", "PUBLISHED", "ARCHIVED"],
+      "description": "Shared.ExamDto.Contracts.Exam.Enums.ExamStatus"
+    },
+    "questionSkill": {
+      "type": "string",
+      "enum": ["SPEAKING", "LISTENING", "WRITING", "READING"],
+      "description": "Shared.ExamDto.Contracts.Exam.Enums.QuestionSkill"
+    },
+    "questionType": {
+      "type": "string",
+      "enum": [
+        "MULTIPLE_CHOICE_SINGLE",
+        "MULTIPLE_CHOICE_MULTIPLE",
+        "TRUE_FALSE_NOT_GIVEN",
+        "YES_NO_NOT_GIVEN",
+        "MULTIPLE_CHOICE_SINGLE_IMAGE",
+        "SUMMARY_COMPLETION",
+        "TABLE_COMPLETION",
+        "NOTE_COMPLETION",
+        "FORM_COMPLETION",
+        "SENTENCE_COMPLETION",
+        "SHORT_ANSWER",
+        "DIAGRAM_LABEL",
+        "MAP_LABEL",
+        "MATCHING_HEADING",
+        "MATCHING_INFORMATION",
+        "MATCHING_FEATURES",
+        "MATCHING_ENDINGS",
+        "CLASSIFICATION",
+        "FLOW_CHART"
+      ],
+      "description": "Shared.ExamDto.Contracts.Exam.Enums.QuestionType"
+    }
+  },
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "exams": [
+        {
+          "id": "03cc85b0-accd-4fd9-a6e1-7e46b8533c4d",
+          "slug": "ielts-academic-sample-01",
+          "title": "IELTS Academic Sample 01",
+          "descriptionMd": "## Overview\\nThis mock IELTS exam is used for QA seeding.",
+          "category": "IELTS",
+          "level": "B2",
+          "status": "DRAFT",
+          "durationMin": 75,
+          "sections": [
+            {
+              "id": "af0f65b7-b484-45c3-962f-f8a6cddfaba6",
+              "idx": 1,
+              "title": "Listening Section",
+              "instructionsMd": "Listen carefully to the recording and answer the questions.",
+              "audioUrl": "https://cdn.langfens.dev/audio/sample-listening-01.mp3",
+              "transcriptMd": "Speaker: *I can't approve the budget unless we reduce scope.*",
+              "questions": [
+                {
+                  "id": "ecc148fa-dbc9-4951-b585-d90b9b6f0b9c",
+                  "idx": 1,
+                  "type": "MULTIPLE_CHOICE_SINGLE",
+                  "skill": "LISTENING",
+                  "difficulty": 2,
+                  "promptMd": "### Question 1\\nChoose the option that best describes the speaker's opinion.",
+                  "explanationMd": null,
+                  "options": [
+                    {
+                      "id": "0fc43efb-e721-4ff1-8624-0b588ffd3747",
+                      "idx": 1,
+                      "contentMd": "The speaker agrees with the proposal.",
+                      "isCorrect": false
+                    },
+                    {
+                      "id": "88caccaa-0dc5-4eb6-8b2e-a137355a1195",
+                      "idx": 2,
+                      "contentMd": "The speaker disagrees because of the cost.",
+                      "isCorrect": true
+                    },
+                    {
+                      "id": "1561f754-22a3-43f5-8bb2-7c554dda699a",
+                      "idx": 3,
+                      "contentMd": "The speaker has no opinion.",
+                      "isCorrect": false
+                    }
+                  ],
+                  "blankAcceptTexts": {},
+                  "blankAcceptRegex": {},
+                  "matchPairs": {},
+                  "orderCorrects": [],
+                  "shortAnswerAcceptTexts": [],
+                  "shortAnswerAcceptRegex": []
+                },
+                {
+                  "id": "e4a028b7-fad1-4d54-94dc-c9e2b642ad93",
+                  "idx": 2,
+                  "type": "SHORT_ANSWER",
+                  "skill": "LISTENING",
+                  "difficulty": 3,
+                  "promptMd": "### Question 2\\nProvide the missing keyword mentioned by the speaker.",
+                  "explanationMd": "The answer is stated in the final sentence of the recording.",
+                  "options": [],
+                  "blankAcceptTexts": {},
+                  "blankAcceptRegex": {},
+                  "matchPairs": {},
+                  "orderCorrects": [],
+                  "shortAnswerAcceptTexts": [
+                    "renewable energy",
+                    "clean energy"
+                  ],
+                  "shortAnswerAcceptRegex": [".*renewable.*energy.*"]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
