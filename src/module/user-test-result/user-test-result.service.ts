@@ -156,19 +156,19 @@ export class UserTestResultService {
     // 4. Get all questions from the test
     const allQuestions = this.extractAllQuestions(testResult);
 
-    // 5. Grade all user answers
+    // 5. Grade all user answers (calculate BEFORE transaction to minimize lock time)
     const gradingResults = await this.gradeAllAnswers(
       testResult.userAnswer,
       allQuestions,
     );
 
-    // 6. Calculate scores
+    // 6. Calculate scores (BEFORE transaction)
     const { total_correct, band_score } = this.calculateScores(
       gradingResults,
       allQuestions.length,
     );
 
-    // 7. Calculate XP (with anti-spam check)
+    // 7. Calculate XP (with anti-spam check - BEFORE transaction)
     const xpGained = await this.calculateXpGained(
       idUser,
       testResult.idTest,
@@ -177,16 +177,62 @@ export class UserTestResultService {
       band_score,
     );
 
-    // 8. Update user XP and streak
-    await this.handleXpAndStreak(idUser, xpGained);
+    // 8. Pre-calculate user level changes if XP will be gained
+    let userLevelUpdate: { newXp: number; currentLevel: string; xpToNext: number } | null = null;
+    if (xpGained > 0) {
+      const user = await this.databaseService.user.findUnique({
+        where: { idUser },
+      });
+      if (user) {
+        let newXp = user.xp + xpGained;
+        let currentLevel = user.level ?? 'Low';
+        let xpToNext = user.xpToNext ?? 100;
 
-    // 9. Update test completion
-    const updatedResult = await this.updateTestCompletion(
-      idTestResult,
-      total_correct,
-      allQuestions.length,
-      band_score,
-    );
+        while (newXp >= xpToNext) {
+          newXp -= xpToNext;
+          currentLevel = this.getNextLevel(currentLevel as any);
+          xpToNext = this.updateXpToNext(currentLevel as any);
+        }
+        userLevelUpdate = { newXp, currentLevel, xpToNext };
+      }
+    }
+
+    // 9. Wrap all state changes in a transaction for atomicity
+    const updatedResult = await this.databaseService.$transaction(async (tx) => {
+      // Update user XP and level if gained
+      if (userLevelUpdate) {
+        await tx.user.update({
+          where: { idUser },
+          data: {
+            xp: userLevelUpdate.newXp,
+            level: userLevelUpdate.currentLevel as any,
+            xpToNext: userLevelUpdate.xpToNext,
+          },
+        });
+      }
+
+      // Update test completion status
+      const result = await tx.userTestResult.update({
+        where: { idTestResult: idTestResult },
+        data: {
+          status: 'FINISHED',
+          finishedAt: new Date(),
+          total_correct: total_correct,
+          total_questions: allQuestions.length,
+          band_score: band_score,
+          score: total_correct,
+        },
+      });
+
+      return result;
+    });
+
+    // 10. Update streak AFTER transaction (non-critical, can fail independently)
+    try {
+      await this.streakService.updateStreak(idUser);
+    } catch (error) {
+      console.error(`Failed to update streak for user ${idUser}`, error);
+    }
 
     return {
       message: 'Test finished successfully!',
@@ -415,23 +461,41 @@ export class UserTestResultService {
     );
   }
 
+  /**
+   * Normalize text for flexible answer comparison
+   * - Converts to lowercase
+   * - Removes punctuation
+   * - Collapses multiple spaces into one
+   */
+  private normalizeText(text: string): string {
+    return text
+      .toLowerCase()
+      .replace(/[.,?!\-:;'"()\[\]]/g, '') // Remove common punctuation
+      .replace(/\s+/g, ' ') // Collapse multiple spaces
+      .trim();
+  }
+
   private gradeTextAnswer(uAnswer: any, questionData: any): boolean {
     // If user left answer blank
     if (!uAnswer.answerText || uAnswer.answerText.trim() === '') {
       return false;
     }
 
-    const userTextNormalized = uAnswer.answerText.trim().toLowerCase();
+    const userTextNormalized = this.normalizeText(uAnswer.answerText);
 
-    // Check if user's text matches any correct answer
+    // Check if user's text matches ANY correct answer (normalized comparison)
     return questionData.answers.some((a) => {
-      const dbAnswerText = a.answer_text?.trim().toLowerCase();
-      const dbMatchingValue = a.matching_value?.trim().toLowerCase();
+      const dbAnswerText = a.answer_text
+        ? this.normalizeText(a.answer_text)
+        : '';
+      const dbMatchingValue = a.matching_value
+        ? this.normalizeText(a.matching_value)
+        : '';
 
       // Match with either answer_text or matching_value in DB
       return (
-        dbAnswerText === userTextNormalized ||
-        dbMatchingValue === userTextNormalized
+        (dbAnswerText && dbAnswerText === userTextNormalized) ||
+        (dbMatchingValue && dbMatchingValue === userTextNormalized)
       );
     });
   }

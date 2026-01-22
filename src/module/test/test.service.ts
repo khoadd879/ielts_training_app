@@ -309,6 +309,33 @@ export class TestService {
     };
   }
 
+  /**
+   * Sanitize answers to hide correctness indicators from users
+   * For MCQ/TFNG/YES_NO: mask both 'CORRECT' and 'INCORRECT' to prevent elimination cheating
+   */
+  private sanitizeAnswersForUser(
+    parts: any[],
+  ): any[] {
+    const mcqTypes = ['MCQ', 'TFNG', 'YES_NO_NOTGIVEN'];
+
+    return parts.map((part) => ({
+      ...part,
+      groupOfQuestions: part.groupOfQuestions.map((group) => ({
+        ...group,
+        question: group.question.map((q) => ({
+          ...q,
+          answers: q.answers.map((answer) => ({
+            ...answer,
+            // For MCQ/TFNG/YES_NO: completely mask matching_value to prevent elimination
+            matching_value: mcqTypes.includes(group.typeQuestion)
+              ? null
+              : answer.matching_value,
+          })),
+        })),
+      })),
+    }));
+  }
+
   async getTest(idTest: string) {
     const testInfo = await this.databaseService.test.findUnique({
       where: { idTest },
@@ -343,7 +370,8 @@ export class TestService {
         }
       })
     } else {
-      data = await this.databaseService.test.findUnique({
+      // LISTENING/READING tests - fetch and sanitize answers
+      const rawData = await this.databaseService.test.findUnique({
         where: { idTest },
         include: {
           parts: {
@@ -363,6 +391,16 @@ export class TestService {
           writingTasks: true,
         },
       });
+
+      // Sanitize answers to hide correctness indicators
+      if (rawData && rawData.parts) {
+        data = {
+          ...rawData,
+          parts: this.sanitizeAnswersForUser(rawData.parts),
+        };
+      } else {
+        data = rawData;
+      }
     }
 
     return {
