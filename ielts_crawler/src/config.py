@@ -18,6 +18,12 @@ class Config:
     
     # Backend API
     BACKEND_BASE_URL: str = os.getenv('BACKEND_BASE_URL', 'http://localhost:3000/api')
+    
+    # Crawler Authentication (primary)
+    CRAWLER_EMAIL: str = os.getenv('CRAWLER_EMAIL', '')
+    CRAWLER_PASSWORD: str = os.getenv('CRAWLER_PASSWORD', '')
+    
+    # Admin credentials (fallback for backwards compatibility)
     ADMIN_EMAIL: str = os.getenv('ADMIN_EMAIL', '')
     ADMIN_PASSWORD: str = os.getenv('ADMIN_PASSWORD', '')
     
@@ -44,8 +50,12 @@ class Config:
         if not cls.GEMINI_API_KEY:
             errors.append("GEMINI_API_KEY is required")
         
-        if not cls.ADMIN_EMAIL or not cls.ADMIN_PASSWORD:
-            errors.append("ADMIN_EMAIL and ADMIN_PASSWORD are required")
+        # Check for valid credentials (CRAWLER or ADMIN)
+        has_crawler_creds = cls.CRAWLER_EMAIL and cls.CRAWLER_PASSWORD
+        has_admin_creds = cls.ADMIN_EMAIL and cls.ADMIN_PASSWORD
+        
+        if not has_crawler_creds and not has_admin_creds:
+            errors.append("CRAWLER_EMAIL/CRAWLER_PASSWORD or ADMIN_EMAIL/ADMIN_PASSWORD are required")
             
         if errors:
             print("Configuration Errors:")

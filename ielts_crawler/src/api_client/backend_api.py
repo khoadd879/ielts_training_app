@@ -39,8 +39,9 @@ class BackendAPI:
             password: Admin password
         """
         self.base_url = (base_url or config.BACKEND_BASE_URL).rstrip('/')
-        self.email = email or config.ADMIN_EMAIL
-        self.password = password or config.ADMIN_PASSWORD
+        # Use CRAWLER credentials first, fallback to ADMIN for backwards compatibility
+        self.email = email or config.CRAWLER_EMAIL or config.ADMIN_EMAIL
+        self.password = password or config.CRAWLER_PASSWORD or config.ADMIN_PASSWORD
         
         self.session = requests.Session()
         self.access_token: Optional[str] = None
