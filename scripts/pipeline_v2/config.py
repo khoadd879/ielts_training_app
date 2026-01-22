@@ -12,7 +12,7 @@ SCRIPTS_DIR = PROJECT_ROOT / "scripts"
 CRAWLER_DIR = SCRIPTS_DIR / "crawler"
 PIPELINE_V2_DIR = SCRIPTS_DIR / "pipeline_v2"
 DATA_DIR = PROJECT_ROOT / "data"
-SEEDS_DIR = PROJECT_ROOT / "deploy" / "seeds"
+SEEDS_DIR = PROJECT_ROOT / "prisma" / "sql_seeds"
 
 # Add crawler directory to path for imports
 sys.path.insert(0, str(CRAWLER_DIR))
@@ -26,7 +26,7 @@ QUARANTINE_DIR = DATA_DIR / "quarantine"
 LOGS_DIR = DATA_DIR / "logs"
 
 # Ensure directories exist
-for d in [RAW_DIR, EXTRACTED_DIR, NORMALIZED_DIR, OUTPUT_DIR, QUARANTINE_DIR, LOGS_DIR]:
+for d in [RAW_DIR, EXTRACTED_DIR, NORMALIZED_DIR, OUTPUT_DIR, QUARANTINE_DIR, LOGS_DIR, SEEDS_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
 # HTTP settings
