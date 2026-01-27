@@ -9,7 +9,7 @@ import * as streamifier from 'streamifier';
 @Injectable()
 export class CloudinaryService {
   //File validation constants
-  private readonly MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  private readonly MAX_FILE_SIZE = 20 * 1024 * 1024; // 10MB
   private readonly ALLOWED_IMAGE_TYPES = [
     'image/jpeg',
     'image/jpg',

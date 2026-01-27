@@ -32,7 +32,7 @@ export class UserTestResultService {
     private readonly streakService: StreakService,
     private readonly writingService: UserWritingSubmissionService,
     private readonly speakingService: UserSpeakingSubmissionService,
-  ) { }
+  ) {}
 
   async findAllTestResultByIdUser(idUser: string) {
     const existingUser = await this.databaseService.user.findUnique({
@@ -178,7 +178,11 @@ export class UserTestResultService {
     );
 
     // 8. Pre-calculate user level changes if XP will be gained
-    let userLevelUpdate: { newXp: number; currentLevel: string; xpToNext: number } | null = null;
+    let userLevelUpdate: {
+      newXp: number;
+      currentLevel: string;
+      xpToNext: number;
+    } | null = null;
     if (xpGained > 0) {
       const user = await this.databaseService.user.findUnique({
         where: { idUser },
@@ -198,34 +202,36 @@ export class UserTestResultService {
     }
 
     // 9. Wrap all state changes in a transaction for atomicity
-    const updatedResult = await this.databaseService.$transaction(async (tx) => {
-      // Update user XP and level if gained
-      if (userLevelUpdate) {
-        await tx.user.update({
-          where: { idUser },
+    const updatedResult = await this.databaseService.$transaction(
+      async (tx) => {
+        // Update user XP and level if gained
+        if (userLevelUpdate) {
+          await tx.user.update({
+            where: { idUser },
+            data: {
+              xp: userLevelUpdate.newXp,
+              level: userLevelUpdate.currentLevel as any,
+              xpToNext: userLevelUpdate.xpToNext,
+            },
+          });
+        }
+
+        // Update test completion status
+        const result = await tx.userTestResult.update({
+          where: { idTestResult: idTestResult },
           data: {
-            xp: userLevelUpdate.newXp,
-            level: userLevelUpdate.currentLevel as any,
-            xpToNext: userLevelUpdate.xpToNext,
+            status: 'FINISHED',
+            finishedAt: new Date(),
+            total_correct: total_correct,
+            total_questions: allQuestions.length,
+            band_score: band_score,
+            score: total_correct,
           },
         });
-      }
 
-      // Update test completion status
-      const result = await tx.userTestResult.update({
-        where: { idTestResult: idTestResult },
-        data: {
-          status: 'FINISHED',
-          finishedAt: new Date(),
-          total_correct: total_correct,
-          total_questions: allQuestions.length,
-          band_score: band_score,
-          score: total_correct,
-        },
-      });
-
-      return result;
-    });
+        return result;
+      },
+    );
 
     // 10. Update streak AFTER transaction (non-critical, can fail independently)
     try {
@@ -705,6 +711,11 @@ export class UserTestResultService {
     if (correct >= 16) return 5.0;
     if (correct >= 13) return 4.5;
     if (correct >= 10) return 4.0;
+    if (correct >= 8) return 3.5;
+    if (correct >= 6) return 3.0;
+    if (correct >= 4) return 2.5;
+    if (correct >= 2) return 2.0;
+    if (correct >= 1) return 1.0;
     return 0.0;
   }
 
