@@ -28,10 +28,10 @@ export class WritingTaskController {
       type: 'object',
       properties: {
         idTest: { type: 'string', example: '123' },
-        task_type: { type: 'string', example: 'TASK1' },
+        taskType: { type: 'string', example: 'TASK1' },
         title: { type: 'string', example: 'title' },
         image: { type: 'string', format: 'binary' },
-        time_limit: { type: 'number', example: 60 },
+        timeLimit: { type: 'number', example: 60 },
       },
     },
   })
@@ -63,10 +63,10 @@ export class WritingTaskController {
       type: 'object',
       properties: {
         idTest: { type: 'string', example: '123' },
-        task_type: { type: 'string', example: 'TASK1' },
+        taskType: { type: 'string', example: 'TASK1' },
         title: { type: 'string', example: 'title' },
         image: { type: 'string', format: 'binary' },
-        time_limit: { type: 'number', example: 60 },
+        timeLimit: { type: 'number', example: 60 },
       },
     },
   })

@@ -14,7 +14,7 @@ export class WritingTaskService {
     createWritingTaskDto: CreateWritingTaskDto,
     file?: Express.Multer.File,
   ) {
-    const { idTest, task_type, title, time_limit } = createWritingTaskDto;
+    const { idTest, taskType, title, timeLimit } = createWritingTaskDto;
 
     const existingTest = await this.databaseService.test.findUnique({
       where: {
@@ -53,10 +53,10 @@ export class WritingTaskService {
           orderBy: { createdAt: 'asc' },
         });
 
-      // Nếu task_type của task mới giống với task cũ thì báo lỗi
-      if (existingWritingTask && existingWritingTask.task_type === task_type) {
+      // Nếu taskType của task mới giống với task cũ thì báo lỗi
+      if (existingWritingTask && existingWritingTask.taskType === taskType) {
         throw new BadRequestException(
-          `The second writing task must have a different type. First task is ${existingWritingTask.task_type}, cannot create another ${task_type}`,
+          `The second writing task must have a different type. First task is ${existingWritingTask.taskType}, cannot create another ${taskType}`,
         );
       }
     }
@@ -64,10 +64,10 @@ export class WritingTaskService {
     const data = await this.databaseService.writingTask.create({
       data: {
         idTest,
-        task_type,
+        taskType,
         title,
         image: image ?? null,
-        time_limit: Number(time_limit),
+        timeLimit: Number(timeLimit),
       },
     });
 
@@ -119,7 +119,7 @@ export class WritingTaskService {
     updateWritingTaskDto: UpdateWritingTaskDto,
     file?: Express.Multer.File,
   ) {
-    const { idTest, task_type, title, time_limit } = updateWritingTaskDto;
+    const { idTest, taskType, title, timeLimit } = updateWritingTaskDto;
 
     const existingWritingTask =
       await this.databaseService.writingTask.findUnique({
@@ -139,8 +139,8 @@ export class WritingTaskService {
 
     if (!existingTest) throw new BadRequestException('Test not found');
 
-    // Kiểm tra nếu task_type thay đổi thì phải khác với task khác trong cùng test
-    if (existingWritingTask.task_type !== task_type) {
+    // Kiểm tra nếu taskType thay đổi thì phải khác với task khác trong cùng test
+    if (existingWritingTask.taskType !== taskType) {
       // Lấy các writing tasks khác trong cùng test (trừ task đang update)
       const otherWritingTasks = await this.databaseService.writingTask.findMany(
         {
@@ -153,14 +153,14 @@ export class WritingTaskService {
         },
       );
 
-      // Kiểm tra xem task_type mới có trùng với task khác không
+      // Kiểm tra xem taskType mới có trùng với task khác không
       const hasSameTaskType = otherWritingTasks.some(
-        (task) => task.task_type === task_type,
+        (task) => task.taskType === taskType,
       );
 
       if (hasSameTaskType) {
         throw new BadRequestException(
-          `Cannot update task type to ${task_type}. Another writing task in this test already has this type`,
+          `Cannot update task type to ${taskType}. Another writing task in this test already has this type`,
         );
       }
     }
@@ -178,10 +178,10 @@ export class WritingTaskService {
       },
       data: {
         idTest,
-        task_type,
+        taskType,
         title,
         image: image ?? null,
-        time_limit: Number(time_limit),
+        timeLimit: Number(timeLimit),
       },
     });
 

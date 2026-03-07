@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { accountType, Gender, Level, Role } from '@prisma/client';
+import { AccountType, Gender, Level, Role } from '@prisma/client';
 import {
   IsEmail,
   IsEnum,
@@ -51,7 +51,7 @@ export class CreateUserDto {
   @IsOptional()
   address: string;
 
-  @ApiProperty({ example: 'LOCAL', enum: accountType })
-  @IsEnum(accountType)
-  accountType: accountType;
+  @ApiProperty({ example: 'LOCAL', enum: AccountType })
+  @IsEnum(AccountType)
+  accountType: AccountType;
 }

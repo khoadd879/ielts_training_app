@@ -18,5 +18,5 @@ export class CreateUserWritingSubmissionDto {
     example: 'This is my essay about global warming...',
     description: 'The user’s essay text',
   })
-  submission_text: string;
+  submissionText: string;
 }

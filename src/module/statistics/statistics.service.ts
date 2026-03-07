@@ -18,7 +18,7 @@ export class StatisticsService {
     const testResult = await this.prisma.userTestResult.findMany({
       where:{idUser, status: 'FINISHED'},
       select:{
-        band_score: true,
+        bandScore: true,
         test : {
           select: {
             testType: true
@@ -39,7 +39,7 @@ export class StatisticsService {
   };
 
     const averages = Object.entries(groupTest).map(([type, tests]) =>{
-    const scores = (tests as typeof testResult).map((t) => t.band_score);
+    const scores = (tests as typeof testResult).map((t) => t.bandScore);
     
     const rawAvg = scores.length
       ? scores.reduce((a, b) => a + b, 0) / scores.length
@@ -79,7 +79,7 @@ export class StatisticsService {
         status: 'FINISHED' 
       },
       select: {
-        band_score: true,
+        bandScore: true,
         createdAt: true,
         test: {
           select: {
@@ -111,7 +111,7 @@ export class StatisticsService {
         groupedByDate[dateKey][type] = { totalScore: 0, count: 0 };
       }
 
-      groupedByDate[dateKey][type].totalScore += result.band_score;
+      groupedByDate[dateKey][type].totalScore += result.bandScore;
       groupedByDate[dateKey][type].count += 1;
     });
 

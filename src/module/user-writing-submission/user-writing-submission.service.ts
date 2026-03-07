@@ -47,7 +47,7 @@ export class UserWritingSubmissionService {
     idTestResult: string,
     createUserWritingSubmissionDto: CreateUserWritingSubmissionDto,
   ) {
-    const { idUser, idWritingTask, submission_text } =
+    const { idUser, idWritingTask, submissionText } =
       createUserWritingSubmissionDto;
 
     // ✅ OPTIMIZATION: Validate data first (before expensive AI call)
@@ -75,13 +75,13 @@ export class UserWritingSubmissionService {
 
       console.log('🎨 Writing Task 1 with image - calling AI with visual analysis');
       aiResult = await this.evaluateWriting(
-        submission_text,
+        submissionText,
         writingTask.title,
         writingTask.image,
       );
     } else {
       console.log('📝 Writing Task 2 (no image) - calling AI for essay evaluation');
-      aiResult = await this.evaluateWriting(submission_text, writingTask.title);
+      aiResult = await this.evaluateWriting(submissionText, writingTask.title);
     }
 
     // ✅ OPTIMIZATION: Fast transaction - only DB writes (< 100ms)
@@ -91,31 +91,29 @@ export class UserWritingSubmissionService {
           idUser,
           idWritingTask,
           idTestResult: idTestResult,
-          submission_text,
-          status: 'GRADED',
+          submissionText,
+          aiGradingStatus: 'COMPLETED',
+          aiOverallScore: aiResult.score,
+          aiDetailedFeedback: {
+            taskResponse: aiResult.task_response,
+            coherenceAndCohesion: aiResult.coherence_and_cohesion,
+            lexicalResource: aiResult.lexical_resource,
+            grammaticalRangeAndAccuracy: aiResult.grammatical_range_and_accuracy,
+            generalFeedback: aiResult.general_feedback,
+            detailedCorrections: aiResult.detailed_corrections ?? [],
+          },
+          gradedAt: new Date(),
         },
       });
 
-      const feedback = await tx.feedback.create({
-        data: {
-          idWritingSubmission: submission.idWritingSubmission,
-          taskResponse: aiResult.task_response,
-          coherenceAndCohesion: aiResult.coherence_and_cohesion,
-          lexicalResource: aiResult.lexical_resource,
-          grammaticalRangeAndAccuracy: aiResult.grammatical_range_and_accuracy,
-          generalFeedback: aiResult.general_feedback,
-          detailedCorrections: aiResult.detailed_corrections ?? [],
-        },
-      });
-
-      return { ...submission, feedback };
+      return submission;
     });
 
     return {
       submissionId: data.idWritingSubmission,
       score: aiResult.score,
-      submission_text: data.submission_text,
-      feedback: data.feedback,
+      submissionText: data.submissionText,
+      aiDetailedFeedback: data.aiDetailedFeedback,
       status: 200,
     };
   }
@@ -237,21 +235,16 @@ export class UserWritingSubmissionService {
   async findAllByIdUser(idUser: string) {
     const submissions = await this.databaseService.userWritingSubmission.findMany({
       where: { idUser },
-      orderBy: { submitted_at: 'desc' },
+      orderBy: { submittedAt: 'desc' },
       include: {
         writingTask: {
-          select: { title: true, task_type: true }
+          select: { title: true, taskType: true }
         },
-        userTestResults: {
+        testResult: {
           select: {
-            band_score: true,
+            bandScore: true,
             idTest: true
           }
-        },
-        feedback: {
-          orderBy: { gradedAt: 'desc' },
-          take: 1,
-          select: { generalFeedback: true }
         },
       },
     });
@@ -259,10 +252,10 @@ export class UserWritingSubmissionService {
     const data = submissions.map(sub => ({
       idWritingSubmission: sub.idWritingSubmission,
       taskTitle: sub.writingTask?.title,
-      submittedAt: sub.submitted_at,
-      status: sub.status,
-      bandScore: sub.userTestResults?.band_score ?? 0, // <--- ĐÃ SỬA
-      generalFeedback: sub.feedback[0]?.generalFeedback
+      submittedAt: sub.submittedAt,
+      aiGradingStatus: sub.aiGradingStatus,
+      bandScore: sub.testResult?.bandScore ?? 0,
+      generalFeedback: (sub.aiDetailedFeedback as any)?.generalFeedback,
     }));
 
     return {
@@ -278,9 +271,8 @@ export class UserWritingSubmissionService {
       include: {
         writingTask: true,
         user: { select: { idUser: true, nameUser: true, avatar: true } },
-        feedback: { orderBy: { gradedAt: 'desc' } },
-        userTestResults: {
-          select: { band_score: true }
+        testResult: {
+          select: { bandScore: true }
         }
       },
     });
@@ -291,7 +283,7 @@ export class UserWritingSubmissionService {
       message: 'Details retrieved successfully',
       data: {
         ...submission,
-        band_score: submission.userTestResults?.band_score ?? 0
+        bandScore: submission.testResult?.bandScore ?? 0
       },
       status: 200,
     };
@@ -307,39 +299,38 @@ export class UserWritingSubmissionService {
         where: { idWritingSubmission },
         include: {
           writingTask: true,
-          //Lấy feedback mới nhất
-          feedback: {
-            orderBy: {
-              gradedAt: 'desc',
-            },
-            take: 1,
-          },
         },
       });
 
     if (!submission) throw new BadRequestException('Submission not found');
 
-    if (updateDto.status === 'GRADED') {
+    if ((updateDto as any).regrade) {
       const aiResult = await this.evaluateWriting(
-        submission.submission_text,
+        submission.submissionText,
         submission.writingTask.title,
       );
 
-      const updatedFeedback = await this.databaseService.feedback.create({
-        data: {
-          idWritingSubmission,
-          taskResponse: aiResult.task_response,
-          coherenceAndCohesion: aiResult.coherence_and_cohesion,
-          lexicalResource: aiResult.lexical_resource,
-          grammaticalRangeAndAccuracy: aiResult.grammatical_range_and_accuracy,
-          generalFeedback: aiResult.general_feedback,
-          detailedCorrections: aiResult.detailed_corrections ?? [],
-        },
-      });
+      const updatedSubmission =
+        await this.databaseService.userWritingSubmission.update({
+          where: { idWritingSubmission },
+          data: {
+            aiGradingStatus: 'COMPLETED',
+            aiOverallScore: aiResult.score,
+            aiDetailedFeedback: {
+              taskResponse: aiResult.task_response,
+              coherenceAndCohesion: aiResult.coherence_and_cohesion,
+              lexicalResource: aiResult.lexical_resource,
+              grammaticalRangeAndAccuracy: aiResult.grammatical_range_and_accuracy,
+              generalFeedback: aiResult.general_feedback,
+              detailedCorrections: aiResult.detailed_corrections ?? [],
+            },
+            gradedAt: new Date(),
+          },
+        });
 
       return {
         message: 'Submission re-graded successfully',
-        data: { ...submission, feedback: updatedFeedback },
+        data: updatedSubmission,
       };
     }
 

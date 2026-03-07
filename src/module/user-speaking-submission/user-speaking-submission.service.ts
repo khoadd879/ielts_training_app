@@ -150,28 +150,26 @@ export class UserSpeakingSubmissionService {
           audioUrl: audioUrl!,
           idTestResult: idTestResult || null,
           transcript: transcript || null,
-          status: 'GRADED',
+          aiGradingStatus: 'COMPLETED',
+          aiOverallScore: aiResult.overallScore,
+          aiDetailedFeedback: {
+            scoreFluency: aiResult.scoreFluency,
+            scoreLexical: aiResult.scoreLexical,
+            scoreGrammar: aiResult.scoreGrammar,
+            scorePronunciation: aiResult.scorePronunciation,
+            overallScore: aiResult.overallScore,
+            commentFluency: aiResult.commentFluency,
+            commentLexical: aiResult.commentLexical,
+            commentGrammar: aiResult.commentGrammar,
+            commentPronunciation: aiResult.commentPronunciation,
+            generalFeedback: aiResult.generalFeedback,
+            detailedCorrections: aiResult.detailedCorrections || [],
+          },
+          gradedAt: new Date(),
         },
       });
 
-      const feedback = await tx.speakingFeedback.create({
-        data: {
-          idSpeakingSubmission: submission.idSpeakingSubmission,
-          scoreFluency: aiResult.scoreFluency,
-          scoreLexical: aiResult.scoreLexical,
-          scoreGrammar: aiResult.scoreGrammar,
-          scorePronunciation: aiResult.scorePronunciation,
-          overallScore: aiResult.overallScore,
-          commentFluency: aiResult.commentFluency,
-          commentLexical: aiResult.commentLexical,
-          commentGrammar: aiResult.commentGrammar,
-          commentPronunciation: aiResult.commentPronunciation,
-          generalFeedback: aiResult.generalFeedback,
-          detailedCorrections: aiResult.detailedCorrections || [],
-        },
-      });
-
-      return { ...submission, feedback };
+      return submission;
     });
 
     return { message: 'Submission created successfully', data, status: 200 };

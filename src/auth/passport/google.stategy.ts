@@ -8,7 +8,7 @@ import {
 import googleOauthConfig from '../config/google-oauth.config';
 import type { ConfigType } from '@nestjs/config';
 import { AuthService } from '../auth.service';
-import { accountType } from '@prisma/client';
+import { AccountType } from '@prisma/client';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -38,7 +38,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         avatar: profile.photos?.[0]?.value,
         password: '',
         role: 'USER',
-        accountType: accountType.GOOGLE,
+        accountType: AccountType.GOOGLE,
         isActive: true,
         gender: 'Male',
         level: 'Low',

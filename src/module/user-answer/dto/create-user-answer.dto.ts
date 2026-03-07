@@ -1,36 +1,26 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { QuestionType } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsOptional, ValidateIf } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsObject } from 'class-validator';
 
 export class CreateUserAnswerDto {
   @IsNotEmpty()
-  @ApiProperty({ example: '123' })
+  @ApiProperty({ example: 'question-uuid' })
   idQuestion: string;
-
-  @ValidateIf((o) =>
-    [
-      QuestionType.TFNG,
-      QuestionType.YES_NO_NOTGIVEN,
-      QuestionType.FILL_BLANK,
-      QuestionType.SHORT_ANSWER,
-    ].includes(o.userAnswerType),
-  )
-  @ApiProperty({ example: 'Some text answer' })
-  answerText?: string;
 
   @IsNotEmpty()
   @IsEnum(QuestionType)
   @ApiProperty({
     enum: QuestionType,
-    description: 'Loại câu trả lời (MCQ, TEXT, MATCHING)',
+    example: 'MULTIPLE_CHOICE',
+    description: 'Mirrors the question type for filtering',
   })
-  userAnswerType: QuestionType;
+  answerType: QuestionType;
 
-  @ValidateIf((o) => o.userAnswerType === QuestionType.MATCHING)
-  @ApiProperty({ example: 'A' })
-  matching_key?: string;
-
-  @ValidateIf((o) => o.userAnswerType === QuestionType.MATCHING)
-  @ApiProperty({ example: '1' })
-  matching_value?: string;
+  @IsNotEmpty()
+  @IsObject()
+  @ApiProperty({
+    example: { type: 'MULTIPLE_CHOICE', selectedIndexes: [0] },
+    description: 'Structured answer payload (see UserAnswerPayload union type)',
+  })
+  answerPayload: Record<string, any>;
 }

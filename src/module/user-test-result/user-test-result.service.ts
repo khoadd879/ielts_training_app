@@ -19,9 +19,9 @@ import { FinishTestSpeakingDto } from './dto/finish-test-speaking.dto';
 
 export interface SubmissionDetail {
   idWritingTask: string;
-  task_type: string;
-  submission_text: string;
-  feedback: any; // Bạn có thể thay any bằng type Feedback cụ thể nếu muốn chuẩn hơn
+  taskType: string;
+  submissionText: string;
+  aiDetailedFeedback: any;
   score: number;
 }
 
@@ -50,7 +50,7 @@ export class UserTestResultService {
       },
       include: {
         test: true,
-        userAnswer: true,
+        userAnswers: true,
       },
     });
 
@@ -158,12 +158,12 @@ export class UserTestResultService {
 
     // 5. Grade all user answers (calculate BEFORE transaction to minimize lock time)
     const gradingResults = await this.gradeAllAnswers(
-      testResult.userAnswer,
+      testResult.userAnswers,
       allQuestions,
     );
 
     // 6. Calculate scores (BEFORE transaction)
-    const { total_correct, band_score } = this.calculateScores(
+    const { totalCorrect, bandScore } = this.calculateScores(
       gradingResults,
       allQuestions.length,
     );
@@ -174,7 +174,7 @@ export class UserTestResultService {
       testResult.idTest,
       idTestResult,
       testResult.test.level,
-      band_score,
+      bandScore,
     );
 
     // 8. Pre-calculate user level changes if XP will be gained
@@ -222,10 +222,10 @@ export class UserTestResultService {
           data: {
             status: 'FINISHED',
             finishedAt: new Date(),
-            total_correct: total_correct,
-            total_questions: allQuestions.length,
-            band_score: band_score,
-            score: total_correct,
+            totalCorrect: totalCorrect,
+            totalQuestions: allQuestions.length,
+            bandScore: bandScore,
+            score: totalCorrect,
           },
         });
 
@@ -244,9 +244,9 @@ export class UserTestResultService {
       message: 'Test finished successfully!',
       data: {
         xpGained,
-        band_score,
-        total_correct,
-        total_questions: allQuestions.length,
+        bandScore,
+        totalCorrect,
+        totalQuestions: allQuestions.length,
         finishedAt: updatedResult.finishedAt,
       },
       status: 200,
@@ -261,7 +261,6 @@ export class UserTestResultService {
   }
 
   private async getTestResultWithDetails(idTestResult: string, idUser: string) {
-    // ✅ OPTIMIZED: Use select instead of include to fetch only needed fields
     const testResult = await this.databaseService.userTestResult.findFirst({
       where: {
         idTestResult: idTestResult,
@@ -274,14 +273,12 @@ export class UserTestResultService {
         status: true,
         startedAt: true,
         finishedAt: true,
-        userAnswer: {
+        userAnswers: {
           select: {
             idUserAnswer: true,
             idQuestion: true,
-            answerText: true,
-            matching_key: true,
-            matching_value: true,
-            userAnswerType: true,
+            answerType: true,
+            answerPayload: true,
             isCorrect: true,
           },
         },
@@ -292,23 +289,17 @@ export class UserTestResultService {
             parts: {
               select: {
                 idPart: true,
-                groupOfQuestions: {
+                questionGroups: {
                   select: {
-                    idGroupOfQuestions: true,
-                    typeQuestion: true,
-                    question: {
+                    idQuestionGroup: true,
+                    questionType: true,
+                    questions: {
                       select: {
                         idQuestion: true,
-                        numberQuestion: true,
+                        questionNumber: true,
+                        questionType: true,
                         content: true,
-                        answers: {
-                          select: {
-                            idAnswer: true,
-                            answer_text: true,
-                            matching_key: true,
-                            matching_value: true,
-                          },
-                        },
+                        metadata: true,
                       },
                     },
                   },
@@ -337,8 +328,8 @@ export class UserTestResultService {
 
   private extractAllQuestions(testResult: any) {
     return testResult.test.parts
-      .flatMap((p) => p.groupOfQuestions)
-      .flatMap((g) => g.question);
+      .flatMap((p) => p.questionGroups)
+      .flatMap((g) => g.questions);
   }
 
   private async gradeAllAnswers(userAnswers: any[], allQuestions: any[]) {
@@ -393,117 +384,114 @@ export class UserTestResultService {
     return gradingResults.map((r) => r.score);
   }
 
+  /**
+   * Grade a single user answer against the question's metadata.
+   * The metadata JSONB contains all correct answers per question type.
+   */
   private gradeUserAnswer(uAnswer: any, questionData: any): boolean {
-    const answerType = uAnswer.userAnswerType;
+    const metadata = questionData.metadata as any;
+    if (!metadata) return false;
 
-    switch (answerType) {
-      case 'MCQ':
-        return this.gradeMCQ(uAnswer, questionData);
+    const answerPayload = uAnswer.answerPayload as any;
+    if (!answerPayload) return false;
 
-      case 'MATCHING':
-        return this.gradeMatching(uAnswer, questionData);
+    const qType = questionData.questionType;
 
-      case 'LABELING':
-        return this.gradeLabeling(uAnswer, questionData);
+    switch (qType) {
+      case 'MULTIPLE_CHOICE':
+        return this.gradeMCQ(answerPayload, metadata);
 
+      case 'TRUE_FALSE_NOT_GIVEN':
+      case 'YES_NO_NOT_GIVEN':
+        return this.gradeTFNG(answerPayload, metadata);
+
+      case 'MATCHING_HEADING':
+        return this.gradeMatchingHeading(answerPayload, metadata);
+
+      case 'MATCHING_INFORMATION':
+        return this.gradeMatchingInformation(answerPayload, metadata);
+
+      case 'MATCHING_FEATURES':
+        return this.gradeMatchingFeatures(answerPayload, metadata);
+
+      case 'MATCHING_SENTENCE_ENDINGS':
+        return this.gradeMatchingSentenceEndings(answerPayload, metadata);
+
+      case 'SENTENCE_COMPLETION':
+      case 'SUMMARY_COMPLETION':
+      case 'NOTE_COMPLETION':
+      case 'TABLE_COMPLETION':
+      case 'FLOW_CHART_COMPLETION':
       case 'SHORT_ANSWER':
-      case 'FILL_BLANK':
-      case 'YES_NO_NOTGIVEN':
-        return this.gradeTextAnswer(uAnswer, questionData);
+        return this.gradeFillIn(answerPayload, metadata);
+
+      case 'DIAGRAM_LABELING':
+        return this.gradeFillIn(answerPayload, metadata);
 
       default:
-        // Default to text comparison for unknown types
-        return this.gradeTextAnswer(uAnswer, questionData);
+        return false;
     }
   }
 
-  private gradeMCQ(uAnswer: any, questionData: any): boolean {
-    const correctKeys = questionData.answers
-      .filter((a) => a.matching_value === 'CORRECT')
-      .map((a) => a.matching_key?.trim().toUpperCase());
+  private gradeMCQ(payload: any, metadata: any): boolean {
+    const correctIndexes: number[] = metadata.correctOptionIndexes ?? [];
+    const selectedIndexes: number[] = payload.selectedIndexes ?? [];
 
-    let userSelectedKeys: string[] = [];
-    if (uAnswer.matching_key) {
-      userSelectedKeys = [uAnswer.matching_key.trim().toUpperCase()];
-    } else if (uAnswer.answerText) {
-      userSelectedKeys = uAnswer.answerText
-        .split(',')
-        .map((s) => s.trim().toUpperCase());
-    }
+    if (correctIndexes.length === 0 || selectedIndexes.length === 0) return false;
+    if (correctIndexes.length !== selectedIndexes.length) return false;
 
-    if (correctKeys.length > 0 && userSelectedKeys.length > 0) {
-      return userSelectedKeys.every((key) => correctKeys.includes(key));
-    }
-
-    return false;
+    const sortedCorrect = [...correctIndexes].sort();
+    const sortedSelected = [...selectedIndexes].sort();
+    return sortedCorrect.every((v, i) => v === sortedSelected[i]);
   }
 
-  private gradeMatching(uAnswer: any, questionData: any): boolean {
-    // User's selected matching key (e.g., "ix", "iii", "vii")
-    const userKey = uAnswer.matching_key?.trim().toLowerCase();
+  private gradeTFNG(payload: any, metadata: any): boolean {
+    const correctAnswer = metadata.correctAnswer?.toUpperCase()?.trim();
+    const userAnswer = payload.answer?.toUpperCase()?.trim();
+    return correctAnswer === userAnswer;
+  }
 
-    // If user didn't select anything, it's wrong
-    if (!userKey) return false;
+  private gradeMatchingHeading(payload: any, metadata: any): boolean {
+    const correctIndex = metadata.correctHeadingIndex;
+    const headings = metadata.headings ?? [];
+    if (correctIndex == null || !headings[correctIndex]) return false;
 
-    // Find the correct answer by checking which answer has matching_value = 'CORRECT'
-    const correctAnswer = questionData.answers.find(
-      (a) => a.matching_value === 'CORRECT',
+    const selectedLabel = payload.selectedLabel?.trim()?.toUpperCase();
+    const correctLabel = headings[correctIndex]?.label?.trim()?.toUpperCase();
+    return selectedLabel === correctLabel;
+  }
+
+  private gradeMatchingInformation(payload: any, metadata: any): boolean {
+    const correctParagraph = metadata.correctParagraph?.trim()?.toUpperCase();
+    const selectedLabel = payload.selectedLabel?.trim()?.toUpperCase();
+    return correctParagraph === selectedLabel;
+  }
+
+  private gradeMatchingFeatures(payload: any, metadata: any): boolean {
+    const correctLabel = metadata.correctFeatureLabel?.trim()?.toUpperCase();
+    const selectedLabel = payload.selectedLabel?.trim()?.toUpperCase();
+    return correctLabel === selectedLabel;
+  }
+
+  private gradeMatchingSentenceEndings(payload: any, metadata: any): boolean {
+    const correctLabel = metadata.correctEndingLabel?.trim()?.toUpperCase();
+    const selectedLabel = payload.selectedLabel?.trim()?.toUpperCase();
+    return correctLabel === selectedLabel;
+  }
+
+  private gradeFillIn(payload: any, metadata: any): boolean {
+    const correctAnswers: string[] = metadata.correctAnswers ?? [];
+    const userText = payload.answerText?.trim();
+    if (!userText) return false;
+
+    const normalizedUser = this.normalizeText(userText);
+    return correctAnswers.some(
+      (correct) => this.normalizeText(correct) === normalizedUser,
     );
-
-    if (!correctAnswer || !correctAnswer.matching_key) return false;
-
-    // Compare user's key with the correct answer's key
-    return userKey === correctAnswer.matching_key.trim().toLowerCase();
   }
 
-  private gradeLabeling(uAnswer: any, questionData: any): boolean {
-    const userKey = uAnswer.matching_key?.trim().toUpperCase();
-
-    // Check if user's matching_key exists in DB with matching_value = 'CORRECT'
-    return questionData.answers.some(
-      (a) =>
-        a.matching_key?.trim().toUpperCase() === userKey &&
-        a.matching_value === 'CORRECT',
-    );
-  }
-
-  /**
-   * Normalize text for flexible answer comparison
-   * - Converts to lowercase
-   * - Removes punctuation
-   * - Collapses multiple spaces into one
-   */
   private normalizeText(text: string): string {
-    return text
-      .toLowerCase()
-      .replace(/[.,?!\-:;'"()\[\]]/g, '') // Remove common punctuation
-      .replace(/\s+/g, ' ') // Collapse multiple spaces
-      .trim();
-  }
-
-  private gradeTextAnswer(uAnswer: any, questionData: any): boolean {
-    // If user left answer blank
-    if (!uAnswer.answerText || uAnswer.answerText.trim() === '') {
-      return false;
-    }
-
-    const userTextNormalized = this.normalizeText(uAnswer.answerText);
-
-    // Check if user's text matches ANY correct answer (normalized comparison)
-    return questionData.answers.some((a) => {
-      const dbAnswerText = a.answer_text
-        ? this.normalizeText(a.answer_text)
-        : '';
-      const dbMatchingValue = a.matching_value
-        ? this.normalizeText(a.matching_value)
-        : '';
-
-      // Match with either answer_text or matching_value in DB
-      return (
-        (dbAnswerText && dbAnswerText === userTextNormalized) ||
-        (dbMatchingValue && dbMatchingValue === userTextNormalized)
-      );
-    });
+    return text.toLowerCase().trim().replace(/\s+/g, ' ');
   }
 
   /**
@@ -522,13 +510,13 @@ export class UserTestResultService {
    * Calculate total correct and band score
    */
   private calculateScores(gradingResults: number[], totalQuestions: number) {
-    const total_correct = gradingResults.reduce((sum, val) => sum + val, 0);
-    const band_score = this.calculateIELTSBandScore(
-      total_correct,
+    const totalCorrect = gradingResults.reduce((sum, val) => sum + val, 0);
+    const bandScore = this.calculateIELTSBandScore(
+      totalCorrect,
       totalQuestions,
     );
 
-    return { total_correct, band_score };
+    return { totalCorrect, bandScore };
   }
 
   /**
@@ -539,7 +527,7 @@ export class UserTestResultService {
     idTest: string,
     currentTestResultId: string,
     level: 'Low' | 'Mid' | 'High' | 'Great',
-    band_score: number,
+    bandScore: number,
   ): Promise<number> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -556,7 +544,7 @@ export class UserTestResultService {
       });
 
     // Only award XP if this is the first completion today
-    return alreadyCompletedToday ? 0 : this.calculateXp(level, band_score);
+    return alreadyCompletedToday ? 0 : this.calculateXp(level, bandScore);
   }
 
   /**
@@ -581,19 +569,19 @@ export class UserTestResultService {
    */
   private async updateTestCompletion(
     idTestResult: string,
-    total_correct: number,
-    total_questions: number,
-    band_score: number,
+    totalCorrect: number,
+    totalQuestions: number,
+    bandScore: number,
   ) {
     return await this.databaseService.userTestResult.update({
       where: { idTestResult: idTestResult },
       data: {
         status: 'FINISHED',
         finishedAt: new Date(),
-        total_correct: total_correct,
-        total_questions: total_questions,
-        band_score: band_score,
-        score: total_correct,
+        totalCorrect: totalCorrect,
+        totalQuestions: totalQuestions,
+        bandScore: bandScore,
+        score: totalCorrect,
       },
     });
   }
@@ -741,16 +729,12 @@ export class UserTestResultService {
             include: {
               writingTasks: {
                 orderBy: {
-                  task_type: 'asc',
+                  taskType: 'asc',
                 },
               },
             },
           },
-          writingSubmission: {
-            include: {
-              feedback: true,
-            },
-          },
+          writingSubmissions: true,
         },
       });
     } else if (testInfo?.test.testType === TestType.SPEAKING) {
@@ -772,11 +756,7 @@ export class UserTestResultService {
               },
             },
           },
-          speakingSubmission: {
-            include: {
-              feedback: true,
-            },
-          },
+          speakingSubmissions: true,
         },
       });
     } else {
@@ -789,18 +769,18 @@ export class UserTestResultService {
           updatedAt: 'desc',
         },
         include: {
-          userAnswer: true,
+          userAnswers: true,
           test: {
             include: {
               parts: {
+                orderBy: { order: 'asc' },
                 include: {
                   passage: true,
-                  groupOfQuestions: {
+                  questionGroups: {
+                    orderBy: { order: 'asc' },
                     include: {
-                      question: {
-                        include: {
-                          answers: true,
-                        },
+                      questions: {
+                        orderBy: { order: 'asc' },
                       },
                     },
                   },
@@ -851,18 +831,18 @@ export class UserTestResultService {
     if (body?.writingSubmissions && body.writingSubmissions.length > 0) {
       // ✅ OPTIMIZATION 1: Prefetch all writing tasks in one query (avoid N+1)
       const taskIds = body.writingSubmissions
-        .filter((s) => s.submission_text?.trim())
+        .filter((s) => s.submissionText?.trim())
         .map((s) => s.idWritingTask);
 
       const tasks = await this.databaseService.writingTask.findMany({
         where: { idWritingTask: { in: taskIds } },
-        select: { idWritingTask: true, task_type: true },
+        select: { idWritingTask: true, taskType: true },
       });
       const taskMap = new Map(tasks.map((t) => [t.idWritingTask, t]));
 
       // ✅ OPTIMIZATION 2: Parallel AI grading (instead of sequential)
       const gradingPromises = body.writingSubmissions
-        .filter((s) => s.submission_text?.trim())
+        .filter((s) => s.submissionText?.trim())
         .map(async (submission) => {
           const taskInfo = taskMap.get(submission.idWritingTask);
           if (!taskInfo) return null;
@@ -875,7 +855,7 @@ export class UserTestResultService {
                 {
                   idUser: idUser,
                   idWritingTask: submission.idWritingTask,
-                  submission_text: submission.submission_text,
+                  submissionText: submission.submissionText,
                 },
               );
 
@@ -904,15 +884,15 @@ export class UserTestResultService {
 
         submissionsDetails.push({
           idWritingTask: taskInfo.idWritingTask,
-          task_type: taskInfo.task_type,
-          submission_text: result.submission_text,
-          feedback: result.feedback,
+          taskType: taskInfo.taskType,
+          submissionText: result.submissionText,
+          aiDetailedFeedback: result.aiDetailedFeedback,
           score: result.score,
         });
 
-        if (taskInfo.task_type === WritingTaskType.TASK1) {
+        if (taskInfo.taskType === WritingTaskType.TASK1) {
           scoreTask1 = result.score;
-        } else if (taskInfo.task_type === WritingTaskType.TASK2) {
+        } else if (taskInfo.taskType === WritingTaskType.TASK2) {
           scoreTask2 = result.score;
         } else {
           scoreTask1 += result.score;
@@ -922,14 +902,14 @@ export class UserTestResultService {
 
     let rawScore = (scoreTask1 + scoreTask2 * 2) / 3;
 
-    let band_score = Math.round(rawScore * 2) / 2;
+    let bandScore = Math.round(rawScore * 2) / 2;
 
     const xpGained = await this.calculateXpGained(
       idUser,
       testResult.idTest,
       idTestResult,
       testResult.test.level,
-      band_score,
+      bandScore,
     );
 
     await this.handleXpAndStreak(idUser, xpGained);
@@ -939,8 +919,8 @@ export class UserTestResultService {
       data: {
         status: 'FINISHED',
         finishedAt: new Date(),
-        band_score: band_score,
-        total_questions: submittedCount,
+        bandScore: bandScore,
+        totalQuestions: submittedCount,
       },
     });
 
@@ -949,14 +929,14 @@ export class UserTestResultService {
       data: {
         idTestResult,
         xpGained,
-        band_score,
+        bandScore,
         breakdown: {
-          task1_score: scoreTask1,
-          task2_score: scoreTask2,
+          task1Score: scoreTask1,
+          task2Score: scoreTask2,
         },
         submissions: submissionsDetails,
         finishedAt: updatedResult.finishedAt,
-        submissions_count: submittedCount,
+        submissionsCount: submittedCount,
       },
       status: 200,
     };
@@ -1035,7 +1015,7 @@ export class UserTestResultService {
           audioFiles[0], // File audio
         );
 
-        const score = result.data?.feedback?.overallScore || 0;
+        const score = (result.data?.aiDetailedFeedback as any)?.overallScore || result.data?.aiOverallScore || 0;
 
         const partIndex = partScores.findIndex((p) => p.part === partType);
         if (partIndex !== -1) {
@@ -1047,7 +1027,7 @@ export class UserTestResultService {
           idSpeakingSubmission: result.data?.idSpeakingSubmission,
           audioUrl: result.data?.audioUrl,
           transcript: result.data?.transcript,
-          feedback: result.data?.feedback,
+          aiDetailedFeedback: result.data?.aiDetailedFeedback,
           score,
         });
       }
@@ -1061,14 +1041,14 @@ export class UserTestResultService {
 
     const totalScore = partScores.reduce((sum, p) => sum + p.score, 0);
     const submittedPartsCount = submissionsDetails.length;
-    let band_score;
+    let bandScore: number;
 
     const totalTasks = testResult.test._count.speakingTasks;
 
     if (totalTasks > 0) {
-      band_score = Math.round((totalScore / totalTasks) * 2) / 2;
+      bandScore = Math.round((totalScore / totalTasks) * 2) / 2;
     } else {
-      band_score = 0;
+      bandScore = 0;
     }
 
     const xpGained = await this.calculateXpGained(
@@ -1076,7 +1056,7 @@ export class UserTestResultService {
       testResult.idTest,
       idTestResult,
       testResult.test.level,
-      band_score,
+      bandScore,
     );
 
     // 5. Update Streak & XP
@@ -1088,8 +1068,8 @@ export class UserTestResultService {
       data: {
         status: 'FINISHED',
         finishedAt: new Date(),
-        band_score: band_score,
-        total_questions: submittedPartsCount,
+        bandScore: bandScore,
+        totalQuestions: submittedPartsCount,
       },
     });
 
@@ -1098,7 +1078,7 @@ export class UserTestResultService {
       data: {
         idTestResult,
         xpGained,
-        band_score,
+        bandScore,
         breakdown: partScores.reduce(
           (acc, p) => {
             acc[p.part] = p.score;
@@ -1108,7 +1088,7 @@ export class UserTestResultService {
         ),
         submissions: submissionsDetails,
         finishedAt: updatedResult.finishedAt,
-        submissions_count: submittedPartsCount,
+        submissionsCount: submittedPartsCount,
       },
       status: 200,
     };

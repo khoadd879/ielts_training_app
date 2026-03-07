@@ -23,7 +23,7 @@ export class RecommendTestService {
     const userHistory = await this.databaseService.userTestResult.findMany({
       where: { idUser, status: 'FINISHED' },
       select: {
-        band_score: true,
+        bandScore: true,
         test: { select: { testType: true, level: true, idTest: true } },
       },
     });
@@ -102,7 +102,7 @@ export class RecommendTestService {
     let totalBand = 0;
     for (const record of history) {
       const type = record.test.testType;
-      const score = record.band_score || 0;
+      const score = record.bandScore || 0;
       if (!skillStats[type]) skillStats[type] = { total: 0, count: 0 };
       skillStats[type].total += score;
       skillStats[type].count += 1;

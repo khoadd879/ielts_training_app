@@ -1,15 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { WritingStatus } from '@prisma/client';
+import { GradingStatus } from '@prisma/client';
 import { IsEnum, IsOptional } from 'class-validator';
 
 export class UpdateUserWritingSubmissionDto {
   @IsOptional()
-  @IsEnum(WritingStatus)
+  @IsEnum(GradingStatus)
   @ApiProperty({
-    enum: WritingStatus,
-    example: WritingStatus.GRADED,
-    description: 'The status of the submission (e.g., triggering a re-grade)',
+    enum: GradingStatus,
+    example: GradingStatus.COMPLETED,
+    description: 'The grading status of the submission',
     required: false,
   })
-  status?: WritingStatus;
+  aiGradingStatus?: GradingStatus;
 }

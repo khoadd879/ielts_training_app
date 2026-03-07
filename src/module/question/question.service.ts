@@ -1,43 +1,32 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { DatabaseService } from 'src/database/database.service';
-import { CreateQuestionAndAnswerDto } from './dto/create-question-and-answer.dto';
-import { UpdateManyQuestionsDto } from './dto/update-many-questions.dto';
-
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class QuestionService {
   constructor(private readonly databaseService: DatabaseService) {}
-  async createQuestion(createQuestionDto: CreateQuestionDto) {
-    const { idGroupOfQuestions, idPart, numberQuestion, content } =
-      createQuestionDto;
 
-    const existingGroupOfQuestions =
-      await this.databaseService.groupOfQuestions.findUnique({
-        where: {
-          idGroupOfQuestions,
-        },
-      });
-
-    if (!existingGroupOfQuestions)
-      throw new BadRequestException('Group of questions not found');
+  async createQuestion(dto: CreateQuestionDto) {
+    const existingGroup = await this.databaseService.questionGroup.findUnique({
+      where: { idQuestionGroup: dto.idQuestionGroup },
+    });
+    if (!existingGroup) throw new BadRequestException('Question group not found');
 
     const existingPart = await this.databaseService.part.findUnique({
-      where: {
-        idPart,
-      },
+      where: { idPart: dto.idPart },
     });
-
-    if (!existingPart) return new BadRequestException('Part not found');
+    if (!existingPart) throw new BadRequestException('Part not found');
 
     const data = await this.databaseService.question.create({
       data: {
-        idGroupOfQuestions,
-        idPart,
-        numberQuestion,
-        content,
+        idQuestionGroup: dto.idQuestionGroup,
+        idPart: dto.idPart,
+        questionNumber: dto.questionNumber,
+        content: dto.content,
+        questionType: dto.questionType,
+        metadata: dto.metadata,
+        order: dto.order ?? 0,
       },
     });
 
@@ -48,28 +37,19 @@ export class QuestionService {
     };
   }
 
-  async findByIdGroupOfQuestion(idGroupOfQuestions: string) {
-    const existingGroupOfQuestions =
-      await this.databaseService.groupOfQuestions.findUnique({
-        where: {
-          idGroupOfQuestions,
-        },
-      });
-
-    if (!existingGroupOfQuestions)
-      throw new BadRequestException('Group of questions not found');
+  async findByQuestionGroup(idQuestionGroup: string) {
+    const existingGroup = await this.databaseService.questionGroup.findUnique({
+      where: { idQuestionGroup },
+    });
+    if (!existingGroup) throw new BadRequestException('Question group not found');
 
     const data = await this.databaseService.question.findMany({
-      where: {
-        idGroupOfQuestions,
-      },
-      orderBy: {
-        numberQuestion: 'asc',
-      },
+      where: { idQuestionGroup },
+      orderBy: { order: 'asc' },
     });
 
     return {
-      message: 'Question retrieved successfully',
+      message: 'Questions retrieved successfully',
       data,
       status: 200,
     };
@@ -77,10 +57,9 @@ export class QuestionService {
 
   async findById(idQuestion: string) {
     const data = await this.databaseService.question.findUnique({
-      where: {
-        idQuestion,
-      },
+      where: { idQuestion },
     });
+    if (!data) throw new NotFoundException('Question not found');
 
     return {
       message: 'Question retrieved successfully',
@@ -89,62 +68,52 @@ export class QuestionService {
     };
   }
 
-  async updateQuestion(
-    idQuestion: string,
-    updateQuestionDto: UpdateQuestionDto,
-  ) {
-    const { idGroupOfQuestions, idPart, numberQuestion, content } =
-      updateQuestionDto;
-
-    const existingGroupOfQuestions =
-      await this.databaseService.groupOfQuestions.findUnique({
-        where: {
-          idGroupOfQuestions,
-        },
-      });
-
-    if (!existingGroupOfQuestions)
-      throw new BadRequestException('Group of questions not found');
-
-    const existingPart = await this.databaseService.part.findUnique({
-      where: {
-        idPart,
-      },
+  async updateQuestion(idQuestion: string, dto: UpdateQuestionDto) {
+    const existing = await this.databaseService.question.findUnique({
+      where: { idQuestion },
     });
+    if (!existing) throw new NotFoundException('Question not found');
 
-    if (!existingPart) return new BadRequestException('Part not found');
+    if (dto.idQuestionGroup) {
+      const group = await this.databaseService.questionGroup.findUnique({
+        where: { idQuestionGroup: dto.idQuestionGroup },
+      });
+      if (!group) throw new BadRequestException('Question group not found');
+    }
+
+    if (dto.idPart) {
+      const part = await this.databaseService.part.findUnique({
+        where: { idPart: dto.idPart },
+      });
+      if (!part) throw new BadRequestException('Part not found');
+    }
 
     const data = await this.databaseService.question.update({
-      where: {
-        idQuestion,
-      },
+      where: { idQuestion },
       data: {
-        idGroupOfQuestions,
-        idPart,
-        numberQuestion,
-        content,
+        ...(dto.idQuestionGroup && { idQuestionGroup: dto.idQuestionGroup }),
+        ...(dto.idPart && { idPart: dto.idPart }),
+        ...(dto.questionNumber !== undefined && { questionNumber: dto.questionNumber }),
+        ...(dto.content && { content: dto.content }),
+        ...(dto.questionType && { questionType: dto.questionType }),
+        ...(dto.metadata && { metadata: dto.metadata }),
+        ...(dto.order !== undefined && { order: dto.order }),
       },
     });
 
     return {
-      message: 'Question created successfully',
+      message: 'Question updated successfully',
       data,
       status: 200,
     };
   }
 
   async removeQuestion(idQuestion: string) {
-    const existingQuestion = await this.databaseService.question.findUnique({
-      where: {
-        idQuestion,
-      },
+    const existing = await this.databaseService.question.findUnique({
+      where: { idQuestion },
     });
+    if (!existing) throw new NotFoundException('Question not found');
 
-    if (!existingQuestion) {
-      throw new BadRequestException('Question not found');
-    }
-
-    // khi đã bật cascade ở Prisma, chỉ cần xóa question
     await this.databaseService.question.delete({ where: { idQuestion } });
 
     return {
@@ -153,35 +122,25 @@ export class QuestionService {
     };
   }
 
-  async createManyQuestions(createQuestionsDto: CreateQuestionAndAnswerDto[]) {
-    if (!Array.isArray(createQuestionsDto) || createQuestionsDto.length === 0) {
-      throw new BadRequestException(
-        'Payload must be a non-empty array of questions',
-      );
+  async createManyQuestions(questions: CreateQuestionDto[]) {
+    if (!Array.isArray(questions) || questions.length === 0) {
+      throw new BadRequestException('Payload must be a non-empty array of questions');
     }
 
-    // collect unique ids to reduce DB calls
-    const groupIds = Array.from(
-      new Set(createQuestionsDto.map((q) => q.idGroupOfQuestions)),
-    );
-    const partIds = Array.from(
-      new Set(createQuestionsDto.map((q) => q.idPart)),
-    );
+    // Validate unique references
+    const groupIds = [...new Set(questions.map((q) => q.idQuestionGroup))];
+    const partIds = [...new Set(questions.map((q) => q.idPart))];
 
-    // validate groups
-    const groups = await this.databaseService.groupOfQuestions.findMany({
-      where: { idGroupOfQuestions: { in: groupIds } },
-      select: { idGroupOfQuestions: true },
+    const groups = await this.databaseService.questionGroup.findMany({
+      where: { idQuestionGroup: { in: groupIds } },
+      select: { idQuestionGroup: true },
     });
-    const foundGroupIds = new Set(groups.map((g) => g.idGroupOfQuestions));
+    const foundGroupIds = new Set(groups.map((g) => g.idQuestionGroup));
     const missingGroup = groupIds.find((id) => !foundGroupIds.has(id));
     if (missingGroup) {
-      throw new BadRequestException(
-        `Group of questions not found: ${missingGroup}`,
-      );
+      throw new BadRequestException(`Question group not found: ${missingGroup}`);
     }
 
-    // validate parts
     const parts = await this.databaseService.part.findMany({
       where: { idPart: { in: partIds } },
       select: { idPart: true },
@@ -192,186 +151,38 @@ export class QuestionService {
       throw new BadRequestException(`Part not found: ${missingPart}`);
     }
 
-    // check duplicate numberQuestion within input per group
+    // Check duplicate questionNumber within each group
     const seen = new Set<string>();
-    for (const q of createQuestionsDto) {
-      const key = `${q.idGroupOfQuestions}:${q.numberQuestion}`;
+    for (const q of questions) {
+      const key = `${q.idQuestionGroup}:${q.questionNumber}`;
       if (seen.has(key)) {
         throw new BadRequestException(
-          `Duplicate numberQuestion ${q.numberQuestion} in group ${q.idGroupOfQuestions} in payload`,
+          `Duplicate questionNumber ${q.questionNumber} in group ${q.idQuestionGroup}`,
         );
       }
       seen.add(key);
     }
 
-    // create each question inside a single transaction so we get created records (with ids)
-    const createOps = createQuestionsDto.map((q) => {
-      const questionData = {
-        idGroupOfQuestions: q.idGroupOfQuestions,
-        idPart: q.idPart,
-        numberQuestion: q.numberQuestion,
-        content: q.content,
-      };
-
-      const answerData = q.answers?.map((a) => ({
-        answer_text: a.answer_text,
-        matching_key: a.matching_key,
-        matching_value: a.matching_value,
-      }));
-
-      return this.databaseService.question.create({
+    // Create all questions in a transaction
+    const createOps = questions.map((q) =>
+      this.databaseService.question.create({
         data: {
-          ...questionData,
-          answers: {
-            create: answerData || [],
-          },
+          idQuestionGroup: q.idQuestionGroup,
+          idPart: q.idPart,
+          questionNumber: q.questionNumber,
+          content: q.content,
+          questionType: q.questionType,
+          metadata: q.metadata,
+          order: q.order ?? 0,
         },
-        include: {
-          answers: true,
-        },
-      });
-    });
+      }),
+    );
 
-    // $transaction will run all creates and return an array of created records
     const createdRecords = await this.databaseService.$transaction(createOps);
 
     return {
       message: 'Questions created successfully',
       data: createdRecords,
-      status: 200,
-    };
-  }
-
-  async updateManyQuestions(updateManyQuestionsDto: UpdateManyQuestionsDto) {
-    const questionsToUpdate = updateManyQuestionsDto.questions;
-
-    if (!Array.isArray(questionsToUpdate) || questionsToUpdate.length === 0) {
-      throw new BadRequestException(
-        'Payload must be a non-empty array of questions',
-      );
-    }
-
-    const questionIds = Array.from(
-      new Set(questionsToUpdate.map((q) => q.idQuestion)),
-    );
-    const groupIds = Array.from(
-      new Set(questionsToUpdate.map((q) => q.idGroupOfQuestions)),
-    ).filter(Boolean) as string[];
-    const partIds = Array.from(
-      new Set(questionsToUpdate.map((q) => q.idPart)),
-    ).filter(Boolean) as string[];
-
-    // Validate existence of questions
-    const existingQuestions = await this.databaseService.question.findMany({
-      where: { idQuestion: { in: questionIds } },
-      select: { idQuestion: true },
-    });
-    const foundQuestionIds = new Set(
-      existingQuestions.map((q) => q.idQuestion),
-    );
-    const missingQuestion = questionIds.find((id) => !foundQuestionIds.has(id));
-    if (missingQuestion) {
-      throw new BadRequestException(`Question not found: ${missingQuestion}`);
-    }
-
-    // Validate groups (only if groupIds are provided in the update payload)
-    if (groupIds.length > 0) {
-      const groups = await this.databaseService.groupOfQuestions.findMany({
-        where: { idGroupOfQuestions: { in: groupIds } },
-        select: { idGroupOfQuestions: true },
-      });
-      const foundGroupIds = new Set(groups.map((g) => g.idGroupOfQuestions));
-      const missingGroup = groupIds.find((id) => !foundGroupIds.has(id));
-      if (missingGroup) {
-        throw new BadRequestException(
-          `Group of questions not found: ${missingGroup}`,
-        );
-      }
-    }
-
-    // Validate parts (only if partIds are provided in the update payload)
-    if (partIds.length > 0) {
-      const parts = await this.databaseService.part.findMany({
-        where: { idPart: { in: partIds } },
-        select: { idPart: true },
-      });
-      const foundPartIds = new Set(parts.map((p) => p.idPart));
-      const missingPart = partIds.find((id) => !foundPartIds.has(id));
-      if (missingPart) {
-        throw new BadRequestException(`Part not found: ${missingPart}`);
-      }
-    }
-
-    // Check for duplicate numberQuestion within input per group
-    const seenNumberQuestionInGroup = new Set<string>();
-    for (const q of questionsToUpdate) {
-      if (q.idGroupOfQuestions && q.numberQuestion !== undefined) {
-        const key = `${q.idGroupOfQuestions}:${q.numberQuestion}`;
-        if (seenNumberQuestionInGroup.has(key)) {
-          throw new BadRequestException(
-            `Duplicate numberQuestion ${q.numberQuestion} for group ${q.idGroupOfQuestions} in the update payload.`,
-          );
-        }
-        seenNumberQuestionInGroup.add(key);
-      }
-    }
-
-    await this.databaseService.$transaction(async (tx) => {
-      for (const q of questionsToUpdate) {
-        const questionData: Prisma.QuestionUpdateInput = {};
-        if (q.idGroupOfQuestions !== undefined)
-          questionData.groupOfQuestions = {
-            connect: { idGroupOfQuestions: q.idGroupOfQuestions },
-          };
-        if (q.idPart !== undefined)
-          questionData.part = { connect: { idPart: q.idPart } };
-        if (q.numberQuestion !== undefined)
-          questionData.numberQuestion = q.numberQuestion;
-        if (q.content !== undefined) questionData.content = q.content;
-
-        // If answers are provided, delete existing and create new ones
-        if (q.answers !== undefined) {
-          // Delete existing answers for this question
-          await tx.answer.deleteMany({
-            where: { idQuestion: q.idQuestion },
-          });
-
-          // Create new answers
-          if (q.answers.length > 0) {
-            const answerData = q.answers.map((a) => ({
-              idQuestion: q.idQuestion,
-              answer_text: a.answer_text?.toUpperCase(),
-              matching_key: a.matching_key?.toUpperCase(),
-              matching_value: a.matching_value?.toUpperCase(),
-            }));
-            await tx.answer.createMany({
-              data: answerData,
-            });
-          }
-        }
-
-        // Update the question itself
-        await tx.question.update({
-          where: { idQuestion: q.idQuestion },
-          data: questionData,
-        });
-      }
-    });
-
-    const updatedRecords = await this.databaseService.question.findMany({
-      where: {
-        idQuestion: {
-          in: questionIds,
-        },
-      },
-      include: {
-        answers: true,
-      },
-    });
-
-    return {
-      message: 'Questions updated successfully',
-      data: updatedRecords,
       status: 200,
     };
   }

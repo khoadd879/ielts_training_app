@@ -15,19 +15,21 @@ export class PartService {
     private readonly userService: UsersService,
   ) {}
   async create(createPartDto: CreatePartDto) {
-    const { idTest, namePart } = createPartDto;
+    const { idTest, namePart, order, audioUrl } = createPartDto;
 
     const existingTest = await this.databaseService.test.findUnique({
       where: { idTest },
     });
 
     if (!existingTest) {
-      return new BadRequestException('Test not found');
+      throw new BadRequestException('Test not found');
     }
     const data = await this.databaseService.part.create({
       data: {
         idTest,
         namePart,
+        order: order ?? 0,
+        audioUrl: audioUrl ?? null,
       },
     });
 
@@ -44,13 +46,12 @@ export class PartService {
     });
 
     if (!existingTest) {
-      return new BadRequestException('Test not found');
+      throw new BadRequestException('Test not found');
     }
 
     const data = await this.databaseService.part.findMany({
-      where: {
-        idTest,
-      },
+      where: { idTest },
+      orderBy: { order: 'asc' },
     });
 
     if (!data) return new BadGatewayException('Part not found');
@@ -69,7 +70,12 @@ export class PartService {
       },
       include: {
         passage: true,
-        groupOfQuestions: true,
+        questionGroups: {
+          orderBy: { order: 'asc' },
+          include: {
+            questions: { orderBy: { order: 'asc' } },
+          },
+        },
       },
     });
 
@@ -83,14 +89,14 @@ export class PartService {
   }
 
   async update(idPart: string, updatePartDto: UpdatePartDto) {
-    const { idTest, namePart } = updatePartDto;
+    const { idTest, namePart, order, audioUrl } = updatePartDto;
 
     const existingTest = await this.databaseService.test.findUnique({
       where: { idTest },
     });
 
     if (!existingTest) {
-      return new BadRequestException('Test not found');
+      throw new BadRequestException('Test not found');
     }
 
     const existingPart = await this.databaseService.part.findUnique({
@@ -104,12 +110,12 @@ export class PartService {
 
     if (!existingPart) return new BadRequestException('Part not found');
     const data = await this.databaseService.part.update({
-      where: {
-        idPart,
-      },
+      where: { idPart },
       data: {
         idTest,
         namePart,
+        ...(order !== undefined && { order }),
+        ...(audioUrl !== undefined && { audioUrl }),
       },
     });
 

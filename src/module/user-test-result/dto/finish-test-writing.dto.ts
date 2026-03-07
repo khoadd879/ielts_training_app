@@ -16,7 +16,7 @@ class WritingSubmissionItem {
       'In this essay, I will discuss the importance of environmental protection...',
   })
   @IsString()
-  submission_text: string;
+  submissionText: string;
 }
 
 export class FinishTestWritingDto {

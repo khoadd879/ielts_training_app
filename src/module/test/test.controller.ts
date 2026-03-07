@@ -13,6 +13,11 @@ import {
 import { TestService } from './test.service';
 import { CreateTestDto } from './dto/create-test.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
+import {
+  ImportFullTestDto,
+  CreateWritingTestDto,
+  CreateSpeakingTestDto,
+} from './dto/import-test.dto';
 import { ApiBearerAuth, ApiConsumes, ApiBody, ApiQuery } from '@nestjs/swagger';
 import {
   FileFieldsInterceptor,
@@ -128,5 +133,23 @@ export class TestController {
   @Delete('delete-test/:idTest')
   remove(@Param('idTest') idTest: string) {
     return this.testService.remove(idTest);
+  }
+
+  @Post('import-full-test')
+  @ApiBody({ type: ImportFullTestDto })
+  importFullTest(@Body() dto: ImportFullTestDto) {
+    return this.testService.importFullReadingListeningTest(dto);
+  }
+
+  @Post('create-writing-test')
+  @ApiBody({ type: CreateWritingTestDto })
+  createWritingTest(@Body() dto: CreateWritingTestDto) {
+    return this.testService.createWritingTest(dto);
+  }
+
+  @Post('create-speaking-test')
+  @ApiBody({ type: CreateSpeakingTestDto })
+  createSpeakingTest(@Body() dto: CreateSpeakingTestDto) {
+    return this.testService.createSpeakingTest(dto);
   }
 }

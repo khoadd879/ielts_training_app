@@ -15,10 +15,8 @@ import { TestModule } from './module/test/test.module';
 import { TopicModule } from './module/topic/topic.module';
 import { PartModule } from './module/part/part.module';
 import { PassageModule } from './module/passage/passage.module';
-import { GroupOfQuestionsModule } from './module/group-of-questions/group-of-questions.module';
+import { QuestionGroupModule } from './module/question-group/question-group.module';
 import { QuestionModule } from './module/question/question.module';
-
-import { AnswerModule } from './module/answer/answer.module';
 import { UserAnswerModule } from './module/user-answer/user-answer.module';
 import { UserTestResultModule } from './module/user-test-result/user-test-result.module';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -80,9 +78,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     }),
     PartModule,
     PassageModule,
-    GroupOfQuestionsModule,
+    QuestionGroupModule,
     QuestionModule,
-    AnswerModule,
     UserAnswerModule,
     UserTestResultModule,
     CacheModule.registerAsync({

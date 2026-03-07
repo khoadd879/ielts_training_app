@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { accountType, Gender, Level, Role } from '@prisma/client';
+import { AccountType, Gender, Level, Role } from '@prisma/client';
 import {
   IsEmail,
   IsEnum,
@@ -48,10 +48,10 @@ export class UpdateUserDto {
   @IsOptional()
   address: string;
 
-  @ApiProperty({ example: 'USER', enum: accountType })
+  @ApiProperty({ example: 'USER', enum: AccountType })
   @IsOptional()
-  @IsEnum(accountType)
-  accountType: accountType;
+  @IsEnum(AccountType)
+  accountType: AccountType;
 
   @IsOptional()
   password: string;

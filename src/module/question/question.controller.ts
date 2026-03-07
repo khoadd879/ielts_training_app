@@ -10,14 +10,13 @@ import {
 import { QuestionService } from './question.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
-import { createManyQuestionsDto } from './dto/create-many-question.dto';
-import { UpdateManyQuestionsDto } from './dto/update-many-questions.dto';
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { CreateManyQuestionsDto } from './dto/create-many-questions.dto';
 
 @ApiBearerAuth()
 @Controller('question')
 export class QuestionController {
-  constructor(private readonly questionService: QuestionService) { }
+  constructor(private readonly questionService: QuestionService) {}
 
   @Post('create-question')
   create(@Body() createQuestionDto: CreateQuestionDto) {
@@ -25,29 +24,19 @@ export class QuestionController {
   }
 
   @Post('create-many-questions')
-  @ApiBody({ type: createManyQuestionsDto })
-  createMany(@Body() createQuestionsDto: createManyQuestionsDto) {
-    return this.questionService.createManyQuestions(
-      createQuestionsDto.questions,
-    );
+  @ApiBody({ type: CreateManyQuestionsDto })
+  createMany(@Body() dto: CreateManyQuestionsDto) {
+    return this.questionService.createManyQuestions(dto.questions);
   }
 
-  @Patch('update-many-questions')
-  @ApiBody({ type: UpdateManyQuestionsDto })
-  updateMany(@Body() updateManyQuestionsDto: UpdateManyQuestionsDto) {
-    return this.questionService.updateManyQuestions(updateManyQuestionsDto);
+  @Get('find-by-question-group/:idQuestionGroup')
+  findByQuestionGroup(@Param('idQuestionGroup') idQuestionGroup: string) {
+    return this.questionService.findByQuestionGroup(idQuestionGroup);
   }
 
-  @Get('find-by-id-group-of-questions/:idGroupOfQuestions')
-  findByIdGroupOfQuestion(
-    @Param('idGroupOfQuestions') idGroupOfQuestions: string,
-  ) {
-    return this.questionService.findByIdGroupOfQuestion(idGroupOfQuestions);
-  }
-
-  @Get('find-by-id/:idGroupOfQuestions')
-  findById(@Param('idGroupOfQuestions') idGroupOfQuestions: string) {
-    return this.questionService.findById(idGroupOfQuestions);
+  @Get('find-by-id/:idQuestion')
+  findById(@Param('idQuestion') idQuestion: string) {
+    return this.questionService.findById(idQuestion);
   }
 
   @Patch('update-question/:idQuestion')
@@ -58,8 +47,8 @@ export class QuestionController {
     return this.questionService.updateQuestion(idQuestion, updateQuestionDto);
   }
 
-  @Delete('delete-questiong/:idGroupOfQuestions')
-  remove(@Param('idGroupOfQuestions') idGroupOfQuestions: string) {
-    return this.questionService.removeQuestion(idGroupOfQuestions);
+  @Delete('delete-question/:idQuestion')
+  remove(@Param('idQuestion') idQuestion: string) {
+    return this.questionService.removeQuestion(idQuestion);
   }
 }

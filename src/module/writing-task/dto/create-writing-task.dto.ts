@@ -14,7 +14,7 @@ export class CreateWritingTaskDto {
     enumName: 'WritingTaskType',
     description: 'Loại câu trả lời (TASK1, TASK2)',
   })
-  task_type: WritingTaskType;
+  taskType: WritingTaskType;
 
   @IsNotEmpty()
   @ApiProperty({ example: 'promt' })
@@ -22,7 +22,7 @@ export class CreateWritingTaskDto {
 
   @IsNotEmpty()
   @ApiProperty({ example: '60' })
-  time_limit: number;
+  timeLimit: number;
 
   @IsOptional()
   @ApiProperty({ example: 'img', nullable: true })

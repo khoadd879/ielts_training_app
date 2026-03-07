@@ -6,6 +6,11 @@ import {
 } from '@nestjs/common';
 import { CreateTestDto } from './dto/create-test.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
+import {
+  ImportFullTestDto,
+  CreateWritingTestDto,
+  CreateSpeakingTestDto,
+} from './dto/import-test.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { UsersService } from '../users/users.service';
@@ -310,30 +315,20 @@ export class TestService {
   }
 
   /**
-   * Sanitize answers to hide correctness indicators from users
-   * For MCQ/TFNG/YES_NO: mask both 'CORRECT' and 'INCORRECT' to prevent elimination cheating
+   * Strip correct answers from metadata before sending to students
    */
-  private sanitizeAnswersForUser(
-    parts: any[],
-  ): any[] {
-    const mcqTypes = ['MCQ', 'TFNG', 'YES_NO_NOTGIVEN'];
-
-    return parts.map((part) => ({
-      ...part,
-      groupOfQuestions: part.groupOfQuestions.map((group) => ({
-        ...group,
-        question: group.question.map((q) => ({
-          ...q,
-          answers: q.answers.map((answer) => ({
-            ...answer,
-            // For MCQ/TFNG/YES_NO: completely mask matching_value to prevent elimination
-            matching_value: mcqTypes.includes(group.typeQuestion)
-              ? null
-              : answer.matching_value,
-          })),
-        })),
-      })),
-    }));
+  private sanitizeMetadataForUser(metadata: any): any {
+    if (!metadata || typeof metadata !== 'object') return metadata;
+    const sanitized = { ...metadata };
+    // Remove any field that reveals the correct answer
+    delete sanitized.correctOptionIndexes;
+    delete sanitized.correctAnswer;
+    delete sanitized.correctHeadingIndex;
+    delete sanitized.correctParagraph;
+    delete sanitized.correctFeatureLabel;
+    delete sanitized.correctEndingLabel;
+    delete sanitized.correctAnswers;
+    return sanitized;
   }
 
   async getTest(idTest: string) {
@@ -347,7 +342,6 @@ export class TestService {
     }
 
     let data: any;
-
 
     if (testInfo.testType === TestType.SPEAKING) {
       data = await this.databaseService.test.findUnique({
@@ -366,37 +360,44 @@ export class TestService {
       data = await this.databaseService.test.findUnique({
         where: { idTest },
         include: {
-          writingTasks: true
-        }
-      })
+          writingTasks: true,
+        },
+      });
     } else {
-      // LISTENING/READING tests - fetch and sanitize answers
+      // LISTENING/READING — sanitize metadata to hide correct answers
       const rawData = await this.databaseService.test.findUnique({
         where: { idTest },
         include: {
           parts: {
+            orderBy: { order: 'asc' },
             include: {
               passage: true,
-              groupOfQuestions: {
+              questionGroups: {
+                orderBy: { order: 'asc' },
                 include: {
-                  question: {
-                    include: {
-                      answers: true,
-                    },
+                  questions: {
+                    orderBy: { order: 'asc' },
                   },
                 },
               },
             },
           },
-          writingTasks: true,
         },
       });
 
-      // Sanitize answers to hide correctness indicators
       if (rawData && rawData.parts) {
         data = {
           ...rawData,
-          parts: this.sanitizeAnswersForUser(rawData.parts),
+          parts: rawData.parts.map((part) => ({
+            ...part,
+            questionGroups: part.questionGroups.map((group) => ({
+              ...group,
+              questions: group.questions.map((q) => ({
+                ...q,
+                metadata: this.sanitizeMetadataForUser(q.metadata),
+              })),
+            })),
+          })),
         };
       } else {
         data = rawData;
@@ -417,28 +418,24 @@ export class TestService {
         idTest: true,
         title: true,
         parts: {
+          orderBy: { order: 'asc' },
           select: {
             idPart: true,
             namePart: true,
-            groupOfQuestions: {
+            questionGroups: {
+              orderBy: { order: 'asc' },
               select: {
-                idGroupOfQuestions: true,
+                idQuestionGroup: true,
                 title: true,
-                typeQuestion: true,
-                question: {
-                  orderBy: { numberQuestion: 'asc' },
+                questionType: true,
+                questions: {
+                  orderBy: { questionNumber: 'asc' },
                   select: {
                     idQuestion: true,
-                    numberQuestion: true,
-                    content: true, // Lấy thêm content để dễ đối chiếu
-                    answers: {
-                      select: {
-                        idAnswer: true,
-                        answer_text: true, // Đáp án text (cho FillBlank, ShortAnswer)
-                        matching_key: true, // Key nối (A, B, C...)
-                        matching_value: true, // Chứa "CORRECT"/"INCORRECT" (MCQ) hoặc giá trị nối (Matching)
-                      },
-                    },
+                    questionNumber: true,
+                    content: true,
+                    questionType: true,
+                    metadata: true,
                   },
                 },
               },
@@ -449,43 +446,230 @@ export class TestService {
     });
 
     if (!testData) throw new NotFoundException('Test not found');
-    // 3. Xử lý logic lọc đáp án đúng (Answer Key)
-    const processedParts = testData.parts.map((part) => ({
-      ...part,
-      groupOfQuestions: part.groupOfQuestions.map((group) => ({
-        ...group,
-        question: group.question.map((q) => {
-          let correctAnswers = q.answers;
-
-          // Nếu là MCQ, TFNG, YESNO: Chỉ lấy đáp án có value khác "INCORRECT"
-          // (Hoặc check === "CORRECT" tùy vào cách bạn lưu chính xác string nào)
-          if (['MCQ', 'TFNG', 'YES_NO_NOTGIVEN'].includes(group.typeQuestion)) {
-            correctAnswers = q.answers.filter(
-              (a) => a.matching_value !== 'INCORRECT',
-            );
-          }
-
-          // Với dạng MATCHING: Lấy tất cả (vì cặp nào cũng là đáp án đúng của cặp đó)
-          // Với dạng FILL_BLANK/SHORT_ANSWER: Lấy tất cả (vì answer_text chính là đáp án đúng)
-
-          return {
-            idQuestion: q.idQuestion,
-            numberQuestion: q.numberQuestion,
-            content: q.content,
-            correctAnswers: correctAnswers, // Trả về list đáp án đúng đã lọc
-          };
-        }),
-      })),
-    }));
 
     return {
       message: 'Test answer key retrieved successfully',
-      data: {
-        idTest: testData.idTest,
-        title: testData.title,
-        parts: processedParts,
-      },
+      data: testData,
       status: 200,
+    };
+  }
+
+  // ============================================================================
+  // MASS-IMPORT — AI Crawler sends a single JSON to create an entire R/L test
+  // ============================================================================
+
+  async importFullReadingListeningTest(dto: ImportFullTestDto) {
+    if (dto.testType !== TestType.READING && dto.testType !== TestType.LISTENING) {
+      throw new BadRequestException('This endpoint only supports READING and LISTENING test types');
+    }
+
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { idUser: dto.idUser },
+    });
+    if (!existingUser) throw new BadRequestException('User not found');
+
+    // Use interactive $transaction for full control — questions need both idPart and idQuestionGroup
+    const data = await this.databaseService.$transaction(async (tx) => {
+      // 1. Create the Test
+      const test = await tx.test.create({
+        data: {
+          idUser: dto.idUser,
+          title: dto.title,
+          description: dto.description ?? null,
+          img: dto.img ?? null,
+          testType: dto.testType,
+          duration: dto.duration,
+          numberQuestion: dto.numberQuestion,
+          audioUrl: dto.audioUrl ?? null,
+          level: dto.level ?? 'Low',
+        },
+      });
+
+      // 2. Create Parts, Passages, QuestionGroups, and Questions
+      for (let partIdx = 0; partIdx < dto.parts.length; partIdx++) {
+        const partDto = dto.parts[partIdx];
+
+        const part = await tx.part.create({
+          data: {
+            idTest: test.idTest,
+            namePart: partDto.namePart,
+            order: partDto.order ?? partIdx,
+            audioUrl: partDto.audioUrl ?? null,
+          },
+        });
+
+        // Create passage if provided
+        if (partDto.passage) {
+          await tx.passage.create({
+            data: {
+              idPart: part.idPart,
+              title: partDto.passage.title,
+              content: partDto.passage.content,
+              image: partDto.passage.image ?? null,
+              description: partDto.passage.description ?? null,
+              audioUrl: partDto.passage.audioUrl ?? null,
+              numberParagraph: partDto.passage.numberParagraph ?? 0,
+            },
+          });
+        }
+
+        // Create question groups and their questions
+        for (let groupIdx = 0; groupIdx < partDto.questionGroups.length; groupIdx++) {
+          const groupDto = partDto.questionGroups[groupIdx];
+
+          const questionGroup = await tx.questionGroup.create({
+            data: {
+              idPart: part.idPart,
+              title: groupDto.title,
+              instructions: groupDto.instructions ?? null,
+              questionType: groupDto.questionType,
+              imageUrl: groupDto.imageUrl ?? null,
+              order: groupDto.order ?? groupIdx,
+            },
+          });
+
+          // Batch create questions for this group
+          if (groupDto.questions.length > 0) {
+            await tx.question.createMany({
+              data: groupDto.questions.map((q, qIdx) => ({
+                idQuestionGroup: questionGroup.idQuestionGroup,
+                idPart: part.idPart,
+                questionNumber: q.questionNumber,
+                content: q.content,
+                questionType: q.questionType,
+                metadata: q.metadata,
+                order: q.order ?? qIdx,
+              })),
+            });
+          }
+        }
+      }
+
+      // 3. Return the complete test with all relations
+      return tx.test.findUnique({
+        where: { idTest: test.idTest },
+        include: {
+          parts: {
+            orderBy: { order: 'asc' },
+            include: {
+              passage: true,
+              questionGroups: {
+                orderBy: { order: 'asc' },
+                include: {
+                  questions: { orderBy: { order: 'asc' } },
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    return {
+      message: 'Full test imported successfully',
+      data,
+      status: 201,
+    };
+  }
+
+  // ============================================================================
+  // WRITING TEST — Create a complete Writing test with tasks
+  // ============================================================================
+
+  async createWritingTest(dto: CreateWritingTestDto) {
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { idUser: dto.idUser },
+    });
+    if (!existingUser) throw new BadRequestException('User not found');
+
+    if (dto.writingTasks.length > 2) {
+      throw new BadRequestException('A writing test can have a maximum of 2 tasks');
+    }
+
+    const data = await this.databaseService.test.create({
+      data: {
+        idUser: dto.idUser,
+        title: dto.title,
+        description: dto.description ?? null,
+        testType: TestType.WRITING,
+        duration: dto.duration,
+        numberQuestion: dto.writingTasks.length,
+        level: dto.level ?? 'Low',
+        writingTasks: {
+          create: dto.writingTasks.map((task) => ({
+            title: task.title,
+            taskType: task.taskType,
+            timeLimit: task.timeLimit,
+            image: task.image ?? null,
+            instructions: task.instructions ?? null,
+          })),
+        },
+      },
+      include: {
+        writingTasks: true,
+      },
+    });
+
+    return {
+      message: 'Writing test created successfully',
+      data,
+      status: 201,
+    };
+  }
+
+  // ============================================================================
+  // SPEAKING TEST — Create a complete Speaking test with tasks and questions
+  // ============================================================================
+
+  async createSpeakingTest(dto: CreateSpeakingTestDto) {
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { idUser: dto.idUser },
+    });
+    if (!existingUser) throw new BadRequestException('User not found');
+
+    if (dto.speakingTasks.length > 3) {
+      throw new BadRequestException('A speaking test can have a maximum of 3 tasks (Part 1, 2, 3)');
+    }
+
+    const data = await this.databaseService.test.create({
+      data: {
+        idUser: dto.idUser,
+        title: dto.title,
+        description: dto.description ?? null,
+        testType: TestType.SPEAKING,
+        duration: dto.duration,
+        numberQuestion: dto.speakingTasks.length,
+        level: dto.level ?? 'Low',
+        speakingTasks: {
+          create: dto.speakingTasks.map((task) => ({
+            title: task.title,
+            part: task.part,
+            questions: {
+              create: task.questions.map((q, qIdx) => ({
+                topic: q.topic ?? null,
+                prompt: q.prompt ?? null,
+                subPrompts: q.subPrompts ?? null,
+                preparationTime: q.preparationTime ?? 0,
+                speakingTime: q.speakingTime ?? 120,
+                order: q.order ?? qIdx,
+              })),
+            },
+          })),
+        },
+      },
+      include: {
+        speakingTasks: {
+          include: {
+            questions: { orderBy: { order: 'asc' } },
+          },
+        },
+      },
+    });
+
+    return {
+      message: 'Speaking test created successfully',
+      data,
+      status: 201,
     };
   }
 }
