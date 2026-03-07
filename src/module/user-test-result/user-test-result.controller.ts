@@ -17,6 +17,7 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiBody, ApiConsume
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 import { FinishTestWritingDto } from './dto/finish-test-writing.dto';
 import { FinishTestSpeakingDto } from './dto/finish-test-speaking.dto';
+import { SubmitTestDto } from './dto/submit-test.dto';
 
 @ApiBearerAuth()
 @Controller('user-test-result')
@@ -90,19 +91,19 @@ export class UserTestResultController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch('finish-test/:idTestResult/:idUser')
+  @Post('submit-reading-listening/:idUser')
   @ApiOperation({
-    summary: 'Hoàn thành bài test',
-    description: 'Đánh dấu bài test đã hoàn thành và tính điểm'
+    summary: 'Nộp bài và chấm điểm Reading/Listening',
+    description: 'Nhận toàn bộ câu trả lời, chấm điểm tự động, lưu kết quả và cập nhật XP trong một lần gọi duy nhất.',
   })
-  @ApiParam({ name: 'idTestResult', description: 'ID của kết quả bài test', example: 'uuid-test-result-1' })
   @ApiParam({ name: 'idUser', description: 'ID của người dùng', example: 'uuid-user-1' })
-  @ApiResponse({ status: 200, description: 'Hoàn thành test thành công' })
-  finishTest(
-    @Param('idTestResult') idTestResult: string,
+  @ApiBody({ type: SubmitTestDto })
+  @ApiResponse({ status: 200, description: 'Nộp bài và chấm điểm thành công' })
+  submitReadingListeningTest(
     @Param('idUser') idUser: string,
+    @Body() dto: SubmitTestDto,
   ) {
-    return this.userTestResultService.finishTest(idTestResult, idUser);
+    return this.userTestResultService.submitReadingListeningTest(idUser, dto);
   }
 
   @Patch('finish-test-writing/:idTestResult/:idUser')

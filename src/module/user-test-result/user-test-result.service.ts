@@ -7,6 +7,7 @@ import { DatabaseService } from 'src/database/database.service';
 import { StreakService } from '../streak-service/streak-service.service';
 import {
   Level,
+  QuestionType,
   TestStatus,
   TestType,
   WritingTaskType,
@@ -16,6 +17,7 @@ import { UserWritingSubmissionService } from '../user-writing-submission/user-wr
 import { UserSpeakingSubmissionService } from '../user-speaking-submission/user-speaking-submission.service';
 import { FinishTestWritingDto } from './dto/finish-test-writing.dto';
 import { FinishTestSpeakingDto } from './dto/finish-test-speaking.dto';
+import { SubmitTestDto } from './dto/submit-test.dto';
 
 export interface SubmissionDetail {
   idWritingTask: string;
@@ -140,44 +142,94 @@ export class UserTestResultService {
     };
   }
 
-  async finishTest(idTestResult: string, idUser: string) {
-    // 1. Validate user exists
-    await this.validateUser(idUser);
+  async submitReadingListeningTest(idUser: string, dto: SubmitTestDto) {
+    // 1. Validate ownership, status, and test type
+    const testResult = await this.databaseService.userTestResult.findFirst({
+      where: { idTestResult: dto.idTestResult, idUser },
+      include: {
+        test: {
+          select: {
+            idTest: true,
+            testType: true,
+            level: true,
+            parts: {
+              select: {
+                questions: {
+                  select: {
+                    idQuestion: true,
+                    questionType: true,
+                    metadata: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
 
-    // 2. Get test result with all related data
-    const testResult = await this.getTestResultWithDetails(
-      idTestResult,
-      idUser,
-    );
+    if (!testResult) {
+      throw new NotFoundException('Test result not found or you do not have permission.');
+    }
+    if (testResult.status !== 'IN_PROGRESS') {
+      throw new BadRequestException('This test is not in progress.');
+    }
+    if (
+      testResult.test.testType !== TestType.READING &&
+      testResult.test.testType !== TestType.LISTENING
+    ) {
+      throw new BadRequestException('This endpoint is for Reading/Listening tests only.');
+    }
 
-    // 3. Validate test is in progress
-    this.validateTestInProgress(testResult);
+    // 2. Build question map from test structure
+    const questionMap = new Map<string, { questionType: string; metadata: any }>();
+    for (const part of testResult.test.parts) {
+      for (const q of part.questions) {
+        questionMap.set(q.idQuestion, {
+          questionType: q.questionType,
+          metadata: q.metadata,
+        });
+      }
+    }
 
-    // 4. Get all questions from the test
-    const allQuestions = this.extractAllQuestions(testResult);
+    // 3. Grade each answer
+    const gradedAnswers: Array<{
+      idQuestion: string;
+      answerType: QuestionType;
+      answerPayload: any;
+      isCorrect: boolean;
+    }> = [];
+    let totalCorrect = 0;
 
-    // 5. Grade all user answers (calculate BEFORE transaction to minimize lock time)
-    const gradingResults = await this.gradeAllAnswers(
-      testResult.userAnswers,
-      allQuestions,
-    );
+    for (const ans of dto.answers) {
+      const question = questionMap.get(ans.idQuestion);
+      const isCorrect = question
+        ? this.evaluateAnswer(question.questionType, question.metadata, ans.answerPayload)
+        : false;
 
-    // 6. Calculate scores (BEFORE transaction)
-    const { totalCorrect, bandScore } = this.calculateScores(
-      gradingResults,
-      allQuestions.length,
-    );
+      if (isCorrect) totalCorrect++;
+      gradedAnswers.push({
+        idQuestion: ans.idQuestion,
+        answerType: ans.answerType,
+        answerPayload: ans.answerPayload,
+        isCorrect,
+      });
+    }
 
-    // 7. Calculate XP (with anti-spam check - BEFORE transaction)
+    // 4. Calculate band score
+    const totalQuestions = questionMap.size;
+    const bandScore = this.calculateBandScore(totalCorrect, testResult.test.testType);
+
+    // 5. Calculate XP (with anti-spam check)
     const xpGained = await this.calculateXpGained(
       idUser,
-      testResult.idTest,
-      idTestResult,
+      testResult.test.idTest,
+      dto.idTestResult,
       testResult.test.level,
       bandScore,
     );
 
-    // 8. Pre-calculate user level changes if XP will be gained
+    // Pre-calculate user level changes if XP will be gained
     let userLevelUpdate: {
       newXp: number;
       currentLevel: string;
@@ -201,39 +253,51 @@ export class UserTestResultService {
       }
     }
 
-    // 9. Wrap all state changes in a transaction for atomicity
-    const updatedResult = await this.databaseService.$transaction(
-      async (tx) => {
-        // Update user XP and level if gained
-        if (userLevelUpdate) {
-          await tx.user.update({
-            where: { idUser },
-            data: {
-              xp: userLevelUpdate.newXp,
-              level: userLevelUpdate.currentLevel as any,
-              xpToNext: userLevelUpdate.xpToNext,
-            },
-          });
-        }
+    // 6. Atomic transaction: save answers + update test result + update XP
+    const updatedResult = await this.databaseService.$transaction(async (tx) => {
+      // Delete any previously saved draft answers
+      await tx.userAnswer.deleteMany({ where: { idTestResult: dto.idTestResult } });
 
-        // Update test completion status
-        const result = await tx.userTestResult.update({
-          where: { idTestResult: idTestResult },
+      // Create graded answers
+      await tx.userAnswer.createMany({
+        data: gradedAnswers.map((a) => ({
+          idQuestion: a.idQuestion,
+          idUser,
+          idTestResult: dto.idTestResult,
+          answerType: a.answerType,
+          answerPayload: a.answerPayload,
+          isCorrect: a.isCorrect,
+        })),
+      });
+
+      // Update user XP and level if gained
+      if (userLevelUpdate) {
+        await tx.user.update({
+          where: { idUser },
           data: {
-            status: 'FINISHED',
-            finishedAt: new Date(),
-            totalCorrect: totalCorrect,
-            totalQuestions: allQuestions.length,
-            bandScore: bandScore,
-            score: totalCorrect,
+            xp: userLevelUpdate.newXp,
+            level: userLevelUpdate.currentLevel as any,
+            xpToNext: userLevelUpdate.xpToNext,
           },
         });
+      }
 
-        return result;
-      },
-    );
+      // Mark test as finished
+      return tx.userTestResult.update({
+        where: { idTestResult: dto.idTestResult },
+        data: {
+          status: 'FINISHED',
+          finishedAt: new Date(),
+          totalCorrect,
+          totalQuestions,
+          bandScore,
+          score: totalCorrect,
+          ...(dto.duration != null ? { duration: dto.duration } : {}),
+        },
+      });
+    });
 
-    // 10. Update streak AFTER transaction (non-critical, can fail independently)
+    // 7. Update streak (non-critical)
     try {
       await this.streakService.updateStreak(idUser);
     } catch (error) {
@@ -241,12 +305,12 @@ export class UserTestResultService {
     }
 
     return {
-      message: 'Test finished successfully!',
+      message: 'Test submitted and graded successfully!',
       data: {
         xpGained,
         bandScore,
         totalCorrect,
-        totalQuestions: allQuestions.length,
+        totalQuestions,
         finishedAt: updatedResult.finishedAt,
       },
       status: 200,
@@ -260,144 +324,18 @@ export class UserTestResultService {
     if (!existingUser) throw new BadRequestException('User not found');
   }
 
-  private async getTestResultWithDetails(idTestResult: string, idUser: string) {
-    const testResult = await this.databaseService.userTestResult.findFirst({
-      where: {
-        idTestResult: idTestResult,
-        idUser: idUser,
-      },
-      select: {
-        idTestResult: true,
-        idUser: true,
-        idTest: true,
-        status: true,
-        startedAt: true,
-        finishedAt: true,
-        userAnswers: {
-          select: {
-            idUserAnswer: true,
-            idQuestion: true,
-            answerType: true,
-            answerPayload: true,
-            isCorrect: true,
-          },
-        },
-        test: {
-          select: {
-            idTest: true,
-            level: true,
-            parts: {
-              select: {
-                idPart: true,
-                questionGroups: {
-                  select: {
-                    idQuestionGroup: true,
-                    questionType: true,
-                    questions: {
-                      select: {
-                        idQuestion: true,
-                        questionNumber: true,
-                        questionType: true,
-                        content: true,
-                        metadata: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!testResult) {
-      throw new NotFoundException(
-        'Test result not found or you do not have permission.',
-      );
-    }
-
-    return testResult;
-  }
-
-  private validateTestInProgress(testResult: any) {
-    if (testResult.status !== 'IN_PROGRESS') {
-      throw new BadRequestException('This test is not in progress.');
-    }
-  }
-
-  private extractAllQuestions(testResult: any) {
-    return testResult.test.parts
-      .flatMap((p) => p.questionGroups)
-      .flatMap((g) => g.questions);
-  }
-
-  private async gradeAllAnswers(userAnswers: any[], allQuestions: any[]) {
-    // ✅ OPTIMIZED: Collect grading results first, then batch update
-    const gradingResults: Array<{
-      idUserAnswer: string;
-      isCorrect: boolean;
-      score: number;
-      needsUpdate: boolean;
-    }> = [];
-
-    // Grade all answers without database updates
-    for (const uAnswer of userAnswers) {
-      const questionData = allQuestions.find(
-        (q) => q.idQuestion === uAnswer.idQuestion,
-      );
-
-      if (!questionData) {
-        gradingResults.push({
-          idUserAnswer: uAnswer.idUserAnswer,
-          isCorrect: false,
-          score: 0,
-          needsUpdate: uAnswer.isCorrect !== false,
-        });
-        continue;
-      }
-
-      const isCorrect = this.gradeUserAnswer(uAnswer, questionData);
-      gradingResults.push({
-        idUserAnswer: uAnswer.idUserAnswer,
-        isCorrect,
-        score: isCorrect ? 1 : 0,
-        needsUpdate: uAnswer.isCorrect !== isCorrect,
-      });
-    }
-
-    // ✅ Batch update all answers that need updating in one transaction
-    const answersToUpdate = gradingResults.filter((r) => r.needsUpdate);
-
-    if (answersToUpdate.length > 0) {
-      await this.databaseService.$transaction(
-        answersToUpdate.map((answer) =>
-          this.databaseService.userAnswer.update({
-            where: { idUserAnswer: answer.idUserAnswer },
-            data: { isCorrect: answer.isCorrect },
-          }),
-        ),
-      );
-    }
-
-    // Return scores
-    return gradingResults.map((r) => r.score);
-  }
-
   /**
-   * Grade a single user answer against the question's metadata.
-   * The metadata JSONB contains all correct answers per question type.
+   * Evaluate a single user answer against the question's metadata.
+   * Returns true if the answer is correct, false otherwise.
    */
-  private gradeUserAnswer(uAnswer: any, questionData: any): boolean {
-    const metadata = questionData.metadata as any;
-    if (!metadata) return false;
+  private evaluateAnswer(
+    questionType: string,
+    metadata: any,
+    answerPayload: any,
+  ): boolean {
+    if (!metadata || !answerPayload) return false;
 
-    const answerPayload = uAnswer.answerPayload as any;
-    if (!answerPayload) return false;
-
-    const qType = questionData.questionType;
-
-    switch (qType) {
+    switch (questionType) {
       case 'MULTIPLE_CHOICE':
         return this.gradeMCQ(answerPayload, metadata);
 
@@ -495,31 +433,6 @@ export class UserTestResultService {
   }
 
   /**
-   * Update answer correctness in database if changed
-   */
-  private async updateAnswerCorrectness(uAnswer: any, isCorrect: boolean) {
-    if (uAnswer.isCorrect !== isCorrect) {
-      await this.databaseService.userAnswer.update({
-        where: { idUserAnswer: uAnswer.idUserAnswer },
-        data: { isCorrect: isCorrect },
-      });
-    }
-  }
-
-  /**
-   * Calculate total correct and band score
-   */
-  private calculateScores(gradingResults: number[], totalQuestions: number) {
-    const totalCorrect = gradingResults.reduce((sum, val) => sum + val, 0);
-    const bandScore = this.calculateIELTSBandScore(
-      totalCorrect,
-      totalQuestions,
-    );
-
-    return { totalCorrect, bandScore };
-  }
-
-  /**
    * Calculate XP with anti-spam check
    */
   private async calculateXpGained(
@@ -562,28 +475,6 @@ export class UserTestResultService {
     } catch (error) {
       console.error(`Failed to update streak for user ${idUser}`, error);
     }
-  }
-
-  /**
-   * Update test completion status
-   */
-  private async updateTestCompletion(
-    idTestResult: string,
-    totalCorrect: number,
-    totalQuestions: number,
-    bandScore: number,
-  ) {
-    return await this.databaseService.userTestResult.update({
-      where: { idTestResult: idTestResult },
-      data: {
-        status: 'FINISHED',
-        finishedAt: new Date(),
-        totalCorrect: totalCorrect,
-        totalQuestions: totalQuestions,
-        bandScore: bandScore,
-        score: totalCorrect,
-      },
-    });
   }
 
   /**
@@ -681,13 +572,18 @@ export class UserTestResultService {
     };
   }
 
-  private calculateIELTSBandScore(correct: number, total: number): number {
-    if (total !== 40) {
-      // Fallback nếu đề không phải chuẩn 40 câu
-      return Math.round((correct / total) * 9 * 2) / 2;
+  /**
+   * Calculate IELTS band score with separate conversion tables
+   * for Reading (Academic) and Listening.
+   */
+  private calculateBandScore(correct: number, testType: TestType): number {
+    if (testType === TestType.LISTENING) {
+      return this.calculateListeningBand(correct);
     }
+    return this.calculateReadingBand(correct);
+  }
 
-    // Thang điểm tham khảo IELTS Listening
+  private calculateListeningBand(correct: number): number {
     if (correct >= 39) return 9.0;
     if (correct >= 37) return 8.5;
     if (correct >= 35) return 8.0;
@@ -697,6 +593,26 @@ export class UserTestResultService {
     if (correct >= 23) return 6.0;
     if (correct >= 18) return 5.5;
     if (correct >= 16) return 5.0;
+    if (correct >= 13) return 4.5;
+    if (correct >= 10) return 4.0;
+    if (correct >= 8) return 3.5;
+    if (correct >= 6) return 3.0;
+    if (correct >= 4) return 2.5;
+    if (correct >= 2) return 2.0;
+    if (correct >= 1) return 1.0;
+    return 0.0;
+  }
+
+  private calculateReadingBand(correct: number): number {
+    if (correct >= 39) return 9.0;
+    if (correct >= 37) return 8.5;
+    if (correct >= 35) return 8.0;
+    if (correct >= 33) return 7.5;
+    if (correct >= 30) return 7.0;
+    if (correct >= 27) return 6.5;
+    if (correct >= 23) return 6.0;
+    if (correct >= 19) return 5.5;
+    if (correct >= 15) return 5.0;
     if (correct >= 13) return 4.5;
     if (correct >= 10) return 4.0;
     if (correct >= 8) return 3.5;
