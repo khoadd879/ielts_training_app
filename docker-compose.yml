@@ -3,10 +3,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      network: host
     image: ielts_training_app
     container_name: ielts_training_app
-    network_mode: "host"
+    networks:
+      - ielts_network
     environment:
       PORT: ${PORT}
       DATABASE_URL: ${DATABASE_URL}
@@ -23,8 +23,9 @@ services:
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       CLOUDINARY_NAME: ${CLOUDINARY_NAME}
+      AI_MICROSERVICE_SECRET: ${AI_MICROSERVICE_SECRET:-my-super-secret-key-123}
       NODE_ENV: development
-      REDIS_HOST: localhost
+      REDIS_HOST: redis
       REDIS_PORT: 6379
     ports:
       - '3000:3000'
@@ -37,10 +38,29 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    network_mode: "host"
+    networks:
+      - ielts_network
     restart: always
     volumes:
       - redis_data:/data
+
+  ai_crawler:
+    build:
+      context: ../ielts_ai_crawler
+    container_name: ai_crawler
+    networks:
+      - ielts_network
+    ports:
+      - '8000:8000'
+    environment:
+      NESTJS_API_URL: http://ielts_training_app:3000/test/import-from-ai
+      AI_MICROSERVICE_SECRET: my-super-secret-key-123
+    depends_on:
+      - ielts_training_app
+
+networks:
+  ielts_network:
+    driver: bridge
 
 volumes:
   redis_data:

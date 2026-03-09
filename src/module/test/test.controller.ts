@@ -9,6 +9,8 @@ import {
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
+  Headers,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { TestService } from './test.service';
 import { CreateTestDto } from './dto/create-test.dto';
@@ -151,5 +153,24 @@ export class TestController {
   @ApiBody({ type: CreateSpeakingTestDto })
   createSpeakingTest(@Body() dto: CreateSpeakingTestDto) {
     return this.testService.createSpeakingTest(dto);
+  }
+
+  /**
+   * Internal endpoint — chỉ dành cho AI Microservice.
+   * Bảo vệ bằng x-api-key header, KHÔNG yêu cầu JWT.
+   */
+  @Post('import-from-ai')
+  @Public()
+  @ApiBody({ type: ImportFullTestDto })
+  importFromAi(
+    @Headers('x-api-key') apiKey: string,
+    @Body() dto: ImportFullTestDto,
+  ) {
+    const secret =
+      process.env.AI_MICROSERVICE_SECRET ?? 'my-super-secret-key-123';
+    if (apiKey !== secret) {
+      throw new UnauthorizedException('Invalid API key');
+    }
+    return this.testService.importFullReadingListeningTest(dto);
   }
 }
