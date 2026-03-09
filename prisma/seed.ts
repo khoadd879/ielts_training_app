@@ -33,7 +33,7 @@
  */
 
 import { PrismaClient, QuestionType, TestType, WritingTaskType, SpeakingPartType, Level } from '@prisma/client'
-import type { Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -1222,7 +1222,7 @@ async function main() {
       data: {
         idSpeakingTask: speakingPart1.idSpeakingTask,
         ...q,
-        subPrompts: null,  // Part 1 never has sub-prompts
+        subPrompts: Prisma.JsonNull,  // Part 1 never has sub-prompts
       },
     })
   }
@@ -1275,7 +1275,7 @@ async function main() {
       idSpeakingTask: speakingPart2.idSpeakingTask,
       topic: 'A memorable journey',
       prompt: 'Would you like to make that same journey again in the future?',
-      subPrompts: null,
+      subPrompts: Prisma.JsonNull,
       preparationTime: 0,
       speakingTime: 30,
       order: 1,
@@ -1314,7 +1314,7 @@ async function main() {
         idSpeakingTask: speakingPart3.idSpeakingTask,
         topic: 'Travel and Tourism',
         prompt: q.prompt,
-        subPrompts: null,
+        subPrompts: Prisma.JsonNull,
         preparationTime: 0,
         speakingTime: 90,
         order: q.order,
