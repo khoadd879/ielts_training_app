@@ -272,11 +272,156 @@ interface ShortAnswerMetadata {
  *   • May have a countdown timer widget
  */
 
+// =============================================================================
+// SKILL ↔ QUESTION TYPE MAPPING
+// =============================================================================
+//
+// ⚠️  CRITICAL — The crawler MUST consult this map before classifying a group.
+//     Never assign a Reading-only type to a Listening test and vice versa.
+//     If a type is in both lists it is shared; detect via context (audio/text).
+// =============================================================================
+
+/**
+ * READING — all 14 question types are valid in a Reading test.
+ * The crawler should try all CRAWL_RULES patterns against the group instruction.
+ *
+ *  1.  TRUE_FALSE_NOT_GIVEN      "Do the statements agree with the INFORMATION…"
+ *  2.  YES_NO_NOT_GIVEN          "Do the statements agree with the VIEWS/CLAIMS…"
+ *  3.  MATCHING_HEADING          "Choose the correct heading for each paragraph…"
+ *  4.  MATCHING_INFORMATION      "Which paragraph contains the following information…"
+ *  5.  MATCHING_FEATURES         "Match each statement with the correct researcher/place…"
+ *  6.  MATCHING_SENTENCE_ENDINGS "Complete each sentence with the correct ending…"
+ *  7.  MULTIPLE_CHOICE           "Choose the correct letter, A, B, C or D"
+ *  8.  SENTENCE_COMPLETION       "Complete the sentences. Write NO MORE THAN X WORDS"
+ *  9.  SUMMARY_COMPLETION        "Complete the summary using words from the box / passage"
+ * 10.  NOTE_COMPLETION           "Complete the notes below. Write NO MORE THAN X WORDS"
+ * 11.  TABLE_COMPLETION          "Complete the table below"
+ * 12.  FLOW_CHART_COMPLETION     "Complete the flow-chart / process diagram"
+ * 13.  DIAGRAM_LABELING          "Label the diagram / map / plan"
+ * 14.  SHORT_ANSWER              "Answer the questions. Choose NO MORE THAN TWO WORDS"
+ */
+const READING_QUESTION_TYPES: QuestionType[] = [
+  QuestionType.TRUE_FALSE_NOT_GIVEN,
+  QuestionType.YES_NO_NOT_GIVEN,
+  QuestionType.MATCHING_HEADING,
+  QuestionType.MATCHING_INFORMATION,
+  QuestionType.MATCHING_FEATURES,
+  QuestionType.MATCHING_SENTENCE_ENDINGS,
+  QuestionType.MULTIPLE_CHOICE,
+  QuestionType.SENTENCE_COMPLETION,
+  QuestionType.SUMMARY_COMPLETION,
+  QuestionType.NOTE_COMPLETION,
+  QuestionType.TABLE_COMPLETION,
+  QuestionType.FLOW_CHART_COMPLETION,
+  QuestionType.DIAGRAM_LABELING,
+  QuestionType.SHORT_ANSWER,
+]
+
+/**
+ * LISTENING — only 9 types appear in Listening tests.
+ *
+ * ❌  NEVER use TRUE_FALSE_NOT_GIVEN in Listening.
+ * ❌  NEVER use YES_NO_NOT_GIVEN in Listening.
+ * ❌  NEVER use MATCHING_HEADING in Listening.
+ * ❌  NEVER use MATCHING_INFORMATION in Listening.
+ * ❌  NEVER use MATCHING_SENTENCE_ENDINGS in Listening.
+ *
+ *  1.  MULTIPLE_CHOICE     "Choose the correct letter, A, B or C"
+ *                          or "Choose TWO letters from A–E"
+ *  2.  MATCHING_FEATURES   Often just called "Matching" — match speakers to statements
+ *  3.  NOTE_COMPLETION     Very common in Section 1 as "Form completion"
+ *                          e.g. Name: _____, Date of birth: _____
+ *  4.  TABLE_COMPLETION    Grid of information with blanks (Section 2 / 4)
+ *  5.  FLOW_CHART_COMPLETION  Process / procedure described in audio (Section 3 / 4)
+ *  6.  SUMMARY_COMPLETION  Short paragraph summary with gaps
+ *  7.  SENTENCE_COMPLETION "Complete the sentences. Write NO MORE THAN TWO WORDS AND/OR A NUMBER"
+ *  8.  DIAGRAM_LABELING    "Plan / map / diagram labelling" (Section 2)
+ *                          ALWAYS comes with QuestionGroup.imageUrl
+ *  9.  SHORT_ANSWER        "Answer the questions. Write NO MORE THAN THREE WORDS"
+ */
+const LISTENING_QUESTION_TYPES: QuestionType[] = [
+  QuestionType.MULTIPLE_CHOICE,
+  QuestionType.MATCHING_FEATURES,
+  QuestionType.NOTE_COMPLETION,
+  QuestionType.TABLE_COMPLETION,
+  QuestionType.FLOW_CHART_COMPLETION,
+  QuestionType.SUMMARY_COMPLETION,
+  QuestionType.SENTENCE_COMPLETION,
+  QuestionType.DIAGRAM_LABELING,
+  QuestionType.SHORT_ANSWER,
+]
+
+/**
+ * Canonical skill-to-allowed-types map.
+ * The crawler should call:
+ *   const allowed = SKILL_QUESTION_TYPE_MAP[testType]
+ *   if (!allowed.includes(detectedType)) { throw or fallback to SHORT_ANSWER }
+ */
+const SKILL_QUESTION_TYPE_MAP: Partial<Record<string, QuestionType[]>> = {
+  READING:   READING_QUESTION_TYPES,
+  LISTENING: LISTENING_QUESTION_TYPES,
+  // WRITING and SPEAKING do not use the Question model — no types needed.
+}
+
+// =============================================================================
+// ANSWER NORMALISATION RULES
+// =============================================================================
+//
+// For completion-style questions (SENTENCE_COMPLETION, NOTE_COMPLETION,
+// SUMMARY_COMPLETION, TABLE_COMPLETION, FLOW_CHART_COMPLETION, SHORT_ANSWER,
+// DIAGRAM_LABELING) the crawler must populate acceptedAnswers[] with ALL
+// reasonable surface forms. The grading engine performs case-insensitive,
+// trimmed exact matching against this array.
+//
+// RULE 1 — Numbers with/without formatting
+//   If the answer contains a number, include both formatted and bare variants:
+//     acceptedAnswers: ["15,000", "15000"]
+//     acceptedAnswers: ["$200", "200", "two hundred"]
+//     acceptedAnswers: ["1.5 million", "1,500,000", "1500000"]
+//
+// RULE 2 — Articles (a / an / the)
+//   IELTS marking often accepts answers with or without articles:
+//     acceptedAnswers: ["internet", "the internet"]
+//     acceptedAnswers: ["university", "a university"]
+//
+// RULE 3 — British / American spelling variants
+//   Include both where common:
+//     acceptedAnswers: ["colour", "color"]
+//     acceptedAnswers: ["travelling", "traveling"]
+//     acceptedAnswers: ["organise", "organize"]
+//
+// RULE 4 — Hyphenation variants
+//   acceptedAnswers: ["well-known", "well known"]
+//   acceptedAnswers: ["follow-up", "follow up", "followup"]
+//
+// RULE 5 — Abbreviations / full forms
+//   acceptedAnswers: ["UN", "United Nations"]
+//   acceptedAnswers: ["approx.", "approximately"]
+//
+// RULE 6 — Singular / Plural (only when both are semantically valid)
+//   acceptedAnswers: ["child", "children"]   ← only if context allows both
+//
+// IMPLEMENTATION TEMPLATE for crawlers:
+//   function buildAcceptedAnswers(rawAnswer: string): string[] {
+//     const variants: string[] = [rawAnswer.trim().toLowerCase()]
+//     // Add number variants
+//     if (/[\d,]+/.test(rawAnswer)) {
+//       variants.push(rawAnswer.replace(/,/g, ''))   // strip commas
+//       variants.push(rawAnswer.replace(/\./g, ''))  // strip decimals
+//     }
+//     // Add article-free variant
+//     variants.push(rawAnswer.replace(/^(a |an |the )/i, '').trim().toLowerCase())
+//     // Deduplicate
+//     return [...new Set(variants)]
+//   }
+// =============================================================================
+
 /**
  * HOW TO DETECT QUESTION TYPE (in priority order)
  * ─────────────────────────────────────────────────
  * Parse the QuestionGroup instructions/title string. Try each rule in order;
- * the FIRST match wins.
+ * the FIRST match wins. Then validate the detected type is in
+ * SKILL_QUESTION_TYPE_MAP[testType] before writing to the database.
  */
 const CRAWL_RULES: Record<QuestionType, {
   /** Regex patterns tested against the group instruction text (case-insensitive) */
