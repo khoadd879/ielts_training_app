@@ -1,844 +1,1196 @@
-import { PrismaClient, Level, Grammar } from '@prisma/client';
-import * as fs from 'fs';
-import * as path from 'path';
+/**
+ * =============================================================================
+ * prisma/seed.ts
+ * =============================================================================
+ * GOLDEN SOURCE OF TRUTH & PARSING BLUEPRINT for IELTS Training App
+ *
+ * This file serves TWO purposes:
+ *   1. DATABASE SEEDING — Creates one complete IELTS Mock Test with all 4 skills.
+ *   2. CRAWLING BLUEPRINT — The TypeScript interfaces and comments are the
+ *      authoritative specification that automated crawling agents MUST follow
+ *      when parsing arbitrary IELTS websites.
+ *
+ * RELATIONSHIP CHAIN (read this before everything else):
+ *   Test
+ *     └─ Part[]              (idTest  → Part.idTest)
+ *          ├─ Passage?        (idPart  → Passage.idPart)         [Reading / sometimes Listening]
+ *          ├─ QuestionGroup[] (idPart  → QuestionGroup.idPart)
+ *          │    └─ Question[] (idQuestionGroup → Question.idQuestionGroup,
+ *          │                   idPart          → Question.idPart)
+ *          └─ Question[]      (direct Part→Question link for fast lookup)
+ *     └─ WritingTask[]        (idTest  → WritingTask.idTest)
+ *     └─ SpeakingTask[]       (idTest  → SpeakingTask.idTest)
+ *          └─ SpeakingQuestion[] (idSpeakingTask → SpeakingQuestion.idSpeakingTask)
+ *
+ * ORDERING CONTRACT:
+ *   • Part.order            — 0-indexed, increments per part within a test
+ *   • QuestionGroup.order   — 0-indexed, increments per group within a part
+ *   • Question.order        — 0-indexed, increments per question within a group
+ *   • Question.questionNumber — 1-indexed, GLOBAL within the test (1..40 for R/L)
+ *   • SpeakingQuestion.order — 0-indexed within a task
+ *
+ * =============================================================================
+ */
 
-const prisma = new PrismaClient();
+import { PrismaClient, QuestionType, TestType, WritingTaskType, SpeakingPartType, Level } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 
-// ID của Admin user dùng để gán 'assignedBy'
-const ADMIN_ASSIGNER_ID = '731328db-1b94-4f4e-acde-7a013a965a38';
-
-const grammarData = [
-  // ==========================
-  // ===== 1. TENSES (Các thì) =====
-  // ==========================
-  {
-    category: {
-      name: 'Tenses',
-      description:
-        'Learn about all the English verb tenses, from simple to perfect continuous.',
-    },
-    lessons: [
-      {
-        title: 'Simple Present',
-        explanation:
-          'The simple present is used to describe habits, unchanging situations, general truths, and fixed arrangements.',
-        level: Level.Low,
-        examples: JSON.stringify([
-          { sentence: 'The sun rises in the east.', note: 'General truth' },
-          { sentence: 'I play football every weekend.', note: 'Habit' },
-        ]),
-        commonMistakes: JSON.stringify([
-          { wrong: "He don't like fish.", right: "He doesn't like fish." },
-        ]),
-        order: 1,
-      },
-      {
-        title: 'Present Continuous',
-        explanation:
-          'The present continuous is used for actions happening at the moment of speaking or for temporary actions.',
-        level: Level.Low,
-        examples: JSON.stringify([
-          {
-            sentence: 'I am studying for my exam right now.',
-            note: 'Action in progress',
-          },
-          {
-            sentence: 'She is working in London this month.',
-            note: 'Temporary situation',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          { wrong: 'I am knowing the answer.', right: 'I know the answer.' },
-        ]),
-        order: 2,
-      },
-      {
-        title: 'Simple Past',
-        explanation:
-          'The simple past is used to talk about a completed action in a time before now.',
-        level: Level.Low,
-        examples: JSON.stringify([
-          {
-            sentence: 'I visited my grandparents last week.',
-            note: 'Completed action',
-          },
-          {
-            sentence: 'He finished his homework an hour ago.',
-            note: 'Finished event',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'I did not went to the party.',
-            right: 'I did not go to the party.',
-          },
-        ]),
-        order: 3,
-      },
-      {
-        title: 'Past Continuous',
-        explanation:
-          'The past continuous is used to describe a past action that was in progress when another action interrupted it.',
-        level: Level.Mid,
-        examples: JSON.stringify([
-          {
-            sentence: 'I was watching TV when you called.',
-            note: 'Interrupted action',
-          },
-          {
-            sentence: 'They were playing tennis at 10 AM yesterday.',
-            note: 'Action at a specific time in the past',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'When you called, I watch TV.',
-            right: 'When you called, I was watching TV.',
-          },
-        ]),
-        order: 4,
-      },
-      // ===== 3 BÀI HỌC THÊM VÀO (RẤT QUAN TRỌNG) =====
-      {
-        title: 'Present Perfect vs. Simple Past',
-        explanation:
-          'Simple Past is for finished actions at a specific time. Present Perfect is for unfinished actions or finished actions with a present result (time is not specified).',
-        level: Level.Mid,
-        examples: JSON.stringify([
-          {
-            sentence: 'I lived in Japan for 5 years.',
-            note: 'Simple Past (I don-t live there now)',
-          },
-          {
-            sentence: 'I have lived in Vietnam for 5 years.',
-            note: 'Present Perfect (I still live here)',
-          },
-          {
-            sentence: 'I have lost my keys.',
-            note: 'Present Perfect (Result: I can-t get in now)',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'I have seen that movie yesterday.',
-            right: 'I saw that movie yesterday.',
-          },
-        ]),
-        order: 5,
-      },
-      {
-        title: 'Past Perfect',
-        explanation:
-          'Used to describe an action that happened *before* another action in the past. (The "past of the past").',
-        level: Level.High,
-        examples: JSON.stringify([
-          {
-            sentence: 'When I arrived, the train had already left.',
-            note: '1st action: train left. 2nd action: I arrived.',
-          },
-          {
-            sentence: 'She told me she had finished her homework.',
-            note: '1st action: finish homework. 2nd action: she told me.',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'When I arrived, the train left.',
-            right: 'When I arrived, the train had left.',
-          },
-        ]),
-        order: 6,
-      },
-      {
-        title: 'Future Tenses (will vs. be going to)',
-        explanation:
-          '"Will" is for predictions or spontaneous decisions. "Be going to" is for plans or intentions made before speaking.',
-        level: Level.Low,
-        examples: JSON.stringify([
-          {
-            sentence: 'I think it will rain tomorrow.',
-            note: 'Prediction',
-          },
-          {
-            sentence: 'I am going to visit my aunt next weekend.',
-            note: 'Plan',
-          },
-          {
-            sentence: 'Oh no, I spilled the milk. I-ll clean it up.',
-            note: 'Spontaneous decision',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'I will travel to Da Nang next month. (if it-s a plan)',
-            right: 'I am going to travel to Da Nang next month.',
-          },
-        ]),
-        order: 7,
-      },
-    ],
-  },
-  // ==========================
-  // ===== 2. ARTICLES (Mạo từ) =====
-  // ==========================
-  {
-    category: {
-      name: 'Articles',
-      description:
-        'Understand how to use indefinite (a/an) and definite (the) articles correctly.',
-    },
-    lessons: [
-      {
-        title: 'Indefinite Articles: A/An',
-        explanation:
-          'Use "a" before words that start with a consonant sound and "an" before words that start with a vowel sound. They are used for non-specific nouns.',
-        level: Level.Low,
-        examples: JSON.stringify([
-          {
-            sentence: 'I saw a cat in the garden.',
-            note: 'A non-specific cat',
-          },
-          {
-            sentence: 'She wants to eat an apple.',
-            note: 'A non-specific apple',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'I need a hour to finish.',
-            right: 'I need an hour to finish.',
-          },
-        ]),
-        order: 1,
-      },
-      {
-        title: 'Definite Article: The',
-        explanation:
-          'Use "the" when talking about a specific noun that both the speaker and listener know about.',
-        level: Level.Low,
-        examples: JSON.stringify([
-          {
-            sentence: 'The cat I saw yesterday was black.',
-            note: 'A specific cat',
-          },
-          {
-            sentence: 'The moon is very bright tonight.',
-            note: 'A unique object',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'I love the music in general.',
-            right: 'I love music.',
-          },
-        ]),
-        order: 2,
-      },
-    ],
-  },
-  // ==========================
-  // ===== 3. PREPOSITIONS (Giới từ) =====
-  // ==========================
-  {
-    category: {
-      name: 'Prepositions',
-      description: 'Learn about prepositions of time, place, and movement.',
-    },
-    lessons: [
-      {
-        title: 'Prepositions of Time: in, on, at',
-        explanation:
-          'Use "in" for months, years, seasons. Use "on" for days and dates. Use "at" for specific times.',
-        level: Level.Low,
-        examples: JSON.stringify([
-          { sentence: 'My birthday is in October.', note: 'Month' },
-          { sentence: 'The meeting is on Monday.', note: 'Day' },
-          { sentence: 'The class starts at 9 AM.', note: 'Specific time' },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'I will see you on October.',
-            right: 'I will see you in October.',
-          },
-        ]),
-        order: 1,
-      },
-      {
-        title: 'Prepositions of Place: in, on, at',
-        explanation:
-          'Use "in" for enclosed spaces or areas. Use "on" for surfaces. Use "at" for specific points or locations.',
-        level: Level.Low,
-        examples: JSON.stringify([
-          { sentence: 'The cat is in the box.', note: 'Enclosed space' },
-          { sentence: 'The book is on the table.', note: 'Surface' },
-          {
-            sentence: 'I will meet you at the bus stop.',
-            note: 'Specific point',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          { wrong: 'She is at the car.', right: 'She is in the car.' },
-        ]),
-        order: 2,
-      },
-    ],
-  },
-  // ==========================
-  // ===== 4. MODAL VERBS (Động từ khiếm khuyết) =====
-  // ==========================
-  {
-    category: {
-      name: 'Modal Verbs',
-      description:
-        'Verbs that express necessity, possibility, permission, or ability.',
-    },
-    lessons: [
-      {
-        title: 'Modals of Ability: can / could',
-        explanation:
-          '"Can" is used for ability in the present. "Could" is used for ability in the past.',
-        level: Level.Low,
-        examples: JSON.stringify([
-          { sentence: 'I can speak three languages.', note: 'Present ability' },
-          {
-            sentence: 'She could swim when she was five.',
-            note: 'Past ability',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          { wrong: 'I can to play guitar.', right: 'I can play guitar.' },
-        ]),
-        order: 1,
-      },
-      {
-        title: 'Modals of Obligation: must / have to',
-        explanation:
-          '"Must" expresses a strong obligation, often from the speaker. "Have to" expresses an external obligation or rule.',
-        level: Level.Mid,
-        examples: JSON.stringify([
-          {
-            sentence: 'You must finish your report by Friday.',
-            note: 'Strong obligation',
-          },
-          {
-            sentence: 'I have to wear a uniform at work.',
-            note: 'External rule',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'She must to study harder.',
-            right: 'She must study harder.',
-          },
-        ]),
-        order: 2,
-      },
-    ],
-  },
-  // ==========================
-  // ===== 5. ADJECTIVES & ADVERBS (Tính từ & Trạng từ) =====
-  // ==========================
-  {
-    category: {
-      name: 'Adjectives & Adverbs',
-      description:
-        'Learn the difference between words that describe nouns and words that describe verbs.',
-    },
-    lessons: [
-      {
-        title: 'Comparative and Superlative Adjectives',
-        explanation:
-          'Comparatives (-er, more) compare two things. Superlatives (-est, most) compare three or more things.',
-        level: Level.Low,
-        examples: JSON.stringify([
-          { sentence: 'She is taller than her brother.', note: 'Comparative' },
-          {
-            sentence: 'Mount Everest is the highest mountain in the world.',
-            note: 'Superlative',
-          },
-          {
-            sentence: 'This book is more interesting than the last one.',
-            note: 'Comparative with long adjective',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'This is the most biggest house.',
-            right: 'This is the biggest house.',
-          },
-          { wrong: 'He is more tall than me.', right: 'He is taller than me.' },
-        ]),
-        order: 1,
-      },
-    ],
-  },
-  // ==========================
-  // ===== 6. CONDITIONALS (Câu điều kiện) =====
-  // ==========================
-  {
-    category: {
-      name: 'Conditionals (If Clauses)',
-      description:
-        'Sentences expressing hypothetical situations and their consequences.',
-    },
-    lessons: [
-      {
-        title: 'First Conditional',
-        explanation:
-          'Used for real possibilities in the future. Structure: If + Simple Present, ... will + base verb.',
-        level: Level.Mid,
-        examples: JSON.stringify([
-          {
-            sentence: 'If it rains tomorrow, we will stay at home.',
-            note: 'Real future possibility',
-          },
-          {
-            sentence: 'If you study hard, you will pass the exam.',
-            note: 'Cause and effect',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'If it will rain, we stay home.',
-            right: 'If it rains, we will stay home.',
-          },
-        ]),
-        order: 1,
-      },
-      {
-        title: 'Second Conditional',
-        explanation:
-          'Used for unreal or hypothetical situations in the present or future. Structure: If + Simple Past, ... would + base verb.',
-        level: Level.Mid,
-        examples: JSON.stringify([
-          {
-            sentence: 'If I won the lottery, I would travel the world.',
-            note: 'Hypothetical situation',
-          },
-          {
-            sentence: 'If I were you, I would take the job.',
-            note: 'Giving advice',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'If I was you, I would go.',
-            right: 'If I were you, I would go.',
-          },
-        ]),
-        order: 2,
-      },
-      {
-        title: 'Third Conditional',
-        explanation:
-          'Used for unreal situations in the past. Structure: If + Past Perfect, ... would have + Past Participle.',
-        level: Level.High,
-        examples: JSON.stringify([
-          {
-            sentence: 'If I had studied, I would have passed the exam.',
-            note: 'Past regret',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'If I would have studied, I passed.',
-            right: 'If I had studied, I would have passed.',
-          },
-        ]),
-        order: 3,
-      },
-    ],
-  },
-  // ==========================
-  // ===== 7. GERUNDS & INFINITIVES (Danh động từ & Động từ nguyên mẫu) =====
-  // ==========================
-  {
-    category: {
-      name: 'Gerunds vs. Infinitives',
-      description:
-        'Understanding when to use the -ing form (gerund) or the "to" form (infinitive) of a verb.',
-    },
-    lessons: [
-      {
-        title: 'Verbs Followed by Gerunds (-ing)',
-        explanation:
-          'Some verbs must be followed by a gerund. Common examples include: enjoy, avoid, finish, suggest, mind, and practice.',
-        level: Level.Mid,
-        examples: JSON.stringify([
-          {
-            sentence: 'I enjoy listening to music.',
-            note: 'Verb "enjoy"',
-          },
-          {
-            sentence: 'He finished doing his homework.',
-            note: 'Verb "finish"',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'I suggest to go to the park.',
-            right: 'I suggest going to the park.',
-          },
-        ]),
-        order: 1,
-      },
-      {
-        title: 'Verbs Followed by Infinitives (to + verb)',
-        explanation:
-          'Some verbs must be followed by an infinitive. Common examples include: want, hope, decide, need, agree, and promise.',
-        level: Level.Mid,
-        examples: JSON.stringify([
-          {
-            sentence: 'She decided to move to a new city.',
-            note: 'Verb "decide"',
-          },
-          {
-            sentence: 'I need to buy some groceries.',
-            note: 'Verb "need"',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'We agreed meeting at 8 PM.',
-            right: 'We agreed to meet at 8 PM.',
-          },
-        ]),
-        order: 2,
-      },
-    ],
-  },
-  // ========================================================
-  // ===== 4 DANH MỤC MỚI CỰC KỲ QUAN TRỌNG CHO IELTS =====
-  // ========================================================
-
-  // ==========================
-  // ===== 8. (MỚI) SENTENCE STRUCTURE (Cấu trúc câu) =====
-  // ==========================
-  {
-    category: {
-      name: 'Sentence Structure',
-      description:
-        'Learn to build complex sentences using clauses and conjunctions for a higher grammar score.',
-    },
-    lessons: [
-      {
-        title: 'Relative Clauses (Defining vs. Non-defining)',
-        explanation:
-          'Clauses that start with "who, which, that, whose, where" to describe a noun. Defining clauses are essential; Non-defining add extra info (using commas).',
-        level: Level.Mid,
-        examples: JSON.stringify([
-          {
-            sentence: 'The man who lives next door is a doctor.',
-            note: 'Defining (essential info)',
-          },
-          {
-            sentence: 'My brother, who lives in London, is a doctor.',
-            note: 'Non-defining (extra info, with commas)',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'My brother who lives in London is a doctor.',
-            right: 'My brother, who lives in London, is a doctor.',
-          },
-          {
-            wrong: 'The book, that I am reading, is good.',
-            right: 'The book that I am reading is good. (no commas for "that")',
-          },
-        ]),
-        order: 1,
-      },
-      {
-        title: 'Subordinating Conjunctions',
-        explanation:
-          'Words that connect a dependent (subordinate) clause to an independent clause. (e.g., although, because, while, when, if, unless).',
-        level: Level.Mid,
-        examples: JSON.stringify([
-          {
-            sentence: 'Although it was raining, we went for a walk.',
-            note: 'Contrast',
-          },
-          {
-            sentence: 'He passed the exam because he studied hard.',
-            note: 'Cause/Reason',
-          },
-          {
-            sentence: 'While I was cooking, my phone rang.',
-            note: 'Time',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'Although it was raining. We went for a walk.',
-            right: 'Although it was raining, we went for a walk.',
-          },
-        ]),
-        order: 2,
-      },
-    ],
-  },
-  // ==========================
-  // ===== 9. (MỚI) PASSIVE VOICE (Thể Bị động) =====
-  // ==========================
-  {
-    category: {
-      name: 'Passive Voice',
-      description:
-        'Learn to use the passive voice (be + past participle) when the action is more important than the doer. Essential for academic writing.',
-    },
-    lessons: [
-      {
-        title: 'Forming the Passive Voice',
-        explanation:
-          'Used when the subject is unknown or unimportant. Structure: Subject + [form of "to be"] + [Past Participle].',
-        level: Level.Mid,
-        examples: JSON.stringify([
-          {
-            sentence:
-              'The report was written by the manager. (Active: The manager wrote the report)',
-            note: 'Simple Past Passive',
-          },
-          {
-            sentence: 'The data is collected every year.',
-            note: 'Simple Present Passive (Used in Task 1)',
-          },
-          {
-            sentence: 'The problem will be solved soon.',
-            note: 'Future Passive',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'The report written by the manager.',
-            right: 'The report was written by the manager.',
-          },
-        ]),
-        order: 1,
-      },
-    ],
-  },
-  // ==========================
-  // ===== 10. (MỚI) REPORTED SPEECH (Câu tường thuật) =====
-  // ==========================
-  {
-    category: {
-      name: 'Reported Speech',
-      description:
-        'Learn how to report what someone else said, often by "shifting" the tenses back.',
-    },
-    lessons: [
-      {
-        title: 'Reported Statements (Tense Backshift)',
-        explanation:
-          'When reporting what someone said in the past, the verb tense often shifts one step back (e.g., Present -> Past, Past -> Past Perfect).',
-        level: Level.High,
-        examples: JSON.stringify([
-          {
-            sentence:
-              'Direct: "I am hungry." -> Reported: He said (that) he was hungry.',
-            note: 'Present -> Past',
-          },
-          {
-            sentence:
-              'Direct: "I finished the test." -> Reported: She said she had finished the test.',
-            note: 'Past -> Past Perfect',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'He said he is hungry.',
-            right: 'He said he was hungry.',
-          },
-        ]),
-        order: 1,
-      },
-    ],
-  },
-  // ==========================
-  // ===== 11. (MỚI) QUANTIFIERS (Lượng từ) =====
-  // ==========================
-  {
-    category: {
-      name: 'Quantifiers (Countable/Uncountable)',
-      description:
-        'Learn to use words that describe quantity (some, any, much, many, few, little).',
-    },
-    lessons: [
-      {
-        title: 'much/many vs. (a) few / (a) little',
-        explanation:
-          '"Many" & "(a) few" are for countable nouns. "Much" & "(a) little" are for uncountable nouns. "A few/A little" = some. "Few/Little" = almost none.',
-        level: Level.Mid,
-        examples: JSON.stringify([
-          {
-            sentence: 'There are many students in the class.',
-            note: 'Countable',
-          },
-          {
-            sentence: 'I don-t have much time.',
-            note: 'Uncountable',
-          },
-          {
-            sentence: 'I have a few apples. (some apples)',
-            note: 'Countable, positive',
-          },
-          {
-            sentence: 'I have few apples. (almost no apples)',
-            note: 'Countable, negative',
-          },
-          {
-            sentence: 'There is a little milk left.',
-            note: 'Uncountable, positive',
-          },
-        ]),
-        commonMistakes: JSON.stringify([
-          {
-            wrong: 'I don-t have many money.',
-            right: 'I don-t have much money.',
-          },
-        ]),
-        order: 1,
-      },
-    ],
-  },
-];
-
-async function main() {
-  console.log('🌱 Start RE-SEEDING system-level grammar...');
-
-  // --- PHẦN MỚI: DỌN DẸP TRIỆT ĐỂ ---
-  // BƯỚC 1: Xóa tất cả các *liên kết* N-N (GrammarsOnCategories)
-  console.log('🗑️ Deleting ALL old links (GrammarsOnCategories)...');
-  await prisma.grammarsOnCategories.deleteMany({});
-
-  // BƯỚC 2: Xóa tất cả các *Bài học* (Grammar)
-  console.log('🗑️ Deleting ALL old Grammar lesson records...');
-  await prisma.grammar.deleteMany({});
-
-  // BƯỚC 3: Xóa tất cả *Danh mục* của hệ thống (idUser: null)
-  console.log('🗑️ Deleting ALL old system GrammarCategory records...');
-  await prisma.grammarCategory.deleteMany({
-    where: { idUser: null },
-  });
-  // --- KẾT THÚC PHẦN DỌN DẸP ---
-
-  console.log('🌱 Seeding new grammar (24 lessons across 11 categories)...');
-
-  for (const item of grammarData) {
-    // 2. Tạo Category (cho hệ thống, idUser: null)
-    const category = await prisma.grammarCategory.create({
-      data: {
-        name: item.category.name,
-        description: item.category.description,
-        idUser: null, // Quan trọng: Đây là data hệ thống
-      },
-    });
-    console.log(`📚 Created category: ${category.name}`);
-
-    // Khai báo rõ kiểu cho mảng
-    const createdLessons: Grammar[] = [];
-
-    // 3. Tạo tất cả bài học (Grammar)
-    for (const lessonData of item.lessons) {
-      const newLesson = await prisma.grammar.create({
-        data: {
-          title: lessonData.title,
-          explanation: lessonData.explanation,
-          level: lessonData.level,
-          examples: lessonData.examples,
-          commonMistakes: lessonData.commonMistakes,
-          order: lessonData.order,
-        },
-      });
-      createdLessons.push(newLesson);
-    }
-    console.log(
-      `✏️ Created ${createdLessons.length} lessons for ${category.name}.`,
-    );
-
-    // 4. Tạo liên kết trong bảng GrammarsOnCategories
-    await prisma.grammarsOnCategories.createMany({
-      data: createdLessons.map((lesson) => ({
-        idGrammarCategory: category.idGrammarCategory,
-        idGrammar: lesson.idGrammar,
-        assignedBy: ADMIN_ASSIGNER_ID, // Admin user ID
-      })),
-    });
-    console.log(
-      `🔗 Linked ${createdLessons.length} lessons to ${category.name}.`,
-    );
-  }
-
-  console.log('✅ Seeding grammar completed!');
-
-  // === STEP 2: Import crawled SQL files ===
-  await importCrawledSql();
-}
+const prisma = new PrismaClient()
 
 /**
- * Import SQL files generated by the pipeline_v2 crawler.
- * Reads .sql files from prisma/sql_seeds/, executes them, and moves to imported/.
+ * Prisma's JsonB input type requires an index signature that plain interfaces
+ * do not satisfy. This helper casts any strongly-typed metadata object to the
+ * `Prisma.InputJsonValue` type that Prisma's generated client accepts.
+ *
+ * CRAWLER NOTE: After validating your metadata object against the interface,
+ * wrap it with `toJson(...)` before passing it to Prisma.
  */
-async function importCrawledSql() {
-  console.log('\n📥 Checking for crawled SQL files to import...');
+function toJson(value: unknown): Prisma.InputJsonValue {
+  return value as Prisma.InputJsonValue
+}
 
-  const sqlSeedsDir = path.join(__dirname, 'sql_seeds');
-  const importedDir = path.join(sqlSeedsDir, 'imported');
+// =============================================================================
+// STEP 1 — STRICT TypeScript Interfaces for `metadata` (JsonB)
+// =============================================================================
+//
+// The `metadata` field on the `Question` model is a JSONB column that stores
+// ALL type-specific data for a question. The `questionType` enum is the
+// discriminator used to pick the correct interface.
+//
+// CRAWLER VALIDATION RULE: After extracting raw data from HTML, the crawler
+// MUST cast the metadata to the correct interface and validate that all
+// required fields are present before upserting to the database. If a field
+// is missing, log a WARNING and fill with a sensible default (never silently
+// drop the question).
+// =============================================================================
 
-  // Create directories if they don't exist
-  if (!fs.existsSync(sqlSeedsDir)) {
-    fs.mkdirSync(sqlSeedsDir, { recursive: true });
-    console.log('📁 Created sql_seeds directory (no files to import yet)');
-    return;
+// ---------------------------------------------------------------------------
+// 1. MULTIPLE_CHOICE
+//    HTML signals: radio buttons, "Choose ONE letter", "Choose TWO letters"
+//    Crawler notes:
+//      - options[] are always lettered (A, B, C, D) — strip the letter prefix
+//        and store only the text; reconstruct labels in the UI.
+//      - correctAnswers[] uses the same stripped text (not the letter).
+//      - maxSelections = 1 for "choose ONE", 2 for "choose TWO".
+// ---------------------------------------------------------------------------
+interface MultipleChoiceMetadata {
+  options: string[]          // e.g. ["a cave system", "a research station", ...]
+  correctAnswers: string[]   // Must be a subset of options[]
+  maxSelections: number      // 1 = single, 2+ = multi-select
+}
+
+// ---------------------------------------------------------------------------
+// 2. TRUE_FALSE_NOT_GIVEN  /  3. YES_NO_NOT_GIVEN
+//    HTML signals:
+//      - "Do the following statements agree with the information?" → TRUE_FALSE_NOT_GIVEN
+//      - "Do the following statements agree with the views/claims?" → YES_NO_NOT_GIVEN
+//    Both share the same metadata shape — only the label text differs.
+//    Crawler notes:
+//      - answer must be one of "TRUE"|"FALSE"|"NOT GIVEN" or "YES"|"NO"|"NOT GIVEN"
+//      - Store whichever the source uses; the UI normalises display.
+// ---------------------------------------------------------------------------
+interface TrueFalseNotGivenMetadata {
+  statement: string          // The claim students evaluate (mirrors Question.content)
+  answer: 'TRUE' | 'FALSE' | 'NOT GIVEN'
+}
+
+interface YesNoNotGivenMetadata {
+  statement: string
+  answer: 'YES' | 'NO' | 'NOT GIVEN'
+}
+
+// ---------------------------------------------------------------------------
+// 4. MATCHING_HEADING
+//    HTML signals: "The Reading Passage has N paragraphs A-X. Choose the
+//    correct heading for each paragraph."
+//    Crawler notes:
+//      - headingBank[] is shared across ALL questions in the group — store it
+//        once on the FIRST question (or better: on QuestionGroup.instructions).
+//        Each Question stores its own correctHeading.
+//      - paragraphLabel is the paragraph letter/number (e.g. "A", "B", "III").
+// ---------------------------------------------------------------------------
+interface MatchingHeadingMetadata {
+  paragraphLabel: string     // e.g. "A", "B", "III"
+  headingBank: string[]      // Full list of heading options (shared across group)
+  correctHeading: string     // The correct heading text from headingBank
+}
+
+// ---------------------------------------------------------------------------
+// 5. MATCHING_INFORMATION
+//    HTML signals: "Which paragraph contains the following information?"
+//    Crawler notes:
+//      - answer is a paragraph letter/number.
+//      - paragraphBank contains the possible paragraph identifiers.
+//      - canRepeat = true when the instructions say "NB: Any paragraph may be
+//        chosen MORE THAN ONCE".
+// ---------------------------------------------------------------------------
+interface MatchingInformationMetadata {
+  informationStatement: string  // The piece of information to locate
+  paragraphBank: string[]       // e.g. ["A","B","C","D","E","F","G"]
+  answer: string                // e.g. "C"
+  canRepeat: boolean
+}
+
+// ---------------------------------------------------------------------------
+// 6. MATCHING_FEATURES
+//    HTML signals: "Match each statement with the correct [person/place/etc.]"
+//    Crawler notes:
+//      - featureBank is the list of named entities (researchers, countries…)
+//      - correctFeature is the entity that the statement maps to.
+// ---------------------------------------------------------------------------
+interface MatchingFeaturesMetadata {
+  statement: string
+  featureBank: string[]      // e.g. ["Researcher A", "Researcher B", "Both"]
+  correctFeature: string
+  canRepeat: boolean
+}
+
+// ---------------------------------------------------------------------------
+// 7. MATCHING_SENTENCE_ENDINGS
+//    HTML signals: "Complete each sentence with the correct ending A-K"
+//    Crawler notes:
+//      - sentenceBeginning is stored in Question.content
+//      - endingBank is shared across the group (store on first question)
+//      - correctEnding is the text of the matched ending
+// ---------------------------------------------------------------------------
+interface MatchingSentenceEndingsMetadata {
+  sentenceBeginning: string
+  endingBank: string[]       // Full list of sentence endings
+  correctEnding: string
+}
+
+// ---------------------------------------------------------------------------
+// 8. SENTENCE_COMPLETION
+//    HTML signals: "Complete the sentences below. Write NO MORE THAN X WORDS"
+//    Crawler notes:
+//      - wordLimit e.g. "ONE WORD ONLY", "NO MORE THAN TWO WORDS",
+//        "ONE WORD AND/OR A NUMBER"
+//      - acceptedAnswers[] for questions where multiple phrasings are correct
+//        (e.g. ["internet", "the internet"] both accepted)
+//      - The blank position is implicit — the UI renders Question.content with
+//        a ________ placeholder.
+// ---------------------------------------------------------------------------
+interface SentenceCompletionMetadata {
+  wordLimit: string          // e.g. "ONE WORD ONLY", "NO MORE THAN TWO WORDS AND/OR A NUMBER"
+  acceptedAnswers: string[]  // All valid answer strings (lowercase, trimmed)
+}
+
+// ---------------------------------------------------------------------------
+// 9. SUMMARY_COMPLETION
+//    HTML signals: "Complete the summary using words from the box" OR
+//                  "Complete the summary. Write NO MORE THAN X WORDS"
+//    Crawler notes:
+//      - If a word box is provided, set wordBank to the available words.
+//      - If free-write, wordBank = [] and wordLimit is set.
+//      - summaryContext is the surrounding sentence fragment (helps UI highlight gap).
+// ---------------------------------------------------------------------------
+interface SummaryCompletionMetadata {
+  wordLimit: string          // e.g. "ONE WORD ONLY"
+  wordBank: string[]         // Empty array = no word box provided
+  summaryContext: string     // The sentence containing the gap, with ____ placeholder
+  acceptedAnswers: string[]
+}
+
+// ---------------------------------------------------------------------------
+// 10. NOTE_COMPLETION  /  11. TABLE_COMPLETION  /  12. FLOW_CHART_COMPLETION
+//     HTML signals:
+//       Note:       Notes / bullet lists with blanks
+//       Table:      HTML <table> or grid structure with blanks
+//       Flow chart: Arrows / boxes with blanks, process/sequence language
+//     All three share the same metadata shape — they differ only in
+//     QuestionGroup.imageUrl (provide a screenshot of the table/chart) and
+//     QuestionGroup.instructions.
+// ---------------------------------------------------------------------------
+interface CompletionMetadata {  // Covers NOTE, TABLE, FLOW_CHART
+  wordLimit: string
+  wordBank: string[]           // Empty = no box
+  cellContext: string          // Surrounding text / cell label identifying where the blank is
+  acceptedAnswers: string[]
+}
+
+// ---------------------------------------------------------------------------
+// 13. DIAGRAM_LABELING  (also covers MAP_LABELING)
+//     HTML signals: Diagram / map image, numbered arrows/labels pointing to parts
+//     Crawler notes:
+//       - imageUrl is REQUIRED. Store on QuestionGroup.imageUrl.
+//       - labelPosition is a textual hint (e.g. "top-left corner", "arrow 3")
+//         to help AI describe the diagram. For precise coordinates use x/y (%).
+//       - acceptedAnswers[] for spelling variants.
+// ---------------------------------------------------------------------------
+interface DiagramLabelingMetadata {
+  wordLimit: string
+  wordBank: string[]
+  labelPosition: string        // Human-readable position hint
+  labelCoordinates?: {         // Optional: percentage-based (0-100)
+    x: number
+    y: number
   }
+  acceptedAnswers: string[]
+}
 
-  if (!fs.existsSync(importedDir)) {
-    fs.mkdirSync(importedDir, { recursive: true });
-  }
+// ---------------------------------------------------------------------------
+// 14. SHORT_ANSWER
+//     HTML signals: "Answer the questions below. Write NO MORE THAN X WORDS"
+//     Crawler notes:
+//       - acceptedAnswers may contain multiple valid responses.
+// ---------------------------------------------------------------------------
+interface ShortAnswerMetadata {
+  wordLimit: string
+  acceptedAnswers: string[]
+}
 
-  // Get all .sql files (not directories, not already imported)
-  const sqlFiles = fs.readdirSync(sqlSeedsDir)
-    .filter(f => f.endsWith('.sql') && fs.statSync(path.join(sqlSeedsDir, f)).isFile());
+// =============================================================================
+// STEP 2 — CRAWLING HEURISTICS & DETECTION RULES
+// =============================================================================
+//
+// These rules are encoded as comments + the CRAWL_RULES config object below.
+// Crawling agents MUST check rules in the listed priority order.
+// =============================================================================
 
-  if (sqlFiles.length === 0) {
-    console.log('📭 No SQL files to import in prisma/sql_seeds/');
-    return;
-  }
+/**
+ * HOW TO DETECT TEST TYPE
+ * ────────────────────────
+ * LISTENING:
+ *   • Page/section contains an <audio> or <video> tag, or URLs ending in
+ *     .mp3 / .wav / .ogg / .m4a
+ *   • Section headings say "Section 1", "Section 2" … "Section 4"
+ *   • Instructions include "You will hear …"
+ *
+ * READING:
+ *   • Long text block (> 300 words) present before the questions
+ *   • Section headings say "Reading Passage 1 / 2 / 3"
+ *   • No audio element found
+ *
+ * WRITING:
+ *   • Contains "Task 1" AND "Task 2" headings, or words like "Write at least
+ *     150 words" / "Write at least 250 words"
+ *   • May contain chart / graph image for Task 1
+ *
+ * SPEAKING:
+ *   • Contains "Part 1 / Part 2 / Part 3" labels
+ *   • Contains cue card layout (bold topic + bullet points)
+ *   • May have a countdown timer widget
+ */
 
-  console.log(`🔄 Found ${sqlFiles.length} SQL file(s) to import...`);
+/**
+ * HOW TO DETECT QUESTION TYPE (in priority order)
+ * ─────────────────────────────────────────────────
+ * Parse the QuestionGroup instructions/title string. Try each rule in order;
+ * the FIRST match wins.
+ */
+const CRAWL_RULES: Record<QuestionType, {
+  /** Regex patterns tested against the group instruction text (case-insensitive) */
+  instructionPatterns: RegExp[]
+  /** Visual / structural HTML signals */
+  htmlSignals: string[]
+  /** Notes for the crawler developer */
+  notes: string
+}> = {
+  [QuestionType.MULTIPLE_CHOICE]: {
+    instructionPatterns: [
+      /choose (the correct letter|one letter|two letters)/i,
+      /which (one|two) of the following/i,
+      /circle the (correct|best) answer/i,
+    ],
+    htmlSignals: [
+      'radio input elements',
+      'checkbox input elements',
+      'lettered option lists (A B C D)',
+    ],
+    notes: 'Detect maxSelections by checking "choose TWO" vs "choose ONE". '
+         + 'Options are usually <li> items under a <ul>. Strip leading "A. " label.',
+  },
 
-  let successCount = 0;
-  let errorCount = 0;
+  [QuestionType.TRUE_FALSE_NOT_GIVEN]: {
+    instructionPatterns: [
+      /TRUE.*FALSE.*NOT GIVEN/i,
+      /agree with the (information|passage)/i,
+    ],
+    htmlSignals: ['Three-option select or radio: TRUE / FALSE / NOT GIVEN'],
+    notes: 'Distinguish from YES_NO_NOT_GIVEN by "information" (fact-based = T/F/NG) '
+         + 'vs "views/claims" (opinion-based = Y/N/NG).',
+  },
 
-  for (const file of sqlFiles) {
-    const filePath = path.join(sqlSeedsDir, file);
-    try {
-      const sqlContent = fs.readFileSync(filePath, 'utf-8');
+  [QuestionType.YES_NO_NOT_GIVEN]: {
+    instructionPatterns: [
+      /YES.*NO.*NOT GIVEN/i,
+      /agree with the (views|claims|opinions)/i,
+    ],
+    htmlSignals: ['Three-option select or radio: YES / NO / NOT GIVEN'],
+    notes: 'Same structure as TRUE_FALSE_NOT_GIVEN — discriminator is the instruction wording.',
+  },
 
-      // Execute the raw SQL
-      await prisma.$executeRawUnsafe(sqlContent);
+  [QuestionType.MATCHING_HEADING]: {
+    instructionPatterns: [
+      /choose the correct heading/i,
+      /reading passage has .+ paragraphs/i,
+      /list of headings/i,
+    ],
+    htmlSignals: [
+      'Numbered list of headings before questions',
+      'Dropdown or text input per paragraph',
+    ],
+    notes: 'Heading bank is listed before the questions. Map each paragraph label '
+         + '(A, B, C… or i, ii, iii…) to the correct heading. '
+         + 'Store headingBank on the FIRST question of the group (or on QuestionGroup).',
+  },
 
-      // Move to imported folder with timestamp to avoid overwriting
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const importedFileName = `${timestamp}_${file}`;
-      fs.renameSync(filePath, path.join(importedDir, importedFileName));
+  [QuestionType.MATCHING_INFORMATION]: {
+    instructionPatterns: [
+      /which paragraph (contains|mentions|refers)/i,
+      /locate information in paragraphs/i,
+    ],
+    htmlSignals: ['Single letter answer box per question (A, B, C…)'],
+    notes: 'Always check for "NB: any paragraph may be used MORE THAN ONCE" → canRepeat=true.',
+  },
 
-      console.log(`✅ Successfully imported: ${file}`);
-      successCount++;
-    } catch (error) {
-      console.error(`❌ Error importing ${file}:`, error instanceof Error ? error.message : error);
-      errorCount++;
+  [QuestionType.MATCHING_FEATURES]: {
+    instructionPatterns: [
+      /match each (statement|feature|finding) with the correct/i,
+      /which (researcher|scientist|country|person)/i,
+    ],
+    htmlSignals: [
+      'Small bank (3-7 items) listed before numbered statements',
+      'Dropdown or letter box per statement',
+    ],
+    notes: 'Feature bank is distinct from paragraph bank. canRepeat is common here.',
+  },
+
+  [QuestionType.MATCHING_SENTENCE_ENDINGS]: {
+    instructionPatterns: [
+      /complete each sentence with the correct ending/i,
+      /match the sentence beginnings .+ endings/i,
+    ],
+    htmlSignals: [
+      'Sentence beginnings numbered, endings lettered (A-K)',
+      'Two-column layout or dropdown per beginning',
+    ],
+    notes: 'Sentence beginnings go in Question.content. The ending bank is stored '
+         + 'in metadata.endingBank on all questions in the group.',
+  },
+
+  [QuestionType.SENTENCE_COMPLETION]: {
+    instructionPatterns: [
+      /complete the sentences? (below|using)/i,
+      /write (no more than|only) .+ word/i,
+      /using words from the (text|passage)/i,
+    ],
+    htmlSignals: ['Short text input inline within a sentence'],
+    notes: 'wordLimit must be extracted literally from the instructions. '
+         + 'For "ONE WORD AND/OR A NUMBER" allow digit-only answers in acceptedAnswers.',
+  },
+
+  [QuestionType.SUMMARY_COMPLETION]: {
+    instructionPatterns: [
+      /complete the summary/i,
+      /using a list of words.+(box|below)/i,
+    ],
+    htmlSignals: [
+      'Boxed word list above a paragraph with blanks',
+      'Short text inputs inside a paragraph block',
+    ],
+    notes: 'If a word box exists, populate wordBank[]. summaryContext is the full '
+         + 'paragraph text with ____ placeholders — helps AI re-locate answers.',
+  },
+
+  [QuestionType.NOTE_COMPLETION]: {
+    instructionPatterns: [
+      /complete the notes? (below|using)/i,
+      /complete the (table|form) below/i,
+    ],
+    htmlSignals: ['Bullet-list or indented notes structure with blank fields'],
+    notes: 'cellContext should capture the bullet point or label immediately '
+         + 'surrounding the blank (e.g. "Date of birth: ____").',
+  },
+
+  [QuestionType.TABLE_COMPLETION]: {
+    instructionPatterns: [
+      /complete the table/i,
+      /fill in the (gaps|blanks) in the table/i,
+    ],
+    htmlSignals: ['<table> element with empty cells or text inputs'],
+    notes: 'Take a screenshot of the table → store as QuestionGroup.imageUrl. '
+         + 'cellContext = "Row: [row heading] | Col: [col heading]" for AI grading.',
+  },
+
+  [QuestionType.FLOW_CHART_COMPLETION]: {
+    instructionPatterns: [
+      /complete the (flow.?chart|process diagram|diagram)/i,
+      /describe the (process|stages)/i,
+    ],
+    htmlSignals: ['Arrow-connected boxes / SVG flowchart', 'Numbered blank boxes'],
+    notes: 'Always capture QuestionGroup.imageUrl. cellContext = descriptive text '
+         + 'of the box\'s position in the sequence ("Step 3 of 5, after X").',
+  },
+
+  [QuestionType.DIAGRAM_LABELING]: {
+    instructionPatterns: [
+      /label the (diagram|map|plan|picture)/i,
+      /write the correct letter.+(map|diagram)/i,
+      /identify.+(parts?|areas?|sections?)/i,
+    ],
+    htmlSignals: [
+      'Image with numbered arrows or callout boxes',
+      'Text inputs adjacent to numbered labels on image',
+    ],
+    notes: 'REQUIRED: store imageUrl on QuestionGroup. '
+         + 'If coordinates can be scraped from inline styles, populate labelCoordinates. '
+         + 'Otherwise use labelPosition (human-readable description).',
+  },
+
+  [QuestionType.SHORT_ANSWER]: {
+    instructionPatterns: [
+      /answer the questions? below/i,
+      /write (no more than|only) .+ word.+ answer/i,
+      /give a short answer/i,
+    ],
+    htmlSignals: ['Plain text input following a direct question'],
+    notes: 'Fallback type — use when none of the above patterns match and the '
+         + 'question is a direct wh- question with a short text answer.',
+  },
+}
+
+// =============================================================================
+// STEP 3 — SEED SCRIPT
+// =============================================================================
+
+async function main() {
+  console.log('🌱  Starting seed...')
+
+  // --------------------------------------------------------------------------
+  // SEED USER — owner of all seeded tests
+  // --------------------------------------------------------------------------
+  const seedUser = await prisma.user.upsert({
+    where: { email: 'seed@ielts.dev' },
+    update: {},
+    create: {
+      email: 'seed@ielts.dev',
+      password: '$2b$10$PLACEHOLDER_BCRYPT_HASH',  // NOT a real password — replace in prod
+      nameUser: 'Seed Admin',
+      role: 'ADMIN',
+      isActive: true,
+    },
+  })
+  console.log('  ✔  Seed user:', seedUser.idUser)
+
+  // ==========================================================================
+  // READING TEST
+  // ==========================================================================
+  //
+  // STRUCTURE: 1 Test → 1 Part → 1 Passage + 3 QuestionGroups → Questions
+  //
+  // Global questionNumber counter starts at 1, increments for each question
+  // across ALL groups within the test (never resets per group).
+  //
+  // This mirrors the real IELTS Reading paper: Questions 1-40 are continuous.
+  // ==========================================================================
+
+  const readingTest = await prisma.test.create({
+    data: {
+      idUser: seedUser.idUser,
+      title: 'IELTS Academic Reading Mock Test 1',
+      description: 'A full Academic Reading passage with three question groups demonstrating all major crawl patterns.',
+      testType: TestType.READING,
+      duration: 3600,          // 60 minutes in seconds
+      numberQuestion: 13,      // Total questions seeded here (Reading normally has 40)
+      level: Level.Mid,
+    },
+  })
+  console.log('  ✔  Reading test:', readingTest.idTest)
+
+  // Part 1 — order: 0
+  const readingPart = await prisma.part.create({
+    data: {
+      idTest: readingTest.idTest,
+      namePart: 'Reading Passage 1',
+      order: 0,
+      // No audioUrl for Reading
+    },
+  })
+
+  // Passage — the long text block
+  await prisma.passage.create({
+    data: {
+      idPart: readingPart.idPart,
+      title: 'The Hidden World of Deep-Sea Vents',
+      numberParagraph: 6,
+      content: `
+<p><strong>A</strong> In the early 1970s, oceanographers using remote-controlled submersibles made one of the most astonishing discoveries in the history of biology: entire ecosystems thriving in the complete absence of sunlight at the bottom of the Pacific Ocean. These communities clustered around hydrothermal vents — fissures in the sea floor from which superheated, mineral-rich water gushes at temperatures exceeding 400 °C.</p>
+
+<p><strong>B</strong> The vents themselves are formed through a process of tectonic plate divergence. As plates pull apart, seawater seeps into cracks, is heated by magma, and re-emerges laden with hydrogen sulphide and other compounds. Chemosynthetic bacteria oxidise these chemicals to produce energy — a biological process that mirrors photosynthesis in function but requires no sunlight whatsoever.</p>
+
+<p><strong>C</strong> The bacterial mats that coat the vent surroundings form the base of a complex food web. Tube worms up to two metres long, giant clams, ghostly white crabs, and exotic shrimp have all evolved specialised anatomies to exploit this sunless cornucopia. The tube worm <em>Riftia pachyptila</em> has no mouth or digestive tract; it feeds entirely through a symbiotic relationship with the chemosynthetic bacteria it harbours in a specialised organ called the trophosome.</p>
+
+<p><strong>D</strong> Scientists were initially baffled by the extreme conditions these organisms tolerate. Pressures at vent depths can exceed 250 atmospheres — enough to crush unprotected submarines. Yet vent fauna appear untroubled. Research has revealed a suite of molecular adaptations: heat-stable enzymes, pressure-resistant cell membranes, and novel antioxidant pathways that neutralise the reactive compounds found in vent fluids.</p>
+
+<p><strong>E</strong> The discovery of vent ecosystems has had profound implications for the search for extraterrestrial life. If life can flourish without sunlight on Earth, it may do so in the subsurface oceans of Jupiter's moon Europa or Saturn's moon Enceladus, where hydrothermal activity is strongly suspected. Several space agencies have proposed dedicated missions to probe these icy moons.</p>
+
+<p><strong>F</strong> Despite their scientific importance, deep-sea vents face growing threats. Mining companies have identified vent fields as rich sources of polymetallic sulphides — ores containing copper, zinc, gold, and silver. The first deep-sea mining licences were granted in the 2010s, and environmental campaigners warn that even a single mining operation could permanently destroy a unique biological community that took thousands of years to establish.</p>
+      `.trim(),
+      description: 'An academic passage about hydrothermal vent ecosystems, their biology, and conservation challenges.',
+    },
+  })
+
+  // --------------------------------------------------------------------------
+  // Reading QuestionGroup 1 — TRUE_FALSE_NOT_GIVEN (Questions 1-5, order: 0)
+  //
+  // CRAWLER SIGNAL: Instructions contain "TRUE, FALSE or NOT GIVEN"
+  //                 AND "agree with the information"
+  // --------------------------------------------------------------------------
+  let globalQNum = 1  // ← This counter MUST persist across all groups in one test
+
+  const tfngGroup = await prisma.questionGroup.create({
+    data: {
+      idPart: readingPart.idPart,
+      title: 'Questions 1–5: True, False, Not Given',
+      instructions:
+        'Do the following statements agree with the information given in the Reading Passage?\n'
+        + 'Write:\n'
+        + '  TRUE       if the statement agrees with the information\n'
+        + '  FALSE      if the statement contradicts the information\n'
+        + '  NOT GIVEN  if there is no information on this',
+      questionType: QuestionType.TRUE_FALSE_NOT_GIVEN,
+      order: 0,
+    },
+  })
+
+  // Seed questions 1-5: TRUE_FALSE_NOT_GIVEN
+  // Each question's metadata must conform to TrueFalseNotGivenMetadata
+  const tfngData: { content: string; answer: 'TRUE' | 'FALSE' | 'NOT GIVEN' }[] = [
+    {
+      content: 'Hydrothermal vents were first discovered in the 1970s.',
+      answer: 'TRUE',
+    },
+    {
+      content: 'The water that emerges from hydrothermal vents contains hydrogen sulphide.',
+      answer: 'TRUE',
+    },
+    {
+      content: 'Riftia pachyptila digests food using a specialised stomach.',
+      answer: 'FALSE',   // It has NO digestive tract
+    },
+    {
+      content: 'Deep-sea vent organisms have been exported to aquariums around the world.',
+      answer: 'NOT GIVEN',
+    },
+    {
+      content: 'Mining companies have received legal permission to extract minerals from vent sites.',
+      answer: 'TRUE',
+    },
+  ]
+
+  for (let i = 0; i < tfngData.length; i++) {
+    const d = tfngData[i]
+    const meta: TrueFalseNotGivenMetadata = {
+      statement: d.content,   // mirrors Question.content — stored redundantly for crawler convenience
+      answer: d.answer,
     }
+    await prisma.question.create({
+      data: {
+        idQuestionGroup: tfngGroup.idQuestionGroup,
+        idPart: readingPart.idPart,
+        questionNumber: globalQNum++,  // 1, 2, 3, 4, 5
+        content: d.content,
+        questionType: QuestionType.TRUE_FALSE_NOT_GIVEN,
+        order: i,                      // 0, 1, 2, 3, 4
+        metadata: toJson(meta),
+      },
+    })
   }
 
-  console.log(`\n📊 Import summary: ${successCount} succeeded, ${errorCount} failed`);
+  // --------------------------------------------------------------------------
+  // Reading QuestionGroup 2 — MATCHING_HEADING (Questions 6-9, order: 1)
+  //
+  // CRAWLER SIGNAL: Instructions contain "choose the correct heading"
+  //                 AND lists headings (i, ii, iii…)
+  //
+  // NOTE: headingBank is stored on EVERY question in the group because the
+  // database has no group-level metadata column. The crawler must deduplicate
+  // it when rendering the UI — only render the bank once per group.
+  // --------------------------------------------------------------------------
+  const headingGroup = await prisma.questionGroup.create({
+    data: {
+      idPart: readingPart.idPart,
+      title: 'Questions 6–9: Matching Headings',
+      instructions:
+        'The Reading Passage has six paragraphs, A–F.\n'
+        + 'Choose the correct heading for Paragraphs B–E from the list of headings below.\n'
+        + 'NB: There are more headings than paragraphs, so you will not use all of them.',
+      questionType: QuestionType.MATCHING_HEADING,
+      order: 1,
+    },
+  })
+
+  // Shared heading bank (i–viii)
+  const headingBank = [
+    'i.   The threat posed by commercial exploitation',
+    'ii.  Life without light: the chemical basis of energy',
+    'iii. Molecular strategies for surviving extreme conditions',
+    'iv.  Possible implications for life beyond Earth',
+    'v.   A surprising discovery on the ocean floor',
+    'vi.  The varied species that populate vent ecosystems',
+    'vii. The political response to deep-sea mining',
+    'viii.How geological forces create vent structures',
+  ]
+
+  const matchingHeadingData: { paragraphLabel: string; correctHeading: string }[] = [
+    { paragraphLabel: 'B', correctHeading: headingBank[7] },  // viii
+    { paragraphLabel: 'C', correctHeading: headingBank[5] },  // vi
+    { paragraphLabel: 'D', correctHeading: headingBank[2] },  // iii
+    { paragraphLabel: 'E', correctHeading: headingBank[3] },  // iv
+  ]
+
+  for (let i = 0; i < matchingHeadingData.length; i++) {
+    const d = matchingHeadingData[i]
+    const meta: MatchingHeadingMetadata = {
+      paragraphLabel: d.paragraphLabel,
+      headingBank,                    // Full bank on every question
+      correctHeading: d.correctHeading,
+    }
+    await prisma.question.create({
+      data: {
+        idQuestionGroup: headingGroup.idQuestionGroup,
+        idPart: readingPart.idPart,
+        questionNumber: globalQNum++,  // 6, 7, 8, 9
+        content: `Choose the correct heading for Paragraph ${d.paragraphLabel}.`,
+        questionType: QuestionType.MATCHING_HEADING,
+        order: i,
+        metadata: toJson(meta),
+      },
+    })
+  }
+
+  // --------------------------------------------------------------------------
+  // Reading QuestionGroup 3 — SUMMARY_COMPLETION (Questions 10-13, order: 2)
+  //
+  // CRAWLER SIGNAL: Instructions contain "complete the summary"
+  //                 AND a word box is present (wordBank[] populated)
+  // --------------------------------------------------------------------------
+  const summaryGroup = await prisma.questionGroup.create({
+    data: {
+      idPart: readingPart.idPart,
+      title: 'Questions 10–13: Summary Completion',
+      instructions:
+        'Complete the summary below.\n'
+        + 'Choose NO MORE THAN TWO WORDS from the passage for each answer.\n'
+        + 'Write your answers in boxes 10–13 on your answer sheet.',
+      questionType: QuestionType.SUMMARY_COMPLETION,
+      order: 2,
+    },
+  })
+
+  // Summary paragraph — each blank is one question
+  // The ____ markers correspond to Questions 10, 11, 12, 13 in order.
+  const summaryParagraph =
+    'Hydrothermal vents support ecosystems that rely on ____(10)____ bacteria '
+    + 'which convert chemicals — particularly ____(11)____ — into energy. '
+    + 'These communities may help scientists understand whether life could '
+    + 'exist on moons such as Europa or ____(12)____, which are believed to '
+    + 'harbour subsurface ____(13)____.'
+
+  const summaryData: {
+    content: string
+    summaryContext: string
+    wordBank: string[]
+    acceptedAnswers: string[]
+  }[] = [
+    {
+      content: 'What type of bacteria form the base of vent ecosystems?',
+      summaryContext: 'rely on ____(10)____ bacteria which convert chemicals',
+      wordBank: ['chemosynthetic', 'photosynthetic', 'hydrogen sulphide', 'Enceladus', 'oceans', 'Europa'],
+      acceptedAnswers: ['chemosynthetic'],
+    },
+    {
+      content: 'Which chemical do vent bacteria primarily convert?',
+      summaryContext: 'convert chemicals — particularly ____(11)____ — into energy',
+      wordBank: ['chemosynthetic', 'photosynthetic', 'hydrogen sulphide', 'Enceladus', 'oceans', 'Europa'],
+      acceptedAnswers: ['hydrogen sulphide'],
+    },
+    {
+      content: 'Besides Europa, which moon is mentioned as a candidate for hydrothermal life?',
+      summaryContext: 'moons such as Europa or ____(12)____',
+      wordBank: ['chemosynthetic', 'photosynthetic', 'hydrogen sulphide', 'Enceladus', 'oceans', 'Europa'],
+      acceptedAnswers: ['enceladus', 'Enceladus'],
+    },
+    {
+      content: 'What do these moons harbour beneath their surfaces?',
+      summaryContext: 'believed to harbour subsurface ____(13)____',
+      wordBank: ['chemosynthetic', 'photosynthetic', 'hydrogen sulphide', 'Enceladus', 'oceans', 'Europa'],
+      acceptedAnswers: ['oceans'],
+    },
+  ]
+
+  for (let i = 0; i < summaryData.length; i++) {
+    const d = summaryData[i]
+    const meta: SummaryCompletionMetadata = {
+      wordLimit: 'NO MORE THAN TWO WORDS',
+      wordBank: d.wordBank,
+      summaryContext: d.summaryContext,
+      acceptedAnswers: d.acceptedAnswers,
+    }
+    await prisma.question.create({
+      data: {
+        idQuestionGroup: summaryGroup.idQuestionGroup,
+        idPart: readingPart.idPart,
+        questionNumber: globalQNum++,   // 10, 11, 12, 13
+        content: d.content,
+        questionType: QuestionType.SUMMARY_COMPLETION,
+        order: i,
+        metadata: toJson(meta),
+      },
+    })
+  }
+
+  console.log('  ✔  Reading test seeded (13 questions, 3 groups)')
+
+  // ==========================================================================
+  // LISTENING TEST
+  // ==========================================================================
+  //
+  // STRUCTURE: 1 Test → 1 Part (with part-level audioUrl) → 2 QuestionGroups
+  //
+  // KEY DIFFERENCE from Reading:
+  //   • Test.audioUrl OR Part.audioUrl holds the media file.
+  //   • Passage is usually NOT created for Listening (questions reference
+  //     audio directly). Some crawlers may create a Passage to store a
+  //     transcript — that is valid but optional.
+  //   • Section headings: "Section 1", "Section 2", "Section 3", "Section 4"
+  // ==========================================================================
+
+  const listeningTest = await prisma.test.create({
+    data: {
+      idUser: seedUser.idUser,
+      title: 'IELTS Listening Mock Test 1',
+      description: 'A Listening section demonstrating MULTIPLE_CHOICE and DIAGRAM_LABELING crawl patterns.',
+      testType: TestType.LISTENING,
+      duration: 1800,        // 30 minutes
+      numberQuestion: 8,
+      audioUrl: 'https://cdn.ielts.dev/audio/mock1_master.mp3',  // Master audio
+      level: Level.Mid,
+    },
+  })
+  console.log('  ✔  Listening test:', listeningTest.idTest)
+
+  // Section 1 — Part.audioUrl can hold a section-specific clip
+  const listeningPart = await prisma.part.create({
+    data: {
+      idTest: listeningTest.idTest,
+      namePart: 'Section 1',
+      order: 0,
+      audioUrl: 'https://cdn.ielts.dev/audio/mock1_section1.mp3',
+    },
+  })
+
+  // --------------------------------------------------------------------------
+  // Listening QuestionGroup 1 — MULTIPLE_CHOICE (Questions 1-4, order: 0)
+  //
+  // CRAWLER SIGNAL: Radio buttons / lettered options + "Choose ONE letter"
+  // --------------------------------------------------------------------------
+  let listeningQNum = 1
+
+  const mcGroup = await prisma.questionGroup.create({
+    data: {
+      idPart: listeningPart.idPart,
+      title: 'Questions 1–4: Multiple Choice',
+      instructions:
+        'Choose the correct letter, A, B or C.',
+      questionType: QuestionType.MULTIPLE_CHOICE,
+      order: 0,
+    },
+  })
+
+  const mcData: {
+    content: string
+    options: string[]
+    correctAnswers: string[]
+  }[] = [
+    {
+      content: 'Why does the woman want to cancel her gym membership?',
+      options: ['She is moving to another city.', 'She cannot afford the fees.', 'She has a new work schedule.'],
+      correctAnswers: ['She cannot afford the fees.'],
+    },
+    {
+      content: 'What is the notice period required to cancel the membership?',
+      options: ['Two weeks', 'One month', 'Three months'],
+      correctAnswers: ['One month'],
+    },
+    {
+      content: 'Which form of refund does the gym offer?',
+      options: ['Cash', 'Bank transfer', 'Credit to the account'],
+      correctAnswers: ['Credit to the account'],
+    },
+    {
+      // Multi-select example — "Choose TWO"
+      content: 'Which TWO facilities will the woman lose access to immediately?',
+      options: ['Swimming pool', 'Sauna', 'Fitness classes', 'Car park'],
+      correctAnswers: ['Swimming pool', 'Sauna'],
+    },
+  ]
+
+  for (let i = 0; i < mcData.length; i++) {
+    const d = mcData[i]
+    const meta: MultipleChoiceMetadata = {
+      options: d.options,
+      correctAnswers: d.correctAnswers,
+      maxSelections: d.correctAnswers.length,  // 1 for single, 2 for the last question
+    }
+    await prisma.question.create({
+      data: {
+        idQuestionGroup: mcGroup.idQuestionGroup,
+        idPart: listeningPart.idPart,
+        questionNumber: listeningQNum++,
+        content: d.content,
+        questionType: QuestionType.MULTIPLE_CHOICE,
+        order: i,
+        metadata: toJson(meta),
+      },
+    })
+  }
+
+  // --------------------------------------------------------------------------
+  // Listening QuestionGroup 2 — DIAGRAM_LABELING (Questions 5-8, order: 1)
+  //
+  // CRAWLER SIGNAL: Image/map with numbered callouts + short text inputs
+  //
+  // IMPORTANT: imageUrl is REQUIRED on the QuestionGroup.
+  //            If crawling a site that uses an inline SVG, render it to PNG
+  //            and upload to CDN first, then store the URL.
+  // --------------------------------------------------------------------------
+  const diagramGroup = await prisma.questionGroup.create({
+    data: {
+      idPart: listeningPart.idPart,
+      title: 'Questions 5–8: Map Labelling',
+      instructions:
+        'Label the map below. Write ONE WORD ONLY for each answer.',
+      questionType: QuestionType.DIAGRAM_LABELING,
+      order: 1,
+      imageUrl: 'https://cdn.ielts.dev/images/mock1_section1_map.png',
+    },
+  })
+
+  const diagramData: {
+    content: string
+    labelPosition: string
+    labelCoordinates: { x: number; y: number }
+    acceptedAnswers: string[]
+  }[] = [
+    {
+      content: 'What is located at position 5 on the map?',
+      labelPosition: 'North-east corner of the recreation centre',
+      labelCoordinates: { x: 72, y: 18 },
+      acceptedAnswers: ['reception', 'Reception'],
+    },
+    {
+      content: 'What is located at position 6 on the map?',
+      labelPosition: 'Centre of the building, adjacent to the main hall',
+      labelCoordinates: { x: 48, y: 50 },
+      acceptedAnswers: ['café', 'cafe', 'Café', 'Cafe'],
+    },
+    {
+      content: 'What is located at position 7 on the map?',
+      labelPosition: 'South-west corner',
+      labelCoordinates: { x: 12, y: 82 },
+      acceptedAnswers: ['library', 'Library'],
+    },
+    {
+      content: 'What is located at position 8 on the map?',
+      labelPosition: 'Outside, east of the main entrance',
+      labelCoordinates: { x: 88, y: 60 },
+      acceptedAnswers: ['car park', 'carpark', 'parking'],
+    },
+  ]
+
+  for (let i = 0; i < diagramData.length; i++) {
+    const d = diagramData[i]
+    const meta: DiagramLabelingMetadata = {
+      wordLimit: 'ONE WORD ONLY',
+      wordBank: [],            // No word box for this question type in this group
+      labelPosition: d.labelPosition,
+      labelCoordinates: d.labelCoordinates,
+      acceptedAnswers: d.acceptedAnswers,
+    }
+    await prisma.question.create({
+      data: {
+        idQuestionGroup: diagramGroup.idQuestionGroup,
+        idPart: listeningPart.idPart,
+        questionNumber: listeningQNum++,
+        content: d.content,
+        questionType: QuestionType.DIAGRAM_LABELING,
+        order: i,
+        metadata: toJson(meta),
+      },
+    })
+  }
+
+  console.log('  ✔  Listening test seeded (8 questions, 2 groups)')
+
+  // ==========================================================================
+  // WRITING TEST
+  // ==========================================================================
+  //
+  // STRUCTURE: 1 Test → 2 WritingTask records (TASK1 + TASK2)
+  //
+  // NO Parts, Passages, or Questions. Writing assessment is fully human/AI-graded
+  // via the UserWritingSubmission model (async, RabbitMQ-backed).
+  //
+  // CRAWLER SIGNAL:
+  //   TASK1: Contains an image (chart/graph/map/process diagram) AND
+  //          "Write at least 150 words" or "spend about 20 minutes"
+  //   TASK2: No image (or image is decoration), "Write at least 250 words",
+  //          "Give reasons for your answer and include relevant examples"
+  // ==========================================================================
+
+  const writingTest = await prisma.test.create({
+    data: {
+      idUser: seedUser.idUser,
+      title: 'IELTS Academic Writing Mock Test 1',
+      description: 'Full Academic Writing paper: Task 1 (data description) and Task 2 (discursive essay).',
+      testType: TestType.WRITING,
+      duration: 3600,    // 60 minutes total
+      numberQuestion: 2, // 2 tasks = 2 "questions"
+      level: Level.Mid,
+    },
+  })
+  console.log('  ✔  Writing test:', writingTest.idTest)
+
+  // TASK 1 — Describe a visual stimulus (chart / graph / map / process)
+  await prisma.writingTask.create({
+    data: {
+      idTest: writingTest.idTest,
+      title: 'Writing Task 1 — Bar Chart Description',
+      taskType: WritingTaskType.TASK1,
+      timeLimit: 1200,   // ~20 minutes in seconds
+      image: 'https://cdn.ielts.dev/images/mock1_writing_task1_chart.png',
+      instructions:
+        'The bar chart below shows the percentage of households in five European countries '
+        + 'that owned a computer in 2002, 2007, and 2012.\n\n'
+        + 'Summarise the information by selecting and reporting the main features, '
+        + 'and make comparisons where relevant.\n\n'
+        + 'Write at least 150 words.',
+    },
+  })
+
+  // TASK 2 — Discursive essay (no image)
+  await prisma.writingTask.create({
+    data: {
+      idTest: writingTest.idTest,
+      title: 'Writing Task 2 — Discussion Essay',
+      taskType: WritingTaskType.TASK2,
+      timeLimit: 2400,   // ~40 minutes in seconds
+      image: null,
+      instructions:
+        'Some people believe that universities should focus only on academic subjects '
+        + 'and not offer vocational courses such as tourism or event management.\n\n'
+        + 'To what extent do you agree or disagree?\n\n'
+        + 'Give reasons for your answer and include any relevant examples from '
+        + 'your own knowledge or experience.\n\n'
+        + 'Write at least 250 words.',
+    },
+  })
+
+  console.log('  ✔  Writing test seeded (2 tasks)')
+
+  // ==========================================================================
+  // SPEAKING TEST
+  // ==========================================================================
+  //
+  // STRUCTURE: 1 Test → 3 SpeakingTask records (PART1, PART2, PART3)
+  //                       → SpeakingQuestion records per task
+  //
+  // CRAWLER SIGNAL:
+  //   PART1: Conversational questions on familiar topics (2-3 topics × 2-3 Qs)
+  //          preparationTime = 0, speakingTime = ~30s per question
+  //   PART2: Single cue card with 1 topic + 3-4 sub-prompts (bullet points)
+  //          preparationTime = 60, speakingTime = 120 (1 minute prep, 2 min talk)
+  //          subPrompts JSON stores the bullet points
+  //   PART3: Abstract discussion questions linked thematically to Part 2 topic
+  //          preparationTime = 0, speakingTime = ~60-90s per question
+  //
+  // NOTE: @@unique([idTest, part]) on SpeakingTask means only ONE task per part
+  //       type per test. Crawlers must not create duplicates.
+  // ==========================================================================
+
+  const speakingTest = await prisma.test.create({
+    data: {
+      idUser: seedUser.idUser,
+      title: 'IELTS Speaking Mock Test 1',
+      description: 'Full Speaking paper across all three parts.',
+      testType: TestType.SPEAKING,
+      duration: 900,    // ~15 minutes
+      numberQuestion: 9,
+      level: Level.Mid,
+    },
+  })
+  console.log('  ✔  Speaking test:', speakingTest.idTest)
+
+  // --------------------------------------------------------------------------
+  // PART 1 — Interview / Familiar Topics
+  // --------------------------------------------------------------------------
+  const speakingPart1 = await prisma.speakingTask.create({
+    data: {
+      idTest: speakingTest.idTest,
+      title: 'Speaking Part 1 — Introduction & Interview',
+      part: SpeakingPartType.PART1,
+    },
+  })
+
+  // Topic 1: Hometown — 3 questions
+  const part1Questions: {
+    topic: string
+    prompt: string
+    preparationTime: number
+    speakingTime: number
+    order: number
+  }[] = [
+    {
+      topic: 'Hometown',
+      prompt: 'Where are you from originally?',
+      preparationTime: 0,
+      speakingTime: 30,
+      order: 0,
+    },
+    {
+      topic: 'Hometown',
+      prompt: 'What do you like most about your hometown?',
+      preparationTime: 0,
+      speakingTime: 30,
+      order: 1,
+    },
+    {
+      topic: 'Work and Study',
+      prompt: 'Are you currently working or studying?',
+      preparationTime: 0,
+      speakingTime: 30,
+      order: 2,
+    },
+    {
+      topic: 'Work and Study',
+      prompt: 'What do you enjoy most about your work or studies?',
+      preparationTime: 0,
+      speakingTime: 30,
+      order: 3,
+    },
+  ]
+
+  for (const q of part1Questions) {
+    await prisma.speakingQuestion.create({
+      data: {
+        idSpeakingTask: speakingPart1.idSpeakingTask,
+        ...q,
+        subPrompts: null,  // Part 1 never has sub-prompts
+      },
+    })
+  }
+
+  // --------------------------------------------------------------------------
+  // PART 2 — Long Turn (Cue Card)
+  //
+  // subPrompts JSON structure:
+  //   {
+  //     "bulletPoints": string[]   // The bullet points on the cue card
+  //   }
+  //
+  // CRAWLER NOTES:
+  //   - The main topic goes in `prompt` (the "Describe a..." stem)
+  //   - Bullet points ("You should say:") go in subPrompts.bulletPoints[]
+  //   - Follow-up question (asked after the 2-minute talk) is a separate
+  //     SpeakingQuestion record with order = 1 and no subPrompts.
+  // --------------------------------------------------------------------------
+  const speakingPart2 = await prisma.speakingTask.create({
+    data: {
+      idTest: speakingTest.idTest,
+      title: 'Speaking Part 2 — Long Turn',
+      part: SpeakingPartType.PART2,
+    },
+  })
+
+  // Cue card (order: 0)
+  await prisma.speakingQuestion.create({
+    data: {
+      idSpeakingTask: speakingPart2.idSpeakingTask,
+      topic: 'A memorable journey',
+      prompt: 'Describe a journey you have taken that was particularly memorable.',
+      subPrompts: {
+        bulletPoints: [
+          'where you went',
+          'who you travelled with',
+          'what happened during the journey',
+          'and explain why this journey was so memorable for you',
+        ],
+      },
+      preparationTime: 60,   // 1 minute to prepare
+      speakingTime: 120,     // 2 minutes to speak
+      order: 0,
+    },
+  })
+
+  // Follow-up question (order: 1) — asked by examiner after the 2-minute talk
+  await prisma.speakingQuestion.create({
+    data: {
+      idSpeakingTask: speakingPart2.idSpeakingTask,
+      topic: 'A memorable journey',
+      prompt: 'Would you like to make that same journey again in the future?',
+      subPrompts: null,
+      preparationTime: 0,
+      speakingTime: 30,
+      order: 1,
+    },
+  })
+
+  // --------------------------------------------------------------------------
+  // PART 3 — Two-Way Discussion (thematically linked to Part 2 topic)
+  // --------------------------------------------------------------------------
+  const speakingPart3 = await prisma.speakingTask.create({
+    data: {
+      idTest: speakingTest.idTest,
+      title: 'Speaking Part 3 — Discussion',
+      part: SpeakingPartType.PART3,
+    },
+  })
+
+  const part3Questions: { prompt: string; order: number }[] = [
+    {
+      prompt: 'How has the way people travel changed over the past few decades?',
+      order: 0,
+    },
+    {
+      prompt: 'Do you think international tourism has a positive or negative impact on local communities?',
+      order: 1,
+    },
+    {
+      prompt: 'Some people argue that frequent travel is harmful to the environment. How far do you agree?',
+      order: 2,
+    },
+  ]
+
+  for (const q of part3Questions) {
+    await prisma.speakingQuestion.create({
+      data: {
+        idSpeakingTask: speakingPart3.idSpeakingTask,
+        topic: 'Travel and Tourism',
+        prompt: q.prompt,
+        subPrompts: null,
+        preparationTime: 0,
+        speakingTime: 90,
+        order: q.order,
+      },
+    })
+  }
+
+  console.log('  ✔  Speaking test seeded (3 parts, 9 questions)')
+  console.log('')
+  console.log('🎉  Seed complete!')
+  console.log('   Reading  :', readingTest.idTest)
+  console.log('   Listening:', listeningTest.idTest)
+  console.log('   Writing  :', writingTest.idTest)
+  console.log('   Speaking :', speakingTest.idTest)
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e);
-    process.exit(1);
+    console.error('❌  Seed failed:', e)
+    process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect();
-  });
+    await prisma.$disconnect()
+  })
