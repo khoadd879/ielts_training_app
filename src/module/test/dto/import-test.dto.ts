@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Level, QuestionType, TestType, WritingTaskType, SpeakingPartType } from '@prisma/client';
+import {
+  Level,
+  QuestionType,
+  TestType,
+  WritingTaskType,
+  SpeakingPartType,
+} from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -35,7 +41,8 @@ export class ImportQuestionDto {
   @IsNotEmpty()
   @IsObject()
   @ApiProperty({
-    description: 'Type-specific metadata including correct answers (see QuestionMetadata)',
+    description:
+      'Type-specific metadata including correct answers (see QuestionMetadata)',
   })
   metadata: Record<string, any>;
 
@@ -52,7 +59,10 @@ export class ImportQuestionGroupDto {
   title: string;
 
   @IsOptional()
-  @ApiProperty({ example: 'Read the passage and decide if the statements are TRUE, FALSE, or NOT GIVEN' })
+  @ApiProperty({
+    example:
+      'Read the passage and decide if the statements are TRUE, FALSE, or NOT GIVEN',
+  })
   instructions?: string;
 
   @IsNotEmpty()
@@ -135,7 +145,10 @@ export class ImportPartDto {
 
 export class ImportFullTestDto {
   @IsNotEmpty()
-  @ApiProperty({ example: '123', description: 'ID of the user creating this test' })
+  @ApiProperty({
+    example: '123',
+    description: 'ID of the user creating this test',
+  })
   idUser: string;
 
   @IsNotEmpty()
@@ -168,7 +181,10 @@ export class ImportFullTestDto {
   numberQuestion: number;
 
   @IsOptional()
-  @ApiProperty({ required: false, description: 'Master audio URL for Listening tests' })
+  @ApiProperty({
+    required: false,
+    description: 'Master audio URL for Listening tests',
+  })
   audioUrl?: string;
 
   @IsOptional()
@@ -257,7 +273,10 @@ export class ImportSpeakingQuestionDto {
   prompt?: string;
 
   @IsOptional()
-  @ApiProperty({ required: false, description: 'Cue card bullet points for Part 2' })
+  @ApiProperty({
+    required: false,
+    description: 'Cue card bullet points for Part 2',
+  })
   subPrompts?: any;
 
   @IsOptional()

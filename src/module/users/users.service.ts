@@ -17,7 +17,7 @@ export class UsersService {
     private readonly verificationService: VerificationService,
     private readonly mailerService: MailerService,
     private readonly cloudinaryService: CloudinaryService,
-  ) { }
+  ) {}
 
   async create(createUserDto: CreateUserDto, file?: Express.Multer.File) {
     const {
@@ -50,7 +50,6 @@ export class UsersService {
     // Hash the password before storing it
     const hashedPassword = await hashPasswordHelper(password);
 
-
     if (!level) throw new BadRequestException('Level not found');
 
     const xpUpdate = this.updateXpToNext(level);
@@ -67,7 +66,7 @@ export class UsersService {
         gender,
         accountType,
         level,
-        xpToNext: xpUpdate
+        xpToNext: xpUpdate,
       },
     });
     return {

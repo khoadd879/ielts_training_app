@@ -18,7 +18,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 @ApiBearerAuth()
 @Controller('forum-post')
 export class ForumPostController {
-  constructor(private readonly forumPostService: ForumPostService) { }
+  constructor(private readonly forumPostService: ForumPostService) {}
 
   @Post('create-forum-post')
   @UseInterceptors(

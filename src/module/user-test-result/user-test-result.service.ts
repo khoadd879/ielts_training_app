@@ -169,7 +169,9 @@ export class UserTestResultService {
     });
 
     if (!testResult) {
-      throw new NotFoundException('Test result not found or you do not have permission.');
+      throw new NotFoundException(
+        'Test result not found or you do not have permission.',
+      );
     }
     if (testResult.status !== 'IN_PROGRESS') {
       throw new BadRequestException('This test is not in progress.');
@@ -178,11 +180,16 @@ export class UserTestResultService {
       testResult.test.testType !== TestType.READING &&
       testResult.test.testType !== TestType.LISTENING
     ) {
-      throw new BadRequestException('This endpoint is for Reading/Listening tests only.');
+      throw new BadRequestException(
+        'This endpoint is for Reading/Listening tests only.',
+      );
     }
 
     // 2. Build question map from test structure
-    const questionMap = new Map<string, { questionType: string; metadata: any }>();
+    const questionMap = new Map<
+      string,
+      { questionType: string; metadata: any }
+    >();
     for (const part of testResult.test.parts) {
       for (const q of part.questions) {
         questionMap.set(q.idQuestion, {
@@ -204,7 +211,11 @@ export class UserTestResultService {
     for (const ans of dto.answers) {
       const question = questionMap.get(ans.idQuestion);
       const isCorrect = question
-        ? this.evaluateAnswer(question.questionType, question.metadata, ans.answerPayload)
+        ? this.evaluateAnswer(
+            question.questionType,
+            question.metadata,
+            ans.answerPayload,
+          )
         : false;
 
       if (isCorrect) totalCorrect++;
@@ -218,7 +229,10 @@ export class UserTestResultService {
 
     // 4. Calculate band score
     const totalQuestions = questionMap.size;
-    const bandScore = this.calculateBandScore(totalCorrect, testResult.test.testType);
+    const bandScore = this.calculateBandScore(
+      totalCorrect,
+      testResult.test.testType,
+    );
 
     // 5. Calculate XP (with anti-spam check)
     const xpGained = await this.calculateXpGained(
@@ -254,48 +268,52 @@ export class UserTestResultService {
     }
 
     // 6. Atomic transaction: save answers + update test result + update XP
-    const updatedResult = await this.databaseService.$transaction(async (tx) => {
-      // Delete any previously saved draft answers
-      await tx.userAnswer.deleteMany({ where: { idTestResult: dto.idTestResult } });
+    const updatedResult = await this.databaseService.$transaction(
+      async (tx) => {
+        // Delete any previously saved draft answers
+        await tx.userAnswer.deleteMany({
+          where: { idTestResult: dto.idTestResult },
+        });
 
-      // Create graded answers
-      await tx.userAnswer.createMany({
-        data: gradedAnswers.map((a) => ({
-          idQuestion: a.idQuestion,
-          idUser,
-          idTestResult: dto.idTestResult,
-          answerType: a.answerType,
-          answerPayload: a.answerPayload,
-          isCorrect: a.isCorrect,
-        })),
-      });
+        // Create graded answers
+        await tx.userAnswer.createMany({
+          data: gradedAnswers.map((a) => ({
+            idQuestion: a.idQuestion,
+            idUser,
+            idTestResult: dto.idTestResult,
+            answerType: a.answerType,
+            answerPayload: a.answerPayload,
+            isCorrect: a.isCorrect,
+          })),
+        });
 
-      // Update user XP and level if gained
-      if (userLevelUpdate) {
-        await tx.user.update({
-          where: { idUser },
+        // Update user XP and level if gained
+        if (userLevelUpdate) {
+          await tx.user.update({
+            where: { idUser },
+            data: {
+              xp: userLevelUpdate.newXp,
+              level: userLevelUpdate.currentLevel as any,
+              xpToNext: userLevelUpdate.xpToNext,
+            },
+          });
+        }
+
+        // Mark test as finished
+        return tx.userTestResult.update({
+          where: { idTestResult: dto.idTestResult },
           data: {
-            xp: userLevelUpdate.newXp,
-            level: userLevelUpdate.currentLevel as any,
-            xpToNext: userLevelUpdate.xpToNext,
+            status: 'FINISHED',
+            finishedAt: new Date(),
+            totalCorrect,
+            totalQuestions,
+            bandScore,
+            score: totalCorrect,
+            ...(dto.duration != null ? { duration: dto.duration } : {}),
           },
         });
-      }
-
-      // Mark test as finished
-      return tx.userTestResult.update({
-        where: { idTestResult: dto.idTestResult },
-        data: {
-          status: 'FINISHED',
-          finishedAt: new Date(),
-          totalCorrect,
-          totalQuestions,
-          bandScore,
-          score: totalCorrect,
-          ...(dto.duration != null ? { duration: dto.duration } : {}),
-        },
-      });
-    });
+      },
+    );
 
     // 7. Update streak (non-critical)
     try {
@@ -375,7 +393,8 @@ export class UserTestResultService {
     const correctIndexes: number[] = metadata.correctOptionIndexes ?? [];
     const selectedIndexes: number[] = payload.selectedIndexes ?? [];
 
-    if (correctIndexes.length === 0 || selectedIndexes.length === 0) return false;
+    if (correctIndexes.length === 0 || selectedIndexes.length === 0)
+      return false;
     if (correctIndexes.length !== selectedIndexes.length) return false;
 
     const sortedCorrect = [...correctIndexes].sort();
@@ -816,9 +835,9 @@ export class UserTestResultService {
       }
     }
 
-    let rawScore = (scoreTask1 + scoreTask2 * 2) / 3;
+    const rawScore = (scoreTask1 + scoreTask2 * 2) / 3;
 
-    let bandScore = Math.round(rawScore * 2) / 2;
+    const bandScore = Math.round(rawScore * 2) / 2;
 
     const xpGained = await this.calculateXpGained(
       idUser,
@@ -931,7 +950,10 @@ export class UserTestResultService {
           audioFiles[0], // File audio
         );
 
-        const score = (result.data?.aiDetailedFeedback as any)?.overallScore || result.data?.aiOverallScore || 0;
+        const score =
+          (result.data?.aiDetailedFeedback as any)?.overallScore ||
+          result.data?.aiOverallScore ||
+          0;
 
         const partIndex = partScores.findIndex((p) => p.part === partType);
         if (partIndex !== -1) {

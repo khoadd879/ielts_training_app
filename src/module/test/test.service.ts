@@ -25,7 +25,7 @@ export class TestService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly userService: UsersService,
     @Inject(CACHE_MANAGER) private cache: Cache,
-  ) { }
+  ) {}
 
   async createTest(
     createTestDto: CreateTestDto,
@@ -459,8 +459,13 @@ export class TestService {
   // ============================================================================
 
   async importFullReadingListeningTest(dto: ImportFullTestDto) {
-    if (dto.testType !== TestType.READING && dto.testType !== TestType.LISTENING) {
-      throw new BadRequestException('This endpoint only supports READING and LISTENING test types');
+    if (
+      dto.testType !== TestType.READING &&
+      dto.testType !== TestType.LISTENING
+    ) {
+      throw new BadRequestException(
+        'This endpoint only supports READING and LISTENING test types',
+      );
     }
 
     const existingUser = await this.databaseService.user.findUnique({
@@ -514,7 +519,11 @@ export class TestService {
         }
 
         // Create question groups and their questions
-        for (let groupIdx = 0; groupIdx < partDto.questionGroups.length; groupIdx++) {
+        for (
+          let groupIdx = 0;
+          groupIdx < partDto.questionGroups.length;
+          groupIdx++
+        ) {
           const groupDto = partDto.questionGroups[groupIdx];
 
           const questionGroup = await tx.questionGroup.create({
@@ -583,7 +592,9 @@ export class TestService {
     if (!existingUser) throw new BadRequestException('User not found');
 
     if (dto.writingTasks.length > 2) {
-      throw new BadRequestException('A writing test can have a maximum of 2 tasks');
+      throw new BadRequestException(
+        'A writing test can have a maximum of 2 tasks',
+      );
     }
 
     const data = await this.databaseService.test.create({
@@ -628,7 +639,9 @@ export class TestService {
     if (!existingUser) throw new BadRequestException('User not found');
 
     if (dto.speakingTasks.length > 3) {
-      throw new BadRequestException('A speaking test can have a maximum of 3 tasks (Part 1, 2, 3)');
+      throw new BadRequestException(
+        'A speaking test can have a maximum of 3 tasks (Part 1, 2, 3)',
+      );
     }
 
     const data = await this.databaseService.test.create({

@@ -147,7 +147,7 @@ export class UserSpeakingSubmissionService {
         data: {
           idUser,
           idSpeakingTask,
-          audioUrl: audioUrl!,
+          audioUrl: audioUrl,
           idTestResult: idTestResult || null,
           transcript: transcript || null,
           aiGradingStatus: 'COMPLETED',

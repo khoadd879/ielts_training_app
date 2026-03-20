@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserWritingSubmissionDto } from './dto/create-user-writing-submission.dto';
 import { UpdateUserWritingSubmissionDto } from './dto/update-user-writing-submission.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -31,7 +36,7 @@ export class UserWritingSubmissionService {
     private readonly databaseService: DatabaseService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   private getAIInstance(): GoogleGenAI {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
@@ -53,8 +58,13 @@ export class UserWritingSubmissionService {
     // ✅ OPTIMIZATION: Validate data first (before expensive AI call)
     const [user, writingTask, testResult] = await Promise.all([
       this.databaseService.user.findUnique({ where: { idUser } }),
-      this.databaseService.writingTask.findUnique({ where: { idWritingTask }, include: { test: true } }),
-      this.databaseService.userTestResult.findUnique({ where: { idTestResult } })
+      this.databaseService.writingTask.findUnique({
+        where: { idWritingTask },
+        include: { test: true },
+      }),
+      this.databaseService.userTestResult.findUnique({
+        where: { idTestResult },
+      }),
     ]);
 
     if (!user) throw new NotFoundException('User not found');
@@ -66,21 +76,29 @@ export class UserWritingSubmissionService {
 
     if (writingTask.image) {
       // Validate image URL format
-      if (!writingTask.image.startsWith('http://') && !writingTask.image.startsWith('https://')) {
+      if (
+        !writingTask.image.startsWith('http://') &&
+        !writingTask.image.startsWith('https://')
+      ) {
         console.warn('⚠️ Image URL is not absolute:', writingTask.image);
         throw new BadRequestException(
-          'Image URL must be an absolute URL (http:// or https://). Got: ' + writingTask.image
+          'Image URL must be an absolute URL (http:// or https://). Got: ' +
+            writingTask.image,
         );
       }
 
-      console.log('🎨 Writing Task 1 with image - calling AI with visual analysis');
+      console.log(
+        '🎨 Writing Task 1 with image - calling AI with visual analysis',
+      );
       aiResult = await this.evaluateWriting(
         submissionText,
         writingTask.title,
         writingTask.image,
       );
     } else {
-      console.log('📝 Writing Task 2 (no image) - calling AI for essay evaluation');
+      console.log(
+        '📝 Writing Task 2 (no image) - calling AI for essay evaluation',
+      );
       aiResult = await this.evaluateWriting(submissionText, writingTask.title);
     }
 
@@ -98,7 +116,8 @@ export class UserWritingSubmissionService {
             taskResponse: aiResult.task_response,
             coherenceAndCohesion: aiResult.coherence_and_cohesion,
             lexicalResource: aiResult.lexical_resource,
-            grammaticalRangeAndAccuracy: aiResult.grammatical_range_and_accuracy,
+            grammaticalRangeAndAccuracy:
+              aiResult.grammatical_range_and_accuracy,
             generalFeedback: aiResult.general_feedback,
             detailedCorrections: aiResult.detailed_corrections ?? [],
           },
@@ -188,16 +207,18 @@ export class UserWritingSubmissionService {
           const waitTime = 1000 * Math.pow(2, attempt);
           console.warn(
             `⚠️ AI evaluation failed (attempt ${attempt + 1}/${maxRetries}), retrying in ${waitTime}ms...`,
-            error?.message || error
+            error?.message || error,
           );
-          await new Promise(resolve => setTimeout(resolve, waitTime));
+          await new Promise((resolve) => setTimeout(resolve, waitTime));
         }
       }
     }
 
     // All retries failed
     console.error('❌ AI evaluation failed after all retries:', lastError);
-    throw new BadRequestException('AI evaluation failed after multiple attempts. Please try again later.');
+    throw new BadRequestException(
+      'AI evaluation failed after multiple attempts. Please try again later.',
+    );
   }
 
   private async fileToGenerativePart(url: string) {
@@ -223,33 +244,38 @@ export class UserWritingSubmissionService {
         },
       };
     } catch (error) {
-      console.error('❌ Failed to fetch image from URL:', url, error?.message || error);
+      console.error(
+        '❌ Failed to fetch image from URL:',
+        url,
+        error?.message || error,
+      );
       // ✅ THROW ERROR instead of returning null (critical for Task 1 accuracy)
       throw new BadRequestException(
-        `Failed to load image for Task 1 evaluation. Please check the image URL: ${url}`
+        `Failed to load image for Task 1 evaluation. Please check the image URL: ${url}`,
       );
     }
   }
 
   // Lấy toàn bộ submissions theo user
   async findAllByIdUser(idUser: string) {
-    const submissions = await this.databaseService.userWritingSubmission.findMany({
-      where: { idUser },
-      orderBy: { submittedAt: 'desc' },
-      include: {
-        writingTask: {
-          select: { title: true, taskType: true }
+    const submissions =
+      await this.databaseService.userWritingSubmission.findMany({
+        where: { idUser },
+        orderBy: { submittedAt: 'desc' },
+        include: {
+          writingTask: {
+            select: { title: true, taskType: true },
+          },
+          testResult: {
+            select: {
+              bandScore: true,
+              idTest: true,
+            },
+          },
         },
-        testResult: {
-          select: {
-            bandScore: true,
-            idTest: true
-          }
-        },
-      },
-    });
+      });
 
-    const data = submissions.map(sub => ({
+    const data = submissions.map((sub) => ({
       idWritingSubmission: sub.idWritingSubmission,
       taskTitle: sub.writingTask?.title,
       submittedAt: sub.submittedAt,
@@ -266,16 +292,17 @@ export class UserWritingSubmissionService {
   }
 
   async findOne(idWritingSubmission: string) {
-    const submission = await this.databaseService.userWritingSubmission.findUnique({
-      where: { idWritingSubmission },
-      include: {
-        writingTask: true,
-        user: { select: { idUser: true, nameUser: true, avatar: true } },
-        testResult: {
-          select: { bandScore: true }
-        }
-      },
-    });
+    const submission =
+      await this.databaseService.userWritingSubmission.findUnique({
+        where: { idWritingSubmission },
+        include: {
+          writingTask: true,
+          user: { select: { idUser: true, nameUser: true, avatar: true } },
+          testResult: {
+            select: { bandScore: true },
+          },
+        },
+      });
 
     if (!submission) throw new BadRequestException('Submission not found');
 
@@ -283,7 +310,7 @@ export class UserWritingSubmissionService {
       message: 'Details retrieved successfully',
       data: {
         ...submission,
-        bandScore: submission.testResult?.bandScore ?? 0
+        bandScore: submission.testResult?.bandScore ?? 0,
       },
       status: 200,
     };
@@ -320,7 +347,8 @@ export class UserWritingSubmissionService {
               taskResponse: aiResult.task_response,
               coherenceAndCohesion: aiResult.coherence_and_cohesion,
               lexicalResource: aiResult.lexical_resource,
-              grammaticalRangeAndAccuracy: aiResult.grammatical_range_and_accuracy,
+              grammaticalRangeAndAccuracy:
+                aiResult.grammatical_range_and_accuracy,
               generalFeedback: aiResult.general_feedback,
               detailedCorrections: aiResult.detailed_corrections ?? [],
             },

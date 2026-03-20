@@ -13,7 +13,10 @@ export class CreateQuestionGroupDto {
   title: string;
 
   @IsOptional()
-  @ApiProperty({ example: 'Read the passage and answer the questions below.', required: false })
+  @ApiProperty({
+    example: 'Read the passage and answer the questions below.',
+    required: false,
+  })
   instructions?: string;
 
   @IsNotEmpty()

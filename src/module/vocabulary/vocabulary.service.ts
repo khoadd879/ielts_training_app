@@ -19,7 +19,7 @@ const vocabCache = new Map<
 
 @Injectable()
 export class VocabularyService {
-  constructor(private readonly databaseService: DatabaseService) { }
+  constructor(private readonly databaseService: DatabaseService) {}
 
   //Vocabulary
   async createVocabulary(createVocabularyDto: CreateVocabularyDto) {

@@ -18,9 +18,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 @ApiBearerAuth()
 @Controller('question-group')
 export class QuestionGroupController {
-  constructor(
-    private readonly questionGroupService: QuestionGroupService,
-  ) {}
+  constructor(private readonly questionGroupService: QuestionGroupService) {}
 
   @Post('create-question-group')
   @UseInterceptors(FileInterceptor('imageUrl'))
@@ -32,7 +30,10 @@ export class QuestionGroupController {
         idPart: { type: 'string', example: '123' },
         questionType: { type: 'string', example: 'MULTIPLE_CHOICE' },
         title: { type: 'string', example: 'Questions 1-5' },
-        instructions: { type: 'string', example: 'Choose TRUE, FALSE, or NOT GIVEN' },
+        instructions: {
+          type: 'string',
+          example: 'Choose TRUE, FALSE, or NOT GIVEN',
+        },
         order: { type: 'number', example: 0 },
         imageUrl: { type: 'string', format: 'binary' },
       },
@@ -65,7 +66,10 @@ export class QuestionGroupController {
         idPart: { type: 'string', example: '123' },
         questionType: { type: 'string', example: 'MULTIPLE_CHOICE' },
         title: { type: 'string', example: 'Questions 1-5' },
-        instructions: { type: 'string', example: 'Choose TRUE, FALSE, or NOT GIVEN' },
+        instructions: {
+          type: 'string',
+          example: 'Choose TRUE, FALSE, or NOT GIVEN',
+        },
         order: { type: 'number', example: 0 },
         imageUrl: { type: 'string', format: 'binary' },
       },

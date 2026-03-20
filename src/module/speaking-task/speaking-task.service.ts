@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateSpeakingTaskDto } from './dto/create-speaking-task.dto';
 import { UpdateSpeakingTaskDto } from './dto/update-speaking-task.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -11,9 +15,7 @@ export class SpeakingTaskService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(
-    createSpeakingTaskDto: CreateSpeakingTaskDto,
-  ) {
+  async create(createSpeakingTaskDto: CreateSpeakingTaskDto) {
     const { idTest, title, part } = createSpeakingTaskDto;
 
     const existingTest = await this.databaseService.test.findUnique({
@@ -24,12 +26,11 @@ export class SpeakingTaskService {
 
     if (!existingTest) throw new BadRequestException('Test not found');
 
-
     const data = await this.databaseService.speakingTask.create({
       data: {
         idTest,
         title,
-        part
+        part,
       },
     });
 
@@ -41,9 +42,11 @@ export class SpeakingTaskService {
   }
 
   async findAllSpeakingTaskInTest(idTest: string) {
-    const data = await this.databaseService.speakingTask.findMany({where: {idTest}});
+    const data = await this.databaseService.speakingTask.findMany({
+      where: { idTest },
+    });
 
-    if(!data) throw new NotFoundException('Test not found')
+    if (!data) throw new NotFoundException('Test not found');
 
     return {
       message: 'Speaking tasks retrieved successfully',
@@ -52,10 +55,12 @@ export class SpeakingTaskService {
     };
   }
 
-  async findOne(idSpeakingTask: string){
-    const data = await this.databaseService.speakingTask.findUnique({where:{idSpeakingTask}})
+  async findOne(idSpeakingTask: string) {
+    const data = await this.databaseService.speakingTask.findUnique({
+      where: { idSpeakingTask },
+    });
 
-     if(!data) throw new NotFoundException('Speaking task not found')
+    if (!data) throw new NotFoundException('Speaking task not found');
 
     return {
       message: 'Speaking tasks retrieved successfully',
@@ -68,7 +73,7 @@ export class SpeakingTaskService {
     idSpeakingTask: string,
     updateSpeakingTaskDto: UpdateSpeakingTaskDto,
   ) {
-    const { idTest, title, part} = updateSpeakingTaskDto;
+    const { idTest, title, part } = updateSpeakingTaskDto;
 
     const existingTest = await this.databaseService.test.findUnique({
       where: {
@@ -95,8 +100,8 @@ export class SpeakingTaskService {
       data: {
         idTest,
         title,
-        part
-      }
+        part,
+      },
     });
 
     return {

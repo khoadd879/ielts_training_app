@@ -16,9 +16,11 @@ export class RecommendTestService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   async getSimpleRecommendations(idUser: string, limit = 2): Promise<Test[]> {
-    const existingUser = await this.databaseService.user.findUnique({where:{idUser}})
-    
-    if(!existingUser) throw new NotFoundException('User not found')
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+
+    if (!existingUser) throw new NotFoundException('User not found');
     // 1. Lấy lịch sử & Phân tích profile (Giữ nguyên)
     const userHistory = await this.databaseService.userTestResult.findMany({
       where: { idUser, status: 'FINISHED' },
@@ -30,7 +32,7 @@ export class RecommendTestService {
 
     const completedTestIds = userHistory.map((h) => h.test.idTest);
     const userProfile = this.analyzeUserProfile(userHistory);
-    
+
     // 2. Lấy TOÀN BỘ bài test chưa làm
     const availableTests = await this.databaseService.test.findMany({
       where: {
@@ -47,15 +49,19 @@ export class RecommendTestService {
       // -- Logic tính điểm (Giữ nguyên hoặc tinh chỉnh nhẹ) --
       if (test.testType === userProfile.weakestSkill) score += 50;
 
-      const diff = LevelWeight[test.level] - LevelWeight[userProfile.currentLevel];
-      if (diff === 0) score += 30;       // Vừa sức
-      else if (diff === 1) score += 15;  // Thử thách 1 chút
-      else if (diff === -1) score += 5;  // Ôn tập
-      else score -= 20;                  // Quá khó hoặc quá dễ
+      const diff =
+        LevelWeight[test.level] - LevelWeight[userProfile.currentLevel];
+      if (diff === 0)
+        score += 30; // Vừa sức
+      else if (diff === 1)
+        score += 15; // Thử thách 1 chút
+      else if (diff === -1)
+        score += 5; // Ôn tập
+      else score -= 20; // Quá khó hoặc quá dễ
 
       // Tăng tính ngẫu nhiên tại đây (Random từ 0 -> 10 điểm thay vì 5)
       // Để các bài xêm xêm nhau có cơ hội tráo đổi vị trí
-      score += Math.random() * 10; 
+      score += Math.random() * 10;
 
       return { test, score };
     });
@@ -64,12 +70,12 @@ export class RecommendTestService {
     scoredTests.sort((a, b) => b.score - a.score);
 
     // --- THAY ĐỔI QUAN TRỌNG Ở ĐÂY ---
-    
-    // Quy tắc: Tạo Pool ứng viên. 
+
+    // Quy tắc: Tạo Pool ứng viên.
     // Nếu cần lấy 'limit' (ví dụ 2), ta sẽ xét trong Top 'poolSize' (ví dụ 6 hoặc 10)
     // Công thức: Lấy gấp 3 lần số lượng cần thiết, hoặc tối thiểu 5 bài.
     const poolSize = Math.max(limit * 3, 5);
-    
+
     // Lấy ra nhóm "Top Tier" (Những bài điểm cao nhất)
     const topCandidates = scoredTests.slice(0, poolSize);
 
@@ -91,7 +97,7 @@ export class RecommendTestService {
 
   // ... (Các hàm analyzeUserProfile, mapBandToLevel giữ nguyên như cũ)
   private analyzeUserProfile(history: any[]) {
-     if (!history || history.length === 0) {
+    if (!history || history.length === 0) {
       return {
         currentLevel: Level.Low,
         weakestSkill: this.getRandomTestType(),
@@ -134,7 +140,12 @@ export class RecommendTestService {
   }
 
   private getRandomTestType(): TestType {
-    const types = [TestType.LISTENING, TestType.READING, TestType.WRITING, TestType.SPEAKING];
+    const types = [
+      TestType.LISTENING,
+      TestType.READING,
+      TestType.WRITING,
+      TestType.SPEAKING,
+    ];
     return types[Math.floor(Math.random() * types.length)];
   }
 }

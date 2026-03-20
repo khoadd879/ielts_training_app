@@ -7,8 +7,13 @@ import { UserWritingSubmissionModule } from '../user-writing-submission/user-wri
 import { UserSpeakingSubmissionModule } from '../user-speaking-submission/user-speaking-submission.module';
 
 @Module({
-  imports: [DatabaseModule, StreakServiceModule, UserWritingSubmissionModule, UserSpeakingSubmissionModule],
+  imports: [
+    DatabaseModule,
+    StreakServiceModule,
+    UserWritingSubmissionModule,
+    UserSpeakingSubmissionModule,
+  ],
   controllers: [UserTestResultController],
   providers: [UserTestResultService],
 })
-export class UserTestResultModule { }
+export class UserTestResultModule {}

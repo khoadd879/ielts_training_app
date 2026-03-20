@@ -1,6 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 
 class QuestionItemDto {
   @ApiProperty({ example: 'What is your favorite food?' })
@@ -37,7 +44,10 @@ export class CreateBulkSpeakingQuestionDto {
   @IsString()
   topic: string;
 
-  @ApiProperty({ example: 0, description: 'Thời gian chuẩn bị chung (Part 1/3 thường là 0)' })
+  @ApiProperty({
+    example: 0,
+    description: 'Thời gian chuẩn bị chung (Part 1/3 thường là 0)',
+  })
   @IsInt()
   @Type(() => Number)
   preparationTime: number;

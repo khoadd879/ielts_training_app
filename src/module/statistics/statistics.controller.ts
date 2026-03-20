@@ -17,23 +17,25 @@ export class StatisticsController {
   constructor(private readonly statisticsService: StatisticsService) {}
 
   @Get('overall-score/:idUser')
-  getOverAllScore(@Param('idUser') idUser: string){
-    return this.statisticsService.OverAllScore(idUser)
+  getOverAllScore(@Param('idUser') idUser: string) {
+    return this.statisticsService.OverAllScore(idUser);
   }
 
   @Get('get-avg-score-by-day/:idUser')
-  getAvgScoreByDay(@Param('idUser') idUser: string){
-    return this.statisticsService.statistic(idUser)
+  getAvgScoreByDay(@Param('idUser') idUser: string) {
+    return this.statisticsService.statistic(idUser);
   }
 
   @Get('get-target/:idUser')
-  getTargetByIdUser(@Param('idUser') idUser: string){
-    return this.statisticsService.getTargetExam(idUser)
+  getTargetByIdUser(@Param('idUser') idUser: string) {
+    return this.statisticsService.getTargetExam(idUser);
   }
 
   @Patch('target/:idUser')
-  createTarget(@Param('idUser') idUser: string, @Body()createTarget: CreateTargetExam){
-    return this.statisticsService.addTargetExam(idUser, createTarget)
+  createTarget(
+    @Param('idUser') idUser: string,
+    @Body() createTarget: CreateTargetExam,
+  ) {
+    return this.statisticsService.addTargetExam(idUser, createTarget);
   }
-
 }

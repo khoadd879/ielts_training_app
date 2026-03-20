@@ -6,12 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  UsePipes,
 } from '@nestjs/common';
 import { QuestionService } from './question.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { CreateManyQuestionsDto } from './dto/create-many-questions.dto';
+import { ValidateMetadataPipe } from '../../core/validators/validate-metadata.pipe';
 
 @ApiBearerAuth()
 @Controller('question')
@@ -19,12 +21,14 @@ export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
   @Post('create-question')
+  @UsePipes(ValidateMetadataPipe)
   create(@Body() createQuestionDto: CreateQuestionDto) {
     return this.questionService.createQuestion(createQuestionDto);
   }
 
   @Post('create-many-questions')
   @ApiBody({ type: CreateManyQuestionsDto })
+  @UsePipes(ValidateMetadataPipe)
   createMany(@Body() dto: CreateManyQuestionsDto) {
     return this.questionService.createManyQuestions(dto.questions);
   }

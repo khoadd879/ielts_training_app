@@ -3,16 +3,16 @@ import { SpeakingPartType } from '@prisma/client';
 import { IsEnum, IsNotEmpty } from 'class-validator';
 
 export class CreateSpeakingTaskDto {
-  @ApiProperty({example: '123'})
+  @ApiProperty({ example: '123' })
   @IsNotEmpty()
   idTest: string;
 
-  @ApiProperty({example: 'title'})
+  @ApiProperty({ example: 'title' })
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({example: 'PART1'})
+  @ApiProperty({ example: 'PART1' })
   @IsNotEmpty()
   @IsEnum(SpeakingPartType)
-  part: SpeakingPartType
+  part: SpeakingPartType;
 }

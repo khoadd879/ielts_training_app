@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -11,7 +15,8 @@ export class QuestionService {
     const existingGroup = await this.databaseService.questionGroup.findUnique({
       where: { idQuestionGroup: dto.idQuestionGroup },
     });
-    if (!existingGroup) throw new BadRequestException('Question group not found');
+    if (!existingGroup)
+      throw new BadRequestException('Question group not found');
 
     const existingPart = await this.databaseService.part.findUnique({
       where: { idPart: dto.idPart },
@@ -41,7 +46,8 @@ export class QuestionService {
     const existingGroup = await this.databaseService.questionGroup.findUnique({
       where: { idQuestionGroup },
     });
-    if (!existingGroup) throw new BadRequestException('Question group not found');
+    if (!existingGroup)
+      throw new BadRequestException('Question group not found');
 
     const data = await this.databaseService.question.findMany({
       where: { idQuestionGroup },
@@ -93,7 +99,9 @@ export class QuestionService {
       data: {
         ...(dto.idQuestionGroup && { idQuestionGroup: dto.idQuestionGroup }),
         ...(dto.idPart && { idPart: dto.idPart }),
-        ...(dto.questionNumber !== undefined && { questionNumber: dto.questionNumber }),
+        ...(dto.questionNumber !== undefined && {
+          questionNumber: dto.questionNumber,
+        }),
         ...(dto.content && { content: dto.content }),
         ...(dto.questionType && { questionType: dto.questionType }),
         ...(dto.metadata && { metadata: dto.metadata }),
@@ -124,7 +132,9 @@ export class QuestionService {
 
   async createManyQuestions(questions: CreateQuestionDto[]) {
     if (!Array.isArray(questions) || questions.length === 0) {
-      throw new BadRequestException('Payload must be a non-empty array of questions');
+      throw new BadRequestException(
+        'Payload must be a non-empty array of questions',
+      );
     }
 
     // Validate unique references
@@ -138,7 +148,9 @@ export class QuestionService {
     const foundGroupIds = new Set(groups.map((g) => g.idQuestionGroup));
     const missingGroup = groupIds.find((id) => !foundGroupIds.has(id));
     if (missingGroup) {
-      throw new BadRequestException(`Question group not found: ${missingGroup}`);
+      throw new BadRequestException(
+        `Question group not found: ${missingGroup}`,
+      );
     }
 
     const parts = await this.databaseService.part.findMany({

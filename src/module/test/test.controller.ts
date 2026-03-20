@@ -123,13 +123,13 @@ export class TestController {
   }
 
   @Get('get-detail-in-test/:idTest')
-  getTest(@Param('idTest') idTest: string){
-    return this.testService.getTest(idTest)
+  getTest(@Param('idTest') idTest: string) {
+    return this.testService.getTest(idTest);
   }
 
   @Get('get-answers-in-test/:idTest')
-  getAnswerInTest(@Param('idTest') idTest: string){
-    return this.testService.getAnswerInTest(idTest)
+  getAnswerInTest(@Param('idTest') idTest: string) {
+    return this.testService.getAnswerInTest(idTest);
   }
 
   @Delete('delete-test/:idTest')

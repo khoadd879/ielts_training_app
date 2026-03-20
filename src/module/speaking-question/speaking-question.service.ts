@@ -93,34 +93,35 @@ export class SpeakingQuestionService {
   }
 
   async createBulk(dto: CreateBulkSpeakingQuestionDto) {
-  const { idSpeakingTask, topic, preparationTime, questions } = dto;
+    const { idSpeakingTask, topic, preparationTime, questions } = dto;
 
-  const existingTask = await this.databaseService.speakingTask.findUnique({
-    where: { idSpeakingTask },
-  });
+    const existingTask = await this.databaseService.speakingTask.findUnique({
+      where: { idSpeakingTask },
+    });
 
-  if (!existingTask) {
-    throw new BadRequestException('Speaking task not found');
+    if (!existingTask) {
+      throw new BadRequestException('Speaking task not found');
+    }
+
+    const dataToInsert = questions.map((q) => ({
+      idSpeakingTask,
+      topic,
+      prompt: q.prompt,
+      subPrompts: q.subPrompts || [],
+      preparationTime: preparationTime ?? 0,
+      speakingTime: q.speakingTime ?? 60,
+      order: q.order,
+    }));
+
+    const createdQuestions =
+      await this.databaseService.speakingQuestion.createManyAndReturn({
+        data: dataToInsert,
+      });
+
+    return {
+      message: `Successfully created ${createdQuestions.length} questions for topic: ${topic}`,
+      data: createdQuestions, // Trả về mảng các bản ghi đã tạo
+      status: 200,
+    };
   }
-
-  const dataToInsert = questions.map((q) => ({
-    idSpeakingTask,
-    topic,
-    prompt: q.prompt,
-    subPrompts: q.subPrompts || [],
-    preparationTime: preparationTime ?? 0,
-    speakingTime: q.speakingTime ?? 60,
-    order: q.order,
-  }));
-
-  const createdQuestions = await this.databaseService.speakingQuestion.createManyAndReturn({
-    data: dataToInsert,
-  });
-
-  return {
-    message: `Successfully created ${createdQuestions.length} questions for topic: ${topic}`,
-    data: createdQuestions, // Trả về mảng các bản ghi đã tạo
-    status: 200,
-  };
-}
 }

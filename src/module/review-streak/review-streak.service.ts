@@ -13,7 +13,7 @@ export class ReviewStreakService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly streakService: StreakService,
-  ) { }
+  ) {}
 
   async submitVocabularyReview(submitReviewDto: SubmitReviewDto) {
     const { idUser, answers } = submitReviewDto;
@@ -48,7 +48,8 @@ export class ReviewStreakService {
           let alreadyReviewedToday = false;
           if (lastReviewedDate) {
             lastReviewedDate.setHours(0, 0, 0, 0);
-            alreadyReviewedToday = lastReviewedDate.getTime() === today.getTime();
+            alreadyReviewedToday =
+              lastReviewedDate.getTime() === today.getTime();
           }
 
           // Cập nhật chuỗi trả lời đúng
@@ -57,7 +58,8 @@ export class ReviewStreakService {
             : 0;
 
           // Chỉ được nhận XP nếu CHƯA ôn tập từ này hôm nay
-          const xpGained = answer.isCorrect && !alreadyReviewedToday ? xpPerCorrectAnswer : 0;
+          const xpGained =
+            answer.isCorrect && !alreadyReviewedToday ? xpPerCorrectAnswer : 0;
 
           // Cập nhật lại từ vựng trong database
           await prisma.vocabulary.update({
@@ -133,7 +135,7 @@ export class ReviewStreakService {
         xp: user?.xp,
         level: user?.level,
         xpToNext: user?.xpToNext,
-      }
+      },
     };
   }
 

@@ -118,7 +118,9 @@ export class QuestionGroupService {
       data: {
         ...(dto.idPart && { idPart: dto.idPart }),
         ...(dto.title && { title: dto.title }),
-        ...(dto.instructions !== undefined && { instructions: dto.instructions }),
+        ...(dto.instructions !== undefined && {
+          instructions: dto.instructions,
+        }),
         ...(dto.questionType && { questionType: dto.questionType }),
         ...(imageUrl !== undefined && { imageUrl }),
         ...(dto.order !== undefined && { order: dto.order }),

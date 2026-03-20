@@ -9,9 +9,9 @@ export class CreateUserSpeakingSubmissionDto {
   @IsString()
   idSpeakingTask: string;
 
-  @IsOptional() 
+  @IsOptional()
   @IsString()
-  idTestResult?: string; 
+  idTestResult?: string;
 
   @IsOptional()
   @IsString()

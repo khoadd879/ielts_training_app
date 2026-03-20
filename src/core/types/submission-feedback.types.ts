@@ -13,10 +13,10 @@
  * Mirrors the Prisma `GradingStatus` enum.
  */
 export enum GradingStatus {
-    PENDING = 'PENDING',
-    GRADING = 'GRADING',
-    COMPLETED = 'COMPLETED',
-    FAILED = 'FAILED',
+  PENDING = 'PENDING',
+  GRADING = 'GRADING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
 }
 
 // ============================================================================
@@ -25,10 +25,10 @@ export enum GradingStatus {
 
 /** Individual IELTS Writing criterion score + comment */
 export interface WritingCriterionFeedback {
-    /** Band score for this criterion (0.0 – 9.0, in 0.5 increments) */
-    score: number;
-    /** Detailed AI comment for this criterion */
-    comment: string;
+  /** Band score for this criterion (0.0 – 9.0, in 0.5 increments) */
+  score: number;
+  /** Detailed AI comment for this criterion */
+  comment: string;
 }
 
 /**
@@ -42,29 +42,29 @@ export interface WritingCriterionFeedback {
  * - GRA: Grammatical Range and Accuracy
  */
 export interface WritingDetailedFeedback {
-    /** Task Achievement / Task Response */
-    taskAchievement: WritingCriterionFeedback;
-    /** Coherence and Cohesion */
-    coherenceAndCohesion: WritingCriterionFeedback;
-    /** Lexical Resource */
-    lexicalResource: WritingCriterionFeedback;
-    /** Grammatical Range and Accuracy */
-    grammaticalRangeAndAccuracy: WritingCriterionFeedback;
-    /** Overall summary / general feedback */
-    generalFeedback: string;
-    /** Optional: sentence-level corrections and suggestions */
-    detailedCorrections?: WritingCorrection[];
+  /** Task Achievement / Task Response */
+  taskAchievement: WritingCriterionFeedback;
+  /** Coherence and Cohesion */
+  coherenceAndCohesion: WritingCriterionFeedback;
+  /** Lexical Resource */
+  lexicalResource: WritingCriterionFeedback;
+  /** Grammatical Range and Accuracy */
+  grammaticalRangeAndAccuracy: WritingCriterionFeedback;
+  /** Overall summary / general feedback */
+  generalFeedback: string;
+  /** Optional: sentence-level corrections and suggestions */
+  detailedCorrections?: WritingCorrection[];
 }
 
 export interface WritingCorrection {
-    /** Original text from the essay */
-    original: string;
-    /** Suggested correction */
-    corrected: string;
-    /** Explanation of the error */
-    explanation: string;
-    /** Which criterion this error relates to */
-    criterion: 'TA' | 'CC' | 'LR' | 'GRA';
+  /** Original text from the essay */
+  original: string;
+  /** Suggested correction */
+  corrected: string;
+  /** Explanation of the error */
+  explanation: string;
+  /** Which criterion this error relates to */
+  criterion: 'TA' | 'CC' | 'LR' | 'GRA';
 }
 
 // ============================================================================
@@ -73,10 +73,10 @@ export interface WritingCorrection {
 
 /** Individual IELTS Speaking criterion score + comment */
 export interface SpeakingCriterionFeedback {
-    /** Band score for this criterion (0.0 – 9.0, in 0.5 increments) */
-    score: number;
-    /** Detailed AI comment for this criterion */
-    comment: string;
+  /** Band score for this criterion (0.0 – 9.0, in 0.5 increments) */
+  score: number;
+  /** Detailed AI comment for this criterion */
+  comment: string;
 }
 
 /**
@@ -90,35 +90,37 @@ export interface SpeakingCriterionFeedback {
  * - P: Pronunciation
  */
 export interface SpeakingDetailedFeedback {
-    /** Fluency and Coherence */
-    fluencyAndCoherence: SpeakingCriterionFeedback;
-    /** Lexical Resource */
-    lexicalResource: SpeakingCriterionFeedback;
-    /** Grammatical Range and Accuracy */
-    grammaticalRangeAndAccuracy: SpeakingCriterionFeedback;
-    /** Pronunciation */
-    pronunciation: SpeakingCriterionFeedback;
-    /** Overall summary / general feedback */
-    generalFeedback: string;
-    /** Optional: specific utterance-level corrections */
-    detailedCorrections?: SpeakingCorrection[];
+  /** Fluency and Coherence */
+  fluencyAndCoherence: SpeakingCriterionFeedback;
+  /** Lexical Resource */
+  lexicalResource: SpeakingCriterionFeedback;
+  /** Grammatical Range and Accuracy */
+  grammaticalRangeAndAccuracy: SpeakingCriterionFeedback;
+  /** Pronunciation */
+  pronunciation: SpeakingCriterionFeedback;
+  /** Overall summary / general feedback */
+  generalFeedback: string;
+  /** Optional: specific utterance-level corrections */
+  detailedCorrections?: SpeakingCorrection[];
 }
 
 export interface SpeakingCorrection {
-    /** Timestamp in the audio (seconds) */
-    timestamp?: number;
-    /** What the student said */
-    original: string;
-    /** Suggested improvement */
-    suggestion: string;
-    /** Explanation */
-    explanation: string;
-    /** Which criterion this relates to */
-    criterion: 'FC' | 'LR' | 'GRA' | 'P';
+  /** Timestamp in the audio (seconds) */
+  timestamp?: number;
+  /** What the student said */
+  original: string;
+  /** Suggested improvement */
+  suggestion: string;
+  /** Explanation */
+  explanation: string;
+  /** Which criterion this relates to */
+  criterion: 'FC' | 'LR' | 'GRA' | 'P';
 }
 
 // ============================================================================
 // Re-export barrel
 // ============================================================================
 
-export type DetailedFeedback = WritingDetailedFeedback | SpeakingDetailedFeedback;
+export type DetailedFeedback =
+  | WritingDetailedFeedback
+  | SpeakingDetailedFeedback;

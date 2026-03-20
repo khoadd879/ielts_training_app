@@ -14,7 +14,7 @@ export class ReviewStreakController {
   }
 
   @Get('get-streak-by-id-user/:idUser')
-  getStreakByIdUser(@Param('idUser') idUser: string){
-    return this.reviewStreakService.getStreak(idUser)
-  }  
+  getStreakByIdUser(@Param('idUser') idUser: string) {
+    return this.reviewStreakService.getStreak(idUser);
+  }
 }

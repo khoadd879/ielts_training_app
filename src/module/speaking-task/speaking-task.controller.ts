@@ -11,9 +11,7 @@ import {
 import { SpeakingTaskService } from './speaking-task.service';
 import { CreateSpeakingTaskDto } from './dto/create-speaking-task.dto';
 import { UpdateSpeakingTaskDto } from './dto/update-speaking-task.dto';
-import {
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiBearerAuth()
 @Controller('speaking-task')
@@ -21,12 +19,8 @@ export class SpeakingTaskController {
   constructor(private readonly speakingTaskService: SpeakingTaskService) {}
 
   @Post('create-speaking-task')
-  create(
-    @Body() createSpeakingTaskDto: CreateSpeakingTaskDto
-  ) {
-    return this.speakingTaskService.create(
-      createSpeakingTaskDto,
-    );
+  create(@Body() createSpeakingTaskDto: CreateSpeakingTaskDto) {
+    return this.speakingTaskService.create(createSpeakingTaskDto);
   }
 
   @Get('find-all-speaking-tasks-in-test/:idTest')
@@ -35,17 +29,18 @@ export class SpeakingTaskController {
   }
 
   @Get('find-speaking-task/:idSpeakingTask')
-  findOne(@Param('idSpeakingTask') idSpeakingTask: string){
-    return this.speakingTaskService.findOne(idSpeakingTask)
+  findOne(@Param('idSpeakingTask') idSpeakingTask: string) {
+    return this.speakingTaskService.findOne(idSpeakingTask);
   }
 
-  @Patch('update-speaking-task/:idSpeakingTask') 
+  @Patch('update-speaking-task/:idSpeakingTask')
   update(
     @Param('idSpeakingTask') idSpeakingTask: string,
-    @Body() updateSpeakingTaskDto: UpdateSpeakingTaskDto) {
+    @Body() updateSpeakingTaskDto: UpdateSpeakingTaskDto,
+  ) {
     return this.speakingTaskService.update(
       idSpeakingTask,
-      updateSpeakingTaskDto 
+      updateSpeakingTaskDto,
     );
   }
 

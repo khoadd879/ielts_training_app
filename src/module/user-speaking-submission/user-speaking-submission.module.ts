@@ -10,4 +10,4 @@ import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
   providers: [UserSpeakingSubmissionService],
   exports: [UserSpeakingSubmissionService], // Export để dùng ở module khác
 })
-export class UserSpeakingSubmissionModule { }
+export class UserSpeakingSubmissionModule {}

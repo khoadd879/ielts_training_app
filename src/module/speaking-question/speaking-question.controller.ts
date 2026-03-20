@@ -24,7 +24,7 @@ export class SpeakingQuestionController {
   createBulk(@Body() createSpeakingQuestionDto: CreateBulkSpeakingQuestionDto) {
     return this.speakingQuestionService.createBulk(createSpeakingQuestionDto);
   }
-  
+
   @Get('find-all-speaking-questions-by-id-speaking-task/:idSpeakingTask')
   findAll(@Param('idSpeakingTask') idSpeakingTask: string) {
     return this.speakingQuestionService.findAllbyIdSpeakingTask(idSpeakingTask);
