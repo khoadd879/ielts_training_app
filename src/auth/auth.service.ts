@@ -102,8 +102,6 @@ export class AuthService {
 
     let otpRecord;
 
-    await this.verificationService.deleteAllOtp(user.idUser);
-
     if (type === OTPType.OTP && user.isActive) {
       throw new BadRequestException('Account is already activated');
     }

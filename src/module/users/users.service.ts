@@ -231,7 +231,8 @@ export class UsersService {
       };
     } catch (error) {
       console.error('Error deleting user:', error);
-      throw new BadRequestException(error.message || 'Could not delete user');
+      const message = error instanceof Error ? error.message : String(error);
+      throw new BadRequestException(message || 'Could not delete user');
     }
   }
 
@@ -266,10 +267,7 @@ export class UsersService {
         isActive: false,
       },
     });
-    const otpGenerate = await this.verificationService.generateOtp(
-      user.idUser,
-      OTPType.OTP,
-    );
+    await this.verificationService.generateOtp(user.idUser, OTPType.OTP);
 
     this.mailerService.sendMail({
       to: `${user.email}`,
@@ -283,7 +281,7 @@ export class UsersService {
             <div style="padding:32px 24px;text-align:center;">
               <p style="font-size:16px;">Đây là mã đăng nhập của bạn:</p>
               <div style="font-size:36px;letter-spacing:12px;font-weight:bold;margin:16px 0 8px 0;">
-                ${otpGenerate}
+                [OTP_CODE]
               </div>
               <p style="color:#888;font-size:14px;">Mã này sẽ sớm hết hạn.</p>
             </div>
@@ -293,10 +291,9 @@ export class UsersService {
     });
 
     return {
-      message: 'User registered successfully',
+      message: 'User registered successfully. Please check email for OTP.',
       data: {
         idUser: user.idUser,
-        otp: otpGenerate,
       },
       status: 200,
     };
@@ -324,7 +321,7 @@ export class UsersService {
             <div style="padding:32px 24px;text-align:center;">
               <p style="font-size:16px;">Mã xác thực đặt lại mật khẩu của bạn:</p>
               <div style="font-size:36px;letter-spacing:12px;font-weight:bold;margin:16px 0 8px 0;">
-                ${otp}
+                [OTP_CODE]
               </div>
               <p style="color:#888;font-size:14px;">Mã này sẽ sớm hết hạn.</p>
             </div>
@@ -337,7 +334,6 @@ export class UsersService {
       message: 'Reset password email sent',
       data: {
         email: email,
-        otp: otp,
       },
       status: 200,
     };

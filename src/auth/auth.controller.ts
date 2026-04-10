@@ -18,11 +18,16 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDTO } from './dto/resend-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { Throttle } from '@nestjs/throttler';
+import { ConfigService } from '@nestjs/config';
 import { GoogleAuthGuard } from './passport/google-auth/google-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
@@ -34,6 +39,7 @@ export class AuthController {
 
   @Post('register')
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   register(@Body() registerDto: CreateAuthDto) {
     return this.authService.handleRegister(registerDto);
   }
@@ -41,6 +47,7 @@ export class AuthController {
   @Post('verify-otp-register')
   @ApiBody({ type: VerifyOtpDto })
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async verifyOtp(@Body() body: { email: string; otp: string }) {
     return this.authService.verifyOtp(body.email, body.otp);
   }
@@ -55,6 +62,7 @@ export class AuthController {
   @Post('forgot-password')
   @ApiBody({ type: ForgotPasswordDto })
   @Public()
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   async forgotPassword(@Body() body: { email: string }) {
     return this.authService.forgotPassword(body.email);
   }
@@ -75,6 +83,7 @@ export class AuthController {
   @Post('reset-password')
   @ApiBody({ type: ResetPasswordDto })
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async resetPassword(
     @Body()
     body: {
@@ -108,7 +117,6 @@ export class AuthController {
   async googleLogin() {}
 
   //google callback
-
   @Get('google/callback')
   @Public()
   @UseGuards(GoogleAuthGuard)
@@ -116,10 +124,11 @@ export class AuthController {
     const data = await this.authService.login(req.user);
 
     const token = data.data.access_token;
-    const user = encodeURIComponent(JSON.stringify(data.data.user)); // 👈 encode
+    const user = encodeURIComponent(JSON.stringify(data.data.user));
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
 
     return res.redirect(
-      `http://localhost:3001/login?token=${token}&user=${user}`, // 👈 dùng & chứ không phải ?
+      `${frontendUrl}/login?token=${token}&user=${user}`,
     );
   }
 

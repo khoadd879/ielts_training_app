@@ -102,7 +102,10 @@ export class ForumPostController {
   }
 
   @Delete('delete-forum-post/:idForumPost')
-  remove(@Param('idForumPost') idForumPost: string) {
-    return this.forumPostService.removeForumPost(idForumPost);
+  remove(
+    @Param('idForumPost') idForumPost: string,
+    @Body('idUser') idUser: string,
+  ) {
+    return this.forumPostService.removeForumPost(idForumPost, idUser);
   }
 }

@@ -25,11 +25,12 @@ export class ValidateMetadataPipe implements PipeTransform {
         value.metadata,
       );
     } catch (error) {
-      if (error.message.includes('Unknown question type')) {
-        throw new BadRequestException(error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('Unknown question type')) {
+        throw new BadRequestException(errorMessage);
       }
       throw new BadRequestException(
-        `Invalid metadata for question type ${value.questionType}: ${error.message}`,
+        `Invalid metadata for question type ${value.questionType}: ${errorMessage}`,
       );
     }
 

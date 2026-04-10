@@ -54,8 +54,6 @@ export class PartService {
       orderBy: { order: 'asc' },
     });
 
-    if (!data) return new BadGatewayException('Part not found');
-
     return {
       message: 'Part retrieved successfully',
       data,
@@ -79,7 +77,7 @@ export class PartService {
       },
     });
 
-    if (!data) return new BadGatewayException('Part not found');
+    if (!data || data.length === 0) throw new BadRequestException('Part not found');
 
     return {
       message: 'Part retrieved successfully',
