@@ -1,9 +1,12 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import * as pdfjsLib from 'pdfjs-dist';
 import { v4 as uuidv4 } from 'uuid';
+import path from 'path';
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Use the worker shipped with pdfjs-dist - resolve from node_modules
+const pdfjsDistDir = path.dirname(require.resolve('pdfjs-dist'));
+const workerPath = path.join(pdfjsDistDir, 'pdf.worker.mjs');
+pdfjsLib.GlobalWorkerOptions.workerSrc = `file://${workerPath}`;
 
 export interface ParsedPage {
   pageNumber: number;
@@ -22,12 +25,21 @@ export interface TextBlock {
   height: number;
 }
 
+export interface ParsedDocumentProfile {
+  pageCount: number;
+  averageCharsPerPage: number;
+  likelyImageBased: boolean;
+  likelyMultiColumn: boolean;
+  repeatedArtifacts: string[];
+}
+
 export interface ExtractedExamData {
   title: string;
   level: 'Low' | 'Mid' | 'High' | 'Great';
   rawText: string;
   pages: ParsedPage[];
   blocks: TextBlock[];
+  profile: ParsedDocumentProfile;
   confidence: number;
   warnings: string[];
 }
@@ -47,7 +59,9 @@ export class PdfParserService {
     testType: string,
   ): Promise<ExtractedExamData> {
     const correlationId = uuidv4();
-    this.logger.log(`[${correlationId}] Starting PDF parse, size: ${fileBuffer.length} bytes`);
+    this.logger.log(
+      `[${correlationId}] Starting PDF parse, size: ${fileBuffer.length} bytes`,
+    );
 
     // Validate file
     this.validateFile(fileBuffer);
@@ -60,20 +74,23 @@ export class PdfParserService {
       });
 
       const pdfDocument = await loadingTask.promise;
-      this.logger.log(`[${correlationId}] PDF loaded, pages: ${pdfDocument.numPages}`);
+      this.logger.log(
+        `[${correlationId}] PDF loaded, pages: ${pdfDocument.numPages}`,
+      );
 
       const pages: ParsedPage[] = [];
       const allBlocks: TextBlock[] = [];
-      let rawText = '';
 
       // Extract text from each page
       for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
         const page = await pdfDocument.getPage(pageNum);
         const pageData = await this.extractPageContent(page, pageNum);
         pages.push(pageData);
-        rawText += pageData.text + '\n\n';
         allBlocks.push(...pageData.blocks);
       }
+
+      const profile = this.buildDocumentProfile(pages);
+      const rawText = this.buildNormalizedRawText(pages, profile);
 
       // Detect title from first page
       const title = this.detectTitle(pages[0]?.blocks || [], rawText);
@@ -88,13 +105,27 @@ export class PdfParserService {
       // Collect warnings
       const warnings: string[] = [];
       if (textDensity < 200) {
-        warnings.push('Low text density detected - this may be an image-based PDF');
+        warnings.push(
+          'Low text density detected - this may be an image-based PDF',
+        );
+      }
+      if (profile.likelyMultiColumn) {
+        warnings.push(
+          'Multi-column or fragmented layout detected - extraction may require additional review',
+        );
+      }
+      if (profile.repeatedArtifacts.length > 0) {
+        warnings.push(
+          `Removed repeated PDF artifacts: ${profile.repeatedArtifacts.slice(0, 3).join(', ')}`,
+        );
       }
       if (pdfDocument.numPages < 1) {
         warnings.push('PDF appears to be empty');
       }
 
-      this.logger.log(`[${correlationId}] Parse complete, confidence: ${confidence}`);
+      this.logger.log(
+        `[${correlationId}] Parse complete, confidence: ${confidence}`,
+      );
 
       return {
         title,
@@ -102,6 +133,7 @@ export class PdfParserService {
         rawText,
         pages,
         blocks: allBlocks,
+        profile,
         confidence,
         warnings,
       };
@@ -170,7 +202,10 @@ export class PdfParserService {
       const blockType = this.classifyBlock(text, fontSize, isBold, x);
 
       // If Y position changed significantly or block type changed, save current block
-      if (currentBlock && (Math.abs(lastY - y) > 10 || currentBlock.type !== blockType)) {
+      if (
+        currentBlock &&
+        (Math.abs(lastY - y) > 10 || currentBlock.type !== blockType)
+      ) {
         if (blockText.trim()) {
           currentBlock.text = blockText.trim();
           blocks.push(currentBlock);
@@ -221,8 +256,15 @@ export class PdfParserService {
     isBold: boolean,
     x: number,
   ): TextBlock['type'] {
+    if (/^(?:Part|Section)\s*(\d+|[IVX]+)/i.test(text)) {
+      return 'heading';
+    }
+
     // Check for question patterns
-    if (/^(Question|Questions|Q\.?)\s*\d+/i.test(text)) {
+    if (
+      /^(Question|Questions|Q\.?)\s*\d+/i.test(text) ||
+      /^\d+(?:[\.\)]|\s)\s*\S/.test(text)
+    ) {
       return 'question';
     }
 
@@ -293,7 +335,13 @@ export class PdfParserService {
       'challenging',
     ];
     const midWords = ['moderate', 'intermediate', 'standard', 'typical'];
-    const easyWords = ['basic', 'simple', 'beginner', 'elementary', 'introductory'];
+    const easyWords = [
+      'basic',
+      'simple',
+      'beginner',
+      'elementary',
+      'introductory',
+    ];
 
     const hardCount = hardWords.filter((w) => lowerText.includes(w)).length;
     const midCount = midWords.filter((w) => lowerText.includes(w)).length;
@@ -302,6 +350,95 @@ export class PdfParserService {
     if (hardCount > easyCount && hardCount > midCount) return 'High';
     if (easyCount > hardCount && easyCount > midCount) return 'Low';
     return 'Mid';
+  }
+
+  private buildDocumentProfile(pages: ParsedPage[]): ParsedDocumentProfile {
+    const pageCount = pages.length || 1;
+    const averageCharsPerPage =
+      pages.reduce((total, page) => total + page.text.length, 0) / pageCount;
+    const repeatedArtifacts = this.detectRepeatedArtifacts(pages);
+    const likelyImageBased = averageCharsPerPage < 200;
+    const likelyMultiColumn = pages.some((page) =>
+      this.hasFragmentedColumns(page.blocks),
+    );
+
+    return {
+      pageCount,
+      averageCharsPerPage,
+      likelyImageBased,
+      likelyMultiColumn,
+      repeatedArtifacts,
+    };
+  }
+
+  private buildNormalizedRawText(
+    pages: ParsedPage[],
+    profile: ParsedDocumentProfile,
+  ): string {
+    const artifactSet = new Set(
+      profile.repeatedArtifacts.map((line) => line.trim()),
+    );
+
+    return pages
+      .map((page) =>
+        page.text
+          .split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line && !artifactSet.has(line))
+          .join('\n'),
+      )
+      .filter(Boolean)
+      .join('\n\n')
+      .trim();
+  }
+
+  private detectRepeatedArtifacts(pages: ParsedPage[]): string[] {
+    if (pages.length < 2) {
+      return [];
+    }
+
+    const counts = new Map<string, number>();
+
+    for (const page of pages) {
+      const candidates = page.text
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => this.isLikelyArtifactLine(line));
+
+      for (const candidate of new Set(candidates)) {
+        counts.set(candidate, (counts.get(candidate) || 0) + 1);
+      }
+    }
+
+    return [...counts.entries()]
+      .filter(
+        ([, count]) => count >= Math.max(2, Math.ceil(pages.length * 0.5)),
+      )
+      .map(([line]) => line);
+  }
+
+  private isLikelyArtifactLine(line: string): boolean {
+    if (!line || line.length > 120) {
+      return false;
+    }
+
+    return (
+      /^page\s+\d+$/i.test(line) ||
+      /^https?:\/\/\S+$/i.test(line) ||
+      /^ielts\s+(?:reading|listening|writing|speaking)/i.test(line) ||
+      /answer sheet/i.test(line)
+    );
+  }
+
+  private hasFragmentedColumns(blocks: TextBlock[]): boolean {
+    if (blocks.length < 8) {
+      return false;
+    }
+
+    const leftColumn = blocks.filter((block) => block.x < 200).length;
+    const rightColumn = blocks.filter((block) => block.x > 260).length;
+
+    return leftColumn >= 3 && rightColumn >= 3;
   }
 
   /**

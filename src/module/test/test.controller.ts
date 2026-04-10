@@ -7,24 +7,13 @@ import {
   Param,
   Delete,
   UseInterceptors,
-  UploadedFile,
   UploadedFiles,
-  Headers,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { TestService } from './test.service';
 import { CreateTestDto } from './dto/create-test.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
-import {
-  ImportFullTestDto,
-  CreateWritingTestDto,
-  CreateSpeakingTestDto,
-} from './dto/import-test.dto';
-import { ApiBearerAuth, ApiConsumes, ApiBody, ApiQuery } from '@nestjs/swagger';
-import {
-  FileFieldsInterceptor,
-  FileInterceptor,
-} from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Public } from 'src/decorator/customize';
 
 @Controller('test')
@@ -135,42 +124,5 @@ export class TestController {
   @Delete('delete-test/:idTest')
   remove(@Param('idTest') idTest: string) {
     return this.testService.remove(idTest);
-  }
-
-  @Post('import-full-test')
-  @ApiBody({ type: ImportFullTestDto })
-  importFullTest(@Body() dto: ImportFullTestDto) {
-    return this.testService.importFullReadingListeningTest(dto);
-  }
-
-  @Post('create-writing-test')
-  @ApiBody({ type: CreateWritingTestDto })
-  createWritingTest(@Body() dto: CreateWritingTestDto) {
-    return this.testService.createWritingTest(dto);
-  }
-
-  @Post('create-speaking-test')
-  @ApiBody({ type: CreateSpeakingTestDto })
-  createSpeakingTest(@Body() dto: CreateSpeakingTestDto) {
-    return this.testService.createSpeakingTest(dto);
-  }
-
-  /**
-   * Internal endpoint — chỉ dành cho AI Microservice.
-   * Bảo vệ bằng x-api-key header, KHÔNG yêu cầu JWT.
-   */
-  @Post('import-from-ai')
-  @Public()
-  @ApiBody({ type: ImportFullTestDto })
-  importFromAi(
-    @Headers('x-api-key') apiKey: string,
-    @Body() dto: ImportFullTestDto,
-  ) {
-    const secret =
-      process.env.AI_MICROSERVICE_SECRET ?? 'my-super-secret-key-123';
-    if (apiKey !== secret) {
-      throw new UnauthorizedException('Invalid API key');
-    }
-    return this.testService.importFullReadingListeningTest(dto);
   }
 }

@@ -3,7 +3,7 @@ import {
   Controller,
   Delete,
   Get,
-  Inject,
+  Logger,
   Param,
   Patch,
   Post,
@@ -13,14 +13,12 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../../auth/passport/jwt-auth.guard';
 import { PdfExamService } from './services/pdf-exam.service';
-import { UploadPdfDto, TestType } from './dto/upload-pdf.dto';
+import { UploadPdfDto } from './dto/upload-pdf.dto';
 import {
   ExtractionResultDto,
   UpdateSessionDto,
-  VerificationResultDto,
   SaveResultDto,
 } from './dto/extraction-result.dto';
 
@@ -28,10 +26,12 @@ import {
 @Controller('pdf-exam')
 @UseGuards(JwtAuthGuard)
 export class PdfExamController {
+  private readonly logger = new Logger(PdfExamController.name);
+
   constructor(private readonly pdfExamService: PdfExamService) {}
 
   /**
-   * Upload PDF and extract exam structure
+   * Upload PDF, extract with code, then refine with AI in the same flow
    * POST /pdf-exam/extract
    */
   @Post('extract')
@@ -60,7 +60,26 @@ export class PdfExamController {
     @UploadedFile() file: Express.Multer.File,
     @Body() uploadPdfDto: UploadPdfDto,
   ): Promise<ExtractionResultDto> {
-    return this.pdfExamService.uploadAndExtract(file, uploadPdfDto);
+    this.logger.log(
+      `[EXTRACT] POST /pdf-exam/extract - testType: ${uploadPdfDto.testType}, title: ${uploadPdfDto.title || 'N/A'}, level: ${uploadPdfDto.level || 'N/A'}`,
+    );
+    this.logger.debug(
+      `[EXTRACT] File info - originalname: ${file?.originalname}, mimetype: ${file?.mimetype}, size: ${file?.size}`,
+    );
+
+    const result = await this.pdfExamService.uploadAndExtract(
+      file,
+      uploadPdfDto,
+    );
+
+    this.logger.log(
+      `[EXTRACT] Session created - idSession: ${result.idSession}, status: ${result.status}, confidence: ${result.confidence}`,
+    );
+    this.logger.debug(
+      `[EXTRACT] Raw data keys: ${Object.keys(result.rawData || {})}, warnings: ${result.warnings?.length || 0}`,
+    );
+
+    return result;
   }
 
   /**
@@ -71,7 +90,15 @@ export class PdfExamController {
   async getSession(
     @Param('idSession') idSession: string,
   ): Promise<ExtractionResultDto> {
-    return this.pdfExamService.getSession(idSession);
+    this.logger.log(`[GET-SESSION] GET /pdf-exam/session/${idSession}`);
+
+    const result = await this.pdfExamService.getSession(idSession);
+
+    this.logger.log(
+      `[GET-SESSION] idSession: ${idSession}, status: ${result.status}, confidence: ${result.confidence}`,
+    );
+
+    return result;
   }
 
   /**
@@ -83,19 +110,21 @@ export class PdfExamController {
     @Param('idSession') idSession: string,
     @Body() updateSessionDto: UpdateSessionDto,
   ): Promise<ExtractionResultDto> {
-    return this.pdfExamService.updateSession(idSession, updateSessionDto);
-  }
+    this.logger.log(`[UPDATE-SESSION] PATCH /pdf-exam/session/${idSession}`);
+    this.logger.debug(
+      `[UPDATE-SESSION] DTO keys: ${Object.keys(updateSessionDto)}, status in DTO: ${updateSessionDto.status}`,
+    );
 
-  /**
-   * AI verification of extracted data
-   * POST /pdf-exam/verify/:idSession
-   */
-  @Post('verify/:idSession')
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute
-  async verifySession(
-    @Param('idSession') idSession: string,
-  ): Promise<VerificationResultDto> {
-    return this.pdfExamService.verifySession(idSession);
+    const result = await this.pdfExamService.updateSession(
+      idSession,
+      updateSessionDto,
+    );
+
+    this.logger.log(
+      `[UPDATE-SESSION] idSession: ${idSession}, new status: ${result.status}`,
+    );
+
+    return result;
   }
 
   /**
@@ -107,7 +136,17 @@ export class PdfExamController {
     @Param('idSession') idSession: string,
     @Body('idUser') idUser: string,
   ): Promise<SaveResultDto> {
-    return this.pdfExamService.saveSession(idSession, idUser);
+    this.logger.log(
+      `[SAVE] POST /pdf-exam/save/${idSession} - idUser: ${idUser}`,
+    );
+
+    const result = await this.pdfExamService.saveSession(idSession, idUser);
+
+    this.logger.log(
+      `[SAVE] idSession: ${idSession}, idTest: ${result.idTest}, parts: ${result.partsCreated}, questions: ${result.questionsCreated}, writingTasks: ${result.writingTasksCreated}, speakingTasks: ${result.speakingTasksCreated}, speakingQuestions: ${result.speakingQuestionsCreated}`,
+    );
+
+    return result;
   }
 
   /**
@@ -118,7 +157,12 @@ export class PdfExamController {
   async deleteSession(
     @Param('idSession') idSession: string,
   ): Promise<{ message: string }> {
+    this.logger.log(`[DELETE] DELETE /pdf-exam/session/${idSession}`);
+
     await this.pdfExamService.deleteSession(idSession);
+
+    this.logger.log(`[DELETE] Session discarded - idSession: ${idSession}`);
+
     return { message: 'Session discarded' };
   }
 }

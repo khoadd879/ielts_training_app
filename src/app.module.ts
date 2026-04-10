@@ -59,6 +59,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     VocabularyModule,
     CloudinaryModule,
     TestModule,
+    PdfExamModule,
     TopicModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
@@ -117,7 +118,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
     UserSpeakingSubmissionModule,
 
-    PdfExamModule,
+    
   ],
   controllers: [AppController],
   providers: [

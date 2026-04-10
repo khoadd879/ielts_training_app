@@ -4,6 +4,9 @@ import { PdfExamController } from './pdf-exam.controller';
 import { PdfExamService } from './services/pdf-exam.service';
 import { PdfParserService } from './services/pdf-parser.service';
 import { StructureAnalyzerService } from './services/structure-analyzer.service';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { DatabaseModule } from 'src/database/database.module';
 
 @Module({
   imports: [
@@ -13,20 +16,20 @@ import { StructureAnalyzerService } from './services/structure-analyzer.service'
       },
       fileFilter: (req, file, callback) => {
         if (file.mimetype !== 'application/pdf') {
-          return callback(
-            new Error('Only PDF files are allowed'),
-            false,
-          );
+          return callback(new Error('Only PDF files are allowed'), false);
         }
         callback(null, true);
       },
     }),
+    CloudinaryModule,
+    DatabaseModule,
   ],
   controllers: [PdfExamController],
   providers: [
     PdfExamService,
     PdfParserService,
     StructureAnalyzerService,
+    CloudinaryService,
   ],
   exports: [PdfExamService],
 })
