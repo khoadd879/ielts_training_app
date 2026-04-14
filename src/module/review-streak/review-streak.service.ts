@@ -1,15 +1,19 @@
 import {
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Level } from '@prisma/client';
+import { updateXpToNext } from 'src/core/utils/xp.util';
 import { DatabaseService } from 'src/database/database.service';
 import { StreakService } from '../streak-service/streak-service.service';
 import { SubmitReviewDto } from './dto/submit-review.dto';
 
 @Injectable()
 export class ReviewStreakService {
+  private readonly logger = new Logger(ReviewStreakService.name);
+
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly streakService: StreakService,
@@ -31,7 +35,7 @@ export class ReviewStreakService {
 
           if (!tuVung) {
             // Nếu từ vựng không tồn tại hoặc không phải của user, bỏ qua hoặc báo lỗi
-            console.warn(
+            this.logger.warn(
               `TuVung with id ${answer.idVocab} not found for user ${idUser}`,
             );
             continue; // Bỏ qua và xử lý từ tiếp theo
@@ -91,7 +95,7 @@ export class ReviewStreakService {
               while (newXp >= xpToNext) {
                 newXp -= xpToNext;
                 currentLevel = this.getNextLevel(currentLevel);
-                xpToNext = this.updateXpToNext(currentLevel);
+                xpToNext = updateXpToNext(currentLevel);
               }
 
               await prisma.user.update({
@@ -107,7 +111,7 @@ export class ReviewStreakService {
         }
       });
     } catch (error) {
-      console.error('Transaction failed during vocabulary review:', error);
+      this.logger.error('Transaction failed during vocabulary review:', error);
       throw new InternalServerErrorException(
         'Could not process review session.',
       );
@@ -118,7 +122,7 @@ export class ReviewStreakService {
     try {
       await this.streakService.updateStreak(idUser);
     } catch (error) {
-      console.error(
+      this.logger.error(
         `Failed to update streak for user ${idUser} after review`,
         error,
       );
@@ -170,19 +174,6 @@ export class ReviewStreakService {
         return Level.Great;
       default:
         return Level.Great;
-    }
-  }
-
-  private updateXpToNext(level: Level): number {
-    switch (level) {
-      case Level.Low:
-        return 100;
-      case Level.Mid:
-        return 350;
-      case Level.High:
-        return 1000;
-      default:
-        return 100;
     }
   }
 }

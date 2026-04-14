@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from '../module/users/users.service';
@@ -8,12 +9,16 @@ import { comparePasswordHelper, hashPasswordHelper } from 'src/helpers/utils';
 import { JwtService } from '@nestjs/jwt';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { VerificationService } from './verification/verification.service';
-import { OTPType } from '@prisma/client';
+import { OTPType, User } from '@prisma/client';
 import { CreateUserGoogleDto } from 'src/module/users/dto/create-user-google.dto';
 import { ConfigService } from '@nestjs/config';
 
+type UserWithPassword = User & { password: string };
+
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -21,8 +26,11 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.usersService.findByEmail(email);
+  async validateUser(
+    email: string,
+    pass: string,
+  ): Promise<UserWithPassword | null> {
+    const user = (await this.usersService.findByEmail(email)) as UserWithPassword | null;
 
     if (!user) return null;
 
@@ -33,7 +41,7 @@ export class AuthService {
     return user;
   }
 
-  async login(user: any) {
+  async login(user: UserWithPassword) {
     const payload = { email: user.email, sub: user.idUser };
 
     if (user.isActive === false) {
@@ -175,7 +183,10 @@ export class AuthService {
 
   //introspect token
   async introspectToken(token: string) {
-    const secrets = [process.env.JWT_SECRET, process.env.JWT_REFRESH_SECRET];
+    const secrets = [
+      this.configService.get<string>('JWT_SECRET'),
+      this.configService.get<string>('JWT_REFRESH_SECRET'),
+    ].filter(Boolean) as string[];
 
     for (const secret of secrets) {
       try {
@@ -188,7 +199,7 @@ export class AuthService {
           status: 200,
         };
       } catch (e) {
-        // thử secret tiếp theo
+        this.logger.debug(`Token verification failed with secret`);
       }
     }
 
@@ -202,7 +213,7 @@ export class AuthService {
   async refreshTokens(refreshToken: string) {
     try {
       const decoded = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET,
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
       const payload = { email: decoded.email, sub: decoded.sub };

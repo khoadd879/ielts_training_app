@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserWritingSubmissionDto } from './dto/create-user-writing-submission.dto';
@@ -32,6 +33,8 @@ type AIFeedbackResult = {
 
 @Injectable()
 export class UserWritingSubmissionService {
+  private readonly logger = new Logger(UserWritingSubmissionService.name);
+
   constructor(
     private readonly databaseService: DatabaseService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -41,7 +44,7 @@ export class UserWritingSubmissionService {
   private getAIInstance(): GoogleGenAI {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (!apiKey) {
-      console.error('GEMINI_API_KEY is missing');
+      this.logger.error('GEMINI_API_KEY is missing');
       throw new BadRequestException('AI API key is not configured');
     }
     return new GoogleGenAI({ apiKey });
@@ -80,14 +83,14 @@ export class UserWritingSubmissionService {
         !writingTask.image.startsWith('http://') &&
         !writingTask.image.startsWith('https://')
       ) {
-        console.warn('⚠️ Image URL is not absolute:', writingTask.image);
+        this.logger.warn('⚠️ Image URL is not absolute:', writingTask.image);
         throw new BadRequestException(
           'Image URL must be an absolute URL (http:// or https://). Got: ' +
             writingTask.image,
         );
       }
 
-      console.log(
+      this.logger.debug(
         '🎨 Writing Task 1 with image - calling AI with visual analysis',
       );
       aiResult = await this.evaluateWriting(
@@ -96,7 +99,7 @@ export class UserWritingSubmissionService {
         writingTask.image,
       );
     } else {
-      console.log(
+      this.logger.debug(
         '📝 Writing Task 2 (no image) - calling AI for essay evaluation',
       );
       aiResult = await this.evaluateWriting(submissionText, writingTask.title);
@@ -147,7 +150,7 @@ export class UserWritingSubmissionService {
     const cachedData = await this.cacheManager.get<AIFeedbackResult>(cacheKey);
 
     if (cachedData) {
-      console.log('Cache HIT!');
+      this.logger.debug('Cache HIT!');
       return cachedData;
     }
 
@@ -156,7 +159,7 @@ export class UserWritingSubmissionService {
 
     // ✅ OPTIMIZATION: Retry logic with exponential backoff
     const maxRetries = 3;
-    let lastError: any;
+    let lastError: unknown;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
@@ -187,7 +190,7 @@ export class UserWritingSubmissionService {
         try {
           parsed = JSON.parse(clean);
         } catch (err) {
-          console.error('JSON parse error from Gemini:', err);
+          this.logger.error('JSON parse error from Gemini:', err);
           throw new BadRequestException('Invalid AI response format');
         }
 
@@ -195,7 +198,7 @@ export class UserWritingSubmissionService {
         await this.cacheManager.set(cacheKey, parsed, 86400);
 
         if (attempt > 0) {
-          console.log(`✅ AI evaluation succeeded on attempt ${attempt + 1}`);
+          this.logger.debug(`✅ AI evaluation succeeded on attempt ${attempt + 1}`);
         }
 
         return parsed;
@@ -205,9 +208,9 @@ export class UserWritingSubmissionService {
         if (attempt < maxRetries - 1) {
           // Exponential backoff: 1s, 2s, 4s
           const waitTime = 1000 * Math.pow(2, attempt);
-          console.warn(
+          this.logger.warn(
             `⚠️ AI evaluation failed (attempt ${attempt + 1}/${maxRetries}), retrying in ${waitTime}ms...`,
-            error?.message || error,
+            error instanceof Error ? error.message : String(error),
           );
           await new Promise((resolve) => setTimeout(resolve, waitTime));
         }
@@ -215,7 +218,7 @@ export class UserWritingSubmissionService {
     }
 
     // All retries failed
-    console.error('❌ AI evaluation failed after all retries:', lastError);
+    this.logger.error('❌ AI evaluation failed after all retries:', lastError);
     throw new BadRequestException(
       'AI evaluation failed after multiple attempts. Please try again later.',
     );
@@ -223,7 +226,7 @@ export class UserWritingSubmissionService {
 
   private async fileToGenerativePart(url: string) {
     try {
-      console.log('📸 Fetching image from:', url);
+      this.logger.debug('📸 Fetching image from:', url);
 
       const response = await axios.get(url, {
         responseType: 'arraybuffer',
@@ -233,9 +236,9 @@ export class UserWritingSubmissionService {
       const b64 = Buffer.from(response.data).toString('base64');
       const mimeType = response.headers['content-type'] || 'image/jpeg';
 
-      console.log('✅ Image loaded successfully');
-      console.log('  - Size:', b64.length, 'bytes');
-      console.log('  - MIME type:', mimeType);
+      this.logger.debug('✅ Image loaded successfully');
+      this.logger.debug('  - Size:', b64.length, 'bytes');
+      this.logger.debug('  - MIME type:', mimeType);
 
       return {
         inlineData: {
@@ -244,11 +247,7 @@ export class UserWritingSubmissionService {
         },
       };
     } catch (error) {
-      console.error(
-        '❌ Failed to fetch image from URL:',
-        url,
-        error?.message || error,
-      );
+      this.logger.error('Failed to fetch image from URL', error);
       // ✅ THROW ERROR instead of returning null (critical for Task 1 accuracy)
       throw new BadRequestException(
         `Failed to load image for Task 1 evaluation. Please check the image URL: ${url}`,
@@ -281,7 +280,7 @@ export class UserWritingSubmissionService {
       submittedAt: sub.submittedAt,
       aiGradingStatus: sub.aiGradingStatus,
       bandScore: sub.testResult?.bandScore ?? 0,
-      generalFeedback: (sub.aiDetailedFeedback as any)?.generalFeedback,
+      generalFeedback: (sub.aiDetailedFeedback as { generalFeedback?: string })?.generalFeedback,
     }));
 
     return {
@@ -331,7 +330,7 @@ export class UserWritingSubmissionService {
 
     if (!submission) throw new BadRequestException('Submission not found');
 
-    if ((updateDto as any).regrade) {
+    if (updateDto.regrade) {
       const aiResult = await this.evaluateWriting(
         submission.submissionText,
         submission.writingTask.title,

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -6,12 +6,15 @@ import { hashPasswordHelper } from 'src/helpers/utils';
 import { CreateAuthDto } from 'src/auth/dto/create-auth.dto';
 import { VerificationService } from 'src/auth/verification/verification.service';
 import { Level, OTPType } from '@prisma/client';
+import { updateXpToNext } from 'src/core/utils/xp.util';
 import { MailerService } from '@nestjs-modules/mailer';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 import { CreateUserGoogleDto } from './dto/create-user-google.dto';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly verificationService: VerificationService,
@@ -52,7 +55,7 @@ export class UsersService {
 
     if (!level) throw new BadRequestException('Level not found');
 
-    const xpUpdate = this.updateXpToNext(level);
+    const xpUpdate = updateXpToNext(level);
 
     const data = await this.databaseService.user.create({
       data: {
@@ -174,7 +177,7 @@ export class UsersService {
 
     if (!level) throw new BadRequestException('Level not found');
 
-    const xpUpdate = this.updateXpToNext(level);
+    const xpUpdate = updateXpToNext(level);
 
     const user = await this.databaseService.user.update({
       where: { idUser: id },
@@ -230,7 +233,7 @@ export class UsersService {
         status: 200,
       };
     } catch (error) {
-      console.error('Error deleting user:', error);
+      this.logger.error('Error deleting user:', error);
       const message = error instanceof Error ? error.message : String(error);
       throw new BadRequestException(message || 'Could not delete user');
     }
@@ -357,18 +360,5 @@ export class UsersService {
       },
     });
     return count;
-  }
-
-  private updateXpToNext(level: Level): number {
-    switch (level) {
-      case Level.Low:
-        return 100;
-      case Level.Mid:
-        return 350;
-      case Level.High:
-        return 1000;
-      default:
-        return 100;
-    }
   }
 }

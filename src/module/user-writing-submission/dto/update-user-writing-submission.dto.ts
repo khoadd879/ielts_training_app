@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { GradingStatus } from '@prisma/client';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional } from 'class-validator';
 
 export class UpdateUserWritingSubmissionDto {
   @IsOptional()
@@ -12,4 +12,12 @@ export class UpdateUserWritingSubmissionDto {
     required: false,
   })
   aiGradingStatus?: GradingStatus;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({
+    description: 'Force re-grading with AI',
+    required: false,
+  })
+  regrade?: boolean;
 }

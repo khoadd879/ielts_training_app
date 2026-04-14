@@ -4,6 +4,7 @@ import { PdfExamController } from './pdf-exam.controller';
 import { PdfExamService } from './services/pdf-exam.service';
 import { PdfParserService } from './services/pdf-parser.service';
 import { StructureAnalyzerService } from './services/structure-analyzer.service';
+import { DoclingService } from './services/docling.service';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { DatabaseModule } from 'src/database/database.module';
@@ -29,6 +30,7 @@ import { DatabaseModule } from 'src/database/database.module';
     PdfExamService,
     PdfParserService,
     StructureAnalyzerService,
+    DoclingService,
     CloudinaryService,
   ],
   exports: [PdfExamService],
