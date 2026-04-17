@@ -1,14 +1,15 @@
 services:
+  # Main Application
   ielts_training_app:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ielts_training_app
+    image: ielts_training_app:latest
     container_name: ielts_training_app
     networks:
       - ielts_network
     environment:
-      PORT: ${PORT}
+      PORT: 3000
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_TOKEN_EXPIRED: ${JWT_ACCESS_TOKEN_EXPIRED}
@@ -24,17 +25,28 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       CLOUDINARY_NAME: ${CLOUDINARY_NAME}
       AI_MICROSERVICE_SECRET: ${AI_MICROSERVICE_SECRET}
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-production}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     ports:
       - '3000:3000'
     volumes:
       - ./src:/src
       - ./prisma:/prisma
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # Redis
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -43,29 +55,46 @@ services:
     restart: always
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
-  ai_crawler:
-    build:
-      context: ../ielts_ai
-    container_name: ai_crawler
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: rabbitmq
     networks:
       - ielts_network
     ports:
-      - '8000:8000'
+      - '5672:5672'
+      - '15672:15672'
     environment:
-      NESTJS_API_URL: http://ielts_training_app:3000/test/import-from-ai
-      AI_MICROSERVICE_SECRET: ${AI_MICROSERVICE_SECRET}
-    depends_on:
-      - ielts_training_app
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
 
+  # AI Workers
   ai-grading-worker:
     build:
       context: ./ai-workers/grading-worker
       dockerfile: Dockerfile
+    image: ai-grading-worker:latest
+    container_name: ai-grading-worker
+    networks:
+      - ielts_network
+    env_file:
+      - ./ai-workers/grading-worker/.env
     environment:
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - NEON_DATABASE_URL=${NEON_DATABASE_URL}
+      NODE_ENV: ${NODE_ENV:-production}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -75,11 +104,14 @@ services:
     build:
       context: ./ai-workers/chatbot-worker
       dockerfile: Dockerfile
+    image: ai-chatbot-worker:latest
+    container_name: ai-chatbot-worker
+    networks:
+      - ielts_network
+    env_file:
+      - ./ai-workers/chatbot-worker/.env
     environment:
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      NODE_ENV: ${NODE_ENV:-production}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -89,11 +121,14 @@ services:
     build:
       context: ./ai-workers/embedding-worker
       dockerfile: Dockerfile
+    image: ai-embedding-worker:latest
+    container_name: ai-embedding-worker
+    networks:
+      - ielts_network
+    env_file:
+      - ./ai-workers/embedding-worker/.env
     environment:
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      NODE_ENV: ${NODE_ENV:-production}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -105,3 +140,4 @@ networks:
 
 volumes:
   redis_data:
+  rabbitmq_data:

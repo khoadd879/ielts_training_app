@@ -1,0 +1,29 @@
+# Local development override
+# Usage: docker compose up (automatically applies this file)
+# To override: docker compose -f docker-compose.yml up
+
+services:
+  ielts_training_app:
+    volumes:
+      - ./src:/src:ro
+      - ./prisma:/prisma:ro
+    environment:
+      NODE_ENV: development
+
+  ai-grading-worker:
+    volumes:
+      - ./ai-workers/grading-worker:/app:ro
+      - /app/node_modules
+    command: npm run dev
+
+  ai-chatbot-worker:
+    volumes:
+      - ./ai-workers/chatbot-worker:/app:ro
+      - /app/node_modules
+    command: npm run dev
+
+  ai-embedding-worker:
+    volumes:
+      - ./ai-workers/embedding-worker:/app:ro
+      - /app/node_modules
+    command: npm run dev
