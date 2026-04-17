@@ -40,6 +40,18 @@ export class UserWritingSubmissionController {
     return this.userWritingSubmissionService.findOne(idWritingSubmission);
   }
 
+  @Get(':id/status')
+  async getWritingStatus(@Param('id') id: string) {
+    const submission = await this.userWritingSubmissionService.findOne(id);
+
+    return {
+      idWritingSubmission: id,
+      status: submission.data.aiGradingStatus,
+      aiOverallScore: submission.data.aiOverallScore,
+      aiDetailedFeedback: submission.data.aiDetailedFeedback,
+    };
+  }
+
   @Patch('update-writing-submission/:idWritingSubmission')
   update(
     @Param('idWritingSubmission') idWritingSubmission: string,

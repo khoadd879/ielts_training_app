@@ -8,6 +8,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { GoogleGenAI } from '@google/genai';
 import { ConfigService } from '@nestjs/config';
+import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
 
 @Injectable()
 export class ChatBotService {
@@ -16,6 +17,7 @@ export class ChatBotService {
   constructor(
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly configService: ConfigService,
+    private readonly rabbitMQService: RabbitMQService,
   ) {}
 
   // Lấy instance Gemini
@@ -61,11 +63,16 @@ export class ChatBotService {
   async handleUserMessage(idUser: string, message: string): Promise<string> {
     await this.saveMessage(idUser, 'user', message);
 
-    const reply = await this.generateGeminiReply(idUser, message);
+    const conversationHistory = await this.getMessages(idUser);
 
-    await this.saveMessage(idUser, 'bot', reply);
+    await this.rabbitMQService.publishChatbotAsk({
+      sessionId: idUser,
+      userId: idUser,
+      message,
+      conversationHistory,
+    });
 
-    return reply;
+    return 'Processing your message...';
   }
 
   // Gọi Gemini để trả lời

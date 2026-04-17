@@ -43,4 +43,22 @@ export class UserSpeakingSubmissionController {
       audioUrl,
     );
   }
+
+  @Get('get-speaking-submission/:idSpeakingSubmission')
+  findOne(@Param('idSpeakingSubmission') idSpeakingSubmission: string) {
+    return this.userSpeakingSubmissionService.findOne(idSpeakingSubmission);
+  }
+
+  @Get(':id/status')
+  async getSpeakingStatus(@Param('id') id: string) {
+    const submission = await this.userSpeakingSubmissionService.findOne(id);
+
+    return {
+      idSpeakingSubmission: id,
+      status: submission.data.aiGradingStatus,
+      aiOverallScore: submission.data.aiOverallScore,
+      transcript: submission.data.transcript,
+      aiDetailedFeedback: submission.data.aiDetailedFeedback,
+    };
+  }
 }

@@ -13,6 +13,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
 
 type CorrectionDetail = {
   mistake: string;
@@ -39,6 +40,7 @@ export class UserWritingSubmissionService {
     private readonly databaseService: DatabaseService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly configService: ConfigService,
+    private readonly rabbitMQService: RabbitMQService,
   ) {}
 
   private getAIInstance(): GoogleGenAI {
@@ -50,7 +52,7 @@ export class UserWritingSubmissionService {
     return new GoogleGenAI({ apiKey });
   }
 
-  //Tạo submission + gọi AI chấm điểm
+  //Tạo submission + publish to queue để AI chấm điểm bất đồng bộ
   async createUserWritingSubmission(
     idTestResult: string,
     createUserWritingSubmissionDto: CreateUserWritingSubmissionDto,
@@ -58,7 +60,7 @@ export class UserWritingSubmissionService {
     const { idUser, idWritingTask, submissionText } =
       createUserWritingSubmissionDto;
 
-    // ✅ OPTIMIZATION: Validate data first (before expensive AI call)
+    // ✅ Validate data first
     const [user, writingTask, testResult] = await Promise.all([
       this.databaseService.user.findUnique({ where: { idUser } }),
       this.databaseService.writingTask.findUnique({
@@ -74,11 +76,8 @@ export class UserWritingSubmissionService {
     if (!writingTask) throw new NotFoundException('Writing task not found');
     if (!testResult) throw new NotFoundException('Test result not found');
 
-    // ✅ OPTIMIZATION: Call AI BEFORE transaction (AI takes 3-8s, don't hold DB lock)
-    let aiResult: AIFeedbackResult;
-
+    // Validate image URL format if present
     if (writingTask.image) {
-      // Validate image URL format
       if (
         !writingTask.image.startsWith('http://') &&
         !writingTask.image.startsWith('https://')
@@ -89,54 +88,33 @@ export class UserWritingSubmissionService {
             writingTask.image,
         );
       }
-
-      this.logger.debug(
-        '🎨 Writing Task 1 with image - calling AI with visual analysis',
-      );
-      aiResult = await this.evaluateWriting(
-        submissionText,
-        writingTask.title,
-        writingTask.image,
-      );
-    } else {
-      this.logger.debug(
-        '📝 Writing Task 2 (no image) - calling AI for essay evaluation',
-      );
-      aiResult = await this.evaluateWriting(submissionText, writingTask.title);
     }
 
-    // ✅ OPTIMIZATION: Fast transaction - only DB writes (< 100ms)
-    const data = await this.databaseService.$transaction(async (tx) => {
-      const submission = await tx.userWritingSubmission.create({
-        data: {
-          idUser,
-          idWritingTask,
-          idTestResult: idTestResult,
-          submissionText,
-          aiGradingStatus: 'COMPLETED',
-          aiOverallScore: aiResult.score,
-          aiDetailedFeedback: {
-            taskResponse: aiResult.task_response,
-            coherenceAndCohesion: aiResult.coherence_and_cohesion,
-            lexicalResource: aiResult.lexical_resource,
-            grammaticalRangeAndAccuracy:
-              aiResult.grammatical_range_and_accuracy,
-            generalFeedback: aiResult.general_feedback,
-            detailedCorrections: aiResult.detailed_corrections ?? [],
-          },
-          gradedAt: new Date(),
-        },
-      });
+    // ✅ Create submission with PENDING status
+    const submission = await this.databaseService.userWritingSubmission.create({
+      data: {
+        idUser,
+        idWritingTask,
+        idTestResult: idTestResult,
+        submissionText,
+        aiGradingStatus: 'PENDING',
+      },
+    });
 
-      return submission;
+    // ✅ Publish to grading queue for async AI processing
+    await this.rabbitMQService.publishGradingWrite({
+      submissionId: submission.idWritingSubmission,
+      userId: submission.idUser,
+      type: writingTask.taskType,
+      submissionText,
+      prompt: writingTask.title,
+      imageUrl: writingTask.image,
     });
 
     return {
-      submissionId: data.idWritingSubmission,
-      score: aiResult.score,
-      submissionText: data.submissionText,
-      aiDetailedFeedback: data.aiDetailedFeedback,
-      status: 200,
+      submissionId: submission.idWritingSubmission,
+      aiGradingStatus: 'PENDING',
+      status: 202,
     };
   }
 

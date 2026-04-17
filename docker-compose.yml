@@ -58,6 +58,47 @@ services:
     depends_on:
       - ielts_training_app
 
+  ai-grading-worker:
+    build:
+      context: ./ai-workers/grading-worker
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - NEON_DATABASE_URL=${NEON_DATABASE_URL}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ai-chatbot-worker:
+    build:
+      context: ./ai-workers/chatbot-worker
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ai-embedding-worker:
+    build:
+      context: ./ai-workers/embedding-worker
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
 networks:
   ielts_network:
     driver: bridge
