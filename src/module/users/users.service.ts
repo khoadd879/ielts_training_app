@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -6,12 +6,15 @@ import { hashPasswordHelper } from 'src/helpers/utils';
 import { CreateAuthDto } from 'src/auth/dto/create-auth.dto';
 import { VerificationService } from 'src/auth/verification/verification.service';
 import { Level, OTPType } from '@prisma/client';
+import { updateXpToNext } from 'src/core/utils/xp.util';
 import { MailerService } from '@nestjs-modules/mailer';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 import { CreateUserGoogleDto } from './dto/create-user-google.dto';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly verificationService: VerificationService,
@@ -52,7 +55,7 @@ export class UsersService {
 
     if (!level) throw new BadRequestException('Level not found');
 
-    const xpUpdate = this.updateXpToNext(level);
+    const xpUpdate = updateXpToNext(level);
 
     const data = await this.databaseService.user.create({
       data: {
@@ -174,7 +177,7 @@ export class UsersService {
 
     if (!level) throw new BadRequestException('Level not found');
 
-    const xpUpdate = this.updateXpToNext(level);
+    const xpUpdate = updateXpToNext(level);
 
     const user = await this.databaseService.user.update({
       where: { idUser: id },
@@ -230,8 +233,9 @@ export class UsersService {
         status: 200,
       };
     } catch (error) {
-      console.error('Error deleting user:', error);
-      throw new BadRequestException(error.message || 'Could not delete user');
+      this.logger.error('Error deleting user:', error);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new BadRequestException(message || 'Could not delete user');
     }
   }
 
@@ -266,10 +270,7 @@ export class UsersService {
         isActive: false,
       },
     });
-    const otpGenerate = await this.verificationService.generateOtp(
-      user.idUser,
-      OTPType.OTP,
-    );
+    await this.verificationService.generateOtp(user.idUser, OTPType.OTP);
 
     this.mailerService.sendMail({
       to: `${user.email}`,
@@ -283,7 +284,7 @@ export class UsersService {
             <div style="padding:32px 24px;text-align:center;">
               <p style="font-size:16px;">Đây là mã đăng nhập của bạn:</p>
               <div style="font-size:36px;letter-spacing:12px;font-weight:bold;margin:16px 0 8px 0;">
-                ${otpGenerate}
+                [OTP_CODE]
               </div>
               <p style="color:#888;font-size:14px;">Mã này sẽ sớm hết hạn.</p>
             </div>
@@ -293,10 +294,9 @@ export class UsersService {
     });
 
     return {
-      message: 'User registered successfully',
+      message: 'User registered successfully. Please check email for OTP.',
       data: {
         idUser: user.idUser,
-        otp: otpGenerate,
       },
       status: 200,
     };
@@ -324,7 +324,7 @@ export class UsersService {
             <div style="padding:32px 24px;text-align:center;">
               <p style="font-size:16px;">Mã xác thực đặt lại mật khẩu của bạn:</p>
               <div style="font-size:36px;letter-spacing:12px;font-weight:bold;margin:16px 0 8px 0;">
-                ${otp}
+                [OTP_CODE]
               </div>
               <p style="color:#888;font-size:14px;">Mã này sẽ sớm hết hạn.</p>
             </div>
@@ -337,7 +337,6 @@ export class UsersService {
       message: 'Reset password email sent',
       data: {
         email: email,
-        otp: otp,
       },
       status: 200,
     };
@@ -361,18 +360,5 @@ export class UsersService {
       },
     });
     return count;
-  }
-
-  private updateXpToNext(level: Level): number {
-    switch (level) {
-      case Level.Low:
-        return 100;
-      case Level.Mid:
-        return 350;
-      case Level.High:
-        return 1000;
-      default:
-        return 100;
-    }
   }
 }

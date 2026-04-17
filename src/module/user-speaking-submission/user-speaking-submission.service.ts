@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserSpeakingSubmissionDto } from './dto/create-user-speaking-submission.dto';
@@ -34,6 +35,7 @@ type AIFeedbackResult = {
 
 @Injectable()
 export class UserSpeakingSubmissionService {
+  private readonly logger = new Logger(UserSpeakingSubmissionService.name);
   private speechClient: SpeechClient;
 
   constructor(
@@ -75,7 +77,7 @@ export class UserSpeakingSubmissionService {
           .join('\n') || '';
       return transcription;
     } catch (error) {
-      console.error('Google STT Error:', error);
+      this.logger.error('Google STT Error:', error);
       return '';
     }
   }
@@ -116,7 +118,7 @@ export class UserSpeakingSubmissionService {
       transcript = transcriptRes;
 
       if (!transcript) {
-        console.warn(
+        this.logger.warn(
           'Warning: Transcription is empty. AI might not grade accurately.',
         );
       }
@@ -216,7 +218,7 @@ export class UserSpeakingSubmissionService {
         detailedCorrections: parsed.detailed_corrections || [],
       };
     } catch (error) {
-      console.error('AI evaluation failed:', error);
+      this.logger.error('AI evaluation failed:', error);
       return {
         scoreFluency: 0,
         scoreLexical: 0,

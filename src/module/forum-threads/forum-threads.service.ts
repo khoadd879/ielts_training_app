@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateForumThreadDto } from './dto/create-forum-thread.dto';
 import { UpdateForumThreadDto } from './dto/update-forum-thread.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -77,6 +77,9 @@ export class ForumThreadsService {
 
     if (!existingForumThread)
       throw new BadRequestException('Forum thread not found');
+    if (existingForumThread.idUser !== idUser) {
+      throw new ForbiddenException('You are not authorized to update this thread');
+    }
 
     const data = await this.databaseService.forumThreads.update({
       where: {
@@ -96,17 +99,26 @@ export class ForumThreadsService {
     };
   }
 
-  async removeForumThread(idForumThreads: string) {
-    const data = await this.databaseService.forumThreads.delete({
+  async removeForumThread(idForumThreads: string, idUser: string) {
+    const existing = await this.databaseService.forumThreads.findUnique({
       where: {
         idForumThreads,
       },
     });
 
-    if (!data) throw new BadRequestException('Forum thread not found');
+    if (!existing) throw new BadRequestException('Forum thread not found');
+    if (existing.idUser !== idUser) {
+      throw new ForbiddenException('You are not authorized to delete this thread');
+    }
+
+    await this.databaseService.forumThreads.delete({
+      where: {
+        idForumThreads,
+      },
+    });
 
     return {
-      message: 'Forum Thread retrieved successfully',
+      message: 'Forum Thread deleted successfully',
       status: 200,
     };
   }

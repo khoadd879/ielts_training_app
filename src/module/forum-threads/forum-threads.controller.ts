@@ -44,7 +44,10 @@ export class ForumThreadsController {
   }
 
   @Delete('delete-forum-thread/:idForumThreads')
-  remove(@Param('idForumThreads') idForumThreads: string) {
-    return this.forumThreadsService.removeForumThread(idForumThreads);
+  remove(
+    @Param('idForumThreads') idForumThreads: string,
+    @Body('idUser') idUser: string,
+  ) {
+    return this.forumThreadsService.removeForumThread(idForumThreads, idUser);
   }
 }

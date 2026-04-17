@@ -44,7 +44,10 @@ export class ForumCommentController {
   }
 
   @Delete('delete-forum-comment/:idForumComment')
-  remove(@Param('idForumComment') idForumComment: string) {
-    return this.forumCommentService.removeForumComment(idForumComment);
+  remove(
+    @Param('idForumComment') idForumComment: string,
+    @Body('idUser') idUser: string,
+  ) {
+    return this.forumCommentService.removeForumComment(idForumComment, idUser);
   }
 }

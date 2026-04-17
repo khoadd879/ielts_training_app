@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
@@ -13,6 +14,7 @@ import {
   WritingTaskType,
   SpeakingPartType,
 } from '@prisma/client';
+import { updateXpToNext } from 'src/core/utils/xp.util';
 import { UserWritingSubmissionService } from '../user-writing-submission/user-writing-submission.service';
 import { UserSpeakingSubmissionService } from '../user-speaking-submission/user-speaking-submission.service';
 import { FinishTestWritingDto } from './dto/finish-test-writing.dto';
@@ -29,6 +31,8 @@ export interface SubmissionDetail {
 
 @Injectable()
 export class UserTestResultService {
+  private readonly logger = new Logger(UserTestResultService.name);
+
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly streakService: StreakService,
@@ -261,7 +265,7 @@ export class UserTestResultService {
         while (newXp >= xpToNext) {
           newXp -= xpToNext;
           currentLevel = this.getNextLevel(currentLevel as any);
-          xpToNext = this.updateXpToNext(currentLevel as any);
+          xpToNext = updateXpToNext(currentLevel as any);
         }
         userLevelUpdate = { newXp, currentLevel, xpToNext };
       }
@@ -319,7 +323,7 @@ export class UserTestResultService {
     try {
       await this.streakService.updateStreak(idUser);
     } catch (error) {
-      console.error(`Failed to update streak for user ${idUser}`, error);
+      this.logger.error(`Failed to update streak for user ${idUser}`, error);
     }
 
     return {
@@ -492,7 +496,7 @@ export class UserTestResultService {
     try {
       await this.streakService.updateStreak(idUser);
     } catch (error) {
-      console.error(`Failed to update streak for user ${idUser}`, error);
+      this.logger.error(`Failed to update streak for user ${idUser}`, error);
     }
   }
 
@@ -529,7 +533,7 @@ export class UserTestResultService {
     while (newXp >= xpToNext) {
       newXp -= xpToNext;
       currentLevel = this.getNextLevel(currentLevel);
-      xpToNext = this.updateXpToNext(currentLevel);
+      xpToNext = updateXpToNext(currentLevel);
     }
 
     await this.databaseService.user.update({
@@ -555,19 +559,6 @@ export class UserTestResultService {
         return 'Great';
       default:
         return 'Great';
-    }
-  }
-
-  private updateXpToNext(level: Level): number {
-    switch (level) {
-      case Level.Low:
-        return 100;
-      case Level.Mid:
-        return 350;
-      case Level.High:
-        return 1000;
-      default:
-        return 100;
     }
   }
 
