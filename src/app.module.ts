@@ -39,6 +39,7 @@ import { RecommendTestModule } from './module/recommend-test/recommend-test.modu
 import { SpeakingTaskModule } from './module/speaking-task/speaking-task.module';
 import { SpeakingQuestionModule } from './module/speaking-question/speaking-question.module';
 import { UserSpeakingSubmissionModule } from './module/user-speaking-submission/user-speaking-submission.module';
+import { DashboardModule } from './module/dashboard/dashboard.module';
 import { PdfExamModule } from './module/pdf-exam/pdf-exam.module';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 
@@ -120,6 +121,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     UserSpeakingSubmissionModule,
 
     RabbitMQModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

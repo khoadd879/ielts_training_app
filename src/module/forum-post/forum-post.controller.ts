@@ -14,6 +14,7 @@ import { CreateForumPostDto } from './dto/create-forum-post.dto';
 import { UpdateForumPostDto } from './dto/update-forum-post.dto';
 import { ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ReviewForumPostDto } from './dto/review-forum-post.dto';
 
 @ApiBearerAuth()
 @Controller('forum-post')
@@ -64,6 +65,22 @@ export class ForumPostController {
     @Param('idUser') idUser: string,
   ) {
     return this.forumPostService.findForumPost(idForumPost, idUser);
+  }
+
+  @Get('moderation-queue/:idUser')
+  getModerationQueue(@Param('idUser') idUser: string) {
+    return this.forumPostService.getModerationQueue(idUser);
+  }
+
+  @Patch('moderation-review/:idForumPost')
+  reviewForumPost(
+    @Param('idForumPost') idForumPost: string,
+    @Body() reviewForumPostDto: ReviewForumPostDto,
+  ) {
+    return this.forumPostService.reviewForumPost(
+      idForumPost,
+      reviewForumPostDto,
+    );
   }
 
   @Patch('update-forum-post/:idForumPost')
