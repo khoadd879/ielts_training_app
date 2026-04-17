@@ -473,106 +473,108 @@ export class TestService {
     });
     if (!existingUser) throw new BadRequestException('User not found');
 
-    // Use interactive $transaction for full control — questions need both idPart and idQuestionGroup
-    const data = await this.databaseService.$transaction(async (tx) => {
-      // 1. Create the Test
-      const test = await tx.test.create({
-        data: {
-          idUser: dto.idUser,
-          title: dto.title,
-          description: dto.description ?? null,
-          img: dto.img ?? null,
-          testType: dto.testType,
-          duration: dto.duration,
-          numberQuestion: dto.numberQuestion,
-          audioUrl: dto.audioUrl ?? null,
-          level: dto.level ?? 'Low',
-        },
-      });
-
-      // 2. Create Parts, Passages, QuestionGroups, and Questions
-      for (let partIdx = 0; partIdx < dto.parts.length; partIdx++) {
-        const partDto = dto.parts[partIdx];
-
-        const part = await tx.part.create({
+    // Use interactive $transactionWithRetry for full control — questions need both idPart and idQuestionGroup
+    const data = await this.databaseService.$transactionWithRetry(
+      async (tx) => {
+        // 1. Create the Test
+        const test = await tx.test.create({
           data: {
-            idTest: test.idTest,
-            namePart: partDto.namePart,
-            order: partDto.order ?? partIdx,
-            audioUrl: partDto.audioUrl ?? null,
+            idUser: dto.idUser,
+            title: dto.title,
+            description: dto.description ?? null,
+            img: dto.img ?? null,
+            testType: dto.testType,
+            duration: dto.duration,
+            numberQuestion: dto.numberQuestion,
+            audioUrl: dto.audioUrl ?? null,
+            level: dto.level ?? 'Low',
           },
         });
 
-        // Create passage if provided
-        if (partDto.passage) {
-          await tx.passage.create({
-            data: {
-              idPart: part.idPart,
-              title: partDto.passage.title,
-              content: partDto.passage.content,
-              image: partDto.passage.image ?? null,
-              description: partDto.passage.description ?? null,
-              audioUrl: partDto.passage.audioUrl ?? null,
-              numberParagraph: partDto.passage.numberParagraph ?? 0,
-            },
-          });
-        }
+        // 2. Create Parts, Passages, QuestionGroups, and Questions
+        for (let partIdx = 0; partIdx < dto.parts.length; partIdx++) {
+          const partDto = dto.parts[partIdx];
 
-        // Create question groups and their questions
-        for (
-          let groupIdx = 0;
-          groupIdx < partDto.questionGroups.length;
-          groupIdx++
-        ) {
-          const groupDto = partDto.questionGroups[groupIdx];
-
-          const questionGroup = await tx.questionGroup.create({
+          const part = await tx.part.create({
             data: {
-              idPart: part.idPart,
-              title: groupDto.title,
-              instructions: groupDto.instructions ?? null,
-              questionType: groupDto.questionType,
-              imageUrl: groupDto.imageUrl ?? null,
-              order: groupDto.order ?? groupIdx,
+              idTest: test.idTest,
+              namePart: partDto.namePart,
+              order: partDto.order ?? partIdx,
+              audioUrl: partDto.audioUrl ?? null,
             },
           });
 
-          // Batch create questions for this group
-          if (groupDto.questions.length > 0) {
-            await tx.question.createMany({
-              data: groupDto.questions.map((q, qIdx) => ({
-                idQuestionGroup: questionGroup.idQuestionGroup,
+          // Create passage if provided
+          if (partDto.passage) {
+            await tx.passage.create({
+              data: {
                 idPart: part.idPart,
-                questionNumber: q.questionNumber,
-                content: q.content,
-                questionType: q.questionType,
-                metadata: q.metadata,
-                order: q.order ?? qIdx,
-              })),
+                title: partDto.passage.title,
+                content: partDto.passage.content,
+                image: partDto.passage.image ?? null,
+                description: partDto.passage.description ?? null,
+                audioUrl: partDto.passage.audioUrl ?? null,
+                numberParagraph: partDto.passage.numberParagraph ?? 0,
+              },
             });
           }
-        }
-      }
 
-      // 3. Return the complete test with all relations
-      return tx.test.findUnique({
-        where: { idTest: test.idTest },
-        include: {
-          parts: {
-            orderBy: { order: 'asc' },
-            include: {
-              passage: true,
-              questionGroups: {
-                orderBy: { order: 'asc' },
-                include: {
-                  questions: { orderBy: { order: 'asc' } },
+          // Create question groups and their questions
+          for (
+            let groupIdx = 0;
+            groupIdx < partDto.questionGroups.length;
+            groupIdx++
+          ) {
+            const groupDto = partDto.questionGroups[groupIdx];
+
+            const questionGroup = await tx.questionGroup.create({
+              data: {
+                idPart: part.idPart,
+                title: groupDto.title,
+                instructions: groupDto.instructions ?? null,
+                questionType: groupDto.questionType,
+                imageUrl: groupDto.imageUrl ?? null,
+                order: groupDto.order ?? groupIdx,
+              },
+            });
+
+            // Batch create questions for this group
+            if (groupDto.questions.length > 0) {
+              await tx.question.createMany({
+                data: groupDto.questions.map((q, qIdx) => ({
+                  idQuestionGroup: questionGroup.idQuestionGroup,
+                  idPart: part.idPart,
+                  questionNumber: q.questionNumber,
+                  content: q.content,
+                  questionType: q.questionType,
+                  metadata: q.metadata,
+                  order: q.order ?? qIdx,
+                })),
+              });
+            }
+          }
+        }
+
+        // 3. Return the complete test with all relations
+        return tx.test.findUnique({
+          where: { idTest: test.idTest },
+          include: {
+            parts: {
+              orderBy: { order: 'asc' },
+              include: {
+                passage: true,
+                questionGroups: {
+                  orderBy: { order: 'asc' },
+                  include: {
+                    questions: { orderBy: { order: 'asc' } },
+                  },
                 },
               },
             },
           },
-        },
-      });
-    });
+        });
+      },
+    );
 
     return {
       message: 'Full test imported successfully',

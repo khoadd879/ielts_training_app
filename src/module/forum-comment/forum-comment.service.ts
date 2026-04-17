@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateForumCommentDto } from './dto/create-forum-comment.dto';
 import { UpdateForumCommentDto } from './dto/update-forum-comment.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -97,6 +97,14 @@ export class ForumCommentService {
     await this.existingForumPost(idForumPost);
     await this.existingUser(idUser);
 
+    const existingComment = await this.databaseService.forumComment.findUnique({
+      where: { idForumComment },
+    });
+    if (!existingComment) throw new BadRequestException('Forum comment not found');
+    if (existingComment.idUser !== idUser) {
+      throw new ForbiddenException('You are not authorized to update this comment');
+    }
+
     const data = await this.databaseService.forumComment.update({
       where: {
         idForumComment,
@@ -123,16 +131,23 @@ export class ForumCommentService {
     };
   }
 
-  async removeForumComment(idForumComment: string) {
-    const data = await this.databaseService.forumComment.delete({
+  async removeForumComment(idForumComment: string, idUser: string) {
+    const existing = await this.databaseService.forumComment.findUnique({
+      where: { idForumComment },
+    });
+    if (!existing) throw new BadRequestException('Forum comment not found');
+    if (existing.idUser !== idUser) {
+      throw new ForbiddenException('You are not authorized to delete this comment');
+    }
+
+    await this.databaseService.forumComment.delete({
       where: {
         idForumComment,
       },
     });
 
-    if (!data) throw new BadRequestException('Forum comment not found');
     return {
-      message: 'Forum Comment updated successfully',
+      message: 'Forum Comment deleted successfully',
       status: 200,
     };
   }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateForumPostDto } from './dto/create-forum-post.dto';
 import { UpdateForumPostDto } from './dto/update-forum-post.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -254,6 +254,15 @@ export class ForumPostService {
     await this.existingUser(idUser);
     await this.existingForumThreads(idForumThreads);
 
+    // Check ownership
+    const existingPost = await this.databaseService.forumPost.findUnique({
+      where: { idForumPost },
+    });
+    if (!existingPost) throw new BadRequestException('Forum post not found');
+    if (existingPost.idUser !== idUser) {
+      throw new ForbiddenException('You are not authorized to update this post');
+    }
+
     let fileUrl = updateForumPostDto.file;
 
     if (file) {
@@ -286,11 +295,14 @@ export class ForumPostService {
     };
   }
 
-  async removeForumPost(idForumPost: string) {
+  async removeForumPost(idForumPost: string, idUser: string) {
     const existing = await this.databaseService.forumPost.findUnique({
       where: { idForumPost },
     });
     if (!existing) throw new BadRequestException('Forum post not found');
+    if (existing.idUser !== idUser) {
+      throw new ForbiddenException('You are not authorized to delete this post');
+    }
 
     await this.databaseService.forumPost.delete({
       where: { idForumPost },
