@@ -594,12 +594,6 @@ ${content}
     await this.existingUser(idUser);
     const forumThread = await this.existingForumThreads(idForumThreads);
 
-    const existingPost = await this.databaseService.forumPost.findUnique({
-      where: { idForumPost },
-    });
-
-    if (!existingPost) throw new BadRequestException('Forum post not found');
-
     // Check ownership
     const existingPost = await this.databaseService.forumPost.findUnique({
       where: { idForumPost },
