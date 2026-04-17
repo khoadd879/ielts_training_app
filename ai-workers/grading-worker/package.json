@@ -1,0 +1,25 @@
+{
+  "name": "ai-grading-worker",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "watch": "tsc --watch"
+  },
+  "dependencies": {
+    "@ai-workers/shared": "1.0.0",
+    "@prisma/client": "^6.19.1",
+    "amqplib": "^0.10.4",
+    "axios": "^1.12.2",
+    "groq-sdk": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.5",
+    "@types/node": "^22.10.7",
+    "prisma": "^6.19.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
