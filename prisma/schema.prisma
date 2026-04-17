@@ -440,6 +440,11 @@ model ForumPost {
   idUser         String
   content        String
   file           String?
+  moderationStatus ForumModerationStatus @default(PENDING)
+  moderationScore  Int?
+  moderationMeta   Json?            @db.JsonB
+  reviewedBy       String?
+  reviewedAt       DateTime?
   created_at     DateTime         @default(now())
   updated_at     DateTime         @updatedAt
 
@@ -450,6 +455,7 @@ model ForumPost {
   forumPostLikes ForumPostLikes[]
 
   @@index([idForumThreads, created_at])
+  @@index([moderationStatus, created_at])
 }
 
 model ForumComment {
@@ -573,6 +579,16 @@ enum GradingStatus {
   GRADING   /// AI Worker is processing
   COMPLETED /// Grading finished successfully
   FAILED    /// Grading failed (retry or manual review)
+}
+
+enum ForumModerationStatus {
+  PENDING
+  AUTO_APPROVED
+  NEEDS_REVIEW
+  AUTO_REJECTED
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
 }
 
 enum VocabType {
