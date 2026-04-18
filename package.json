@@ -40,6 +40,7 @@
     "@openai/agents": "^0.1.4",
     "@prisma/client": "6.19.1",
     "@types/cheerio": "^0.22.35",
+    "amqplib": "^1.0.3",
     "axios": "^1.12.2",
     "bcrypt": "6.0.0",
     "cache-manager": "^7.2.2",

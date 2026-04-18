@@ -53,6 +53,58 @@ export class SupabaseService {
       throw error;
     }
   }
+
+  // Helper to create embedding
+  private async createEmbedding(text: string): Promise<number[]> {
+    const Groq = require('groq-sdk');
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY_1 || process.env.GROQ_API_KEY });
+    const response = await groq.embeddings.create({
+      model: 'embed-english-v2',
+      input: text
+    });
+    return response.data[0]?.embedding || [];
+  }
+
+  // Skill-specific search methods
+  async searchBySkill(
+    skill: 'reading' | 'listening' | 'speaking' | 'writing',
+    queryEmbedding: number[],
+    matchThreshold: number = 0.6,
+    matchCount: number = 3
+  ): Promise<RagDocument[]> {
+    const { data, error } = await this.client.rpc(`search_ielts_${skill}`, {
+      query_embedding: queryEmbedding,
+      match_threshold: matchThreshold,
+      match_count: matchCount
+    });
+
+    if (error) {
+      console.error(`Supabase ${skill} search error:`, error);
+      return [];
+    }
+
+    return data || [];
+  }
+
+  async searchReading(query: string): Promise<RagDocument[]> {
+    const embedding = await this.createEmbedding(query);
+    return this.searchBySkill('reading', embedding);
+  }
+
+  async searchListening(query: string): Promise<RagDocument[]> {
+    const embedding = await this.createEmbedding(query);
+    return this.searchBySkill('listening', embedding);
+  }
+
+  async searchSpeaking(query: string): Promise<RagDocument[]> {
+    const embedding = await this.createEmbedding(query);
+    return this.searchBySkill('speaking', embedding);
+  }
+
+  async searchWriting(query: string): Promise<RagDocument[]> {
+    const embedding = await this.createEmbedding(query);
+    return this.searchBySkill('writing', embedding);
+  }
 }
 
 export function createSupabaseService(): SupabaseService {

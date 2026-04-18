@@ -1,25 +1,36 @@
 # Build stage
-FROM node:22-alpine AS builder
+FROM node:22-bookworm AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
+
+# Setup chatbot-worker directory structure
+RUN mkdir -p chatwork
+COPY ./chatbot-worker/package*.json chatwork/
+
+# Copy shared to ../shared relative to chatwork (where package.json is)
+COPY ./shared chatwork/../shared
+
+WORKDIR /app/chatwork
+RUN npm install --ignore-scripts
+
+# Build chatbot-worker
+COPY ./chatbot-worker/src ./src
+COPY ./chatbot-worker/tsconfig.json ./
 RUN npm run build
 
 # Production stage
-FROM node:22-alpine AS production
+FROM node:22-bookworm-slim AS production
 WORKDIR /app
 
 # Create non-root user
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -S appuser -u 1001 -G appgroup
+RUN groupadd -g 1001 appgroup && useradd -u 1001 -g appgroup appuser
 
 # Copy only needed files from builder
-COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
-COPY --from=builder --chown=appuser:appgroup /app/package*.json ./
+COPY --from=builder --chown=appuser:appgroup /app/chatwork/dist ./dist
+COPY --from=builder --chown=appuser:appgroup /app/chatwork/package*.json ./
+COPY --from=builder --chown=appuser:appgroup /app/chatwork/node_modules ./node_modules
 
 # Install production deps only
-RUN npm ci --only=production
+RUN npm ci --only=production --ignore-scripts
 
 USER appuser
 

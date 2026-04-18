@@ -1,5 +1,5 @@
 import http from 'http';
-import { setupRabbitMQ, publishMessage } from '@ai-workers/shared';
+import { setupRabbitMQ, publishMessage } from '@ai-workers/shared/config/rabbitmq';
 import { EXCHANGES, QUEUES, ROUTING_KEYS } from '@ai-workers/shared/types/messages';
 import { processChatbotAsk } from './handlers/ask.handler';
 import { ChatbotAskMessage } from '@ai-workers/shared/types/messages';
@@ -53,7 +53,7 @@ async function main() {
   process.on('SIGINT', () => shutdown('SIGINT'));
 
   // Consume chatbot ask queue
-  channel.consume(QUEUES.CHATBOT_ASK, async (msg) => {
+  channel.consume(QUEUES.CHATBOT_ASK, async (msg: any) => {
     if (!msg || isShuttingDown) return;
 
     try {

@@ -16,4 +16,8 @@ export class CreateUserSpeakingSubmissionDto {
   @IsOptional()
   @IsString()
   audioUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  transcript?: string;
 }

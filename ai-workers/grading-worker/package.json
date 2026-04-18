@@ -9,7 +9,6 @@
     "watch": "tsc --watch"
   },
   "dependencies": {
-    "@ai-workers/shared": "1.0.0",
     "@prisma/client": "^6.19.1",
     "amqplib": "^0.10.4",
     "axios": "^1.12.2",

@@ -82,7 +82,7 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # AI Workers
+  # AI Workers (all use shared ai-workers/.env)
   ai-grading-worker:
     build:
       context: ./ai-workers/grading-worker
@@ -92,9 +92,11 @@ services:
     networks:
       - ielts_network
     env_file:
-      - ./ai-workers/grading-worker/.env
+      - ./ai-workers/.env
     environment:
+      PORT: 3001
       NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: ${DATABASE_URL}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -102,15 +104,16 @@ services:
 
   ai-chatbot-worker:
     build:
-      context: ./ai-workers/chatbot-worker
-      dockerfile: Dockerfile
+      context: ./ai-workers
+      dockerfile: ./chatbot-worker/Dockerfile
     image: ai-chatbot-worker:latest
     container_name: ai-chatbot-worker
     networks:
       - ielts_network
     env_file:
-      - ./ai-workers/chatbot-worker/.env
+      - ./ai-workers/.env
     environment:
+      PORT: 3002
       NODE_ENV: ${NODE_ENV:-production}
     depends_on:
       rabbitmq:
@@ -126,8 +129,9 @@ services:
     networks:
       - ielts_network
     env_file:
-      - ./ai-workers/embedding-worker/.env
+      - ./ai-workers/.env
     environment:
+      PORT: 3003
       NODE_ENV: ${NODE_ENV:-production}
     depends_on:
       rabbitmq:

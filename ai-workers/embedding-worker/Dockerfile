@@ -1,25 +1,25 @@
 # Build stage
-FROM node:22-alpine AS builder
+FROM node:22-bookworm AS builder
 WORKDIR /app
+
 COPY package*.json ./
-RUN npm install
+RUN npm install --ignore-scripts
 COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:22-alpine AS production
+FROM node:22-bookworm-slim AS production
 WORKDIR /app
 
 # Create non-root user
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -S appuser -u 1001 -G appgroup
+RUN groupadd -g 1001 appgroup && useradd -u 1001 -g appgroup appuser
 
 # Copy only needed files from builder
 COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
 COPY --from=builder --chown=appuser:appgroup /app/package*.json ./
 
 # Install production deps only
-RUN npm ci --only=production
+RUN npm ci --only=production --ignore-scripts
 
 USER appuser
 
