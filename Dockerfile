@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 # Base image
 FROM node:22-alpine AS builder
 
@@ -7,8 +9,10 @@ WORKDIR /app
 # Copy only package files first (optimize caching)
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --no-audit --no-fund
+# Install dependencies with cache and retry settings for flaky networks
+RUN --mount=type=cache,target=/root/.npm \
+  npm ci --no-audit --no-fund --prefer-offline \
+  --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
 # Copy the rest of the app
 COPY . .

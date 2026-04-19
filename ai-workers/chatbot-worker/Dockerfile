@@ -1,40 +1,47 @@
-# Build stage
-FROM node:22-bookworm AS builder
-WORKDIR /app
+# syntax=docker/dockerfile:1.7
 
-# Setup chatbot-worker directory structure
-RUN mkdir -p chatwork
-COPY ./chatbot-worker/package*.json chatwork/
+FROM node:22-alpine AS shared-builder
 
-# Copy shared to ../shared relative to chatwork (where package.json is)
-COPY ./shared chatwork/../shared
+WORKDIR /app/shared
 
-WORKDIR /app/chatwork
-RUN npm install --ignore-scripts
+COPY ./shared/package*.json ./
+COPY ./shared/tsconfig.json ./
+COPY ./shared/src ./src
 
-# Build chatbot-worker
-COPY ./chatbot-worker/src ./src
-COPY ./chatbot-worker/tsconfig.json ./
+RUN --mount=type=cache,target=/root/.npm \
+  npm install --ignore-scripts --no-audit --no-fund --prefer-offline \
+  --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 RUN npm run build
 
-# Production stage
-FROM node:22-bookworm-slim AS production
-WORKDIR /app
+FROM node:22-alpine AS builder
 
-# Create non-root user
-RUN groupadd -g 1001 appgroup && useradd -u 1001 -g appgroup appuser
+WORKDIR /app/chatbot-worker
 
-# Copy only needed files from builder
-COPY --from=builder --chown=appuser:appgroup /app/chatwork/dist ./dist
-COPY --from=builder --chown=appuser:appgroup /app/chatwork/package*.json ./
-COPY --from=builder --chown=appuser:appgroup /app/chatwork/node_modules ./node_modules
+COPY ./chatbot-worker/package*.json ./
+COPY ./chatbot-worker/tsconfig.json ./
+COPY --from=shared-builder /app/shared ../shared
 
-# Install production deps only
-RUN npm ci --only=production --ignore-scripts
+RUN --mount=type=cache,target=/root/.npm \
+  npm install --ignore-scripts --no-audit --no-fund --prefer-offline \
+  --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+COPY ./chatbot-worker/src ./src
+
+RUN npm run build
+
+FROM node:22-alpine
+
+WORKDIR /app/chatbot-worker
+
+RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup
+
+COPY --from=builder --chown=appuser:appgroup /app/chatbot-worker/package*.json ./
+COPY --from=builder --chown=appuser:appgroup /app/chatbot-worker/node_modules ./node_modules
+COPY --from=builder --chown=appuser:appgroup /app/chatbot-worker/dist ./dist
+COPY --from=shared-builder --chown=appuser:appgroup /app/shared ../shared
 
 USER appuser
 
-# Healthcheck - worker listens on port 3002
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget -qO- http://localhost:3002/health || exit 1
 

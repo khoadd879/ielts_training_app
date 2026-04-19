@@ -8,6 +8,7 @@
     "dev": "ts-node src/index.ts"
   },
   "dependencies": {
+    "@ai-workers/shared": "file:../shared",
     "@supabase/supabase-js": "^2.47.0",
     "amqplib": "^0.10.4",
     "better-sqlite3": "^12.9.0",

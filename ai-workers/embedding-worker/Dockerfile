@@ -1,29 +1,47 @@
-# Build stage
-FROM node:22-bookworm AS builder
-WORKDIR /app
+# syntax=docker/dockerfile:1.7
 
-COPY package*.json ./
-RUN npm install --ignore-scripts
-COPY . .
+FROM node:22-alpine AS shared-builder
+
+WORKDIR /app/shared
+
+COPY ./shared/package*.json ./
+COPY ./shared/tsconfig.json ./
+COPY ./shared/src ./src
+
+RUN --mount=type=cache,target=/root/.npm \
+  npm install --ignore-scripts --no-audit --no-fund --prefer-offline \
+  --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 RUN npm run build
 
-# Production stage
-FROM node:22-bookworm-slim AS production
-WORKDIR /app
+FROM node:22-alpine AS builder
 
-# Create non-root user
-RUN groupadd -g 1001 appgroup && useradd -u 1001 -g appgroup appuser
+WORKDIR /app/embedding-worker
 
-# Copy only needed files from builder
-COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
-COPY --from=builder --chown=appuser:appgroup /app/package*.json ./
+COPY ./embedding-worker/package*.json ./
+COPY ./embedding-worker/tsconfig.json ./
+COPY --from=shared-builder /app/shared ../shared
 
-# Install production deps only
-RUN npm ci --only=production --ignore-scripts
+RUN --mount=type=cache,target=/root/.npm \
+  npm install --ignore-scripts --no-audit --no-fund --prefer-offline \
+  --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+COPY ./embedding-worker/src ./src
+
+RUN npm run build
+
+FROM node:22-alpine
+
+WORKDIR /app/embedding-worker
+
+RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup
+
+COPY --from=builder --chown=appuser:appgroup /app/embedding-worker/package*.json ./
+COPY --from=builder --chown=appuser:appgroup /app/embedding-worker/node_modules ./node_modules
+COPY --from=builder --chown=appuser:appgroup /app/embedding-worker/dist ./dist
+COPY --from=shared-builder --chown=appuser:appgroup /app/shared ../shared
 
 USER appuser
 
-# Healthcheck - worker listens on port 3003
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget -qO- http://localhost:3003/health || exit 1
 

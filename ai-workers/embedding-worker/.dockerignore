@@ -1,0 +1,8 @@
+# Dependencies - we will COPY node_modules directly to bypass npm install
+# node_modules is needed from host
+npm-debug.log
+*.log
+.git
+.gitignore
+*.md
+dist
