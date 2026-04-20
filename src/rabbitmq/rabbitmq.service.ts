@@ -103,42 +103,56 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async ensureChatbotReplyConsumer(): Promise<void> {
-    if (
-      !this.channel ||
-      this.chatbotReplyConsumerStarted ||
-      this.chatbotReplyHandlers.size === 0
-    ) {
+    if (!this.channel) {
+      this.logger.warn('RabbitMQ channel not available');
       return;
     }
 
-    await this.channel.assertQueue(QUEUES.CHATBOT_REPLY, { durable: true });
-    await this.channel.bindQueue(
-      QUEUES.CHATBOT_REPLY,
-      EXCHANGES.CHATBOT,
-      ROUTING_KEYS.REPLY,
-    );
+    if (this.chatbotReplyConsumerStarted) {
+      return;
+    }
 
-    await this.channel.consume(QUEUES.CHATBOT_REPLY, async (msg) => {
-      if (!msg) {
-        return;
-      }
+    if (this.chatbotReplyHandlers.size === 0) {
+      this.logger.debug('No chatbot reply handlers yet, skipping consumer setup');
+      return;
+    }
 
-      try {
-        const payload = JSON.parse(
-          msg.content.toString(),
-        ) as ChatbotReplyMessage;
+    try {
+      await this.channel.assertQueue(QUEUES.CHATBOT_REPLY, { durable: true });
+      await this.channel.bindQueue(
+        QUEUES.CHATBOT_REPLY,
+        EXCHANGES.CHATBOT,
+        ROUTING_KEYS.REPLY,
+      );
 
-        for (const handler of this.chatbotReplyHandlers) {
-          await handler(payload);
+      const channel = this.channel;
+      await channel.consume(QUEUES.CHATBOT_REPLY, async (msg) => {
+        if (!msg) {
+          return;
         }
 
-        this.channel?.ack(msg);
-      } catch (error) {
-        this.logger.error('Failed to process chatbot reply:', error);
-        this.channel?.nack(msg, false, false);
-      }
-    });
+        try {
+          const payload = JSON.parse(
+            msg.content.toString(),
+          ) as ChatbotReplyMessage;
 
-    this.chatbotReplyConsumerStarted = true;
+          this.logger.debug(`Received chatbot reply for session: ${payload.sessionId}`);
+
+          for (const handler of this.chatbotReplyHandlers) {
+            await handler(payload);
+          }
+
+          channel.ack(msg);
+        } catch (error) {
+          this.logger.error('Failed to process chatbot reply:', error);
+          channel.nack(msg, false, false);
+        }
+      });
+
+      this.chatbotReplyConsumerStarted = true;
+      this.logger.log('Chatbot reply consumer started');
+    } catch (error) {
+      this.logger.error('Failed to start chatbot reply consumer:', error);
+    }
   }
 }
