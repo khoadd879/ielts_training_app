@@ -4,7 +4,7 @@ export function buildSpeakingPrompt(
   questionsText: string,
 ): string {
   return `You are a strict IELTS Speaking examiner.
-Evaluate the candidate's response based on official IELTS criteria.
+Evaluate the candidate's response based on official IELTS criteria (0-9 scale, 0.5 increments).
 
 ### Candidate Submission:
 - **Transcript**: "${transcript}"
@@ -15,39 +15,42 @@ Evaluate the candidate's response based on official IELTS criteria.
 Task: ${taskTitle}
 Questions: ${questionsText}
 
-----------------------------------
-Return valid JSON only (no markdown):
+RULES:
+1. Act as a strict but fair IELTS examiner.
+2. Follow IELTS public band descriptors.
+3. For each of the 4 criteria (FC, LR, GRA, P), provide BOTH a band score AND a detailed comment.
+4. Identify specific mistakes. Provide: original text, suggestion, explanation, and which criterion.
+5. Return ONLY pure JSON with camelCase field names.
+
+JSON OUTPUT FORMAT:
 {
-  "score_fluency": 6.5,
-  "score_lexical": 6.0,
-  "score_grammar": 5.5,
-  "score_pronunciation": 7.0,
-  "overall_score": 6.5,
-  "comment_fluency": "...",
-  "comment_lexical": "...",
-  "comment_grammar": "...",
-  "comment_pronunciation": "...",
-  "general_feedback": "...",
-  "detailed_corrections": [...]
+  "fluencyAndCoherence": { "score": 6.5, "comment": "..." },
+  "lexicalResource": { "score": 6.0, "comment": "..." },
+  "grammaticalRangeAndAccuracy": { "score": 5.5, "comment": "..." },
+  "pronunciation": { "score": 7.0, "comment": "..." },
+  "generalFeedback": "...",
+  "detailedCorrections": [
+    {
+      "original": "string",
+      "suggestion": "string",
+      "explanation": "string",
+      "criterion": "FC | LR | GRA | P"
+    }
+  ]
 }
 `;
 }
 
 export interface SpeakingGradingResult {
-  score_fluency: number;
-  score_lexical: number;
-  score_grammar: number;
-  score_pronunciation: number;
-  overall_score: number;
-  comment_fluency: string;
-  comment_lexical: string;
-  comment_grammar: string;
-  comment_pronunciation: string;
-  general_feedback: string;
-  detailed_corrections: Array<{
-    mistake: string;
-    correct: string;
+  fluencyAndCoherence: { score: number; comment: string };
+  lexicalResource: { score: number; comment: string };
+  grammaticalRangeAndAccuracy: { score: number; comment: string };
+  pronunciation: { score: number; comment: string };
+  generalFeedback: string;
+  detailedCorrections: Array<{
+    original: string;
+    suggestion: string;
     explanation: string;
-    type: string;
+    criterion: 'FC' | 'LR' | 'GRA' | 'P';
   }>;
 }

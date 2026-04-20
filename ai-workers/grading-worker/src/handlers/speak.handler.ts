@@ -79,22 +79,27 @@ export async function processSpeakGrading(
 
       const result = JSON.parse(cleanJson) as SpeakingGradingResult;
 
+      // Calculate overall score as average of 4 criteria
+      const overallScore = Math.round(
+        (result.fluencyAndCoherence.score +
+          result.lexicalResource.score +
+          result.grammaticalRangeAndAccuracy.score +
+          result.pronunciation.score) /
+          4 *
+          2,
+      ) / 2;
+
       await neon.updateSpeakingSubmission(msg.submissionId, {
         aiGradingStatus: 'COMPLETED',
         transcript,
-        aiOverallScore: result.overall_score,
+        aiOverallScore: overallScore,
         aiDetailedFeedback: {
-          scoreFluency: result.score_fluency,
-          scoreLexical: result.score_lexical,
-          scoreGrammar: result.score_grammar,
-          scorePronunciation: result.score_pronunciation,
-          overallScore: result.overall_score,
-          commentFluency: result.comment_fluency,
-          commentLexical: result.comment_lexical,
-          commentGrammar: result.comment_grammar,
-          commentPronunciation: result.comment_pronunciation,
-          generalFeedback: result.general_feedback,
-          detailedCorrections: result.detailed_corrections,
+          fluencyAndCoherence: result.fluencyAndCoherence,
+          lexicalResource: result.lexicalResource,
+          grammaticalRangeAndAccuracy: result.grammaticalRangeAndAccuracy,
+          pronunciation: result.pronunciation,
+          generalFeedback: result.generalFeedback,
+          detailedCorrections: result.detailedCorrections ?? [],
         },
         gradedAt: new Date(),
       });

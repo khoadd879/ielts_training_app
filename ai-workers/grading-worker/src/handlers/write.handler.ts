@@ -20,17 +20,14 @@ export async function processWriteGrading(
 
   for (let attempt = 0; attempt < RETRY_CONFIG.maxRetries; attempt++) {
     try {
-      // Build prompt
       const prompt = buildWritingPrompt(
         msg.submissionText,
         msg.prompt,
         msg.type,
       );
 
-      // Call Groq with retry
       const responseText = await groq.chatcompletion(prompt);
 
-      // Parse response
       const cleanJson = responseText
         .replace(/```json/gi, '')
         .replace(/```/g, '')
@@ -38,22 +35,32 @@ export async function processWriteGrading(
 
       const result = JSON.parse(cleanJson) as WritingGradingResult;
 
-      // Write to Neon
+      // Calculate overall score as average of 4 criteria
+      const overallScore = Math.round(
+        (result.taskAchievement.score +
+          result.coherenceAndCohesion.score +
+          result.lexicalResource.score +
+          result.grammaticalRangeAndAccuracy.score) /
+          4 *
+          2,
+      ) / 2;
+
       await neon.updateWritingSubmission(msg.submissionId, {
         aiGradingStatus: 'COMPLETED',
-        aiOverallScore: result.score,
+        aiOverallScore: overallScore,
         aiDetailedFeedback: {
-          taskResponse: result.task_response,
-          coherenceAndCohesion: result.coherence_and_cohesion,
-          lexicalResource: result.lexical_resource,
-          grammaticalRangeAndAccuracy: result.grammatical_range_and_accuracy,
-          generalFeedback: result.general_feedback,
-          detailedCorrections: result.detailed_corrections,
+          taskAchievement: result.taskAchievement,
+          coherenceAndCohesion: result.coherenceAndCohesion,
+          lexicalResource: result.lexicalResource,
+          grammaticalRangeAndAccuracy: result.grammaticalRangeAndAccuracy,
+          generalFeedback: result.generalFeedback,
+          detailedCorrections: result.detailedCorrections ?? [],
         },
         gradedAt: new Date(),
       });
 
-      return; // Success
+      await neon.disconnect();
+      return;
     } catch (error) {
       lastError = error;
       console.error(
@@ -69,7 +76,6 @@ export async function processWriteGrading(
     }
   }
 
-  // All retries failed - mark as FAILED
   console.error('All retries exhausted for write grading:', lastError);
 
   await neon.updateWritingSubmission(msg.submissionId, {

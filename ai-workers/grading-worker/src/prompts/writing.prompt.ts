@@ -28,25 +28,24 @@ ${taskTypeNote}
 
 RULES:
 1. Act as a strict but fair IELTS examiner.
-2. Follow IELTS public band descriptors.
-3. For each of the 4 criteria (TR/TA, CC, LR, GRA), provide detailed feedback.
-4. Identify specific mistakes. Provide: original text, correction, and explanation.
-5. Return ONLY pure JSON.
+2. Follow IELTS public band descriptors (0-9 scale, 0.5 increments).
+3. For each of the 4 criteria (TA, CC, LR, GRA), provide BOTH a band score AND a detailed comment.
+4. Identify specific mistakes. Provide: original text, corrected text, explanation, and which criterion.
+5. Return ONLY pure JSON with camelCase field names.
 
 JSON OUTPUT FORMAT:
 {
-  "score": number,
-  "task_response": string,
-  "coherence_and_cohesion": string,
-  "lexical_resource": string,
-  "grammatical_range_and_accuracy": string,
-  "general_feedback": string,
-  "detailed_corrections": [
+  "taskAchievement": { "score": 6.5, "comment": "..." },
+  "coherenceAndCohesion": { "score": 6.0, "comment": "..." },
+  "lexicalResource": { "score": 6.5, "comment": "..." },
+  "grammaticalRangeAndAccuracy": { "score": 6.0, "comment": "..." },
+  "generalFeedback": "...",
+  "detailedCorrections": [
     {
-      "mistake": "string",
-      "correct": "string",
+      "original": "string",
+      "corrected": "string",
       "explanation": "string",
-      "type": "Grammar | Lexis | Spelling | Cohesion"
+      "criterion": "TA | CC | LR | GRA"
     }
   ]
 }
@@ -60,16 +59,15 @@ ${submissionText}
 }
 
 export interface WritingGradingResult {
-  score: number;
-  task_response: string;
-  coherence_and_cohesion: string;
-  lexical_resource: string;
-  grammatical_range_and_accuracy: string;
-  general_feedback: string;
-  detailed_corrections: Array<{
-    mistake: string;
-    correct: string;
+  taskAchievement: { score: number; comment: string };
+  coherenceAndCohesion: { score: number; comment: string };
+  lexicalResource: { score: number; comment: string };
+  grammaticalRangeAndAccuracy: { score: number; comment: string };
+  generalFeedback: string;
+  detailedCorrections: Array<{
+    original: string;
+    corrected: string;
     explanation: string;
-    type: string;
+    criterion: 'TA' | 'CC' | 'LR' | 'GRA';
   }>;
 }

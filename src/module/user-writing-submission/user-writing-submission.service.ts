@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -8,29 +7,7 @@ import {
 import { CreateUserWritingSubmissionDto } from './dto/create-user-writing-submission.dto';
 import { UpdateUserWritingSubmissionDto } from './dto/update-user-writing-submission.dto';
 import { DatabaseService } from 'src/database/database.service';
-import { GoogleGenAI } from '@google/genai';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import type { Cache } from 'cache-manager';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
 import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
-
-type CorrectionDetail = {
-  mistake: string;
-  correct: string;
-  explanation: string;
-  type: string; //Loại lỗi
-};
-
-type AIFeedbackResult = {
-  score: number;
-  task_response: string;
-  coherence_and_cohesion: string;
-  lexical_resource: string;
-  grammatical_range_and_accuracy: string;
-  general_feedback: string;
-  detailed_corrections: CorrectionDetail[];
-};
 
 @Injectable()
 export class UserWritingSubmissionService {
@@ -38,19 +15,8 @@ export class UserWritingSubmissionService {
 
   constructor(
     private readonly databaseService: DatabaseService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
-    private readonly configService: ConfigService,
     private readonly rabbitMQService: RabbitMQService,
   ) {}
-
-  private getAIInstance(): GoogleGenAI {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-    if (!apiKey) {
-      this.logger.error('GEMINI_API_KEY is missing');
-      throw new BadRequestException('AI API key is not configured');
-    }
-    return new GoogleGenAI({ apiKey });
-  }
 
   //Tạo submission + publish to queue để AI chấm điểm bất đồng bộ
   async createUserWritingSubmission(
@@ -116,121 +82,6 @@ export class UserWritingSubmissionService {
       aiGradingStatus: 'PENDING',
       status: 202,
     };
-  }
-
-  // HÀM CHẤM BÀI BẰNG GEMINI (với retry logic)
-  async evaluateWriting(
-    submissionText: string,
-    writingPrompt: string,
-    imageUrl?: string,
-  ): Promise<AIFeedbackResult> {
-    const cacheKey = `writing-feedback:${submissionText.trim()}:${writingPrompt.trim()}:${imageUrl ?? 'no-image'}`;
-    const cachedData = await this.cacheManager.get<AIFeedbackResult>(cacheKey);
-
-    if (cachedData) {
-      this.logger.debug('Cache HIT!');
-      return cachedData;
-    }
-
-    const prompt = this.buildPrompt(submissionText, writingPrompt, !!imageUrl);
-    const ai = this.getAIInstance();
-
-    // ✅ OPTIMIZATION: Retry logic with exponential backoff
-    const maxRetries = 3;
-    let lastError: unknown;
-
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        const parts: any[] = [{ text: prompt }];
-
-        if (imageUrl) {
-          const imagePart = await this.fileToGenerativePart(imageUrl);
-          if (imagePart) parts.push(imagePart);
-        }
-
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: [
-            {
-              role: 'user',
-              parts,
-            },
-          ],
-        });
-
-        const rawText = response.text?.trim() ?? '';
-        const clean = rawText
-          .replace(/```json/i, '')
-          .replace(/```/g, '')
-          .trim();
-
-        let parsed: AIFeedbackResult;
-        try {
-          parsed = JSON.parse(clean);
-        } catch (err) {
-          this.logger.error('JSON parse error from Gemini:', err);
-          throw new BadRequestException('Invalid AI response format');
-        }
-
-        // Lưu vào cache 24 giờ (tăng từ 1 giờ)
-        await this.cacheManager.set(cacheKey, parsed, 86400);
-
-        if (attempt > 0) {
-          this.logger.debug(`✅ AI evaluation succeeded on attempt ${attempt + 1}`);
-        }
-
-        return parsed;
-      } catch (error) {
-        lastError = error;
-
-        if (attempt < maxRetries - 1) {
-          // Exponential backoff: 1s, 2s, 4s
-          const waitTime = 1000 * Math.pow(2, attempt);
-          this.logger.warn(
-            `⚠️ AI evaluation failed (attempt ${attempt + 1}/${maxRetries}), retrying in ${waitTime}ms...`,
-            error instanceof Error ? error.message : String(error),
-          );
-          await new Promise((resolve) => setTimeout(resolve, waitTime));
-        }
-      }
-    }
-
-    // All retries failed
-    this.logger.error('❌ AI evaluation failed after all retries:', lastError);
-    throw new BadRequestException(
-      'AI evaluation failed after multiple attempts. Please try again later.',
-    );
-  }
-
-  private async fileToGenerativePart(url: string) {
-    try {
-      this.logger.debug('📸 Fetching image from:', url);
-
-      const response = await axios.get(url, {
-        responseType: 'arraybuffer',
-        timeout: 15000, // 15s timeout for image download
-      });
-
-      const b64 = Buffer.from(response.data).toString('base64');
-      const mimeType = response.headers['content-type'] || 'image/jpeg';
-
-      this.logger.debug('✅ Image loaded successfully');
-      this.logger.debug('  - Size:', b64.length, 'bytes');
-      this.logger.debug('  - MIME type:', mimeType);
-
-      return {
-        inlineData: {
-          data: b64,
-          mimeType,
-        },
-      };
-    } catch (error) {
-      this.logger.error('Failed to fetch image from URL', error);
-      // ✅ THROW ERROR instead of returning null (critical for Task 1 accuracy)
-      throw new BadRequestException(
-        `Failed to load image for Task 1 evaluation. Please check the image URL: ${url}`,
-      );
-    }
   }
 
   // Lấy toàn bộ submissions theo user
@@ -309,33 +160,29 @@ export class UserWritingSubmissionService {
     if (!submission) throw new BadRequestException('Submission not found');
 
     if (updateDto.regrade) {
-      const aiResult = await this.evaluateWriting(
-        submission.submissionText,
-        submission.writingTask.title,
-      );
+      // ✅ Regrade: publish to grading queue for async AI processing
+      await this.rabbitMQService.publishGradingWrite({
+        submissionId: submission.idWritingSubmission,
+        userId: submission.idUser,
+        type: submission.writingTask.taskType,
+        submissionText: submission.submissionText,
+        prompt: submission.writingTask.title,
+        imageUrl: submission.writingTask.image,
+      });
 
+      // Update status to PENDING
       const updatedSubmission =
         await this.databaseService.userWritingSubmission.update({
           where: { idWritingSubmission },
           data: {
-            aiGradingStatus: 'COMPLETED',
-            aiOverallScore: aiResult.score,
-            aiDetailedFeedback: {
-              taskResponse: aiResult.task_response,
-              coherenceAndCohesion: aiResult.coherence_and_cohesion,
-              lexicalResource: aiResult.lexical_resource,
-              grammaticalRangeAndAccuracy:
-                aiResult.grammatical_range_and_accuracy,
-              generalFeedback: aiResult.general_feedback,
-              detailedCorrections: aiResult.detailed_corrections ?? [],
-            },
-            gradedAt: new Date(),
+            aiGradingStatus: 'PENDING',
           },
         });
 
       return {
-        message: 'Submission re-graded successfully',
+        message: 'Regrade queued successfully',
         data: updatedSubmission,
+        status: 202,
       };
     }
 
@@ -369,69 +216,5 @@ export class UserWritingSubmissionService {
       message: 'User writing submission deleted successfully',
       status: 200,
     };
-  }
-
-  // Prompt AI
-  // Trong class UserWritingSubmissionService
-
-  private buildPrompt(
-    submissionText: string,
-    writingPrompt: string,
-    hasImage: boolean,
-  ): string {
-    const taskTypeNote = hasImage
-      ? `This is an IELTS Writing Task 1 (Report/Academic Writing).
-
-⚠️ CRITICAL: An image (chart/graph/diagram/table/map/process) has been provided.
-You MUST carefully analyze the image to verify:
-1. Whether the candidate accurately described the data/information shown in the image
-2. Whether key features, trends, and comparisons match what's in the image
-3. Whether the overview statement correctly summarizes the main trends/features
-4. Whether specific numbers, percentages, or data points mentioned are accurate
-
-❌ DO NOT give a high Task Achievement score if:
-- The essay describes data that doesn't exist in the image
-- Key features visible in the image are completely missing from the essay
-- The candidate fabricated data not shown in the image
-- The overview doesn't match the actual main trends in the image
-
-Evaluate strictly based on IELTS Task 1 criteria.`
-      : 'This is an IELTS Writing Task 2 (Essay). Evaluate the arguments and ideas.';
-
-    return `
-You are a certified IELTS Writing examiner. 
-${taskTypeNote}
-
-RULES:
-1. Act as a strict but fair IELTS examiner.
-2. Follow IELTS public band descriptors.
-3. For each of the 4 criteria (TR/TA, CC, LR, GRA), provide detailed feedback.
-4. Identify specific mistakes. Provide: original text, correction, and explanation.
-5. Return ONLY pure JSON.
-
-JSON OUTPUT FORMAT:
-{
-  "score": number,
-  "task_response": string,
-  "coherence_and_cohesion": string,
-  "lexical_resource": string,
-  "grammatical_range_and_accuracy": string,
-  "general_feedback": string,
-  "detailed_corrections": [
-    {
-      "mistake": "string",
-      "correct": "string",
-      "explanation": "string",
-      "type": "Grammar | Lexis | Spelling | Cohesion"
-    }
-  ]
-}
-
-### Writing Prompt:
-${writingPrompt}
-
-### Candidate's Essay:
-${submissionText}
-`;
   }
 }
