@@ -28,6 +28,7 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6380
+      REDIS_URL: redis://127.0.0.1:6380
       RABBITMQ_URL: amqp://guest:guest@127.0.0.1:5672
     depends_on:
       redis:
@@ -87,14 +88,14 @@ services:
       network: host
     image: ai-grading-worker:latest
     container_name: ai-grading-worker
-    networks:
-      - ielts_network
+    network_mode: host
     env_file:
       - ./ai-workers/.env
     environment:
       PORT: 3001
       NODE_ENV: ${NODE_ENV:-production}
       DATABASE_URL: ${DATABASE_URL}
+      RABBITMQ_URL: amqp://guest:guest@127.0.0.1:5672
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -107,13 +108,13 @@ services:
       network: host
     image: ai-chatbot-worker:latest
     container_name: ai-chatbot-worker
-    networks:
-      - ielts_network
+    network_mode: host
     env_file:
       - ./ai-workers/.env
     environment:
       PORT: 3002
       NODE_ENV: ${NODE_ENV:-production}
+      RABBITMQ_URL: amqp://guest:guest@127.0.0.1:5672
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -126,13 +127,13 @@ services:
       network: host
     image: ai-embedding-worker:latest
     container_name: ai-embedding-worker
-    networks:
-      - ielts_network
+    network_mode: host
     env_file:
       - ./ai-workers/.env
     environment:
       PORT: 3003
       NODE_ENV: ${NODE_ENV:-production}
+      RABBITMQ_URL: amqp://guest:guest@127.0.0.1:5672
     depends_on:
       rabbitmq:
         condition: service_healthy

@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
@@ -11,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
 
 @Injectable()
-export class ChatBotService {
+export class ChatBotService implements OnModuleInit {
   private readonly logger = new Logger(ChatBotService.name);
 
   constructor(
@@ -19,6 +20,12 @@ export class ChatBotService {
     private readonly configService: ConfigService,
     private readonly rabbitMQService: RabbitMQService,
   ) {}
+
+  async onModuleInit() {
+    await this.rabbitMQService.subscribeChatbotReply(async (message) => {
+      await this.handleWorkerReply(message.userId, message.reply);
+    });
+  }
 
   // Lấy instance Gemini
   private getAIInstance(): GoogleGenAI {
@@ -73,6 +80,10 @@ export class ChatBotService {
     });
 
     return 'Processing your message...';
+  }
+
+  async handleWorkerReply(idUser: string, reply: string): Promise<void> {
+    await this.saveMessage(idUser, 'bot', reply);
   }
 
   // Gọi Gemini để trả lời

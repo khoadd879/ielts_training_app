@@ -1,5 +1,14 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+type Skill = 'reading' | 'listening' | 'speaking' | 'writing';
+
+const SKILL_TABLES: Record<Skill, string> = {
+  reading: 'ielts_reading',
+  listening: 'ielts_listening',
+  speaking: 'ielts_speaking',
+  writing: 'ielts_writing',
+};
+
 export interface RagDocument {
   id: string;
   content: string;
@@ -8,7 +17,7 @@ export interface RagDocument {
     category: string;
     user_id?: string;
   };
-  embedding: number[];
+  embedding?: number[] | string;
 }
 
 export class SupabaseService {
@@ -65,9 +74,84 @@ export class SupabaseService {
     return response.data[0]?.embedding || [];
   }
 
-  // Skill-specific search methods
+  private buildSearchTerms(query: string): string[] {
+    const stopWords = new Set([
+      'the',
+      'and',
+      'for',
+      'with',
+      'what',
+      'about',
+      'hay',
+      'tra',
+      'loi',
+      'ngan',
+      'gon',
+      'mot',
+      'cau',
+    ]);
+
+    const terms = query
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((term) => term.length >= 3 && !stopWords.has(term));
+
+    return Array.from(new Set(terms)).slice(0, 6);
+  }
+
+  private scoreTextMatch(content: string, query: string, terms: string[]): number {
+    const normalizedContent = content.toLowerCase();
+    const normalizedQuery = query.toLowerCase();
+
+    let score = normalizedContent.includes(normalizedQuery) ? 10 : 0;
+
+    for (const term of terms) {
+      if (normalizedContent.includes(term)) {
+        score += 1;
+      }
+    }
+
+    return score;
+  }
+
+  private async searchBySkillText(
+    skill: Skill,
+    query: string,
+    matchCount: number = 3,
+  ): Promise<RagDocument[]> {
+    const terms = this.buildSearchTerms(query);
+
+    if (terms.length === 0) {
+      return [];
+    }
+
+    const filters = terms.map((term) => `content.ilike.%${term}%`);
+    const tableName = SKILL_TABLES[skill];
+    const queryBuilder = this.client
+      .from(tableName)
+      .select('id,content,metadata,embedding')
+      .or(filters.join(','));
+
+    const { data, error } = await queryBuilder.limit(Math.max(matchCount * 4, 12));
+
+    if (error) {
+      console.error(`Supabase ${skill} text search error:`, error);
+      return [];
+    }
+
+    return (data || [])
+      .map((doc) => ({
+        doc,
+        score: this.scoreTextMatch(doc.content || '', query, terms),
+      }))
+      .sort((left, right) => right.score - left.score)
+      .slice(0, matchCount)
+      .map(({ doc }) => doc as RagDocument);
+  }
+
   async searchBySkill(
-    skill: 'reading' | 'listening' | 'speaking' | 'writing',
+    skill: Skill,
     queryEmbedding: number[],
     matchThreshold: number = 0.6,
     matchCount: number = 3
@@ -86,24 +170,51 @@ export class SupabaseService {
     return data || [];
   }
 
+  private async searchSkill(
+    skill: Skill,
+    query: string,
+    matchThreshold: number = 0.6,
+    matchCount: number = 3,
+  ): Promise<RagDocument[]> {
+    try {
+      const embedding = await this.createEmbedding(query);
+
+      if (embedding.length > 0) {
+        const vectorResults = await this.searchBySkill(
+          skill,
+          embedding,
+          matchThreshold,
+          matchCount,
+        );
+
+        if (vectorResults.length > 0) {
+          return vectorResults;
+        }
+      }
+    } catch (error: any) {
+      console.warn(
+        `Embedding search unavailable for ${skill}, falling back to text search:`,
+        error?.message || error,
+      );
+    }
+
+    return this.searchBySkillText(skill, query, matchCount);
+  }
+
   async searchReading(query: string): Promise<RagDocument[]> {
-    const embedding = await this.createEmbedding(query);
-    return this.searchBySkill('reading', embedding);
+    return this.searchSkill('reading', query);
   }
 
   async searchListening(query: string): Promise<RagDocument[]> {
-    const embedding = await this.createEmbedding(query);
-    return this.searchBySkill('listening', embedding);
+    return this.searchSkill('listening', query);
   }
 
   async searchSpeaking(query: string): Promise<RagDocument[]> {
-    const embedding = await this.createEmbedding(query);
-    return this.searchBySkill('speaking', embedding);
+    return this.searchSkill('speaking', query);
   }
 
   async searchWriting(query: string): Promise<RagDocument[]> {
-    const embedding = await this.createEmbedding(query);
-    return this.searchBySkill('writing', embedding);
+    return this.searchSkill('writing', query);
   }
 }
 

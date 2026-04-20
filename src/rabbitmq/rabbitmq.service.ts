@@ -1,13 +1,24 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
-import { EXCHANGES, ROUTING_KEYS } from './rabbitmq.constants';
+import { EXCHANGES, QUEUES, ROUTING_KEYS } from './rabbitmq.constants';
+
+interface ChatbotReplyMessage {
+  sessionId: string;
+  userId: string;
+  reply: string;
+  error?: string;
+}
 
 @Injectable()
 export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RabbitMQService.name);
   private connection: amqp.Connection | null = null;
   private channel: amqp.Channel | null = null;
+  private readonly chatbotReplyHandlers = new Set<
+    (message: ChatbotReplyMessage) => Promise<void> | void
+  >();
+  private chatbotReplyConsumerStarted = false;
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -21,6 +32,8 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     try {
       this.connection = await amqp.connect(url);
       this.channel = await this.connection.createChannel();
+      await this.setupExchanges();
+      await this.ensureChatbotReplyConsumer();
       this.logger.log('Connected to RabbitMQ');
     } catch (error) {
       this.logger.error('Failed to connect to RabbitMQ:', error);
@@ -53,6 +66,13 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  async subscribeChatbotReply(
+    handler: (message: ChatbotReplyMessage) => Promise<void> | void,
+  ): Promise<void> {
+    this.chatbotReplyHandlers.add(handler);
+    await this.ensureChatbotReplyConsumer();
+  }
+
   async publishGradingWrite(message: object): Promise<boolean> {
     return this.publish(EXCHANGES.GRADING, ROUTING_KEYS.WRITE, message);
   }
@@ -67,5 +87,58 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
 
   async publishChatbotEmbed(message: object): Promise<boolean> {
     return this.publish(EXCHANGES.CHATBOT, ROUTING_KEYS.EMBED, message);
+  }
+
+  private async setupExchanges(): Promise<void> {
+    if (!this.channel) {
+      return;
+    }
+
+    await this.channel.assertExchange(EXCHANGES.GRADING, 'direct', {
+      durable: true,
+    });
+    await this.channel.assertExchange(EXCHANGES.CHATBOT, 'direct', {
+      durable: true,
+    });
+  }
+
+  private async ensureChatbotReplyConsumer(): Promise<void> {
+    if (
+      !this.channel ||
+      this.chatbotReplyConsumerStarted ||
+      this.chatbotReplyHandlers.size === 0
+    ) {
+      return;
+    }
+
+    await this.channel.assertQueue(QUEUES.CHATBOT_REPLY, { durable: true });
+    await this.channel.bindQueue(
+      QUEUES.CHATBOT_REPLY,
+      EXCHANGES.CHATBOT,
+      ROUTING_KEYS.REPLY,
+    );
+
+    await this.channel.consume(QUEUES.CHATBOT_REPLY, async (msg) => {
+      if (!msg) {
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(
+          msg.content.toString(),
+        ) as ChatbotReplyMessage;
+
+        for (const handler of this.chatbotReplyHandlers) {
+          await handler(payload);
+        }
+
+        this.channel?.ack(msg);
+      } catch (error) {
+        this.logger.error('Failed to process chatbot reply:', error);
+        this.channel?.nack(msg, false, false);
+      }
+    });
+
+    this.chatbotReplyConsumerStarted = true;
   }
 }

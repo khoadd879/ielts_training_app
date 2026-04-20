@@ -35,7 +35,13 @@ export class MultiKeyGroqService {
   }
 
   async chatcompletion(
-    messages: Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string; name?: string; tool_call_id?: string }>,
+    messages: Array<{
+      role: 'system' | 'user' | 'assistant' | 'tool';
+      content?: string | null;
+      name?: string;
+      tool_call_id?: string;
+      tool_calls?: any[];
+    }>,
     model: string = 'llama-3.3-70b-versatile',
     tools?: any[],
     toolChoice?: any

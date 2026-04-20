@@ -5,10 +5,35 @@ import { createGroqService } from '../services/groq.service';
 import { createSupabaseService } from '../services/supabase.service';
 import { buildRagSystemPrompt, formatConversationHistory, IELTS_TOOLS } from '../prompts/rag.prompt';
 
+const TOOL_ROUTER_MODEL = 'llama-3.1-8b-instant';
+const CHAT_RESPONSE_MODEL = 'llama-3.3-70b-versatile';
+
 interface ToolCall {
   id?: string;
-  name: string;
-  arguments: { query: string };
+  function?: {
+    name?: string;
+    arguments?: string;
+  };
+}
+
+function parseToolCall(toolCall: ToolCall): { functionName: string; query: string } {
+  const functionName = toolCall.function?.name || '';
+  const rawArguments = toolCall.function?.arguments;
+
+  if (!rawArguments) {
+    return { functionName, query: '' };
+  }
+
+  try {
+    const parsedArguments = JSON.parse(rawArguments);
+    return {
+      functionName,
+      query: typeof parsedArguments?.query === 'string' ? parsedArguments.query : '',
+    };
+  } catch (error) {
+    console.error(`Failed to parse tool arguments for ${functionName || 'unknown tool'}:`, rawArguments);
+    return { functionName, query: '' };
+  }
 }
 
 export async function processChatbotAsk(
@@ -23,7 +48,13 @@ export async function processChatbotAsk(
     const systemPrompt = buildRagSystemPrompt();
 
     // Step 2: Build messages array
-    const messages: Array<{ role: 'system' | 'user' | 'assistant' | 'tool'; content: string; name?: string; tool_call_id?: string }> = [
+    const messages: Array<{
+      role: 'system' | 'user' | 'assistant' | 'tool';
+      content?: string | null;
+      name?: string;
+      tool_call_id?: string;
+      tool_calls?: any[];
+    }> = [
       systemPrompt as any
     ];
 
@@ -39,7 +70,7 @@ export async function processChatbotAsk(
     // Step 3: First LLM call - detect which skills needed
     const initialResponse = await groq.chatcompletion(
       messages,
-      'llama-3.3-70b-versatile',
+      TOOL_ROUTER_MODEL,
       IELTS_TOOLS,
       'auto'
     );
@@ -59,8 +90,7 @@ export async function processChatbotAsk(
 
     const toolResults = await Promise.all(
       toolCalls.map(async (toolCall: ToolCall) => {
-        const functionName = toolCall.name;
-        const query = toolCall.arguments?.query || '';
+        const { functionName, query } = parseToolCall(toolCall);
 
         console.log(`  Calling ${functionName} with query: "${query}"`);
 
@@ -111,7 +141,7 @@ export async function processChatbotAsk(
     // Step 7: Second LLM call - generate final answer with tool results
     const finalResponse = await groq.chatcompletion(
       messages,
-      'llama-3.3-70b-versatile'
+      CHAT_RESPONSE_MODEL
     );
 
     const reply = finalResponse.choices[0]?.message?.content || '';
