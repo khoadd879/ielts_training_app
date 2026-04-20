@@ -1,0 +1,8 @@
+# Dependencies - we COPY node_modules directly from host
+npm-debug.log
+*.log
+.git
+.gitignore
+*.md
+dist
+shared

@@ -4,26 +4,42 @@
 
 services:
   ielts_training_app:
+    command: npm run start:dev
     volumes:
-      - ./src:/src:ro
-      - ./prisma:/prisma:ro
+      - ./src:/app/src:ro
+      - ./prisma:/app/prisma:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.build.json:/app/tsconfig.build.json:ro
+      - ./nest-cli.json:/app/nest-cli.json:ro
     environment:
       NODE_ENV: development
 
   ai-grading-worker:
+    working_dir: /app/grading-worker
     volumes:
-      - ./ai-workers/grading-worker:/app:ro
-      - /app/node_modules
+      - ./ai-workers/grading-worker/src:/app/grading-worker/src:ro
+      - ./ai-workers/grading-worker/tsconfig.json:/app/grading-worker/tsconfig.json:ro
+      - /app/grading-worker/node_modules
     command: npm run dev
+    environment:
+      NODE_ENV: development
 
   ai-chatbot-worker:
+    working_dir: /app/chatbot-worker
     volumes:
-      - ./ai-workers/chatbot-worker:/app:ro
-      - /app/node_modules
+      - ./ai-workers/chatbot-worker/src:/app/chatbot-worker/src:ro
+      - ./ai-workers/chatbot-worker/tsconfig.json:/app/chatbot-worker/tsconfig.json:ro
+      - /app/chatbot-worker/node_modules
     command: npm run dev
+    environment:
+      NODE_ENV: development
 
   ai-embedding-worker:
+    working_dir: /app/embedding-worker
     volumes:
-      - ./ai-workers/embedding-worker:/app:ro
-      - /app/node_modules
+      - ./ai-workers/embedding-worker/src:/app/embedding-worker/src:ro
+      - ./ai-workers/embedding-worker/tsconfig.json:/app/embedding-worker/tsconfig.json:ro
+      - /app/embedding-worker/node_modules
     command: npm run dev
+    environment:
+      NODE_ENV: development

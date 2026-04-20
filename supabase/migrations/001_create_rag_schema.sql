@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS rag_documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   content TEXT NOT NULL,
   metadata JSONB DEFAULT '{}',
-  embedding VECTOR(1536),
+  embedding VECTOR(768),
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -22,7 +22,7 @@ ON rag_documents USING gin (metadata);
 
 -- Function for matching documents
 CREATE OR REPLACE FUNCTION match_documents(
-  query_embedding VECTOR(1536),
+  query_embedding VECTOR(768),
   match_threshold FLOAT DEFAULT 0.7,
   match_count INT DEFAULT 5
 )

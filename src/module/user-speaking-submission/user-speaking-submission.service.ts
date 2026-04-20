@@ -78,7 +78,7 @@ export class UserSpeakingSubmissionService {
     });
 
     await this.rabbitMQService.publishGradingSpeak({
-      submissionId: submission.idUserSpeakingSubmission,
+      submissionId: submission.idSpeakingSubmission,
       userId: idUser,
       audioUrl: audioUrl,
       transcript: transcript || undefined,
@@ -88,8 +88,23 @@ export class UserSpeakingSubmissionService {
 
     return {
       message: 'Submission received and queued for grading',
-      data: { id: submission.idUserSpeakingSubmission },
+      data: { id: submission.idSpeakingSubmission },
       status: 202,
+    };
+  }
+
+  async findOne(idSpeakingSubmission: string) {
+    const submission = await this.databaseService.userSpeakingSubmission.findUnique({
+      where: { idSpeakingSubmission },
+      include: { speakingTask: { include: { questions: true } } },
+    });
+
+    if (!submission) {
+      throw new NotFoundException('Speaking submission not found');
+    }
+
+    return {
+      data: submission,
     };
   }
 }

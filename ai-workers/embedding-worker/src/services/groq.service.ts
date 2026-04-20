@@ -13,12 +13,23 @@ export class GroqService {
       input: text,
     });
 
-    return response.data[0]?.embedding || [];
+    const embedding = response.data[0]?.embedding;
+
+    if (!Array.isArray(embedding)) {
+      throw new Error('Unexpected embedding payload from Groq');
+    }
+
+    return embedding;
   }
 }
 
 export function createGroqService(): GroqService {
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey =
+    process.env.GROQ_API_KEY_1 ||
+    process.env.GROQ_API_KEY_2 ||
+    process.env.GROQ_API_KEY_3 ||
+    process.env.GROQ_API_KEY;
+
   if (!apiKey) {
     throw new Error('GROQ_API_KEY is not set');
   }

@@ -37,7 +37,12 @@ export class GroqService {
 }
 
 export function createGroqService(): GroqService {
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey =
+    process.env.GROQ_API_KEY_1 ||
+    process.env.GROQ_API_KEY_2 ||
+    process.env.GROQ_API_KEY_3 ||
+    process.env.GROQ_API_KEY;
+
   if (!apiKey) {
     throw new Error('GROQ_API_KEY is not set');
   }

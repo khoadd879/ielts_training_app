@@ -8,9 +8,12 @@
     "dev": "ts-node src/index.ts"
   },
   "dependencies": {
-    "@ai-workers/shared": "1.0.0",
+    "@ai-workers/shared": "file:../shared",
     "@supabase/supabase-js": "^2.47.0",
     "amqplib": "^0.10.4",
+    "better-sqlite3": "^12.9.0",
+    "chromadb": "^3.4.3",
+    "dotenv": "^17.4.2",
     "groq-sdk": "^0.7.0"
   },
   "devDependencies": {

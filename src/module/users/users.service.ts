@@ -270,7 +270,7 @@ export class UsersService {
         isActive: false,
       },
     });
-    await this.verificationService.generateOtp(user.idUser, OTPType.OTP);
+    const otp = await this.verificationService.generateOtp(user.idUser, OTPType.OTP);
 
     this.mailerService.sendMail({
       to: `${user.email}`,
@@ -284,7 +284,7 @@ export class UsersService {
             <div style="padding:32px 24px;text-align:center;">
               <p style="font-size:16px;">Đây là mã đăng nhập của bạn:</p>
               <div style="font-size:36px;letter-spacing:12px;font-weight:bold;margin:16px 0 8px 0;">
-                [OTP_CODE]
+                ${otp}
               </div>
               <p style="color:#888;font-size:14px;">Mã này sẽ sớm hết hạn.</p>
             </div>
@@ -324,7 +324,7 @@ export class UsersService {
             <div style="padding:32px 24px;text-align:center;">
               <p style="font-size:16px;">Mã xác thực đặt lại mật khẩu của bạn:</p>
               <div style="font-size:36px;letter-spacing:12px;font-weight:bold;margin:16px 0 8px 0;">
-                [OTP_CODE]
+                ${otp}
               </div>
               <p style="color:#888;font-size:14px;">Mã này sẽ sớm hết hạn.</p>
             </div>

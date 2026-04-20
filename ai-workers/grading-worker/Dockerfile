@@ -1,29 +1,50 @@
-# Build stage
-FROM node:22-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
+# syntax=docker/dockerfile:1.7
+
+FROM node:22-alpine AS shared-builder
+
+WORKDIR /app/shared
+
+COPY ./ai-workers/shared/package*.json ./
+COPY ./ai-workers/shared/tsconfig.json ./
+COPY ./ai-workers/shared/src ./src
+
+RUN --mount=type=cache,target=/root/.npm \
+  npm install --ignore-scripts --no-audit --no-fund --prefer-offline \
+  --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 RUN npm run build
 
-# Production stage
-FROM node:22-alpine AS production
-WORKDIR /app
+FROM node:22-alpine AS builder
 
-# Create non-root user
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -S appuser -u 1001 -G appgroup
+WORKDIR /app/grading-worker
 
-# Copy only needed files from builder
-COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
-COPY --from=builder --chown=appuser:appgroup /app/package*.json ./
+COPY ./ai-workers/grading-worker/package*.json ./
+COPY ./ai-workers/grading-worker/tsconfig.json ./
+COPY --from=shared-builder /app/shared ../shared
+COPY ./prisma ../prisma
 
-# Install production deps only
-RUN npm ci --only=production
+RUN --mount=type=cache,target=/root/.npm \
+  npm install --ignore-scripts --no-audit --no-fund --prefer-offline \
+  --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+RUN npx prisma generate --schema=/app/prisma/schema.prisma
+
+COPY ./ai-workers/grading-worker/src ./src
+
+RUN npm run build
+
+FROM node:22-alpine
+
+WORKDIR /app/grading-worker
+
+RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup
+
+COPY --from=builder --chown=appuser:appgroup /app/grading-worker/package*.json ./
+COPY --from=builder --chown=appuser:appgroup /app/grading-worker/node_modules ./node_modules
+COPY --from=builder --chown=appuser:appgroup /app/grading-worker/dist ./dist
+COPY --from=shared-builder --chown=appuser:appgroup /app/shared ../shared
 
 USER appuser
 
-# Healthcheck - worker listens on port 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget -qO- http://localhost:3001/health || exit 1
 

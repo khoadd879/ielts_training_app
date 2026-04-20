@@ -26,7 +26,7 @@ export interface SubmissionDetail {
   taskType: string;
   submissionText: string;
   aiDetailedFeedback: any;
-  score: number;
+  score: number | null;
 }
 
 @Injectable()
@@ -788,6 +788,7 @@ export class UserTestResultService {
             return {
               taskInfo,
               result,
+              submissionText: submission.submissionText,
             };
           } catch (error) {
             console.error(
@@ -804,24 +805,24 @@ export class UserTestResultService {
       // ✅ OPTIMIZATION 3: Process results efficiently
       for (const item of gradedResults) {
         if (!item) continue;
-        const { taskInfo, result } = item;
+        const { taskInfo, result, submissionText } = item;
 
         submittedCount++;
 
         submissionsDetails.push({
           idWritingTask: taskInfo.idWritingTask,
           taskType: taskInfo.taskType,
-          submissionText: result.submissionText,
-          aiDetailedFeedback: result.aiDetailedFeedback,
-          score: result.score,
+          submissionText: submissionText,
+          aiDetailedFeedback: null,
+          score: null,
         });
 
         if (taskInfo.taskType === WritingTaskType.TASK1) {
-          scoreTask1 = result.score;
+          scoreTask1 = 0;
         } else if (taskInfo.taskType === WritingTaskType.TASK2) {
-          scoreTask2 = result.score;
+          scoreTask2 = 0;
         } else {
-          scoreTask1 += result.score;
+          scoreTask1 += 0;
         }
       }
     }
@@ -941,10 +942,7 @@ export class UserTestResultService {
           audioFiles[0], // File audio
         );
 
-        const score =
-          (result.data?.aiDetailedFeedback as any)?.overallScore ||
-          result.data?.aiOverallScore ||
-          0;
+        const score = 0;
 
         const partIndex = partScores.findIndex((p) => p.part === partType);
         if (partIndex !== -1) {
@@ -953,11 +951,11 @@ export class UserTestResultService {
 
         submissionsDetails.push({
           part: partType,
-          idSpeakingSubmission: result.data?.idSpeakingSubmission,
-          audioUrl: result.data?.audioUrl,
-          transcript: result.data?.transcript,
-          aiDetailedFeedback: result.data?.aiDetailedFeedback,
-          score,
+          idSpeakingSubmission: result.data?.id,
+          audioUrl: null,
+          transcript: null,
+          aiDetailedFeedback: null,
+          score: score,
         });
       }
     };

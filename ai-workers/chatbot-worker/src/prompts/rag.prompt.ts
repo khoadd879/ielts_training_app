@@ -1,40 +1,30 @@
-export interface RagContext {
-  content: string;
-  metadata: {
-    source: string;
-    category: string;
+import { IELTS_TOOLS } from './tools.prompt';
+
+export function buildRagSystemPrompt(): any {
+  return {
+    role: 'system' as const,
+    content: `You are IELTS Assistant AI with access to search tools for IELTS preparation.
+
+You have 4 search tools available:
+- search_reading: For reading techniques, question types, passages
+- search_listening: For listening strategies, transcripts, audio content
+- search_speaking: For speaking topics, cue cards, model answers, pronunciation
+- search_writing: For writing tasks, essay structures, sample answers
+
+IMPORTANT RULES:
+1. When user asks about a specific IELTS skill (reading, listening, speaking, writing), call the corresponding search function FIRST to get real content.
+2. If user asks about multiple skills (e.g., "reading tips AND speaking topics"), call multiple search functions in PARALLEL.
+3. Base your answers on the content returned from search tools. Do not make up fake sample answers or passages.
+4. When showing sample answers or content, cite the source from the search results.
+5. If no relevant content is found, tell the user you couldn't find specific content for that query and suggest refining their question.
+
+Always use search tools when the question relates to IELTS skills.`
   };
 }
 
-export function buildRagSystemPrompt(contexts: RagContext[]): string {
-  const contextText = contexts
-    .map((ctx, i) => `[${i + 1}] (${ctx.metadata.source}) ${ctx.content}`)
-    .join('\n\n');
-
-  return `You are IELTS Assistant AI.
-Your role: help the user improve English for IELTS (Writing, Speaking, Vocabulary, etc.)
-
-## Context from knowledge base:
-${contextText || 'No relevant context found.'}
-
-## Instructions:
-- Respond in a natural, friendly tone.
-- Be concise, educational, and clear.
-- Use the provided context to give accurate IELTS-specific answers.
-- Answer in English if the user asks in English.
-- Answer in Vietnamese if the user asks in Vietnamese.
-- Don't answer if the question is not related to IELTS or English learning.
-- If the context doesn't contain enough information, say so honestly.`;
+export function formatConversationHistory(history: Array<{ sender: 'user' | 'bot'; message: string }> | undefined): string {
+  if (!history || history.length === 0) return '';
+  return history.map(msg => `${msg.sender}: ${msg.message}`).join('\n');
 }
 
-export function formatConversationHistory(
-  history: Array<{ sender: 'user' | 'bot'; message: string }> | undefined,
-): string {
-  if (!history || history.length === 0) {
-    return '';
-  }
-
-  return history
-    .map((m) => `${m.sender === 'user' ? 'User' : 'Assistant'}: ${m.message}`)
-    .join('\n');
-}
+export { IELTS_TOOLS };

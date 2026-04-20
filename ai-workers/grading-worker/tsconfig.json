@@ -9,8 +9,10 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
+    "moduleResolution": "node",
     "paths": {
-      "@ai-workers/shared": ["../shared/types"]
+      "@ai-workers/shared": ["../shared/dist"],
+      "@ai-workers/shared/*": ["../shared/dist/*"]
     }
   },
   "include": ["src/**/*"],

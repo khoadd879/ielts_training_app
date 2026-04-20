@@ -4,10 +4,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      network: host
     image: ielts_training_app:latest
     container_name: ielts_training_app
-    networks:
-      - ielts_network
+    network_mode: host
     environment:
       PORT: 3000
       DATABASE_URL: ${DATABASE_URL}
@@ -26,14 +26,10 @@ services:
       CLOUDINARY_NAME: ${CLOUDINARY_NAME}
       AI_MICROSERVICE_SECRET: ${AI_MICROSERVICE_SECRET}
       NODE_ENV: ${NODE_ENV:-production}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
-    ports:
-      - '3000:3000'
-    volumes:
-      - ./src:/src
-      - ./prisma:/prisma
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6380
+      REDIS_URL: redis://127.0.0.1:6380
+      RABBITMQ_URL: amqp://guest:guest@127.0.0.1:5672
     depends_on:
       redis:
         condition: service_healthy
@@ -41,7 +37,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -52,6 +48,8 @@ services:
     container_name: redis
     networks:
       - ielts_network
+    ports:
+      - '6380:6379'
     restart: always
     volumes:
       - redis_data:/data
@@ -82,19 +80,22 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # AI Workers
+  # AI Workers (all use shared ai-workers/.env)
   ai-grading-worker:
     build:
-      context: ./ai-workers/grading-worker
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./ai-workers/grading-worker/Dockerfile
+      network: host
     image: ai-grading-worker:latest
     container_name: ai-grading-worker
-    networks:
-      - ielts_network
+    network_mode: host
     env_file:
-      - ./ai-workers/grading-worker/.env
+      - ./ai-workers/.env
     environment:
+      PORT: 3001
       NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: ${DATABASE_URL}
+      RABBITMQ_URL: amqp://guest:guest@127.0.0.1:5672
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -102,16 +103,18 @@ services:
 
   ai-chatbot-worker:
     build:
-      context: ./ai-workers/chatbot-worker
-      dockerfile: Dockerfile
+      context: ./ai-workers
+      dockerfile: ./chatbot-worker/Dockerfile
+      network: host
     image: ai-chatbot-worker:latest
     container_name: ai-chatbot-worker
-    networks:
-      - ielts_network
+    network_mode: host
     env_file:
-      - ./ai-workers/chatbot-worker/.env
+      - ./ai-workers/.env
     environment:
+      PORT: 3002
       NODE_ENV: ${NODE_ENV:-production}
+      RABBITMQ_URL: amqp://guest:guest@127.0.0.1:5672
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -119,16 +122,18 @@ services:
 
   ai-embedding-worker:
     build:
-      context: ./ai-workers/embedding-worker
-      dockerfile: Dockerfile
+      context: ./ai-workers
+      dockerfile: ./embedding-worker/Dockerfile
+      network: host
     image: ai-embedding-worker:latest
     container_name: ai-embedding-worker
-    networks:
-      - ielts_network
+    network_mode: host
     env_file:
-      - ./ai-workers/embedding-worker/.env
+      - ./ai-workers/.env
     environment:
+      PORT: 3003
       NODE_ENV: ${NODE_ENV:-production}
+      RABBITMQ_URL: amqp://guest:guest@127.0.0.1:5672
     depends_on:
       rabbitmq:
         condition: service_healthy
