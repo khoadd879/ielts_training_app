@@ -32,6 +32,8 @@ export interface GradingWriteMessage {
   submissionText: string;
   prompt: string;
   imageUrl?: string;
+  usedSubscriptionQuota?: boolean;
+  idCreditTransaction?: string;
 }
 
 export interface GradingSpeakMessage {
@@ -41,6 +43,8 @@ export interface GradingSpeakMessage {
   transcript?: string;
   taskTitle: string;
   questionsText: string;
+  usedSubscriptionQuota?: boolean;
+  idCreditTransaction?: string;
 }
 
 export interface ChatbotAskMessage {

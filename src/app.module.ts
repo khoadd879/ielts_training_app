@@ -42,6 +42,7 @@ import { UserSpeakingSubmissionModule } from './module/user-speaking-submission/
 import { DashboardModule } from './module/dashboard/dashboard.module';
 import { PdfExamModule } from './module/pdf-exam/pdf-exam.module';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
+import { CreditsModule } from './module/credits/credits.module';
 
 import * as redisStore from 'cache-manager-redis-store';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -119,6 +120,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     SpeakingQuestionModule,
 
     UserSpeakingSubmissionModule,
+
+    CreditsModule,
 
     RabbitMQModule,
     DashboardModule,

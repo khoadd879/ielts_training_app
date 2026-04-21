@@ -598,6 +598,143 @@ const CRAWL_RULES: Record<QuestionType, {
 // =============================================================================
 // STEP 3 — SEED SCRIPT
 // =============================================================================
+// CREDIT PACKAGES SEED
+// =============================================================================
+
+async function seedCreditPackages() {
+  const packages = [
+    {
+      name: 'Starter Pack',
+      description: '5 AI Grading Credits to get started',
+      creditAmount: 5,
+      price: 0,
+      priceUnit: 'VND',
+      isActive: true,
+      sortOrder: 1,
+    },
+    {
+      name: 'Basic Pack',
+      description: '10 AI Grading Credits',
+      creditAmount: 10,
+      price: 50000,
+      priceUnit: 'VND',
+      isActive: true,
+      sortOrder: 2,
+    },
+    {
+      name: 'Standard Pack',
+      description: '30 AI Grading Credits - Best Value',
+      creditAmount: 30,
+      price: 120000,
+      priceUnit: 'VND',
+      isActive: true,
+      sortOrder: 3,
+    },
+    {
+      name: 'Premium Pack',
+      description: '100 AI Grading Credits',
+      creditAmount: 100,
+      price: 350000,
+      priceUnit: 'VND',
+      isActive: true,
+      sortOrder: 4,
+    },
+  ]
+
+  for (const pkg of packages) {
+    await prisma.creditPackage.upsert({
+      where: { name: pkg.name },
+      update: pkg,
+      create: pkg,
+    })
+  }
+  console.log('  ✔  Credit packages seeded')
+}
+
+// =============================================================================
+// SUBSCRIPTION PACKAGES SEED
+// =============================================================================
+
+async function seedSubscriptionPackages() {
+  const packages = [
+    {
+      name: 'Monthly Basic',
+      description: '30 AI Grading credits per month',
+      billingCycle: 'MONTHLY' as const,
+      price: 199000,
+      priceUnit: 'VND',
+      creditsQuota: 30,
+      features: ['AI Writing Grading', 'AI Speaking Grading', 'Progress Tracking'],
+      badge: null,
+      isActive: true,
+      isFeatured: false,
+      sortOrder: 1,
+    },
+    {
+      name: 'Monthly Pro',
+      description: '60 AI Grading credits per month',
+      billingCycle: 'MONTHLY' as const,
+      price: 349000,
+      priceUnit: 'VND',
+      creditsQuota: 60,
+      features: ['AI Writing Grading', 'AI Speaking Grading', 'Progress Tracking', 'Priority Queue'],
+      badge: 'Popular',
+      isActive: true,
+      isFeatured: true,
+      sortOrder: 2,
+    },
+    {
+      name: 'Monthly Premium',
+      description: 'Unlimited AI Grading - Best for intensive learners',
+      billingCycle: 'MONTHLY' as const,
+      price: 599000,
+      priceUnit: 'VND',
+      creditsQuota: 0,
+      features: ['AI Writing Grading', 'AI Speaking Grading', 'Progress Tracking', 'Priority Queue', 'Unlimited Access'],
+      badge: 'Best Value',
+      isActive: true,
+      isFeatured: false,
+      sortOrder: 3,
+    },
+    {
+      name: 'Annual Basic',
+      description: '360 AI Grading credits (30/month) - Save 20%',
+      billingCycle: 'ANNUAL' as const,
+      price: 1900000,
+      priceUnit: 'VND',
+      creditsQuota: 360,
+      features: ['AI Writing Grading', 'AI Speaking Grading', 'Progress Tracking'],
+      badge: null,
+      isActive: true,
+      isFeatured: false,
+      sortOrder: 4,
+    },
+    {
+      name: 'Annual Pro',
+      description: '720 AI Grading credits (60/month) - Save 20%',
+      billingCycle: 'ANNUAL' as const,
+      price: 3350000,
+      priceUnit: 'VND',
+      creditsQuota: 720,
+      features: ['AI Writing Grading', 'AI Speaking Grading', 'Progress Tracking', 'Priority Queue'],
+      badge: 'Popular',
+      isActive: true,
+      isFeatured: false,
+      sortOrder: 5,
+    },
+  ]
+
+  for (const pkg of packages) {
+    await prisma.subscriptionPackage.upsert({
+      where: { name: pkg.name },
+      update: pkg,
+      create: pkg,
+    })
+  }
+  console.log('  ✔  Subscription packages seeded')
+}
+
+// =============================================================================
 
 async function main() {
   console.log('🌱  Starting seed...')
@@ -617,6 +754,22 @@ async function main() {
     },
   })
   console.log('  ✔  Seed user:', seedUser.idUser)
+
+  // Give seed user 3 free credits
+  await prisma.creditBalance.upsert({
+    where: { idUser: seedUser.idUser },
+    update: {},
+    create: {
+      idUser: seedUser.idUser,
+      totalCredits: 3,
+      usedCredits: 0,
+    },
+  })
+  console.log('  ✔  Seed user credit balance: 3 free credits')
+
+  // Seed credit and subscription packages
+  await seedCreditPackages()
+  await seedSubscriptionPackages()
 
   // ==========================================================================
   // READING TEST
