@@ -87,6 +87,28 @@ export async function processWriteGrading(
     gradedAt: new Date(),
   });
 
+  // Refund credits or subscription quota for failed grading
+  try {
+    const submission = await neon.getWritingSubmissionWithRefund(msg.submissionId);
+
+    if (submission) {
+      // REFUND OPTION 1: Subscription quota (if was used)
+      if (msg.usedSubscriptionQuota) {
+        await neon.refundSubscriptionQuota(submission.idUser, 1);
+        console.log(`Refunded 1 subscription quota for user ${submission.idUser}`);
+      }
+
+      // REFUND OPTION 2: Credits (if credit transaction was used)
+      if (submission.idCreditTransaction) {
+        await neon.refundCredits(submission.idUser, 0, msg.submissionId);
+        console.log(`Refunded credits for user ${submission.idUser}`);
+      }
+    }
+  } catch (refundError) {
+    console.error('Failed to refund credits/quota:', refundError);
+  }
+  // Don't rethrow - grading already failed, we don't want to retry the refund
+
   await neon.disconnect();
   throw lastError;
 }
