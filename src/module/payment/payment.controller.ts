@@ -8,11 +8,14 @@ import {
   Request,
   Res,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Public } from 'src/decorator/customize';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { Response } from 'express';
+import type { Response } from 'express';
 
+@ApiTags('payment')
 @Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
@@ -23,19 +26,20 @@ export class PaymentController {
    */
   @Post('vnpay/create')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async createPayment(
     @Request() req: any,
     @Body() dto: CreatePaymentDto,
     @Res() res: Response,
   ) {
-    const { idUser } = req.user;
+    const { userId } = req.user;
     const ipAddress = dto.ipAddress || req.ip;
 
     // Get package details to determine amount
     // TODO: Call CreditsService or SubscriptionService to get price
 
     const { paymentUrl, txnRef } = await this.paymentService.createPaymentUrl({
-      idUser,
+      idUser: userId,
       idPackage: dto.idPackage,
       packageType: dto.packageType,
       amount: 50000, // TODO: Get from package price
@@ -52,6 +56,7 @@ export class PaymentController {
    * VNPay return URL (customer redirected here after payment)
    * GET /payment/vnpay/return
    */
+  @Public()
   @Get('vnpay/return')
   async vnpayReturn(@Query() query: any, @Res() res: Response) {
     const result = await this.paymentService.handleVnpayReturn(query);
@@ -73,6 +78,7 @@ export class PaymentController {
    * VNPay IPN URL (server-to-server notification)
    * POST /payment/vnpay/ipn
    */
+  @Public()
   @Post('vnpay/ipn')
   async vnpayIpn(@Body() body: any, @Res() res: Response) {
     const result = await this.paymentService.handleVnpayIpn(body);
