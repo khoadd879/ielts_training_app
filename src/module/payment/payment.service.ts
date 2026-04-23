@@ -16,10 +16,10 @@ export class PaymentService {
     'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction';
 
   constructor(private readonly configService: ConfigService) {
-    this.vnpTmnCode = this.configService.get('VNPAY_TMN_CODE');
-    this.vnpHashSecret = this.configService.get('VNPAY_HASH_SECRET');
-    this.vnpReturnUrl = this.configService.get('VNPAY_RETURN_URL');
-    this.vnpIpnUrl = this.configService.get('VNPAY_IPN_URL');
+    this.vnpTmnCode = this.configService.get('VNPAY_TMN_CODE') ?? '';
+    this.vnpHashSecret = this.configService.get('VNPAY_HASH_SECRET') ?? '';
+    this.vnpReturnUrl = this.configService.get('VNPAY_RETURN_URL') ?? '';
+    this.vnpIpnUrl = this.configService.get('VNPAY_IPN_URL') ?? '';
     this.isSandbox = this.configService.get('VNPAY_SANDBOX', 'true') === 'true';
   }
 
