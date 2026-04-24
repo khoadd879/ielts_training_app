@@ -8,6 +8,8 @@ import { CreateUserWritingSubmissionDto } from './dto/create-user-writing-submis
 import { UpdateUserWritingSubmissionDto } from './dto/update-user-writing-submission.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
+import { CreditsService } from 'src/module/credits/credits.service';
+import { SubscriptionService } from 'src/module/subscription/subscription.service';
 
 @Injectable()
 export class UserWritingSubmissionService {
@@ -16,6 +18,8 @@ export class UserWritingSubmissionService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly rabbitMQService: RabbitMQService,
+    private readonly creditsService: CreditsService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   //Tạo submission + publish to queue để AI chấm điểm bất đồng bộ
@@ -42,6 +46,24 @@ export class UserWritingSubmissionService {
     if (!writingTask) throw new NotFoundException('Writing task not found');
     if (!testResult) throw new NotFoundException('Test result not found');
 
+    // ===== Payment Priority =====
+    // 1. Check subscription quota first (1 credit for writing)
+    const quota = await this.subscriptionService.checkQuota(idUser);
+
+    let usedSubscriptionQuota = false;
+
+    if (!quota.hasQuota) {
+      // 2. Fall back to credits balance (1 credit for writing)
+      const CREDIT_COST = 1;
+      const balance = await this.creditsService.getBalance(idUser);
+      if (balance.availableCredits < CREDIT_COST) {
+        throw new BadRequestException('Insufficient credits and no active subscription');
+      }
+      this.logger.log(`User ${idUser} has ${balance.availableCredits} credits available`);
+    } else {
+      usedSubscriptionQuota = true;
+    }
+
     // Validate image URL format if present
     if (writingTask.image) {
       if (
@@ -67,6 +89,33 @@ export class UserWritingSubmissionService {
       },
     });
 
+    // ===== Deduct payment after submission creation =====
+    try {
+      if (usedSubscriptionQuota) {
+        // Already checked quota, just log
+        this.logger.log(`User ${idUser} using subscription quota for writing submission ${submission.idWritingSubmission}`);
+      } else {
+        // Deduct credits (1 credit for writing)
+        const CREDIT_COST = 1;
+        await this.creditsService.deductCredit({
+          idUser,
+          type: 'WRITING',
+          submissionId: submission.idWritingSubmission,
+          creditsCost: CREDIT_COST,
+        });
+        this.logger.log(`User ${idUser} deducted ${CREDIT_COST} credits for writing submission ${submission.idWritingSubmission}`);
+      }
+    } catch (error) {
+      // Rollback: delete the submission if payment deduction fails
+      await this.databaseService.userWritingSubmission.delete({
+        where: { idWritingSubmission: submission.idWritingSubmission },
+      }).catch(e => this.logger.error('Failed to rollback submission', e));
+      if (error instanceof BadRequestException) {
+        throw new BadRequestException('Insufficient credits and no active subscription');
+      }
+      throw error;
+    }
+
     // ✅ Publish to grading queue for async AI processing
     await this.rabbitMQService.publishGradingWrite({
       submissionId: submission.idWritingSubmission,
@@ -80,6 +129,7 @@ export class UserWritingSubmissionService {
     return {
       submissionId: submission.idWritingSubmission,
       aiGradingStatus: 'PENDING',
+      paymentMethod: usedSubscriptionQuota ? 'subscription' : 'credits',
       status: 202,
     };
   }

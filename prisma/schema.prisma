@@ -27,29 +27,36 @@ model User {
   gender      Gender      @default(Male)
 
   // Gamification
-  level         Level    @default(Low)
-  xp            Int      @default(0)
-  xpToNext      Int      @default(100)
-  currentStreak Int      @default(0)
+  level         Level     @default(Low)
+  xp            Int       @default(0)
+  xpToNext      Int       @default(100)
+  currentStreak Int       @default(0)
   lastStudiedAt DateTime?
-  longestStreak Int      @default(0)
+  longestStreak Int       @default(0)
 
   // IELTS targets
   targetBandScore Float?
   targetExamDate  DateTime?
 
   // Relations
-  verificationCodes      VerificationCode[]
-  tests                  Test[]
-  userTestResults        UserTestResult[]
-  userAnswers            UserAnswer[]
-  userWritingSubmissions UserWritingSubmission[]
+  verificationCodes       VerificationCode[]
+  tests                   Test[]
+  userTestResults         UserTestResult[]
+  userAnswers             UserAnswer[]
+  userWritingSubmissions  UserWritingSubmission[]
   userSpeakingSubmissions UserSpeakingSubmission[]
 
   // Vocabulary & Grammar
   topics            Topic[]
   vocabularies      Vocabulary[]
   grammarCategories GrammarCategory[]
+
+  // Credits
+  creditBalance      CreditBalance?
+  creditTransactions CreditTransaction[]
+
+  // Subscriptions
+  subscriptions UserSubscription[]
 
   // Forum
   forumThreads      ForumThreads[]
@@ -84,9 +91,9 @@ model Test {
   description    String?
   img            String?
   testType       TestType
-  duration       Int      /// Total duration in seconds
-  numberQuestion Int      /// Total number of questions
-  audioUrl       String?  /// Master audio URL (for Listening tests)
+  duration       Int /// Total duration in seconds
+  numberQuestion Int /// Total number of questions
+  audioUrl       String? /// Master audio URL (for Listening tests)
   level          Level    @default(Low)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -104,9 +111,9 @@ model Test {
 model Part {
   idPart    String   @id @default(uuid())
   idTest    String
-  namePart  String   /// e.g. "Part 1", "Section 1"
+  namePart  String /// e.g. "Part 1", "Section 1"
   order     Int      @default(0)
-  audioUrl  String?  /// Part-level audio (for Listening)
+  audioUrl  String? /// Part-level audio (for Listening)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -124,10 +131,10 @@ model Passage {
   idPassage       String   @id @default(uuid())
   idPart          String   @unique
   title           String
-  content         String   /// Full passage text (HTML/Markdown)
+  content         String /// Full passage text (HTML/Markdown)
   image           String?
   description     String?
-  audioUrl        String?  /// Passage-level audio (for Listening passages)
+  audioUrl        String? /// Passage-level audio (for Listening passages)
   numberParagraph Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -141,10 +148,10 @@ model Passage {
 model QuestionGroup {
   idQuestionGroup String       @id @default(uuid())
   idPart          String
-  title           String       /// Group heading shown to students
-  instructions    String?      /// Detailed instructions for the group
+  title           String /// Group heading shown to students
+  instructions    String? /// Detailed instructions for the group
   questionType    QuestionType /// All questions in this group share this type
-  imageUrl        String?      /// Image for the group (e.g. map, diagram)
+  imageUrl        String? /// Image for the group (e.g. map, diagram)
   order           Int          @default(0)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
@@ -161,16 +168,16 @@ model QuestionGroup {
 /// (options, correct answers, coordinates, word banks, etc.).
 /// Use the `questionType` discriminator to interpret the metadata.
 model Question {
-  idQuestion      String        @id @default(uuid())
+  idQuestion      String       @id @default(uuid())
   idQuestionGroup String
   idPart          String
-  questionNumber  Int           /// Global question number within the test
-  content         String        /// Question text / prompt
-  questionType    QuestionType  /// Discriminator — mirrors the group type but can differ
-  metadata        Json          @db.JsonB /// Type-specific payload (see TS interfaces)
-  order           Int           @default(0)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  questionNumber  Int /// Global question number within the test
+  content         String /// Question text / prompt
+  questionType    QuestionType /// Discriminator — mirrors the group type but can differ
+  metadata        Json         @db.JsonB /// Type-specific payload (see TS interfaces)
+  order           Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   // Relations
   questionGroup QuestionGroup @relation(fields: [idQuestionGroup], references: [idQuestionGroup], onDelete: Cascade)
@@ -186,15 +193,15 @@ model Question {
 // ============================================================================
 
 model WritingTask {
-  idWritingTask String         @id @default(uuid())
+  idWritingTask String          @id @default(uuid())
   idTest        String
   title         String
   taskType      WritingTaskType
-  timeLimit     Int            /// Time limit in seconds
-  image         String?        /// Stimulus image (charts, graphs for Task 1)
-  instructions  String?        /// Task instructions
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  timeLimit     Int /// Time limit in seconds
+  image         String? /// Stimulus image (charts, graphs for Task 1)
+  instructions  String? /// Task instructions
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   // Relations
   test                   Test                    @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
@@ -218,14 +225,14 @@ model SpeakingTask {
 }
 
 model SpeakingQuestion {
-  idSpeakingQuestion String @id @default(uuid())
+  idSpeakingQuestion String  @id @default(uuid())
   idSpeakingTask     String
-  topic              String?  /// e.g. "Hometown", "Work/Study"
-  prompt             String?  /// Question text
-  subPrompts         Json?    /// Cue card bullet points (Part 2)
-  preparationTime    Int      @default(0)
-  speakingTime       Int      @default(120)
-  order              Int      @default(0)
+  topic              String? /// e.g. "Hometown", "Work/Study"
+  prompt             String? /// Question text
+  subPrompts         Json? /// Cue card bullet points (Part 2)
+  preparationTime    Int     @default(0)
+  speakingTime       Int     @default(120)
+  order              Int     @default(0)
 
   // Relations
   speakingTask SpeakingTask @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
@@ -238,43 +245,51 @@ model SpeakingQuestion {
 // ============================================================================
 
 model UserTestResult {
-  idTestResult    String     @id @default(uuid())
-  idUser          String
-  idTest          String
-  score           Int?       @default(0)  /// Raw score (out of 40 for R/L)
-  totalCorrect    Int?       @default(0)
-  totalQuestions  Int?       @default(0)
-  rawScore        Int?       @default(0)
-  bandScore       Float      @default(0)
-  duration        Int        @default(0)  /// Actual time spent in seconds
-  status          TestStatus @default(IN_PROGRESS)
-  level           Level      @default(Low)
-  startedAt       DateTime   @default(now())
-  finishedAt      DateTime?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  idTestResult   String     @id @default(uuid())
+  idUser         String
+  idTest         String
+  score          Int?       @default(0) /// Raw score (out of 40 for R/L)
+  totalCorrect   Int?       @default(0)
+  totalQuestions Int?       @default(0)
+  rawScore       Int?       @default(0)
+  bandScore      Float      @default(0)
+  duration       Int        @default(0) /// Actual time spent in seconds
+  status         TestStatus @default(IN_PROGRESS)
+  level          Level      @default(Low)
+  startedAt      DateTime   @default(now())
+  finishedAt     DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   // Relations
+<<<<<<< HEAD
   user                  User                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   test                  Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
   userAnswers           UserAnswer[]
   writingSubmissions    UserWritingSubmission[]
   speakingSubmissions   UserSpeakingSubmission[]
   teacherReviewTickets  TeacherReviewTicket[]
+=======
+  user                User                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  test                Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  userAnswers         UserAnswer[]
+  writingSubmissions  UserWritingSubmission[]
+  speakingSubmissions UserSpeakingSubmission[]
+>>>>>>> 113c227866064a8e19fe0729f3d913f2add38d4e
 
   @@index([idUser, status, finishedAt])
   @@index([idTest, createdAt])
 }
 
 model UserAnswer {
-  idUserAnswer   String       @id @default(uuid())
-  idUser         String
-  idQuestion     String
-  idTestResult   String
-  answerType     QuestionType /// Mirrors the question type for easy filtering
-  answerPayload  Json         @db.JsonB /// Structured answer (text, selected option index, matching pairs, etc.)
-  isCorrect      Boolean      @default(false)
-  submittedAt    DateTime     @default(now())
+  idUserAnswer  String       @id @default(uuid())
+  idUser        String
+  idQuestion    String
+  idTestResult  String
+  answerType    QuestionType /// Mirrors the question type for easy filtering
+  answerPayload Json         @db.JsonB /// Structured answer (text, selected option index, matching pairs, etc.)
+  isCorrect     Boolean      @default(false)
+  submittedAt   DateTime     @default(now())
 
   // Relations
   user       User           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
@@ -290,24 +305,27 @@ model UserAnswer {
 // ============================================================================
 
 model UserWritingSubmission {
-  idWritingSubmission String        @id @default(uuid())
+  idWritingSubmission String  @id @default(uuid())
   idUser              String
   idWritingTask       String
   idTestResult        String?
 
-  submissionText String            /// The student's essay
+  submissionText String /// The student's essay
 
   // Async grading state machine
   aiGradingStatus    GradingStatus @default(PENDING)
-  aiOverallScore     Float?        /// Band score (0.0 – 9.0)
+  aiOverallScore     Float? /// Band score (0.0 – 9.0)
   aiDetailedFeedback Json?         @db.JsonB /// { ta, cc, lr, gra } with scores + comments
   submittedAt        DateTime      @default(now())
-  gradedAt           DateTime?     /// Set when AI worker returns result
+  gradedAt           DateTime? /// Set when AI worker returns result
 
   // Relations
-  user       User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  writingTask WritingTask    @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
-  testResult UserTestResult? @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
+  user        User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  writingTask WritingTask     @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
+  testResult  UserTestResult? @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
+
+  // Credits - FK stored here, relation via idWritingSubmission in CreditTransaction
+  idCreditTransaction String?
 
   @@index([idUser, aiGradingStatus, submittedAt])
   @@index([aiGradingStatus]) // For worker polling
@@ -318,25 +336,28 @@ model UserWritingSubmission {
 // ============================================================================
 
 model UserSpeakingSubmission {
-  idSpeakingSubmission String        @id @default(uuid())
+  idSpeakingSubmission String  @id @default(uuid())
   idUser               String
   idSpeakingTask       String
   idTestResult         String?
 
-  audioUrl   String                  /// Uploaded audio file URL
-  transcript String?                 /// AI-generated transcript
+  audioUrl   String /// Uploaded audio file URL
+  transcript String? /// AI-generated transcript
 
   // Async grading state machine
   aiGradingStatus    GradingStatus @default(PENDING)
-  aiOverallScore     Float?        /// Band score (0.0 – 9.0)
+  aiOverallScore     Float? /// Band score (0.0 – 9.0)
   aiDetailedFeedback Json?         @db.JsonB /// { fc, lr, gra, pronunciation } with scores + comments
   submittedAt        DateTime      @default(now())
-  gradedAt           DateTime?     /// Set when AI worker returns result
+  gradedAt           DateTime? /// Set when AI worker returns result
 
   // Relations
   user         User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   speakingTask SpeakingTask    @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
   testResult   UserTestResult? @relation(fields: [idTestResult], references: [idTestResult])
+
+  // Credits - FK stored here, relation via idSpeakingSubmission in CreditTransaction
+  idCreditTransaction String?
 
   @@index([idUser, aiGradingStatus, submittedAt])
   @@index([aiGradingStatus]) // For worker polling
@@ -368,11 +389,11 @@ model Vocabulary {
 }
 
 model Topic {
-  idTopic    String       @id @default(uuid())
-  nameTopic  String
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  idUser     String
+  idTopic   String   @id @default(uuid())
+  nameTopic String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  idUser    String
 
   // Relations
   user       User         @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
@@ -380,11 +401,11 @@ model Topic {
 }
 
 model GrammarCategory {
-  idGrammarCategory String                 @id @default(uuid())
+  idGrammarCategory String   @id @default(uuid())
   name              String
   description       String?
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   idUser            String?
 
   // Relations
@@ -395,15 +416,15 @@ model GrammarCategory {
 }
 
 model Grammar {
-  idGrammar      String                 @id @default(uuid())
+  idGrammar      String   @id @default(uuid())
   title          String
   explanation    String
-  level          Level                  @default(Low)
+  level          Level    @default(Low)
   commonMistakes Json?
   examples       Json?
-  order          Int                    @default(0)
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relations
   categories GrammarsOnCategories[]
@@ -412,7 +433,7 @@ model Grammar {
 model GrammarsOnCategories {
   idGrammarCategory String
   idGrammar         String
-  assignedAt        DateTime        @default(now())
+  assignedAt        DateTime @default(now())
   assignedBy        String
 
   // Relations
@@ -427,12 +448,12 @@ model GrammarsOnCategories {
 // ============================================================================
 
 model ForumThreads {
-  idForumThreads String      @id @default(uuid())
+  idForumThreads String   @id @default(uuid())
   idUser         String
   title          String
   content        String
-  created_at     DateTime    @default(now())
-  updated_at     DateTime    @updatedAt
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
   // Relations
   user      User        @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
@@ -440,18 +461,18 @@ model ForumThreads {
 }
 
 model ForumPost {
-  idForumPost    String           @id @default(uuid())
-  idForumThreads String
-  idUser         String
-  content        String
-  file           String?
+  idForumPost      String                @id @default(uuid())
+  idForumThreads   String
+  idUser           String
+  content          String
+  file             String?
   moderationStatus ForumModerationStatus @default(PENDING)
   moderationScore  Int?
-  moderationMeta   Json?            @db.JsonB
+  moderationMeta   Json?                 @db.JsonB
   reviewedBy       String?
   reviewedAt       DateTime?
-  created_at     DateTime         @default(now())
-  updated_at     DateTime         @updatedAt
+  created_at       DateTime              @default(now())
+  updated_at       DateTime              @updatedAt
 
   // Relations
   forumThreads   ForumThreads     @relation(fields: [idForumThreads], references: [idForumThreads], onDelete: Cascade)
@@ -464,12 +485,12 @@ model ForumPost {
 }
 
 model ForumComment {
-  idForumComment    String              @id @default(uuid())
-  idForumPost       String
-  idUser            String
-  content           String
-  created_at        DateTime            @default(now())
-  updated_at        DateTime            @updatedAt
+  idForumComment String   @id @default(uuid())
+  idForumPost    String
+  idUser         String
+  content        String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
   // Relations
   forumPost         ForumPost           @relation(fields: [idForumPost], references: [idForumPost], onDelete: Cascade)
@@ -478,10 +499,10 @@ model ForumComment {
 }
 
 model ForumPostLikes {
-  idForumPostLikes String    @id @default(uuid())
+  idForumPostLikes String   @id @default(uuid())
   idForumPost      String
   idUser           String
-  created_at       DateTime  @default(now())
+  created_at       DateTime @default(now())
 
   // Relations
   forumPost ForumPost @relation(fields: [idForumPost], references: [idForumPost], onDelete: Cascade)
@@ -491,16 +512,166 @@ model ForumPostLikes {
 }
 
 model ForumCommentLikes {
-  idForumCommentLikes String       @id @default(uuid())
+  idForumCommentLikes String   @id @default(uuid())
   idForumComment      String
   idUser              String
-  created_at          DateTime     @default(now())
+  created_at          DateTime @default(now())
 
   // Relations
   forumComment ForumComment @relation(fields: [idForumComment], references: [idForumComment], onDelete: Cascade)
   user         User         @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@unique([idForumComment, idUser])
+}
+
+// ============================================================================
+// CREDITS & MONETIZATION
+// ============================================================================
+
+model CreditPackage {
+  idPackage    String   @id @default(uuid())
+  name         String   @unique
+  description  String?
+  creditAmount Int
+  price        Float
+  priceUnit    String   @default("VND") // VND, USD
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  transactions CreditTransaction[]
+
+  @@index([isActive, sortOrder])
+}
+
+model CreditBalance {
+  idUser        String @id @default(uuid())
+  totalCredits  Int    @default(0)
+  usedCredits   Int    @default(0)
+  frozenCredits Int    @default(0) // Reserved for pending submissions
+
+  // Relations
+  user         User                @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  transactions CreditTransaction[]
+
+  @@index([idUser])
+}
+
+model CreditTransaction {
+  idTransaction        String            @id @default(uuid())
+  idUser               String
+  idPackage            String?
+  creditsAmount        Int
+  transactionType      CreditTransType
+  description          String?
+  idWritingSubmission  String?
+  idSpeakingSubmission String?
+  status               CreditTransStatus @default(PENDING)
+  createdAt            DateTime          @default(now())
+
+  // Relations
+  user                User           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  package             CreditPackage? @relation(fields: [idPackage], references: [idPackage])
+  creditBalance       CreditBalance? @relation(fields: [creditBalanceIdUser], references: [idUser])
+  creditBalanceIdUser String?
+
+  @@index([idUser, createdAt])
+  @@index([transactionType, createdAt])
+}
+
+// ============================================================================
+// SUBSCRIPTION (Pay-as-you-go credits + Subscription tiers)
+// ============================================================================
+
+model SubscriptionPackage {
+  idPackage    String       @id @default(uuid())
+  name         String       @unique // "Monthly Pro", "Annual Premium"
+  description  String?
+  billingCycle BillingCycle @default(MONTHLY) // MONTHLY, ANNUAL
+  price        Float
+  priceUnit    String       @default("VND")
+  creditsQuota Int          @default(0) // 0 = unlimited
+  features     String[] // ["AI Writing", "AI Speaking", "Priority Queue"]
+  badge        String? // "Popular", "Best Value"
+  isActive     Boolean      @default(true)
+  isFeatured   Boolean      @default(false)
+  sortOrder    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relations
+  subscriptions UserSubscription[]
+
+  @@index([isActive, sortOrder])
+  @@index([billingCycle])
+}
+
+model UserSubscription {
+  idSubscription String             @id @default(uuid())
+  idUser         String
+  idPackage      String
+  status         SubscriptionStatus @default(ACTIVE)
+  startedAt      DateTime           @default(now())
+  expiresAt      DateTime // End of billing period
+  nextBillingAt  DateTime? // For recurring billing
+  autoRenew      Boolean            @default(true)
+
+  // Quota tracking (for limited subscriptions)
+  creditsUsedThisPeriod  Int @default(0)
+  creditsQuotaThisPeriod Int @default(0)
+
+  // Payment
+  paymentRef    String? // Payment gateway reference
+  paymentMethod PaymentMethod? // MOMO, VNPAY, STRIPE, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user    User                @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  package SubscriptionPackage @relation(fields: [idPackage], references: [idPackage])
+
+  @@index([idUser, status])
+  @@index([expiresAt])
+}
+
+enum CreditTransType {
+  PURCHASE // User mua package
+  USED_WRITING // Dùng cho writing submission
+  USED_SPEAKING // Dùng cho speaking submission
+  REFUND // Hoàn credit (grading fail)
+  EXPIRY // Credit hết hạn
+  BONUS // Credit bonus (promotion, referral)
+  ADMIN_ADJUST // Admin điều chỉnh
+}
+
+enum CreditTransStatus {
+  PENDING // Đang xử lý
+  COMPLETED // Hoàn tất
+  FAILED // Thất bại
+  CANCELLED // Bị hủy
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE // Đang sử dụng, quota còn
+  EXPIRED // Hết hạn (không renew được)
+  CANCELLED // User hủy
+  SUSPENDED // Admin suspend
+}
+
+enum PaymentMethod {
+  MOMO
+  VNPAY
+  STRIPE
+  BANK_TRANSFER
+  ADMIN_CREDIT // Admin tặng
 }
 
 // ============================================================================
@@ -580,10 +751,10 @@ enum SpeakingPartType {
 
 /// Async grading state machine for AI Worker (RabbitMQ)
 enum GradingStatus {
-  PENDING   /// Submission received, queued
-  GRADING   /// AI Worker is processing
+  PENDING /// Submission received, queued
+  GRADING /// AI Worker is processing
   COMPLETED /// Grading finished successfully
-  FAILED    /// Grading failed (retry or manual review)
+  FAILED /// Grading failed (retry or manual review)
 }
 
 enum ForumModerationStatus {
