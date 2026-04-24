@@ -57,6 +57,10 @@ model User {
   forumComments     ForumComment[]
   forumPostLikes    ForumPostLikes[]
   forumCommentLikes ForumCommentLikes[]
+
+  // Teacher Review
+  teacherReviewTickets    TeacherReviewTicket[]
+  teacherReviewTicketsAsTeacher TeacherReviewTicket[] @relation("TeacherReviewTickets")
 }
 
 model VerificationCode {
@@ -251,11 +255,12 @@ model UserTestResult {
   updatedAt       DateTime   @updatedAt
 
   // Relations
-  user               User                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  test               Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
-  userAnswers        UserAnswer[]
-  writingSubmissions UserWritingSubmission[]
-  speakingSubmissions UserSpeakingSubmission[]
+  user                  User                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  test                  Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  userAnswers           UserAnswer[]
+  writingSubmissions    UserWritingSubmission[]
+  speakingSubmissions   UserSpeakingSubmission[]
+  teacherReviewTickets  TeacherReviewTicket[]
 
   @@index([idUser, status, finishedAt])
   @@index([idTest, createdAt])
@@ -601,4 +606,44 @@ enum VocabType {
   PREPOSITION
   CONJUNCTION
   INTERJECTION
+}
+
+enum ReviewType {
+  WRITING
+  SPEAKING
+}
+
+enum TeacherReviewStatus {
+  PENDING
+  CLAIMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model TeacherReviewTicket {
+  idTicket         String              @id @default(uuid())
+  idTestResult     String
+  idUser           String
+  type             ReviewType
+  status           TeacherReviewStatus @default(PENDING)
+  aiBandScore      Float?
+  aiFeedback       Json?
+  idTeacher        String?
+  claimedAt        DateTime?
+  teacherBandScore Float?
+  teacherFeedback  Json?
+  submittedAt      DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  commissionAmount Float?
+
+  // Relations
+  testResult UserTestResult @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade, onUpdate: Cascade)
+  user       User           @relation(fields: [idUser], references: [idUser], onDelete: Cascade, onUpdate: Cascade)
+  teacher    User?          @relation("TeacherReviewTickets", fields: [idTeacher], references: [idUser], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([status, createdAt])
+  @@index([idTeacher, status])
+  @@index([idUser, status])
 }
