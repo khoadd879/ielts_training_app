@@ -262,20 +262,11 @@ model UserTestResult {
   updatedAt      DateTime   @updatedAt
 
   // Relations
-<<<<<<< HEAD
-  user                  User                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  test                  Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
-  userAnswers           UserAnswer[]
-  writingSubmissions    UserWritingSubmission[]
-  speakingSubmissions   UserSpeakingSubmission[]
-  teacherReviewTickets  TeacherReviewTicket[]
-=======
   user                User                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   test                Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
   userAnswers         UserAnswer[]
   writingSubmissions  UserWritingSubmission[]
   speakingSubmissions UserSpeakingSubmission[]
->>>>>>> 113c227866064a8e19fe0729f3d913f2add38d4e
 
   @@index([idUser, status, finishedAt])
   @@index([idTest, createdAt])
