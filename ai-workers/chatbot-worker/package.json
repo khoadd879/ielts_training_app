@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node src/index.ts",
+    "test": "jest"
   },
   "dependencies": {
     "@ai-workers/shared": "file:../shared",
@@ -15,7 +16,10 @@
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.5",
+    "@types/jest": "^29.5.12",
     "@types/node": "^22.10.7",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
