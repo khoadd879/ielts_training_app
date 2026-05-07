@@ -42,7 +42,7 @@ export class AuthService {
   }
 
   async login(user: UserWithPassword) {
-    const payload = { email: user.email, sub: user.idUser };
+    const payload = { email: user.email, sub: user.idUser, role: user.role };
 
     if (user.isActive === false) {
       throw new BadRequestException('Account is not activated');
@@ -216,7 +216,7 @@ export class AuthService {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
-      const payload = { email: decoded.email, sub: decoded.sub };
+      const payload = { email: decoded.email, sub: decoded.sub, role: decoded.role };
 
       const newAccessToken = this.jwtService.sign(payload, {
         secret: this.configService.get<string>('JWT_SECRET'),

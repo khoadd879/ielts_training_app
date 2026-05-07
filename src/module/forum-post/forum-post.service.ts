@@ -9,22 +9,10 @@ import { UpdateForumPostDto } from './dto/update-forum-post.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { ConfigService } from '@nestjs/config';
+import { SystemConfigService } from 'src/module/system-config/system-config.service';
 import { GoogleGenAI } from '@google/genai';
 import { ForumModerationStatus, Role } from '@prisma/client';
 import { ReviewForumPostDto } from './dto/review-forum-post.dto';
-
-const AUTO_APPROVE_THRESHOLD = 80;
-const AUTO_REJECT_THRESHOLD = 20;
-
-const BLOCKED_TERMS = [
-  'casino',
-  'đặt cược',
-  'kiếm tiền nhanh',
-  'free money',
-  'click link',
-  'airdrop',
-  'telegram',
-];
 
 type ForumModerationMeta = {
   confidence?: number;
@@ -50,6 +38,7 @@ export class ForumPostService {
     private readonly databaseService: DatabaseService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly configService: ConfigService,
+    private readonly systemConfigService: SystemConfigService,
   ) {}
 
   async existingUser(idUser: string) {
@@ -212,7 +201,7 @@ ${content}
 `;
   }
 
-  private runQuickChecks(content: string) {
+  private runQuickChecks(content: string, blockedTerms: string[]) {
     const normalized = content.toLowerCase();
     const reasons: string[] = [];
 
@@ -220,7 +209,7 @@ ${content}
       reasons.push('Nội dung quá ngắn hoặc trống.');
     }
 
-    if (BLOCKED_TERMS.some((term) => normalized.includes(term))) {
+    if (blockedTerms.some((term) => normalized.includes(term))) {
       reasons.push('Phát hiện từ khóa có rủi ro spam/vi phạm.');
     }
 
@@ -230,11 +219,11 @@ ${content}
     };
   }
 
-  private resolveDecisionByScore(score: number) {
-    if (score >= AUTO_APPROVE_THRESHOLD) {
+  private resolveDecisionByScore(score: number, autoApproveThreshold: number, autoRejectThreshold: number) {
+    if (score >= autoApproveThreshold) {
       return ForumModerationStatus.AUTO_APPROVED;
     }
-    if (score <= AUTO_REJECT_THRESHOLD) {
+    if (score <= autoRejectThreshold) {
       return ForumModerationStatus.AUTO_REJECTED;
     }
     return ForumModerationStatus.NEEDS_REVIEW;
@@ -245,7 +234,10 @@ ${content}
     threadTitle: string | null,
     hasAttachment: boolean,
   ): Promise<ModerationResult> {
-    const quickCheck = this.runQuickChecks(content);
+    const policy = await this.systemConfigService.getModerationPolicy();
+    const { autoApproveThreshold, autoRejectThreshold, blockedWords } = policy;
+
+    const quickCheck = this.runQuickChecks(content, blockedWords);
     if (quickCheck.hardRejected) {
       return {
         status: ForumModerationStatus.AUTO_REJECTED,
@@ -299,7 +291,7 @@ ${content}
       const rawScore =
         typeof parsed.score === 'number' ? Math.round(parsed.score) : 50;
       const score = this.clamp(rawScore, 0, 100);
-      const status = this.resolveDecisionByScore(score);
+      const status = this.resolveDecisionByScore(score, autoApproveThreshold, autoRejectThreshold);
 
       return {
         status,

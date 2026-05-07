@@ -829,3 +829,26 @@ model SystemConfig {
 
   @@unique([idConfig])
 }
+
+// ============================================================================
+// AUDIT LOG - Immutable record of admin actions
+// ============================================================================
+
+model AuditLog {
+  idAuditLog   String    @id @default(uuid())
+  actorId      String    // idUser of who performed the action
+  actorName    String?   // denormalized for readability
+  actorRole    Role      // ADMIN, GIAOVIEN, USER
+  action       String    // e.g., "MODERATION_POLICY_UPDATE", "FORUM_POST_REVIEW"
+  targetType   String    // e.g., "SystemConfig", "ForumPost", "User"
+  targetId     String?   // id of the affected entity
+  beforeValue  Json?     // snapshot before change (null for creates)
+  afterValue   Json?     // snapshot after change (null for deletes)
+  metadata     Json?     @db.JsonB // extra context (ip, user-agent, etc.)
+  createdAt    DateTime  @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
