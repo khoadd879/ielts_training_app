@@ -736,6 +736,59 @@ async function seedSubscriptionPackages() {
 
 // =============================================================================
 
+// =============================================================================
+// SYSTEM CONFIG SEED — Moderation Policy
+// =============================================================================
+
+async function seedSystemConfig() {
+  // Seed moderation policy
+  await prisma.systemConfig.upsert({
+    where: { idConfig: 'moderation_policy' },
+    update: {},
+    create: {
+      idConfig: 'moderation_policy',
+      value: {
+        autoApproveThreshold: 80,
+        autoRejectThreshold: 20,
+        // Blocked words - phrased for IELTS academic context (no legitimate use cases)
+        blockedWords: [
+          // Vietnamese gambling/scams
+          'đặt cược', 'casino', 'lừa đảo', 'kiếm tiền nhanh',
+          // Contact spam
+          'zalo', 'discord', 'whatsapp', 'telegram',
+          // Crypto/spam
+          'airdrop', 'token', 'crypto', 'binance',
+        ],
+        reviewSlaHours: 24,
+      },
+    },
+  })
+  console.log('  ✔  System config: moderation_policy seeded')
+
+  // Seed commission config
+  await prisma.systemConfig.upsert({
+    where: { idConfig: 'teacher_review_commission' },
+    update: {},
+    create: {
+      idConfig: 'teacher_review_commission',
+      value: { writing: 50000, speaking: 40000 },
+    },
+  })
+  console.log('  ✔  System config: teacher_review_commission seeded')
+
+  // Seed assign mode
+  await prisma.systemConfig.upsert({
+    where: { idConfig: 'assign_mode' },
+    update: {},
+    create: {
+      idConfig: 'assign_mode',
+      value: {},
+      assignMode: 'MANUAL',
+    },
+  })
+  console.log('  ✔  System config: assign_mode seeded')
+}
+
 async function main() {
   console.log('🌱  Starting seed...')
 
@@ -766,6 +819,9 @@ async function main() {
     },
   })
   console.log('  ✔  Seed user credit balance: 3 free credits')
+
+  // Seed system config
+  await seedSystemConfig()
 
   // Seed credit and subscription packages
   await seedCreditPackages()
