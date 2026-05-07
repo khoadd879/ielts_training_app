@@ -712,6 +712,11 @@ enum TestStatus {
   CANCELLED
 }
 
+enum AssignMode {
+  AUTO
+  MANUAL
+}
+
 /// All 14 IELTS Reading/Listening question types
 enum QuestionType {
   MULTIPLE_CHOICE
@@ -809,4 +814,18 @@ model TeacherReviewTicket {
   @@index([status, createdAt])
   @@index([idTeacher, status])
   @@index([idUser, status])
+}
+
+// ============================================================================
+// SYSTEM CONFIG - Lưu cấu hình hệ thống (commission, assign mode, etc.)
+// ============================================================================
+
+model SystemConfig {
+  idConfig     String     @id // VD: "teacher_review_commission", "assign_mode"
+  value        Json       // VD: { "writing": 50000, "speaking": 40000 }
+  assignMode   AssignMode @default(MANUAL) // Chỉ dùng cho assign_mode record
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([idConfig])
 }
