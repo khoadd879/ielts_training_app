@@ -7,11 +7,13 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
+import { SubmitReviewDto, GetDueReviewDto, GetTierRecommendationDto } from './dto/review.dto';
 import { DatabaseService } from 'src/database/database.service';
 import axios, { AxiosError } from 'axios';
 import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from '@nestjs/cache-manager';
+import { endOfDay, startOfDay } from 'date-fns';
 
 interface VocabCacheEntry {
   word: string;
@@ -23,6 +25,12 @@ interface VocabCacheEntry {
 }
 
 const VOCAB_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+interface SM2Result {
+  repetitions: number;
+  interval: number;
+  easiness: number;
+}
 
 @Injectable()
 export class VocabularyService {
@@ -39,6 +47,177 @@ export class VocabularyService {
     if (apiKey) {
       this.ai = new GoogleGenAI({ apiKey });
     }
+  }
+
+  /**
+   * SM-2 Spaced Repetition Algorithm
+   * Based on Woźniak (1987)
+   */
+  sm2(quality: number, repetitions: number, easiness: number, interval: number): SM2Result {
+    // quality: 0-5 (0=wrong, 3=correct with difficulty, 5=perfect)
+    if (quality < 3) {
+      return { repetitions: 0, interval: 1, easiness };
+    }
+    if (repetitions === 0) interval = 1;
+    else if (repetitions === 1) interval = 6;
+    else interval = Math.round(interval * easiness);
+
+    repetitions++;
+    easiness = easiness + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+
+    return { repetitions, interval: Math.max(1, interval), easiness: Math.max(1.3, easiness) };
+  }
+
+  /**
+   * Get vocabulary due for review today
+   */
+  async getDueReview(getDueReviewDto: GetDueReviewDto) {
+    const { idUser, limit = 20 } = getDueReviewDto;
+    const now = new Date();
+    const startOfToday = startOfDay(now);
+    const endOfToday = endOfDay(now);
+
+    return this.databaseService.vocabulary.findMany({
+      where: {
+        idUser,
+        OR: [
+          { nextReviewAt: null }, // New words
+          { nextReviewAt: { lte: endOfToday } }, // Due today or overdue
+        ],
+        status: { not: 'mastered' },
+      },
+      take: limit,
+      orderBy: [
+        { nextReviewAt: 'asc' }, // Most overdue first
+        { createdAt: 'asc' }, // Then by creation date (newest first)
+      ],
+    });
+  }
+
+  /**
+   * Submit a review with quality rating
+   */
+  async submitReview(submitReviewDto: SubmitReviewDto) {
+    const { idVocab, idUser, quality } = submitReviewDto;
+
+    const vocabulary = await this.databaseService.vocabulary.findUnique({
+      where: { idVocab },
+    });
+
+    if (!vocabulary) {
+      throw new BadRequestException('Vocabulary not found');
+    }
+
+    if (vocabulary.idUser !== idUser) {
+      throw new BadRequestException('Vocabulary does not belong to user');
+    }
+
+    // Get current SM-2 values
+    const repetitions = vocabulary.timesReviewed || 0;
+    const easiness = vocabulary.easinessFactor || 2.5;
+    const interval = vocabulary.interval || 1;
+
+    // Calculate new SM-2 values
+    const result = this.sm2(quality, repetitions, easiness, interval);
+
+    // Calculate next review date
+    const nextReviewAt = new Date();
+    nextReviewAt.setDate(nextReviewAt.getDate() + result.interval);
+
+    // Determine new status based on repetitions and quality
+    let status = vocabulary.status || 'new';
+    if (quality < 3) {
+      status = 'learning';
+    } else if (result.repetitions >= 5 && result.easiness >= 2.5) {
+      status = 'mastered';
+    } else if (result.repetitions >= 2) {
+      status = 'review';
+    } else {
+      status = 'learning';
+    }
+
+    const updated = await this.databaseService.vocabulary.update({
+      where: { idVocab },
+      data: {
+        timesReviewed: result.repetitions,
+        easinessFactor: result.easiness,
+        interval: result.interval,
+        nextReviewAt,
+        status,
+        lastReviewed: new Date(),
+      },
+    });
+
+    return {
+      idVocab: updated.idVocab,
+      word: updated.word,
+      status: updated.status,
+      timesReviewed: updated.timesReviewed,
+      interval: updated.interval,
+      nextReviewAt: updated.nextReviewAt,
+      easinessFactor: updated.easinessFactor,
+    };
+  }
+
+  /**
+   * Get tier recommendation based on user's target band
+   */
+  async getTierRecommendation(getTierRecommendationDto: GetTierRecommendationDto) {
+    const { idUser } = getTierRecommendationDto;
+
+    const user = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Get user's vocabulary stats
+    const vocabCount = await this.databaseService.vocabulary.count({
+      where: { idUser },
+    });
+
+    // Get user's target band (default to 5.5 if not set)
+    const targetBand = user.targetBandScore || 5.5;
+
+    // Determine tier based on band target
+    let recommendedTier: number;
+    if (targetBand < 5.5) {
+      recommendedTier = 1; // High frequency words (3k = 90% coverage)
+    } else if (targetBand < 6.5) {
+      recommendedTier = 2; // Academic Word List (570 words)
+    } else {
+      recommendedTier = 3; // Specialized/technical vocabulary
+    }
+
+    // Count mastered words per tier
+    const masteredByTier = await this.databaseService.vocabulary.groupBy({
+      by: ['tier'],
+      where: { idUser, status: 'mastered' },
+      _count: true,
+    });
+
+    const masteredCount = masteredByTier.find(t => t.tier === recommendedTier)?._count || 0;
+
+    // Get total in recommended tier
+    const totalInTier = await this.databaseService.vocabulary.count({
+      where: { idUser, tier: recommendedTier },
+    });
+
+    // Check if should progress to next tier (80% mastery)
+    const masteryPercentage = totalInTier > 0 ? (masteredCount / totalInTier) * 100 : 0;
+    const shouldProgress = totalInTier > 0 && masteryPercentage >= 80;
+
+    return {
+      recommendedTier,
+      vocabCount,
+      masteredCount,
+      totalInTier,
+      masteryPercentage: Math.round(masteryPercentage * 10) / 10,
+      shouldProgress,
+      targetBand,
+    };
   }
 
   async createVocabulary(createVocabularyDto: CreateVocabularyDto) {
@@ -61,6 +240,19 @@ export class VocabularyService {
       throw new BadRequestException('User not found');
     }
 
+    // Determine tier based on user's target band
+    const targetBand = existingUser.targetBandScore || 5.5;
+    let tier = 1;
+    if (targetBand >= 6.5) {
+      tier = 2; // AWL for academic users
+    } else if (targetBand >= 5.5) {
+      tier = 1; // High frequency words
+    }
+
+    // Set next review to tomorrow (new words)
+    const nextReviewAt = new Date();
+    nextReviewAt.setDate(nextReviewAt.getDate() + 1);
+
     const data = await this.databaseService.vocabulary.create({
       data: {
         idUser,
@@ -71,6 +263,9 @@ export class VocabularyService {
         phonetic,
         example,
         level,
+        tier,
+        nextReviewAt,
+        status: 'new',
       },
     });
 
