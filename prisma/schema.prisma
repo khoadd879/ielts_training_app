@@ -375,6 +375,17 @@ model Vocabulary {
   idUser        String
   idTopic       String?
 
+  // SM-2 Spaced Repetition
+  timesReviewed    Int       @default(0)
+  easinessFactor   Float     @default(2.5)
+  interval         Int       @default(1) // days until next review
+  nextReviewAt     DateTime?
+  status           String    @default("new") // new|learning|review|mastered
+
+  // Vocabulary Tier System (1: high-freq 3k words, 2: AWL 570 words, 3: specialized)
+  tier            Int @default(1)
+  frequencyRank   Int?
+
   // Relations
   topic Topic? @relation(fields: [idTopic], references: [idTopic], onDelete: Cascade)
   user  User   @relation(fields: [idUser], references: [idUser], onDelete: Cascade)

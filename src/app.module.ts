@@ -46,6 +46,7 @@ import { CreditsModule } from './module/credits/credits.module';
 import { TeacherReviewModule } from './module/teacher-review/teacher-review.module';
 import { SystemConfigModule } from './module/system-config/system-config.module';
 import { AuditLogModule } from './module/audit-log/audit-log.module';
+import { StudyPlannerModule } from './module/study-planner/study-planner.module';
 
 import * as redisStore from 'cache-manager-redis-store';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -134,6 +135,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
     RabbitMQModule,
     DashboardModule,
+    StudyPlannerModule,
   ],
   controllers: [AppController],
   providers: [

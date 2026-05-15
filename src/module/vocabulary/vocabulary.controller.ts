@@ -15,6 +15,7 @@ import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { AddVocabularyToTopicDto } from './dto/add-vocabulary-to-topic.dto';
+import { SubmitReviewDto, GetDueReviewDto, GetTierRecommendationDto } from './dto/review.dto';
 
 @ApiBearerAuth()
 @Controller('vocabulary')
@@ -62,5 +63,22 @@ export class VocabularyController {
   @Get('suggest/:word')
   suggest(@Param('word') word: string) {
     return this.vocabularyService.suggest(word);
+  }
+
+  // SM-2 Spaced Repetition Endpoints
+  @Get('due-review')
+  getDueReview(@Query() query: GetDueReviewDto) {
+    return this.vocabularyService.getDueReview(query);
+  }
+
+  @Post('review')
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  submitReview(@Body() body: SubmitReviewDto) {
+    return this.vocabularyService.submitReview(body);
+  }
+
+  @Get('tier-recommendation')
+  getTierRecommendation(@Query() query: GetTierRecommendationDto) {
+    return this.vocabularyService.getTierRecommendation(query);
   }
 }
