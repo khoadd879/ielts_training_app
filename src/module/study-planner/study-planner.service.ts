@@ -96,10 +96,10 @@ export class StudyPlannerService {
     const isRealistic = bandGap <= maxPossibleGain * 1.5;
 
     // Generate daily tasks
-    const dailyTasks = this.generateDailyTasks(studyMinutesPerDay);
+    const dailyTasks = await this.generateDailyTasks(studyMinutesPerDay);
 
     // Generate weekly plan
-    const weeklyPlan = this.generateWeeklyPlan(studyMinutesPerDay);
+    const weeklyPlan = await this.generateWeeklyPlan(studyMinutesPerDay);
 
     // Generate response
     const plan: StudyPlan = {
@@ -224,45 +224,56 @@ export class StudyPlannerService {
     ];
   }
 
-  private generateDailyTasks(studyMinutesPerDay: number): DailyTask[] {
+  private async generateDailyTasks(studyMinutesPerDay: number): Promise<DailyTask[]> {
     const tasks: DailyTask[] = [];
     const time = studyMinutesPerDay;
 
     if (time <= 30) {
-      tasks.push(this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện yếu điểm Reading', 20));
-      tasks.push(this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', 'Ôn từ đã học', 10));
+      tasks.push(await this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện yếu điểm Reading', 20));
+      tasks.push(await this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', 'Ôn từ đã học', 10));
     } else if (time <= 60) {
-      tasks.push(this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện yếu điểm Reading', 20));
-      tasks.push(this.createTask('SPEAKING', 'Luyện Speaking Part 3', 'Cải thiện Speaking', 15));
-      tasks.push(this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', '15 từ cần ôn', 15));
-      tasks.push(this.createTask('GRAMMAR', 'Luyện Verb Tenses', 'Grammar yếu cần cải thiện', 10));
+      tasks.push(await this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện yếu điểm Reading', 20));
+      tasks.push(await this.createTask('SPEAKING', 'Luyện Speaking Part 3', 'Cải thiện Speaking', 15));
+      tasks.push(await this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', '15 từ cần ôn', 15));
+      tasks.push(await this.createTask('GRAMMAR', 'Luyện Verb Tenses', 'Grammar yếu cần cải thiện', 10));
     } else if (time <= 90) {
-      tasks.push(this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện yếu điểm Reading', 20));
-      tasks.push(this.createTask('LISTENING', 'Luyện nghe', 'Cải thiện Listening', 20));
-      tasks.push(this.createTask('SPEAKING', 'Luyện Speaking Part 3', 'Cải thiện Speaking', 15));
-      tasks.push(this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', '15 từ cần ôn', 15));
-      tasks.push(this.createTask('GRAMMAR', 'Luyện Verb Tenses', 'Grammar yếu cần cải thiện', 10));
+      tasks.push(await this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện yếu điểm Reading', 20));
+      tasks.push(await this.createTask('LISTENING', 'Luyện nghe', 'Cải thiện Listening', 20));
+      tasks.push(await this.createTask('SPEAKING', 'Luyện Speaking Part 3', 'Cải thiện Speaking', 15));
+      tasks.push(await this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', '15 từ cần ôn', 15));
+      tasks.push(await this.createTask('GRAMMAR', 'Luyện Verb Tenses', 'Grammar yếu cần cải thiện', 10));
     } else {
-      tasks.push(this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện Reading', 20));
-      tasks.push(this.createTask('LISTENING', 'Luyện nghe', 'Cải thiện Listening', 20));
-      tasks.push(this.createTask('WRITING', 'Luyện viết Essay', 'Cải thiện Writing', 20));
-      tasks.push(this.createTask('SPEAKING', 'Luyện Speaking Part 3', 'Cải thiện Speaking', 20));
-      tasks.push(this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', '15 từ cần ôn', 15));
-      tasks.push(this.createTask('GRAMMAR', 'Luyện Verb Tenses', 'Grammar yếu cần cải thiện', 15));
+      tasks.push(await this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện Reading', 20));
+      tasks.push(await this.createTask('LISTENING', 'Luyện nghe', 'Cải thiện Listening', 20));
+      tasks.push(await this.createTask('WRITING', 'Luyện viết Essay', 'Cải thiện Writing', 20));
+      tasks.push(await this.createTask('SPEAKING', 'Luyện Speaking Part 3', 'Cải thiện Speaking', 20));
+      tasks.push(await this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', '15 từ cần ôn', 15));
+      tasks.push(await this.createTask('GRAMMAR', 'Luyện Verb Tenses', 'Grammar yếu cần cải thiện', 15));
     }
     return tasks;
   }
 
-  private createTask(type: 'READING' | 'LISTENING' | 'WRITING' | 'SPEAKING' | 'VOCABULARY' | 'GRAMMAR', name: string, description: string, minutes: number): DailyTask {
-    const routeMap: Record<string, { route: string; paramKey: string; paramValue: string }> = {
+  private async createTask(type: 'READING' | 'LISTENING' | 'WRITING' | 'SPEAKING' | 'VOCABULARY' | 'GRAMMAR', name: string, description: string, minutes: number): Promise<DailyTask> {
+    const routeMap: Record<string, { route: string; paramKey: string; paramValue?: string }> = {
       READING: { route: '/doTest', paramKey: 'skill', paramValue: 'READING' },
       LISTENING: { route: '/doTest', paramKey: 'skill', paramValue: 'LISTENING' },
       WRITING: { route: '/doTest', paramKey: 'skill', paramValue: 'WRITING' },
       SPEAKING: { route: '/doTest', paramKey: 'skill', paramValue: 'SPEAKING' },
       VOCABULARY: { route: '/vocabulary', paramKey: 'mode', paramValue: 'review' },
-      GRAMMAR: { route: '/grammar', paramKey: 'idGrammar', paramValue: 'verb-tenses' },
+      GRAMMAR: { route: '/grammar', paramKey: 'idGrammar' },
     };
     const mapping = routeMap[type];
+
+    // For GRAMMAR, get actual grammar ID from database dynamically
+    let paramValue = mapping.paramValue;
+    if (type === 'GRAMMAR') {
+      const grammar = await this.db.grammar.findFirst({
+        where: { status: true },
+        orderBy: { createdAt: 'desc' }
+      });
+      paramValue = grammar?.idGrammar || 'verb-tenses'; // fallback
+    }
+
     return {
       id: `${type.toLowerCase()}-${Date.now()}`,
       type,
@@ -270,12 +281,12 @@ export class StudyPlannerService {
       description,
       completed: false,
       route: mapping.route,
-      routeParams: { [mapping.paramKey]: mapping.paramValue },
+      routeParams: { [mapping.paramKey]: paramValue },
       estimatedMinutes: minutes,
     };
   }
 
-  private generateWeeklyPlan(dailyMinutes: number): DayPlan[] {
+  private async generateWeeklyPlan(dailyMinutes: number): Promise<DayPlan[]> {
     const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
     const today = new Date();
     const startOfWeek = new Date(today);
@@ -286,7 +297,7 @@ export class StudyPlannerService {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
       const isSunday = i === 0;
-      const tasks = isSunday ? [] : this.generateDailyTasks(dailyMinutes).map(t => ({ ...t, id: `${t.type.toLowerCase()}-${date.toISOString().split('T')[0]}` }));
+      const tasks = isSunday ? [] : (await this.generateDailyTasks(dailyMinutes)).map(t => ({ ...t, id: `${t.type.toLowerCase()}-${date.toISOString().split('T')[0]}` }));
       weekPlans.push({ date: date.toISOString().split('T')[0], dayName: dayNames[i], tasks, isRestDay: isSunday, completedCount: 0, totalCount: tasks.length });
     }
     return weekPlans;
