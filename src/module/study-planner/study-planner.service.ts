@@ -482,4 +482,106 @@ export class StudyPlannerService {
     });
     return { success: true, dailyMinutesAvailable };
   }
+
+  private async calculateAvgBand(userId: string): Promise<number> {
+    const results = await this.db.userTestResult.findMany({
+      where: { idUser: userId, status: 'FINISHED' },
+      orderBy: { finishedAt: 'desc' },
+      take: 20,
+      include: { test: { select: { testType: true } } }
+    });
+
+    const skillBands: Record<string, number[]> = { LISTENING: [], READING: [], WRITING: [], SPEAKING: [] };
+    for (const r of results) {
+      if (r.bandScore > 0) skillBands[r.test.testType].push(r.bandScore);
+    }
+
+    const allBands = Object.values(skillBands).flat();
+    return allBands.length > 0
+      ? Math.round((allBands.reduce((a, b) => a + b, 0) / allBands.length) * 10) / 10
+      : 5.0;
+  }
+
+  private async calculateVocabMastery(userId: string): Promise<VocabStats> {
+    const vocabs = await this.db.vocabulary.groupBy({
+      by: ['status'],
+      where: { idUser: userId },
+      _count: true
+    });
+
+    const stats: VocabStats = { totalWords: 0, mastered: 0, learning: 0, new: 0 };
+    for (const v of vocabs) {
+      stats.totalWords += v._count;
+      if (v.status === 'mastered') stats.mastered = v._count;
+      else if (v.status === 'learning') stats.learning = v._count;
+      else stats.new += v._count; // 'new' or 'review'
+    }
+
+    return stats;
+  }
+
+  private async calculateGrammarProficiency(userId: string): Promise<GrammarStats> {
+    const proficiencies = await this.db.userGrammarProficiency.groupBy({
+      by: ['proficiency'],
+      where: { idUser: userId },
+      _count: true
+    });
+
+    const stats: GrammarStats = { total: 0, strong: 0, medium: 0, weak: 0, unknown: 0 };
+    for (const p of proficiencies) {
+      stats.total += p._count;
+      if (p.proficiency in stats) {
+        stats[p.proficiency as keyof GrammarStats] = p._count;
+      }
+    }
+
+    return stats;
+  }
+
+  private async calculateCompletionRate(userId: string, weeks: number = 2): Promise<number> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - (weeks * 7));
+    startDate.setHours(0, 0, 0, 0);
+
+    const completions = await this.db.userDailyTaskCompletion.count({
+      where: {
+        idUser: userId,
+        date: { gte: startDate },
+        completed: true
+      }
+    });
+
+    const totalTasks = weeks * 5 * 6; // weeks * days * avg tasks per day
+    return Math.min(1, completions / totalTasks);
+  }
+
+  async calculateUserProficiency(userId: string): Promise<UserProficiency> {
+    const [avgBand, vocabStats, grammarStats, completionRate] = await Promise.all([
+      this.calculateAvgBand(userId),
+      this.calculateVocabMastery(userId),
+      this.calculateGrammarProficiency(userId),
+      this.calculateCompletionRate(userId)
+    ]);
+
+    // Determine stage based on band
+    let stage: Stage;
+    if (avgBand < 5.0) stage = Stage.FOUNDATION;
+    else if (avgBand < 6.0) stage = Stage.SKILL_BUILDING;
+    else if (avgBand < 7.0) stage = Stage.INTEGRATION;
+    else stage = Stage.EXAM_PREP;
+
+    // Calculate readiness score (0-100)
+    const bandScore = Math.min(100, (avgBand / 9) * 100);
+    const vocabScore = Math.min(100, (vocabStats.mastered / 300) * 100);
+    const grammarScore = grammarStats.total > 0
+      ? Math.min(100, ((grammarStats.medium + grammarStats.strong * 2) / (grammarStats.total * 2)) * 100)
+      : 0;
+    const completionScore = completionRate * 100;
+
+    const readinessScore = Math.round(
+      bandScore * 0.4 + vocabScore * 0.25 + grammarScore * 0.2 + completionScore * 0.15
+    );
+
+    return { avgBand, stage, vocabStats, grammarStats, completionRate, readinessScore };
+  }
 }
