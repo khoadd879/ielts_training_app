@@ -3,6 +3,121 @@ import { DatabaseService } from 'src/database/database.service';
 import { CalculatePlanDto } from './dto/calculate-plan.dto';
 import { CompleteTaskDto } from './dto/complete-task.dto';
 
+// Stage enum
+export enum Stage {
+  FOUNDATION = "FOUNDATION",
+  SKILL_BUILDING = "SKILL_BUILDING",
+  INTEGRATION = "INTEGRATION",
+  EXAM_PREP = "EXAM_PREP"
+}
+
+// Stage configurations
+const STAGE_CONFIGS: Record<Stage, {
+  bandRange: [number, number];
+  minVocabMastered: number;
+  minGrammarProficiency: string;
+  recommendedMinutes: [number, number];
+  fourStrandBalance: FourStrandBalance;
+  themes: { theme: string; description: string }[];
+}> = {
+  [Stage.FOUNDATION]: {
+    bandRange: [0, 5.0],
+    minVocabMastered: 0,
+    minGrammarProficiency: "weak",
+    recommendedMinutes: [60, 90],
+    fourStrandBalance: { input: 40, output: 30, language: 20, fluency: 10 },
+    themes: [
+      { theme: "Nền tảng từ vựng", description: "Tập trung xây dựng vốn từ vựng cơ bản" },
+      { theme: "Nền tảng ngữ pháp", description: "Học các cấu trúc ngữ pháp nền tảng" },
+      { theme: "Nền tảng đọc", description: "Luyện kỹ năng đọc hiểu cơ bản" },
+      { theme: "Nền tảng nghe", description: "Luyện kỹ năng nghe hiểu cơ bản" }
+    ]
+  },
+  [Stage.SKILL_BUILDING]: {
+    bandRange: [5.0, 6.0],
+    minVocabMastered: 50,
+    minGrammarProficiency: "medium",
+    recommendedMinutes: [90, 120],
+    fourStrandBalance: { input: 35, output: 35, language: 20, fluency: 10 },
+    themes: [
+      { theme: "Rèn đọc", description: "Nâng cao kỹ năng đọc với passages phức tạp hơn" },
+      { theme: "Rèn nghe", description: "Luyện nghe với nhiều accent và tốc độ" },
+      { theme: "Rèn viết", description: "Phát triển kỹ năng viết câu và đoạn" },
+      { theme: "Rèn nói", description: "Tự tin giao tiếp với các chủ đề quen thuộc" }
+    ]
+  },
+  [Stage.INTEGRATION]: {
+    bandRange: [6.0, 7.0],
+    minVocabMastered: 150,
+    minGrammarProficiency: "strong",
+    recommendedMinutes: [120, 150],
+    fourStrandBalance: { input: 30, output: 40, language: 20, fluency: 10 },
+    themes: [
+      { theme: "Tích hợp R+W", description: "Kết hợp đọc và viết trong các bài tập thực tế" },
+      { theme: "Tích hợp L+S", description: "Kết hợp nghe và nói trong các tình huống" },
+      { theme: "Tích hợp ngữ pháp", description: "Sử dụng ngữ pháp nâng cao trong ngữ cảnh" },
+      { theme: "Tích hợp từ vựng", description: "Sử dụng từ vựng học thuật trong giao tiếp" }
+    ]
+  },
+  [Stage.EXAM_PREP]: {
+    bandRange: [7.0, 9.0],
+    minVocabMastered: 300,
+    minGrammarProficiency: "strong",
+    recommendedMinutes: [150, 180],
+    fourStrandBalance: { input: 25, output: 45, language: 15, fluency: 15 },
+    themes: [
+      { theme: "Luyện đề Listening", description: "Giải đề IELTS Listening với thời gian thực" },
+      { theme: "Luyện đề Reading", description: "Giải đề IELTS Reading với time management" },
+      { theme: "Luyện đề Writing", description: "Luyện viết Task 1 và Task 2 với feedback" },
+      { theme: "Luyện đề Speaking", description: "Mô phỏng bài thi Speaking với giáo viên" }
+    ]
+  }
+};
+
+// Stage transitions
+const STAGE_TRANSITIONS: { from: Stage; to: Stage; conditions: { minAvgBand: number; minVocabMastered: number; minGrammarProficiency: string; minCompletionRate: number; minWeeksInStage: number } }[] = [
+  { from: Stage.FOUNDATION, to: Stage.SKILL_BUILDING, conditions: { minAvgBand: 5.0, minVocabMastered: 50, minGrammarProficiency: "medium", minCompletionRate: 0.75, minWeeksInStage: 2 } },
+  { from: Stage.SKILL_BUILDING, to: Stage.INTEGRATION, conditions: { minAvgBand: 6.0, minVocabMastered: 150, minGrammarProficiency: "strong", minCompletionRate: 0.80, minWeeksInStage: 2 } },
+  { from: Stage.INTEGRATION, to: Stage.EXAM_PREP, conditions: { minAvgBand: 7.0, minVocabMastered: 300, minGrammarProficiency: "strong", minCompletionRate: 0.85, minWeeksInStage: 2 } }
+];
+
+// Proficiency interfaces
+interface VocabStats {
+  totalWords: number;
+  mastered: number;
+  learning: number;
+  new: number;
+}
+
+interface GrammarStats {
+  total: number;
+  strong: number;
+  medium: number;
+  weak: number;
+  unknown: number;
+}
+
+interface UserProficiency {
+  avgBand: number;
+  stage: Stage;
+  vocabStats: VocabStats;
+  grammarStats: GrammarStats;
+  completionRate: number;
+  readinessScore: number;
+}
+
+interface StageProgress {
+  currentStage: Stage;
+  weeksInStage: number;
+  stageProgressPercent: number;
+  readinessScore: number;
+  nextMilestone: {
+    stage: Stage;
+    requirements: string[];
+    currentValues: Record<string, number>;
+  } | null;
+}
+
 /**
  * Study Planner Service v2 - Research-based learning plan generator
  * Based on SpecificPlan.md research:
@@ -268,7 +383,6 @@ export class StudyPlannerService {
     let paramValue = mapping.paramValue;
     if (type === 'GRAMMAR') {
       const grammar = await this.db.grammar.findFirst({
-        where: { status: true },
         orderBy: { createdAt: 'desc' }
       });
       paramValue = grammar?.idGrammar || 'verb-tenses'; // fallback
@@ -318,39 +432,46 @@ export class StudyPlannerService {
   }
 
   async getUserStudyPlan(idUser: string) {
-    const user = await this.db.user.findUnique({ where: { idUser }, select: { targetBandScore: true, targetExamDate: true } });
-    if (!user) return { error: 'User not found' };
+    try {
+      const user = await this.db.user.findUnique({ where: { idUser }, select: { targetBandScore: true, targetExamDate: true } });
+      if (!user) {
+        throw new Error(`User not found: ${idUser}`);
+      }
 
-    const recentResults = await this.db.userTestResult.findMany({
-      where: { idUser, status: 'FINISHED' },
-      orderBy: { finishedAt: 'desc' },
-      take: 10,
-      include: { test: { select: { testType: true } } },
-    });
+      const recentResults = await this.db.userTestResult.findMany({
+        where: { idUser, status: 'FINISHED' },
+        orderBy: { finishedAt: 'desc' },
+        take: 10,
+        include: { test: { select: { testType: true } } },
+      });
 
-    const skillBands: Record<string, number[]> = { LISTENING: [], READING: [], WRITING: [], SPEAKING: [] };
-    for (const result of recentResults) {
-      const skill = result.test.testType;
-      if (result.bandScore > 0) skillBands[skill].push(result.bandScore);
+      const skillBands: Record<string, number[]> = { LISTENING: [], READING: [], WRITING: [], SPEAKING: [] };
+      for (const result of recentResults) {
+        const skill = result.test.testType;
+        if (result.bandScore > 0) skillBands[skill].push(result.bandScore);
+      }
+
+      let currentBand = 5.0;
+      if (recentResults.length > 0) {
+        const allBands = Object.values(skillBands).flat();
+        if (allBands.length > 0) currentBand = allBands.reduce((a, b) => a + b, 0) / allBands.length;
+      }
+
+      const daysUntilExam = user.targetExamDate ? Math.max(1, Math.ceil((user.targetExamDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 60;
+      const preference = await this.db.userStudyPreference.findUnique({ where: { idUser } });
+      const studyMinutesPerDay = preference?.dailyMinutesAvailable || 120;
+
+      return this.calculatePlan({
+        idUser,
+        currentBand: Math.round(currentBand * 10) / 10,
+        targetBand: user.targetBandScore || 6.5,
+        daysUntilExam,
+        studyMinutesPerDay,
+      });
+    } catch (error) {
+      console.error('getUserStudyPlan error:', error);
+      throw error;
     }
-
-    let currentBand = 5.0;
-    if (recentResults.length > 0) {
-      const allBands = Object.values(skillBands).flat();
-      if (allBands.length > 0) currentBand = allBands.reduce((a, b) => a + b, 0) / allBands.length;
-    }
-
-    const daysUntilExam = user.targetExamDate ? Math.max(1, Math.ceil((user.targetExamDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 60;
-    const preference = await this.db.userStudyPreference.findUnique({ where: { idUser } });
-    const studyMinutesPerDay = preference?.dailyMinutesAvailable || 120;
-
-    return this.calculatePlan({
-      idUser,
-      currentBand: Math.round(currentBand * 10) / 10,
-      targetBand: user.targetBandScore || 6.5,
-      daysUntilExam,
-      studyMinutesPerDay,
-    });
   }
 
   async updateStudyPreference(idUser: string, dailyMinutesAvailable: number) {
