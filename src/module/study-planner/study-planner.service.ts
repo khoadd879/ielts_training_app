@@ -156,6 +156,12 @@ interface DayPlan {
   isRestDay: boolean;
   completedCount: number;
   totalCount: number;
+  strandBreakdown: {
+    input: number;
+    output: number;
+    language: number;
+    fluency: number;
+  };
 }
 
 interface StudyPlan {
@@ -219,7 +225,7 @@ export class StudyPlannerService {
     const dailyTasks = await this.generateDailyTasks(dto.idUser, prof.stage, weeklyTheme.theme, studyMinutesPerDay);
 
     // Generate weekly plan
-    const weeklyPlan = await this.generateWeeklyPlan(dto.idUser, prof.stage, weeklyTheme.theme, studyMinutesPerDay);
+    const weeklyPlan = await this.generateWeeklyPlan(studyMinutesPerDay, prof.stage, 0);
 
     // Generate response
     const plan: StudyPlan = {
@@ -502,22 +508,46 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
   return proficiencies.map(p => p.grammar);
 }
 
-  private async generateWeeklyPlan(userId: string, stage: Stage, theme: string, dailyMinutes: number): Promise<DayPlan[]> {
-    const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+  private async generateWeeklyPlan(dailyMinutes: number, stage: Stage, weekOffset: number = 0): Promise<DayPlan[]> {
+  const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay() + 1);
 
-    const weekPlans: DayPlan[] = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      const isSunday = i === 0;
-      const tasks = isSunday ? [] : (await this.generateDailyTasks(userId, stage, theme, dailyMinutes)).map(t => ({ ...t, id: `${t.type.toLowerCase()}-${date.toISOString().split('T')[0]}` }));
-      weekPlans.push({ date: date.toISOString().split('T')[0], dayName: dayNames[i], tasks, isRestDay: isSunday, completedCount: 0, totalCount: tasks.length });
-    }
-    return weekPlans;
+  const weekPlans: DayPlan[] = [];
+  const theme = this.getWeeklyTheme(stage, weekOffset);
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(startOfWeek);
+    date.setDate(startOfWeek.getDate() + i);
+    const isSunday = i === 0;
+
+    const tasks = isSunday
+      ? []
+      : (await this.generateDailyTasks('', stage, theme.theme, dailyMinutes)).map((t, idx) => ({
+          ...t,
+          id: `${t.type.toLowerCase()}-${date.toISOString().split('T')[0]}-${idx}`
+        }));
+
+    const strandConfig = STAGE_CONFIGS[stage].fourStrandBalance;
+    weekPlans.push({
+      date: date.toISOString().split('T')[0],
+      dayName: dayNames[i],
+      tasks,
+      isRestDay: isSunday,
+      completedCount: 0,
+      totalCount: tasks.length,
+      strandBreakdown: {
+        input: Math.round(dailyMinutes * strandConfig.input / 100),
+        output: Math.round(dailyMinutes * strandConfig.output / 100),
+        language: Math.round(dailyMinutes * strandConfig.language / 100),
+        fluency: Math.round(dailyMinutes * strandConfig.fluency / 100)
+      }
+    });
   }
+
+  return weekPlans;
+}
 
   async completeTask(idUser: string, idStudyPlan: string, taskId: string, dto: CompleteTaskDto): Promise<{ success: boolean; completed: boolean; completedAt: Date | null }> {
     const taskType = taskId.split('-')[0].toUpperCase();
