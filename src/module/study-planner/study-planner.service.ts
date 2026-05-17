@@ -584,4 +584,107 @@ export class StudyPlannerService {
 
     return { avgBand, stage, vocabStats, grammarStats, completionRate, readinessScore };
   }
+
+  async canTransition(userId: string, targetStage: Stage): Promise<boolean> {
+    const prof = await this.calculateUserProficiency(userId);
+    const transition = STAGE_TRANSITIONS.find(t => t.to === targetStage);
+
+    if (!transition) return false;
+
+    // Check band
+    if (prof.avgBand < transition.conditions.minAvgBand) return false;
+
+    // Check vocab
+    if (prof.vocabStats.mastered < transition.conditions.minVocabMastered) return false;
+
+    // Check grammar
+    const grammarLevel = prof.grammarStats.total > 0
+      ? (prof.grammarStats.strong > prof.grammarStats.weak ? "strong" : "medium")
+      : "unknown";
+    if (grammarLevel !== transition.conditions.minGrammarProficiency &&
+        grammarLevel !== "strong") return false;
+
+    // Check completion rate
+    if (prof.completionRate < transition.conditions.minCompletionRate) return false;
+
+    // Check weeks in stage
+    const preference = await this.db.userStudyPreference.findUnique({
+      where: { idUser: userId }
+    });
+    if ((preference?.weeksInCurrentStage || 0) < transition.conditions.minWeeksInStage) return false;
+
+    return true;
+  }
+
+  async calculateStageProgress(userId: string): Promise<StageProgress> {
+    const prof = await this.calculateUserProficiency(userId);
+    const currentStage = prof.stage;
+
+    const preference = await this.db.userStudyPreference.findUnique({
+      where: { idUser: userId }
+    });
+    const weeksInStage = preference?.weeksInCurrentStage || 0;
+
+    const transition = STAGE_TRANSITIONS.find(t => t.from === currentStage);
+    const nextMilestone = transition ? {
+      stage: transition.to,
+      requirements: [
+        `Band ≥ ${transition.conditions.minAvgBand}`,
+        `Vocab mastered ≥ ${transition.conditions.minVocabMastered}`,
+        `Grammar: ${transition.conditions.minGrammarProficiency}+`,
+        `Completion rate ≥ ${transition.conditions.minCompletionRate * 100}%`
+      ],
+      currentValues: {
+        avgBand: prof.avgBand,
+        vocabMastered: prof.vocabStats.mastered,
+        completionRate: Math.round(prof.completionRate * 100)
+      }
+    } : null;
+
+    return {
+      currentStage,
+      weeksInStage,
+      stageProgressPercent: Math.min(100, Math.round((prof.readinessScore + weeksInStage * 10) / 2)),
+      readinessScore: prof.readinessScore,
+      nextMilestone
+    };
+  }
+
+  getWeeklyTheme(stage: Stage, weekNumber: number): { theme: string; description: string } {
+    const config = STAGE_CONFIGS[stage];
+    return config.themes[weekNumber % config.themes.length];
+  }
+
+  private async getWeakSkills(userId: string, limit: number = 2): Promise<{ input: string[]; output: string[] }> {
+    const results = await this.db.userTestResult.findMany({
+      where: { idUser: userId, status: 'FINISHED' },
+      orderBy: { finishedAt: 'desc' },
+      take: 20,
+      include: { test: { select: { testType: true } } }
+    });
+
+    const skillBands: Record<string, { sum: number; count: number }> = {
+      LISTENING: { sum: 0, count: 0 },
+      READING: { sum: 0, count: 0 },
+      WRITING: { sum: 0, count: 0 },
+      SPEAKING: { sum: 0, count: 0 }
+    };
+
+    for (const r of results) {
+      const skill = r.test.testType;
+      if (r.bandScore > 0) {
+        skillBands[skill].sum += r.bandScore;
+        skillBands[skill].count += 1;
+      }
+    }
+
+    const avgBands = Object.entries(skillBands)
+      .map(([skill, data]) => ({ skill, avg: data.count > 0 ? data.sum / data.count : 5.0 }))
+      .sort((a, b) => a.avg - b.avg);
+
+    const input = avgBands.filter(s => s.skill === 'READING' || s.skill === 'LISTENING').slice(0, limit).map(s => s.skill);
+    const output = avgBands.filter(s => s.skill === 'WRITING' || s.skill === 'SPEAKING').slice(0, limit).map(s => s.skill);
+
+    return { input, output };
+  }
 }
