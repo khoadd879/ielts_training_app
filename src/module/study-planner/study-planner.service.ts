@@ -140,10 +140,13 @@ interface DailyTask {
   type: 'READING' | 'LISTENING' | 'WRITING' | 'SPEAKING' | 'VOCABULARY' | 'GRAMMAR';
   name: string;
   description: string;
+  reason: string;
   completed: boolean;
   route: string;
   routeParams: Record<string, any>;
   estimatedMinutes: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  strand: 'input' | 'output' | 'language' | 'fluency';
 }
 
 interface DayPlan {
@@ -211,10 +214,12 @@ export class StudyPlannerService {
     const isRealistic = bandGap <= maxPossibleGain * 1.5;
 
     // Generate daily tasks
-    const dailyTasks = await this.generateDailyTasks(studyMinutesPerDay);
+    const prof = await this.calculateUserProficiency(dto.idUser);
+    const weeklyTheme = this.getWeeklyTheme(prof.stage, Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)));
+    const dailyTasks = await this.generateDailyTasks(dto.idUser, prof.stage, weeklyTheme.theme, studyMinutesPerDay);
 
     // Generate weekly plan
-    const weeklyPlan = await this.generateWeeklyPlan(studyMinutesPerDay);
+    const weeklyPlan = await this.generateWeeklyPlan(dto.idUser, prof.stage, weeklyTheme.theme, studyMinutesPerDay);
 
     // Generate response
     const plan: StudyPlan = {
@@ -339,68 +344,165 @@ export class StudyPlannerService {
     ];
   }
 
-  private async generateDailyTasks(studyMinutesPerDay: number): Promise<DailyTask[]> {
-    const tasks: DailyTask[] = [];
-    const time = studyMinutesPerDay;
+  private async generateDailyTasks(
+  userId: string,
+  stage: Stage,
+  theme: string,
+  totalMinutes: number
+): Promise<DailyTask[]> {
+  const tasks: DailyTask[] = [];
+  const prof = await this.calculateUserProficiency(userId);
 
-    if (time <= 30) {
-      tasks.push(await this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện yếu điểm Reading', 20));
-      tasks.push(await this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', 'Ôn từ đã học', 10));
-    } else if (time <= 60) {
-      tasks.push(await this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện yếu điểm Reading', 20));
-      tasks.push(await this.createTask('SPEAKING', 'Luyện Speaking Part 3', 'Cải thiện Speaking', 15));
-      tasks.push(await this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', '15 từ cần ôn', 15));
-      tasks.push(await this.createTask('GRAMMAR', 'Luyện Verb Tenses', 'Grammar yếu cần cải thiện', 10));
-    } else if (time <= 90) {
-      tasks.push(await this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện yếu điểm Reading', 20));
-      tasks.push(await this.createTask('LISTENING', 'Luyện nghe', 'Cải thiện Listening', 20));
-      tasks.push(await this.createTask('SPEAKING', 'Luyện Speaking Part 3', 'Cải thiện Speaking', 15));
-      tasks.push(await this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', '15 từ cần ôn', 15));
-      tasks.push(await this.createTask('GRAMMAR', 'Luyện Verb Tenses', 'Grammar yếu cần cải thiện', 10));
-    } else {
-      tasks.push(await this.createTask('READING', 'Luyện đọc Passage', 'Cải thiện Reading', 20));
-      tasks.push(await this.createTask('LISTENING', 'Luyện nghe', 'Cải thiện Listening', 20));
-      tasks.push(await this.createTask('WRITING', 'Luyện viết Essay', 'Cải thiện Writing', 20));
-      tasks.push(await this.createTask('SPEAKING', 'Luyện Speaking Part 3', 'Cải thiện Speaking', 20));
-      tasks.push(await this.createTask('VOCABULARY', 'Học từ vựng (SM-2)', '15 từ cần ôn', 15));
-      tasks.push(await this.createTask('GRAMMAR', 'Luyện Verb Tenses', 'Grammar yếu cần cải thiện', 15));
-    }
-    return tasks;
+  // Get weak skills
+  const weakSkills = await this.getWeakSkills(userId, 2);
+
+  // Get strand config for stage
+  const strandConfig = STAGE_CONFIGS[stage].fourStrandBalance;
+
+  // Calculate minutes per strand
+  const inputMinutes = Math.round(totalMinutes * strandConfig.input / 100);
+  const outputMinutes = Math.round(totalMinutes * strandConfig.output / 100);
+  const languageMinutes = Math.round(totalMinutes * strandConfig.language / 100);
+  const fluencyMinutes = Math.round(totalMinutes * strandConfig.fluency / 100);
+
+  // Input tasks (Reading + Listening)
+  if (inputMinutes > 0 && weakSkills.input.length > 0) {
+    const skill = weakSkills.input[0];
+    tasks.push(await this.createInputTask(skill, theme, Math.min(inputMinutes, 25), prof.avgBand));
   }
 
-  private async createTask(type: 'READING' | 'LISTENING' | 'WRITING' | 'SPEAKING' | 'VOCABULARY' | 'GRAMMAR', name: string, description: string, minutes: number): Promise<DailyTask> {
-    const routeMap: Record<string, { route: string; paramKey: string; paramValue?: string }> = {
-      READING: { route: '/doTest', paramKey: 'skill', paramValue: 'READING' },
-      LISTENING: { route: '/doTest', paramKey: 'skill', paramValue: 'LISTENING' },
-      WRITING: { route: '/doTest', paramKey: 'skill', paramValue: 'WRITING' },
-      SPEAKING: { route: '/doTest', paramKey: 'skill', paramValue: 'SPEAKING' },
-      VOCABULARY: { route: '/vocabulary', paramKey: 'mode', paramValue: 'review' },
-      GRAMMAR: { route: '/grammar', paramKey: 'idGrammar' },
-    };
-    const mapping = routeMap[type];
-
-    // For GRAMMAR, get actual grammar ID from database dynamically
-    let paramValue = mapping.paramValue;
-    if (type === 'GRAMMAR') {
-      const grammar = await this.db.grammar.findFirst({
-        orderBy: { createdAt: 'desc' }
-      });
-      paramValue = grammar?.idGrammar || 'verb-tenses'; // fallback
-    }
-
-    return {
-      id: `${type.toLowerCase()}-${Date.now()}`,
-      type,
-      name,
-      description,
-      completed: false,
-      route: mapping.route,
-      routeParams: { [mapping.paramKey]: paramValue },
-      estimatedMinutes: minutes,
-    };
+  // Output tasks (Writing + Speaking)
+  if (outputMinutes > 0 && weakSkills.output.length > 0) {
+    const skill = weakSkills.output[0];
+    tasks.push(await this.createOutputTask(skill, theme, Math.min(outputMinutes, 25), prof.avgBand));
   }
 
-  private async generateWeeklyPlan(dailyMinutes: number): Promise<DayPlan[]> {
+  // Language tasks (Vocab)
+  if (languageMinutes > 0 && prof.vocabStats.totalWords > 0) {
+    tasks.push(this.createVocabTask(Math.min(languageMinutes - 10, 15)));
+  }
+
+  // Language tasks (Grammar)
+  if (languageMinutes > 10) {
+    const grammarWeak = await this.getGrammarWeakAreas(userId, 1);
+    if (grammarWeak.length > 0) {
+      tasks.push(await this.createGrammarTask(grammarWeak[0], Math.min(10, 15)));
+    }
+  }
+
+  // Fluency task
+  if (fluencyMinutes >= 10) {
+    tasks.push(this.createFluencyTask(stage, Math.min(fluencyMinutes, 15)));
+  }
+
+  return tasks;
+}
+
+  private async createInputTask(skill: string, theme: string, minutes: number, avgBand: number): Promise<DailyTask> {
+  const skillLabel = skill === 'READING' ? 'đọc' : 'nghe';
+  const difficulty = avgBand < 5.5 ? 'easy' : avgBand < 6.5 ? 'medium' : 'hard';
+
+  return {
+    id: `input-${skill.toLowerCase()}-${Date.now()}`,
+    type: skill as 'READING' | 'LISTENING',
+    name: `Luyện ${skillLabel} - ${theme}`,
+    description: `Cải thiện yếu điểm: ${skill} band thấp`,
+    reason: `Weak skill detected: ${skill} là kỹ năng yếu nhất của bạn`,
+    completed: false,
+    route: '/doTest',
+    routeParams: { skill, practice: true },
+    estimatedMinutes: minutes,
+    difficulty,
+    strand: 'input'
+  };
+}
+
+private async createOutputTask(skill: string, theme: string, minutes: number, avgBand: number): Promise<DailyTask> {
+  const skillLabel = skill === 'WRITING' ? 'viết' : 'nói';
+  const difficulty = avgBand < 5.5 ? 'easy' : avgBand < 6.5 ? 'medium' : 'hard';
+
+  return {
+    id: `output-${skill.toLowerCase()}-${Date.now()}`,
+    type: skill as 'WRITING' | 'SPEAKING',
+    name: `Rèn ${skillLabel} - ${theme}`,
+    description: `Cải thiện yếu điểm: ${skill} band thấp`,
+    reason: `Weak skill detected: ${skill} cần được cải thiện`,
+    completed: false,
+    route: '/doTest',
+    routeParams: { skill, practice: true },
+    estimatedMinutes: minutes,
+    difficulty,
+    strand: 'output'
+  };
+}
+
+private createVocabTask(minutes: number): DailyTask {
+  return {
+    id: `vocab-${Date.now()}`,
+    type: 'VOCABULARY',
+    name: 'Học từ vựng (SM-2)',
+    description: 'Ôn từ vựng theo lịch trình spaced repetition',
+    reason: 'Vocab là nền tảng của mọi kỹ năng IELTS',
+    completed: false,
+    route: '/vocabulary',
+    routeParams: { mode: 'review' },
+    estimatedMinutes: minutes,
+    difficulty: 'medium',
+    strand: 'language'
+  };
+}
+
+private async createGrammarTask(grammar: any, minutes: number): Promise<DailyTask> {
+  return {
+    id: `grammar-${Date.now()}`,
+    type: 'GRAMMAR',
+    name: `Luyện ${grammar.title || 'ngữ pháp'}`,
+    description: grammar.explanation ? grammar.explanation.substring(0, 50) + '...' : 'Cải thiện ngữ pháp yếu',
+    reason: 'Grammar là điểm yếu được xác định từ bài kiểm tra',
+    completed: false,
+    route: '/grammar',
+    routeParams: { idGrammar: grammar.idGrammar },
+    estimatedMinutes: minutes,
+    difficulty: 'medium',
+    strand: 'language'
+  };
+}
+
+private createFluencyTask(stage: Stage, minutes: number): DailyTask {
+  const taskNames: Record<Stage, string> = {
+    [Stage.FOUNDATION]: 'Luyện phát âm cơ bản',
+    [Stage.SKILL_BUILDING]: 'Luyện nói theo chủ đề',
+    [Stage.INTEGRATION]: 'Tự tin giao tiếp',
+    [Stage.EXAM_PREP]: 'Mô phỏng phỏng vấn'
+  };
+
+  return {
+    id: `fluency-${Date.now()}`,
+    type: 'SPEAKING',
+    name: taskNames[stage],
+    description: 'Rèn luyện sự mạnh dạn trong giao tiếp',
+    reason: 'Fluency cần được rèn luyện đều đặn',
+    completed: false,
+    route: '/doTest',
+    routeParams: { skill: 'SPEAKING', practice: true },
+    estimatedMinutes: minutes,
+    difficulty: 'medium',
+    strand: 'fluency'
+  };
+}
+
+private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]> {
+  const proficiencies = await this.db.userGrammarProficiency.findMany({
+    where: { idUser: userId, proficiency: { in: ['weak', 'unknown'] } },
+    take: limit,
+    include: { grammar: true },
+    orderBy: { updatedAt: 'asc' }
+  });
+
+  return proficiencies.map(p => p.grammar);
+}
+
+  private async generateWeeklyPlan(userId: string, stage: Stage, theme: string, dailyMinutes: number): Promise<DayPlan[]> {
     const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
     const today = new Date();
     const startOfWeek = new Date(today);
@@ -411,7 +513,7 @@ export class StudyPlannerService {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
       const isSunday = i === 0;
-      const tasks = isSunday ? [] : (await this.generateDailyTasks(dailyMinutes)).map(t => ({ ...t, id: `${t.type.toLowerCase()}-${date.toISOString().split('T')[0]}` }));
+      const tasks = isSunday ? [] : (await this.generateDailyTasks(userId, stage, theme, dailyMinutes)).map(t => ({ ...t, id: `${t.type.toLowerCase()}-${date.toISOString().split('T')[0]}` }));
       weekPlans.push({ date: date.toISOString().split('T')[0], dayName: dayNames[i], tasks, isRestDay: isSunday, completedCount: 0, totalCount: tasks.length });
     }
     return weekPlans;
