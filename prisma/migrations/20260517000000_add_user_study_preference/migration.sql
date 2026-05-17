@@ -1,0 +1,1 @@
+CREATE TABLE "user_study_preference" ( "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(), "idUser" TEXT UNIQUE NOT NULL, "dailyMinutesAvailable" INT DEFAULT 60, "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP );

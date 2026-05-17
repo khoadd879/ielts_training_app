@@ -927,6 +927,9 @@ model UserStudyPreference {
   id                    String   @id @default(uuid())
   idUser                String   @unique
   dailyMinutesAvailable Int      @default(60)
+  currentStage          String   @default("FOUNDATION")
+  weeksInCurrentStage   Int      @default(0)
+  stageStartDate        DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
   user User @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
