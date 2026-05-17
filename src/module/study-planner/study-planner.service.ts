@@ -184,6 +184,13 @@ interface StudyPlan {
     status: 'warn' | 'ok';
     message: string;
   };
+  // Stage info fields
+  userProficiency: UserProficiency;
+  currentStage: Stage;
+  stageProgress: StageProgress;
+  stageTheme: string;
+  stageThemeDescription: string;
+  stageNextMilestone?: { stage: string; requirements: string[] };
 }
 
 interface FourStrandBalance {
@@ -221,13 +228,15 @@ export class StudyPlannerService {
 
     // Generate daily tasks
     const prof = await this.calculateUserProficiency(dto.idUser);
-    const weeklyTheme = this.getWeeklyTheme(prof.stage, Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)));
-    const dailyTasks = await this.generateDailyTasks(dto.idUser, prof.stage, weeklyTheme.theme, studyMinutesPerDay);
+    const theme = this.getWeeklyTheme(prof.stage, Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)));
+    const dailyTasks = await this.generateDailyTasks(dto.idUser, prof.stage, theme.theme, studyMinutesPerDay);
 
     // Generate weekly plan
     const weeklyPlan = await this.generateWeeklyPlan(studyMinutesPerDay, prof.stage, 0);
 
     // Generate response
+    const stageProgress = await this.calculateStageProgress(dto.idUser);
+
     const plan: StudyPlan = {
       isRealistic,
       currentBand,
@@ -243,6 +252,15 @@ export class StudyPlannerService {
       motivationTips: this.generateMotivationTips(currentBand, targetBand, daysUntilExam),
       metacognitivePrompts: this.generateMetacognitivePrompts(),
       recommendation: this.getRecommendation(studyMinutesPerDay, currentBand, targetBand),
+      userProficiency: prof,
+      currentStage: prof.stage,
+      stageProgress,
+      stageTheme: theme.theme,
+      stageThemeDescription: theme.description,
+      stageNextMilestone: stageProgress.nextMilestone ? {
+        stage: stageProgress.nextMilestone.stage,
+        requirements: stageProgress.nextMilestone.requirements
+      } : undefined,
     };
 
     if (!isRealistic) {
