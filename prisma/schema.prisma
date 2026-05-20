@@ -468,11 +468,29 @@ model UserGrammarProficiency {
   idUser      String
   idGrammar   String
   proficiency String   // "unknown" | "weak" | "medium" | "strong"
+  totalAttempts Int @default(0)
+  correctCount  Int @default(0)
+  wrongCount    Int @default(0)
   updatedAt   DateTime @updatedAt
 
   grammar     Grammar  @relation(fields: [idGrammar], references: [idGrammar])
 
   @@id([idUser, idGrammar])
+}
+
+model UserGrammarViolation {
+  id            String @id @default(uuid())
+  idUser        String
+  source        String // "WRITING" | "SPEAKING"
+  idGrammar     String
+
+  submissionId  String
+  userSentence String
+  correctedSentence String
+
+  createdAt DateTime @default(now())
+
+  @@index([idUser, idGrammar])
 }
 
 model UserGrammarExerciseResult {
@@ -902,6 +920,28 @@ model AuditLog {
   @@index([action, createdAt])
   @@index([targetType, targetId])
   @@index([createdAt])
+}
+
+// ============================================================================
+// QUESTION TYPE PERFORMANCE
+// ============================================================================
+
+model QuestionTypePerformance {
+  id            String @id @default(uuid())
+  idUser        String
+  skillType     String // "READING" | "LISTENING"
+  questionType  String // QuestionType enum values
+
+  // Stats
+  totalAttempts Int @default(0)
+  correctCount  Int @default(0)
+
+  // Computed
+  errorRate     Float @default(0)
+
+  lastAttemptAt DateTime?
+
+  @@unique([idUser, skillType, questionType])
 }
 
 // ============================================================================
