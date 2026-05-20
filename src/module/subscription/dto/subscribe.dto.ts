@@ -1,20 +1,16 @@
 import { IsString, IsUUID, IsOptional } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SubscribeDto {
   @ApiProperty()
   @IsUUID()
   idPackage: string;
 
-  @ApiProperty({ description: 'Payment reference (from payment gateway)' })
-  @IsString()
-  paymentRef: string;
-
-  @ApiProperty({ enum: ['MOMO', 'VNPAY', 'STRIPE', 'BANK_TRANSFER'] })
-  @IsString()
-  paymentMethod: string;
-
-  @ApiProperty({ description: 'Auto-renew subscription', required: false })
+  @ApiPropertyOptional({
+    description:
+      'Optional VNPay bank/method code: VNPAYQR | VNBANK | INTCARD | NCB | VCB | ...',
+  })
   @IsOptional()
-  autoRenew?: boolean;
+  @IsString()
+  bankCode?: string;
 }

@@ -6,6 +6,8 @@ import {
   Body,
   UseGuards,
   Request,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from 'src/decorator/customize';
@@ -13,11 +15,16 @@ import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 import { SubscriptionService } from './subscription.service';
 import { CreateSubscriptionPackageDto } from './dto/create-subscription-package.dto';
 import { SubscribeDto } from './dto/subscribe.dto';
+import { PaymentService } from '../payment/payment.service';
 
 @ApiTags('subscriptions')
 @Controller('subscriptions')
 export class SubscriptionController {
-  constructor(private readonly subscriptionService: SubscriptionService) {}
+  constructor(
+    private readonly subscriptionService: SubscriptionService,
+    @Inject(forwardRef(() => PaymentService))
+    private readonly paymentService: PaymentService,
+  ) {}
 
   // ===== User Routes =====
 
@@ -35,15 +42,28 @@ export class SubscriptionController {
     return this.subscriptionService.getActivePackages();
   }
 
+  /**
+   * Subscribe routes through VNPay payment.
+   * Returns JSON `{ paymentUrl, idTransaction, vnpTxnRef }` — the actual
+   * subscription is activated only after VNPay's IPN confirms payment.
+   */
   @Post('subscribe')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async subscribe(
-    @Request() req: any,
-    @Body() dto: SubscribeDto,
-  ) {
+  async subscribe(@Request() req: any, @Body() dto: SubscribeDto) {
     const { userId } = req.user;
-    return this.subscriptionService.subscribe(userId, dto);
+    const forwarded = (req.headers['x-forwarded-for'] as string | undefined)
+      ?.split(',')[0]
+      ?.trim();
+    const ipAddress = forwarded || req.ip || '0.0.0.0';
+
+    return this.paymentService.createPaymentUrl({
+      idUser: userId,
+      idPackage: dto.idPackage,
+      packageType: 'SUBSCRIPTION',
+      ipAddress,
+      bankCode: dto.bankCode,
+    });
   }
 
   @Put('cancel')
