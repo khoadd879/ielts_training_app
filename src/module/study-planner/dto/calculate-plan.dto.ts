@@ -6,17 +6,19 @@ export class CalculatePlanDto {
   @IsString()
   idUser: string;
 
-  @ApiProperty({ description: 'Current band score (average of 4 skills)', minimum: 0, maximum: 9 })
+  @ApiPropertyOptional({ description: 'Current band score (average of 4 skills)', minimum: 0, maximum: 9 })
+  @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(9)
-  currentBand: number;
+  currentBand?: number | null;
 
-  @ApiProperty({ description: 'Target band score', minimum: 0, maximum: 9 })
+  @ApiPropertyOptional({ description: 'Target band score', minimum: 0, maximum: 9 })
+  @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(9)
-  targetBand: number;
+  targetBand?: number | null;
 
   @ApiProperty({ description: 'Days until exam date', maximum: 365 })
   @IsNumber()

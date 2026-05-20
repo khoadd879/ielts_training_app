@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { DatabaseService } from 'src/database/database.service';
 import { CalculatePlanDto } from './dto/calculate-plan.dto';
 import { CompleteTaskDto } from './dto/complete-task.dto';
@@ -168,8 +170,8 @@ interface StudyPlan {
   isRealistic: boolean;
   warning?: string;
   adjustedTarget?: number;
-  currentBand: number;
-  targetBand: number;
+  currentBand: number | null;  // null = needs placement test
+  targetBand: number | null;   // null = needs to set target
   daysUntilExam: number;
   maxPossibleGain: number;
   dailyMinutes: number;
@@ -202,14 +204,28 @@ interface FourStrandBalance {
 
 @Injectable()
 export class StudyPlannerService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    @Inject(CACHE_MANAGER) private cache: Cache,
+  ) {}
 
   /**
    * Calculate realistic target and generate study plan
    * Based on research-based band improvement rates
    */
   async calculatePlan(dto: CalculatePlanDto): Promise<StudyPlan> {
+    console.log('[StudyPlannerService] calculatePlan called with:', JSON.stringify(dto));
+    try {
     const { currentBand, targetBand, daysUntilExam, studyMinutesPerDay = 120 } = dto;
+
+    // Validate required fields
+    if (currentBand === null || currentBand === undefined) {
+      throw new BadRequestException('Placement test required. Please take the assessment to determine your current band.');
+    }
+    if (targetBand === null || targetBand === undefined) {
+      throw new BadRequestException('Target band required. Please set your target band in settings.');
+    }
+
     const bandGap = targetBand - currentBand;
 
     // Calculate max possible gain based on research rates
@@ -227,15 +243,21 @@ export class StudyPlannerService {
     const isRealistic = bandGap <= maxPossibleGain * 1.5;
 
     // Generate daily tasks
+    console.log('[StudyPlannerService] Calling calculateUserProficiency for:', dto.idUser);
     const prof = await this.calculateUserProficiency(dto.idUser);
+    console.log('[StudyPlannerService] Prof result:', JSON.stringify(prof));
     const theme = this.getWeeklyTheme(prof.stage, Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)));
+    console.log('[StudyPlannerService] Theme:', JSON.stringify(theme));
     const dailyTasks = await this.generateDailyTasks(dto.idUser, prof.stage, theme.theme, studyMinutesPerDay);
+    console.log('[StudyPlannerService] Daily tasks count:', dailyTasks.length);
 
     // Generate weekly plan
-    const weeklyPlan = await this.generateWeeklyPlan(studyMinutesPerDay, prof.stage, 0);
+    const weeklyPlan = await this.generateWeeklyPlan(dto.idUser, studyMinutesPerDay, prof.stage, 0);
+    console.log('[StudyPlannerService] Weekly plan count:', weeklyPlan.length);
 
     // Generate response
     const stageProgress = await this.calculateStageProgress(dto.idUser);
+    console.log('[StudyPlannerService] Stage progress:', JSON.stringify(stageProgress));
 
     const plan: StudyPlan = {
       isRealistic,
@@ -269,6 +291,10 @@ export class StudyPlannerService {
     }
 
     return plan;
+    } catch (error) {
+      console.error('[StudyPlannerService] calculatePlan error:', error);
+      throw error;
+    }
   }
 
   private getRecommendation(minutes: number, currentBand: number, targetBand: number): { status: 'warn' | 'ok'; message: string } {
@@ -377,8 +403,11 @@ export class StudyPlannerService {
   const tasks: DailyTask[] = [];
   const prof = await this.calculateUserProficiency(userId);
 
-  // Get weak skills
-  const weakSkills = await this.getWeakSkills(userId, 2);
+  // Determine if user has actual history
+  const hasActualHistory = prof.avgBand !== 5.0 || prof.vocabStats.totalWords > 0 || prof.grammarStats.total > 0;
+
+  // Get weak skills (empty if no history)
+  const weakSkills = hasActualHistory ? await this.getWeakSkills(userId, 2) : { input: [], output: [] };
 
   // Get strand config for stage
   const strandConfig = STAGE_CONFIGS[stage].fourStrandBalance;
@@ -389,6 +418,26 @@ export class StudyPlannerService {
   const languageMinutes = Math.round(totalMinutes * strandConfig.language / 100);
   const fluencyMinutes = Math.round(totalMinutes * strandConfig.fluency / 100);
 
+  // For new users without history - add foundational tasks based on stage
+  if (!hasActualHistory) {
+    // Foundation stage: prioritize vocab and basic grammar
+    if (languageMinutes >= 10) {
+      tasks.push(this.createVocabTask(15));
+      tasks.push(await this.createBasicGrammarTask(10));
+    }
+    if (inputMinutes >= 15) {
+      tasks.push(await this.createInputTask('READING', theme, 20, 5.0));
+    }
+    if (outputMinutes >= 10) {
+      tasks.push(await this.createOutputTask('SPEAKING', theme, 15, 5.0));
+    }
+    if (fluencyMinutes >= 10) {
+      tasks.push(this.createFluencyTask(stage, 10));
+    }
+    return tasks;
+  }
+
+  // For users with history - use weak skills detection
   // Input tasks (Reading + Listening)
   if (inputMinutes > 0 && weakSkills.input.length > 0) {
     const skill = weakSkills.input[0];
@@ -515,6 +564,23 @@ private createFluencyTask(stage: Stage, minutes: number): DailyTask {
   };
 }
 
+private async createBasicGrammarTask(minutes: number): Promise<DailyTask> {
+  const grammar = await this.getBasicGrammar();
+  return {
+    id: `basic-grammar-${Date.now()}`,
+    type: 'GRAMMAR',
+    name: grammar ? `Luyện ${grammar.title}` : 'Học ngữ pháp cơ bản',
+    description: grammar?.explanation?.substring(0, 50) || 'Nền tảng ngữ pháp IELTS',
+    reason: 'Ngữ pháp là nền tảng cho mọi kỹ năng',
+    completed: false,
+    route: '/grammar',
+    routeParams: { idGrammar: grammar?.idGrammar || 'basic' },
+    estimatedMinutes: minutes,
+    difficulty: 'easy',
+    strand: 'language'
+  };
+}
+
 private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]> {
   const proficiencies = await this.db.userGrammarProficiency.findMany({
     where: { idUser: userId, proficiency: { in: ['weak', 'unknown'] } },
@@ -526,11 +592,71 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
   return proficiencies.map(p => p.grammar);
 }
 
-  private async generateWeeklyPlan(dailyMinutes: number, stage: Stage, weekOffset: number = 0): Promise<DayPlan[]> {
+private async getBasicGrammar(): Promise<any | null> {
+  // Get a basic grammar for new users (e.g., verb tenses or basic sentence structure)
+  const grammar = await this.db.grammar.findFirst({
+    where: { level: 'Low' },
+    orderBy: { order: 'asc' }
+  });
+  return grammar;
+}
+
+private createFallbackTask(stage: Stage, minutes: number): DailyTask {
+  // For very new users with no data at all
+  const fallbackTaskNames: Record<Stage, string> = {
+    [Stage.FOUNDATION]: 'Học từ vựng cơ bản',
+    [Stage.SKILL_BUILDING]: 'Luyện đọc cơ bản',
+    [Stage.INTEGRATION]: 'Luyện viết câu',
+    [Stage.EXAM_PREP]: 'Luyện đề IELTS'
+  };
+
+  return {
+    id: `fallback-${Date.now()}`,
+    type: 'VOCABULARY',
+    name: fallbackTaskNames[stage],
+    description: 'Bắt đầu hành trình IELTS của bạn với bài học cơ bản',
+    reason: 'Đây là những bài học nền tảng cho người mới bắt đầu',
+    completed: false,
+    route: '/vocabulary',
+    routeParams: { mode: 'learn' },
+    estimatedMinutes: minutes,
+    difficulty: 'easy',
+    strand: 'language'
+  };
+}
+
+  private async generateWeeklyPlan(userId: string, dailyMinutes: number, stage: Stage, weekOffset: number = 0): Promise<DayPlan[]> {
+  const cacheKey = `weekly:${userId}:${weekOffset}`;
+  const cached = await this.cache.get<DayPlan[]>(cacheKey);
+  if (cached) return cached;
+
   const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
   const today = new Date();
   const startOfWeek = new Date(today);
   startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+
+  // Get week start and end for completion query
+  const weekStart = new Date(startOfWeek);
+  weekStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(startOfWeek);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+
+  // Query all completions for the week in 1 query
+  const allCompletions = await this.db.userDailyTaskCompletion.findMany({
+    where: {
+      idUser: userId,
+      date: { gte: weekStart, lte: weekEnd },
+      completed: true
+    }
+  });
+
+  // Map completions by date
+  const completionMap = new Map<string, number>();
+  for (const c of allCompletions) {
+    const dateKey = c.date.toISOString().split('T')[0];
+    completionMap.set(dateKey, (completionMap.get(dateKey) || 0) + 1);
+  }
 
   const weekPlans: DayPlan[] = [];
   const theme = this.getWeeklyTheme(stage, weekOffset);
@@ -539,21 +665,22 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
     const date = new Date(startOfWeek);
     date.setDate(startOfWeek.getDate() + i);
     const isSunday = i === 0;
+    const dateStr = date.toISOString().split('T')[0];
 
     const tasks = isSunday
       ? []
-      : (await this.generateDailyTasks('', stage, theme.theme, dailyMinutes)).map((t, idx) => ({
+      : (await this.generateDailyTasks(userId, stage, theme.theme, dailyMinutes)).map((t, idx) => ({
           ...t,
-          id: `${t.type.toLowerCase()}-${date.toISOString().split('T')[0]}-${idx}`
+          id: `${t.type.toLowerCase()}-${dateStr}-${idx}`
         }));
 
     const strandConfig = STAGE_CONFIGS[stage].fourStrandBalance;
     weekPlans.push({
-      date: date.toISOString().split('T')[0],
+      date: dateStr,
       dayName: dayNames[i],
       tasks,
       isRestDay: isSunday,
-      completedCount: 0,
+      completedCount: completionMap.get(dateStr) || 0,
       totalCount: tasks.length,
       strandBreakdown: {
         input: Math.round(dailyMinutes * strandConfig.input / 100),
@@ -563,6 +690,11 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
       }
     });
   }
+
+  // Cache for 1 minute
+  await this.cache.set(cacheKey, weekPlans, 60);
+
+  return weekPlans;
 
   return weekPlans;
 }
@@ -578,14 +710,77 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
       create: { idUser, idStudyPlan, taskType: taskType.toUpperCase(), date: today, completed: dto.completed, completedAt },
       update: { completed: dto.completed, completedAt },
     });
+
+    // Check if user can transition to next stage
+    if (dto.completed) {
+      await this.checkAndTransitionStage(idUser);
+    }
+
+    // Invalidate weekly plan cache
+    await this.cache.del(`weekly:${idUser}:0`);
+    await this.cache.del(`weekly:${idUser}:1`);
+
     return { success: true, completed: dto.completed, completedAt };
+  }
+
+  private async checkAndTransitionStage(userId: string): Promise<void> {
+    const prof = await this.calculateUserProficiency(userId);
+    const currentStage = prof.stage;
+
+    // Find the transition from current stage to next
+    const transition = STAGE_TRANSITIONS.find(t => t.from === currentStage);
+    if (!transition) return; // Already at highest stage (EXAM_PREP)
+
+    // Calculate weeks in current stage
+    const preference = await this.db.userStudyPreference.findUnique({
+      where: { idUser: userId }
+    });
+
+    let weeksInStage = 0;
+    if (preference?.stageStartDate) {
+      const now = new Date();
+      const startDate = new Date(preference.stageStartDate);
+      const daysDiff = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      weeksInStage = Math.floor(daysDiff / 7);
+    }
+
+    // Check all conditions
+    const canTransition =
+      prof.avgBand >= transition.conditions.minAvgBand &&
+      prof.vocabStats.mastered >= transition.conditions.minVocabMastered &&
+      this.checkGrammarLevel(prof.grammarStats, transition.conditions.minGrammarProficiency) &&
+      prof.completionRate >= transition.conditions.minCompletionRate &&
+      weeksInStage >= transition.conditions.minWeeksInStage;
+
+    if (canTransition) {
+      // Transition to next stage
+      await this.db.userStudyPreference.update({
+        where: { idUser: userId },
+        data: {
+          currentStage: transition.to,
+          stageStartDate: new Date(),
+          weeksInCurrentStage: 0
+        }
+      });
+    }
+  }
+
+  private checkGrammarLevel(grammarStats: GrammarStats, minLevel: string): boolean {
+    if (minLevel === 'weak') return true;
+    if (minLevel === 'medium') {
+      return grammarStats.total > 0 && (grammarStats.strong > 0 || grammarStats.medium > 0);
+    }
+    if (minLevel === 'strong') {
+      return grammarStats.strong > grammarStats.weak;
+    }
+    return false;
   }
 
   async getUserStudyPlan(idUser: string) {
     try {
       const user = await this.db.user.findUnique({ where: { idUser }, select: { targetBandScore: true, targetExamDate: true } });
       if (!user) {
-        throw new Error(`User not found: ${idUser}`);
+        throw new NotFoundException(`User with ID ${idUser} not found`);
       }
 
       const recentResults = await this.db.userTestResult.findMany({
@@ -601,20 +796,45 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
         if (result.bandScore > 0) skillBands[skill].push(result.bandScore);
       }
 
-      let currentBand = 5.0;
+      let currentBand: number | null = null;
       if (recentResults.length > 0) {
         const allBands = Object.values(skillBands).flat();
-        if (allBands.length > 0) currentBand = allBands.reduce((a, b) => a + b, 0) / allBands.length;
+        if (allBands.length > 0) currentBand = Math.round((allBands.reduce((a, b) => a + b, 0) / allBands.length) * 10) / 10;
       }
 
       const daysUntilExam = user.targetExamDate ? Math.max(1, Math.ceil((user.targetExamDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 60;
       const preference = await this.db.userStudyPreference.findUnique({ where: { idUser } });
       const studyMinutesPerDay = preference?.dailyMinutesAvailable || 120;
 
+      // Only require currentBand to exist. targetBand can be null (user hasn't set target yet).
+      if (currentBand === null) {
+        return {
+          isRealistic: false,
+          currentBand: null,
+          targetBand: user.targetBandScore,
+          daysUntilExam,
+          maxPossibleGain: 0,
+          dailyMinutes: studyMinutesPerDay,
+          dailyTasks: [],
+          weeklyPlan: [],
+          fourStrandBalance: { input: 0, output: 0, language: 0, fluency: 0 },
+          difficultyLevel: 'standard' as const,
+          motivationTips: [],
+          metacognitivePrompts: [],
+          recommendation: { status: 'warn', message: 'Vui lòng hoàn thành bài đánh giá trình độ để xác định band hiện tại.' },
+          userProficiency: { avgBand: 0, stage: Stage.FOUNDATION, vocabStats: { totalWords: 0, mastered: 0, learning: 0, new: 0 }, grammarStats: { total: 0, strong: 0, medium: 0, weak: 0, unknown: 0 }, completionRate: 0, readinessScore: 0 },
+          currentStage: Stage.FOUNDATION,
+          stageProgress: { currentStage: Stage.FOUNDATION, weeksInStage: 0, stageProgressPercent: 0, readinessScore: 0, nextMilestone: null },
+          stageTheme: '',
+          stageThemeDescription: '',
+        };
+      }
+
+      // Call calculatePlan - it will validate and throw if targetBand is null
       return this.calculatePlan({
         idUser,
-        currentBand: Math.round(currentBand * 10) / 10,
-        targetBand: user.targetBandScore || 6.5,
+        currentBand,
+        targetBand: user.targetBandScore,  // can be null, calculatePlan will throw BadRequestException
         daysUntilExam,
         studyMinutesPerDay,
       });
@@ -633,7 +853,7 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
     return { success: true, dailyMinutesAvailable };
   }
 
-  private async calculateAvgBand(userId: string): Promise<number> {
+  private async calculateAvgBand(userId: string): Promise<{ band: number; hasHistory: boolean }> {
     const results = await this.db.userTestResult.findMany({
       where: { idUser: userId, status: 'FINISHED' },
       orderBy: { finishedAt: 'desc' },
@@ -647,9 +867,10 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
     }
 
     const allBands = Object.values(skillBands).flat();
-    return allBands.length > 0
-      ? Math.round((allBands.reduce((a, b) => a + b, 0) / allBands.length) * 10) / 10
-      : 5.0;
+    return {
+      band: allBands.length > 0 ? Math.round((allBands.reduce((a, b) => a + b, 0) / allBands.length) * 10) / 10 : 5.0,
+      hasHistory: allBands.length > 0
+    };
   }
 
   private async calculateVocabMastery(userId: string): Promise<VocabStats> {
@@ -706,19 +927,34 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
   }
 
   async calculateUserProficiency(userId: string): Promise<UserProficiency> {
-    const [avgBand, vocabStats, grammarStats, completionRate] = await Promise.all([
+    const cacheKey = `proficiency:${userId}`;
+    const cached = await this.cache.get<UserProficiency>(cacheKey);
+    if (cached) return cached;
+
+    const [avgBandResult, vocabStats, grammarStats, completionRate] = await Promise.all([
       this.calculateAvgBand(userId),
       this.calculateVocabMastery(userId),
       this.calculateGrammarProficiency(userId),
       this.calculateCompletionRate(userId)
     ]);
 
-    // Determine stage based on band
+    const avgBand = avgBandResult.band;
+    const hasTestHistory = avgBandResult.hasHistory;
+
+    // For new users with no history, start in FOUNDATION regardless of targetBand
+    // Stage is determined by actual proficiency, not target
     let stage: Stage;
-    if (avgBand < 5.0) stage = Stage.FOUNDATION;
-    else if (avgBand < 6.0) stage = Stage.SKILL_BUILDING;
-    else if (avgBand < 7.0) stage = Stage.INTEGRATION;
-    else stage = Stage.EXAM_PREP;
+    if (!hasTestHistory) {
+      stage = Stage.FOUNDATION;
+    } else if (avgBand < 5.0) {
+      stage = Stage.FOUNDATION;
+    } else if (avgBand < 6.0) {
+      stage = Stage.SKILL_BUILDING;
+    } else if (avgBand < 7.0) {
+      stage = Stage.INTEGRATION;
+    } else {
+      stage = Stage.EXAM_PREP;
+    }
 
     // Calculate readiness score (0-100)
     const bandScore = Math.min(100, (avgBand / 9) * 100);
@@ -732,7 +968,12 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
       bandScore * 0.4 + vocabScore * 0.25 + grammarScore * 0.2 + completionScore * 0.15
     );
 
-    return { avgBand, stage, vocabStats, grammarStats, completionRate, readinessScore };
+    const result = { avgBand, stage, vocabStats, grammarStats, completionRate, readinessScore };
+
+    // Cache for 5 minutes
+    await this.cache.set(`proficiency:${userId}`, result, 300);
+
+    return result;
   }
 
   async canTransition(userId: string, targetStage: Stage): Promise<boolean> {
@@ -757,25 +998,86 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
     // Check completion rate
     if (prof.completionRate < transition.conditions.minCompletionRate) return false;
 
-    // Check weeks in stage
+    // Check weeks in stage (calculate from stageStartDate)
+    let weeksInStage = 0;
     const preference = await this.db.userStudyPreference.findUnique({
       where: { idUser: userId }
     });
-    if ((preference?.weeksInCurrentStage || 0) < transition.conditions.minWeeksInStage) return false;
+    if (preference?.stageStartDate) {
+      const now = new Date();
+      const startDate = new Date(preference.stageStartDate);
+      const daysDiff = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      weeksInStage = Math.floor(daysDiff / 7);
+    }
+    if (weeksInStage < transition.conditions.minWeeksInStage) return false;
 
     return true;
   }
 
   async calculateStageProgress(userId: string): Promise<StageProgress> {
+    // Verify user exists first to avoid FK constraint errors
+    const userExists = await this.db.user.findUnique({ where: { idUser: userId } });
+    if (!userExists) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
     const prof = await this.calculateUserProficiency(userId);
     const currentStage = prof.stage;
 
-    const preference = await this.db.userStudyPreference.findUnique({
+    // Check if user has any actual test history
+    const hasTestHistory = prof.avgBand !== 5.0 || prof.vocabStats.totalWords > 0 || prof.grammarStats.total > 0;
+
+    let preference = await this.db.userStudyPreference.findUnique({
       where: { idUser: userId }
     });
-    const weeksInStage = preference?.weeksInCurrentStage || 0;
+
+    // Initialize stageStartDate if not set (first access)
+    if (!preference?.stageStartDate) {
+      preference = await this.db.userStudyPreference.upsert({
+        where: { idUser: userId },
+        create: {
+          idUser: userId,
+          dailyMinutesAvailable: 120,
+          currentStage: currentStage,
+          stageStartDate: new Date(),
+          weeksInCurrentStage: 0
+        },
+        update: {
+          stageStartDate: new Date()
+        }
+      });
+    }
+
+    // Calculate weeks in stage based on stageStartDate
+    let weeksInStage = 0;
+    if (preference?.stageStartDate) {
+      const now = new Date();
+      const startDate = new Date(preference.stageStartDate);
+      const daysDiff = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      weeksInStage = Math.floor(daysDiff / 7);
+    }
 
     const transition = STAGE_TRANSITIONS.find(t => t.from === currentStage);
+
+    // Calculate progress based on actual milestone requirements met
+    let stageProgressPercent = 0;
+    if (transition && transition.conditions) {
+      const reqs = transition.conditions;
+      let metCount = 0;
+      let totalReqs = 4; // band, vocab, grammar, completion
+
+      if (prof.avgBand >= reqs.minAvgBand) metCount++;
+      if (prof.vocabStats.mastered >= reqs.minVocabMastered) metCount++;
+      // Grammar: strong = 2, medium = 1, weak/unknown = 0
+      const grammarScore = prof.grammarStats.strong * 2 + prof.grammarStats.medium;
+      const maxGrammarScore = (prof.grammarStats.total || 1) * 2;
+      const grammarPercent = maxGrammarScore > 0 ? grammarScore / maxGrammarScore : 0;
+      if (grammarPercent >= 0.75 || reqs.minGrammarProficiency === 'weak') metCount++;
+      if (prof.completionRate >= reqs.minCompletionRate) metCount++;
+
+      stageProgressPercent = Math.round((metCount / totalReqs) * 100);
+    }
+
     const nextMilestone = transition ? {
       stage: transition.to,
       requirements: [
@@ -791,10 +1093,15 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
       }
     } : null;
 
+    // New users with no history start at 0% in FOUNDATION
+    if (!hasTestHistory) {
+      stageProgressPercent = 0;
+    }
+
     return {
       currentStage,
       weeksInStage,
-      stageProgressPercent: Math.min(100, Math.round((prof.readinessScore + weeksInStage * 10) / 2)),
+      stageProgressPercent,
       readinessScore: prof.readinessScore,
       nextMilestone
     };
@@ -829,8 +1136,14 @@ private async getGrammarWeakAreas(userId: string, limit: number): Promise<any[]>
     }
 
     const avgBands = Object.entries(skillBands)
-      .map(([skill, data]) => ({ skill, avg: data.count > 0 ? data.sum / data.count : 5.0 }))
+      .filter(([_, data]) => data.count > 0) // Only include skills with actual test history
+      .map(([skill, data]) => ({ skill, avg: data.sum / data.count }))
       .sort((a, b) => a.avg - b.avg);
+
+    // If no test history, return empty (user starts fresh in FOUNDATION)
+    if (avgBands.length === 0) {
+      return { input: [], output: [] };
+    }
 
     const input = avgBands.filter(s => s.skill === 'READING' || s.skill === 'LISTENING').slice(0, limit).map(s => s.skill);
     const output = avgBands.filter(s => s.skill === 'WRITING' || s.skill === 'SPEAKING').slice(0, limit).map(s => s.skill);

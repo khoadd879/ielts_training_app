@@ -1,24 +1,38 @@
 import { Controller, Get, Post, Patch, Body, Query, Param, Headers } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
+import { Public } from 'src/decorator/customize';
 import { StudyPlannerService } from './study-planner.service';
 import { CalculatePlanDto, GetPlanDto } from './dto/calculate-plan.dto';
 import { CompleteTaskDto } from './dto/complete-task.dto';
 import { UpdatePreferenceDto } from './dto/update-preference.dto';
 
-@ApiBearerAuth()
 @ApiTags('Study Planner')
 @Controller('study-planner')
 export class StudyPlannerController {
   constructor(private readonly studyPlannerService: StudyPlannerService) {}
 
+  @Public()
   @Post('calculate')
-  calculatePlan(@Body() dto: CalculatePlanDto): Promise<any> {
-    return this.studyPlannerService.calculatePlan(dto);
+  async calculatePlan(@Body() dto: CalculatePlanDto): Promise<any> {
+    try {
+      console.log('[StudyPlanner] calculatePlan called with:', JSON.stringify(dto));
+      return await this.studyPlannerService.calculatePlan(dto);
+    } catch (error) {
+      console.error('[StudyPlanner] calculatePlan error:', error);
+      throw error;
+    }
   }
 
+  @Public()
   @Get('plan')
-  getUserPlan(@Query() query: GetPlanDto): Promise<any> {
-    return this.studyPlannerService.getUserStudyPlan(query.idUser);
+  async getUserPlan(@Query() query: GetPlanDto): Promise<any> {
+    try {
+      console.log('[StudyPlanner] getUserPlan called with:', query.idUser);
+      return await this.studyPlannerService.getUserStudyPlan(query.idUser);
+    } catch (error) {
+      console.error('[StudyPlanner] getUserPlan error:', error);
+      throw error;
+    }
   }
 
   @Patch('preference')
