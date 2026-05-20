@@ -11,7 +11,6 @@ import { Public } from 'src/decorator/customize';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 import { CreditsService } from './credits.service';
 import { CreateCreditPackageDto } from './dto/create-credit-package.dto';
-import { PurchaseCreditsDto } from './dto/purchase-credit.dto';
 import { AdminAdjustDto } from './dto/admin-adjust.dto';
 
 @ApiTags('credits')
@@ -35,16 +34,9 @@ export class CreditsController {
     return this.creditsService.getActivePackages();
   }
 
-  @Post('purchase')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  async purchaseCredits(
-    @Request() req: any,
-    @Body() dto: PurchaseCreditsDto,
-  ) {
-    const { userId } = req.user;
-    return this.creditsService.purchaseCredits(userId, dto);
-  }
+  // NOTE: POST /credits/purchase removed — credits can only be granted
+  // through a verified VNPay payment (POST /payment/vnpay/create).
+  // Admins can still adjust balances via /credits/admin/adjust.
 
   // ===== Admin Routes =====
 
@@ -58,9 +50,11 @@ export class CreditsController {
   @Post('admin/adjust')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async adjustBalance(
-    @Body() dto: AdminAdjustDto,
-  ) {
-    return this.creditsService.adminAdjustBalance(dto.idUser, parseFloat(dto.amount), dto.reason);
+  async adjustBalance(@Body() dto: AdminAdjustDto) {
+    return this.creditsService.adminAdjustBalance(
+      dto.idUser,
+      parseFloat(dto.amount),
+      dto.reason,
+    );
   }
 }

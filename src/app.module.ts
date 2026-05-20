@@ -49,6 +49,8 @@ import { AuditLogModule } from './module/audit-log/audit-log.module';
 import { StudyPlannerModule } from './module/study-planner/study-planner.module';
 import { QuestionTypePerformanceModule } from './module/question-type-performance/question-type-performance.module';
 import { GrammarTrackingModule } from './module/grammar-tracking/grammar-tracking.module';
+import { PaymentModule } from './module/payment/payment.module';
+import { SubscriptionModule } from './module/subscription/subscription.module';
 
 import * as redisStore from 'cache-manager-redis-store';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -140,6 +142,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     StudyPlannerModule,
     QuestionTypePerformanceModule,
     GrammarTrackingModule,
+    PaymentModule,
+    SubscriptionModule,
   ],
   controllers: [AppController],
   providers: [

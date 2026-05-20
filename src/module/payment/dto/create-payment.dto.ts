@@ -1,9 +1,8 @@
-import { IsString, IsUUID, IsIn } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsUUID, IsIn, IsOptional, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreatePaymentDto {
   @ApiProperty({ enum: ['CREDIT', 'SUBSCRIPTION'] })
-  @IsString()
   @IsIn(['CREDIT', 'SUBSCRIPTION'])
   packageType: 'CREDIT' | 'SUBSCRIPTION';
 
@@ -11,7 +10,11 @@ export class CreatePaymentDto {
   @IsUUID()
   idPackage: string;
 
-  @ApiProperty({ description: 'Client IP address' })
+  @ApiPropertyOptional({
+    description:
+      'Optional VNPay bank/method code: VNPAYQR | VNBANK | INTCARD | NCB | VCB | ...',
+  })
+  @IsOptional()
   @IsString()
-  ipAddress: string;
+  bankCode?: string;
 }
