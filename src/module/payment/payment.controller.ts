@@ -47,7 +47,8 @@ export class PaymentController {
   }
 
   /**
-   * VNPay return URL (customer redirected here after payment)
+   * VNPay return URL (browser redirected here after payment).
+   * Display-only — actual provisioning happens in IPN.
    * GET /payment/vnpay/return
    */
   @Public()
@@ -58,25 +59,25 @@ export class PaymentController {
 
     if (result.success) {
       return res.redirect(
-        `${frontend}/payment/success?txnRef=${result.txnRef}&amount=${result.amount}`,
-      );
-    } else {
-      return res.redirect(
-        `${frontend}/payment/failed?message=${encodeURIComponent(
-          result.message,
-        )}`,
+        `${frontend}/payment/success?txnRef=${result.vnpTxnRef}&amount=${result.amount}`,
       );
     }
+    return res.redirect(
+      `${frontend}/payment/failed?message=${encodeURIComponent(
+        result.message,
+      )}`,
+    );
   }
 
   /**
-   * VNPay IPN URL (server-to-server notification)
-   * POST /payment/vnpay/ipn
+   * VNPay IPN (server-to-server, GET with query string per VNPay spec).
+   * Returns plain JSON `{ RspCode, Message }` so VNPay knows the order is
+   * confirmed (any non-200 or wrong field name triggers retry).
+   * GET /payment/vnpay/ipn
    */
   @Public()
-  @Post('vnpay/ipn')
-  async vnpayIpn(@Body() body: any, @Res() res: Response) {
-    const result = await this.paymentService.handleVnpayIpn(body);
-    return res.json(result);
+  @Get('vnpay/ipn')
+  async vnpayIpn(@Query() query: Record<string, string>) {
+    return this.paymentService.handleVnpayIpn(query);
   }
 }

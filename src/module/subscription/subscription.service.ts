@@ -27,6 +27,62 @@ export class SubscriptionService {
 
   // ===== Subscription Operations =====
 
+  /**
+   * Internal: activate a subscription from a verified PaymentTransaction.
+   * Must be called inside a Prisma `$transaction` so the same `tx` is shared
+   * with PaymentService — atomicity is the caller's responsibility.
+   */
+  async activateFromPayment(
+    tx: any,
+    payment: {
+      idTransaction: string;
+      idUser: string;
+      idSubscriptionPackage: string | null;
+    },
+  ): Promise<{ idSubscription: string }> {
+    if (!payment.idSubscriptionPackage) {
+      throw new BadRequestException('Payment has no subscription package');
+    }
+
+    const pkg = await tx.subscriptionPackage.findUnique({
+      where: { idPackage: payment.idSubscriptionPackage },
+    });
+    if (!pkg) {
+      throw new NotFoundException('Subscription package vanished');
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now);
+    if (pkg.billingCycle === 'MONTHLY') {
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+    } else {
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+    }
+
+    await tx.userSubscription.updateMany({
+      where: { idUser: payment.idUser, status: 'ACTIVE' },
+      data: { status: 'CANCELLED' },
+    });
+
+    const sub = await tx.userSubscription.create({
+      data: {
+        idUser: payment.idUser,
+        idPackage: pkg.idPackage,
+        status: 'ACTIVE',
+        startedAt: now,
+        expiresAt,
+        nextBillingAt: null,
+        autoRenew: false,
+        creditsQuotaThisPeriod: pkg.creditsQuota,
+        creditsUsedThisPeriod: 0,
+        paymentRef: payment.idTransaction,
+        paymentMethod: 'VNPAY',
+      },
+    });
+
+    return { idSubscription: sub.idSubscription };
+  }
+
   async getUserSubscription(idUser: string) {
     const sub = await this.db.userSubscription.findFirst({
       where: { idUser, status: 'ACTIVE' },

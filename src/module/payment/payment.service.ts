@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from 'src/database/database.service';
+import { CreditsService } from '../credits/credits.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { VnpayUtils } from './payment.utils';
 
 @Injectable()
@@ -26,6 +28,8 @@ export class PaymentService {
   constructor(
     private readonly configService: ConfigService,
     private readonly db: DatabaseService,
+    private readonly creditsService: CreditsService,
+    private readonly subscriptionService: SubscriptionService,
   ) {
     this.vnpTmnCode = this.configService.get('VNPAY_TMN_CODE') ?? '';
     this.vnpHashSecret = this.configService.get('VNPAY_HASH_SECRET') ?? '';
@@ -154,80 +158,170 @@ export class PaymentService {
   }
 
   /**
-   * Handle VNPay return (after customer completes payment)
+   * Browser return — display-only. Provisioning is done by IPN, not here,
+   * because the user can close the tab before this fires.
    */
   async handleVnpayReturn(
-    query: any,
+    query: Record<string, string>,
   ): Promise<{
     success: boolean;
     message: string;
-    txnRef?: string;
+    vnpTxnRef?: string;
     amount?: number;
   }> {
-    // Verify signature
     if (!VnpayUtils.verifySignature(query, this.vnpHashSecret)) {
       return { success: false, message: 'Invalid signature' };
     }
 
     const responseCode = query['vnp_ResponseCode'];
-    const txnRef = query['vnp_TxnRef'];
-    const amount = parseInt(query['vnp_Amount']) / 100;
+    const vnpTxnRef = query['vnp_TxnRef'];
+    const amount = parseInt(query['vnp_Amount'], 10) / 100;
 
     if (responseCode === '00') {
       return {
         success: true,
         message: 'Payment successful',
-        txnRef,
+        vnpTxnRef,
         amount,
       };
     }
 
-    const errorMessages: Record<string, string> = {
-      '07': 'Suspected fraud',
-      '09': 'Internet banking not registered',
-      '10': 'Invalid account info',
-      '11': 'Payment timeout',
-      '24': 'Customer cancelled',
-      '51': 'Insufficient funds',
-      '65': 'Daily limit exceeded',
-      '75': 'Bank maintenance',
-      '79': 'Wrong password',
-      '99': 'Other error',
-    };
-
     return {
       success: false,
-      message: errorMessages[responseCode] || `Payment failed with code: ${responseCode}`,
-      txnRef,
+      message: this.mapResponseCode(responseCode),
+      vnpTxnRef,
       amount,
     };
   }
 
   /**
-   * Handle VNPay IPN (server-to-server notification)
+   * IPN (server-to-server). Idempotent: provisions credits/subscription
+   * exactly once, even if VNPay retries the callback.
+   *
+   * RspCode reference (per VNPay spec):
+   *   00 — confirm success / order processed
+   *   01 — order not found
+   *   02 — order already confirmed
+   *   04 — invalid amount
+   *   97 — invalid signature
+   *   99 — other error
    */
   async handleVnpayIpn(
-    query: any,
-  ): Promise<{ rspCode: string; message: string }> {
-    // Verify signature
+    query: Record<string, string>,
+  ): Promise<{ RspCode: string; Message: string }> {
     if (!VnpayUtils.verifySignature(query, this.vnpHashSecret)) {
-      return { rspCode: '97', message: 'Invalid signature' };
+      return { RspCode: '97', Message: 'Invalid signature' };
     }
 
+    const vnpTxnRef = query['vnp_TxnRef'];
     const responseCode = query['vnp_ResponseCode'];
     const transactionStatus = query['vnp_TransactionStatus'];
-    const txnRef = query['vnp_TxnRef'];
-    const amount = parseInt(query['vnp_Amount']) / 100;
+    const amountVnp = parseInt(query['vnp_Amount'], 10);
 
-    if (responseCode === '00' && transactionStatus === '00') {
-      // Payment successful - credits/subscription will be provisioned
-      // based on txnRef parsing (idUser, idPackage, packageType)
-      // This is handled asynchronously - return success to VNPay
-      return { rspCode: '00', message: 'Confirm success' };
+    const payment = await this.db.paymentTransaction.findUnique({
+      where: { vnpTxnRef },
+    });
+    if (!payment) {
+      return { RspCode: '01', Message: 'Order not found' };
     }
 
-    // Payment failed
-    return { rspCode: '00', message: 'Order processed' }; // Return 00 to stop VNPay retry
+    // Amount tampering check — server-recorded amount * 100 must match VNPay
+    if (Math.round(payment.amount * 100) !== amountVnp) {
+      await this.db.paymentTransaction.update({
+        where: { idTransaction: payment.idTransaction },
+        data: {
+          status: 'FAILED',
+          errorMessage: 'Amount mismatch',
+          rawCallback: query as any,
+        },
+      });
+      return { RspCode: '04', Message: 'Invalid amount' };
+    }
+
+    // Idempotency: already SUCCESS → return 02 (already confirmed)
+    if (payment.status === 'SUCCESS') {
+      return { RspCode: '02', Message: 'Order already confirmed' };
+    }
+
+    // Failure path: persist + return 00 to stop VNPay retry
+    if (responseCode !== '00' || transactionStatus !== '00') {
+      await this.db.paymentTransaction.update({
+        where: { idTransaction: payment.idTransaction },
+        data: {
+          status: 'FAILED',
+          vnpResponseCode: responseCode,
+          vnpTransactionNo: query['vnp_TransactionNo'] ?? null,
+          vnpBankCode: query['vnp_BankCode'] ?? null,
+          vnpPayDate: query['vnp_PayDate'] ?? null,
+          errorMessage: this.mapResponseCode(responseCode),
+          rawCallback: query as any,
+        },
+      });
+      return { RspCode: '00', Message: 'Order processed' };
+    }
+
+    // Success path — provision atomically
+    try {
+      await this.db.$transaction(async (tx) => {
+        let idCreditTransaction: string | null = null;
+        let idSubscription: string | null = null;
+
+        if (payment.packageType === 'CREDIT') {
+          const r = await this.creditsService.creditFromPayment(tx, {
+            idTransaction: payment.idTransaction,
+            idUser: payment.idUser,
+            idCreditPackage: payment.idCreditPackage,
+          });
+          idCreditTransaction = r.idTransaction;
+        } else {
+          const r = await this.subscriptionService.activateFromPayment(tx, {
+            idTransaction: payment.idTransaction,
+            idUser: payment.idUser,
+            idSubscriptionPackage: payment.idSubscriptionPackage,
+          });
+          idSubscription = r.idSubscription;
+        }
+
+        await tx.paymentTransaction.update({
+          where: { idTransaction: payment.idTransaction },
+          data: {
+            status: 'SUCCESS',
+            paidAt: new Date(),
+            vnpResponseCode: responseCode,
+            vnpTransactionNo: query['vnp_TransactionNo'] ?? null,
+            vnpBankCode: query['vnp_BankCode'] ?? null,
+            vnpPayDate: query['vnp_PayDate'] ?? null,
+            idCreditTransaction,
+            idSubscription,
+            rawCallback: query as any,
+          },
+        });
+      });
+
+      return { RspCode: '00', Message: 'Confirm Success' };
+    } catch (err: any) {
+      this.logger.error(`Provision failed for ${vnpTxnRef}: ${err.message}`);
+      return { RspCode: '99', Message: 'Provision failed' };
+    }
+  }
+
+  private mapResponseCode(code: string | undefined): string {
+    const map: Record<string, string> = {
+      '00': 'Thanh cong',
+      '07': 'Nghi ngo gian lan',
+      '09': 'Khach hang chua dang ky InternetBanking',
+      '10': 'Xac thuc thong tin sai qua 3 lan',
+      '11': 'Het han thanh toan',
+      '12': 'The bi khoa',
+      '13': 'Sai mat khau OTP',
+      '24': 'Khach hang huy',
+      '51': 'Khong du so du',
+      '65': 'Vuot han muc giao dich trong ngay',
+      '75': 'Ngan hang dang bao tri',
+      '79': 'Sai mat khau qua so lan quy dinh',
+      '99': 'Loi khac',
+    };
+    return code && map[code] ? map[code] : `Loi (${code ?? 'unknown'})`;
   }
 
   /**
