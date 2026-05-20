@@ -175,15 +175,18 @@ export class PaymentService {
   }
 
   /**
-   * Format date to yyyyMMddHHmmss (GMT+7)
+   * Format date to yyyyMMddHHmmss in GMT+7 (VNPay requirement),
+   * independent of host timezone.
    */
   private formatDate(date: Date): string {
-    const yyyy = date.getFullYear();
-    const MM = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const HH = String(date.getHours()).padStart(2, '0');
-    const mm = String(date.getMinutes()).padStart(2, '0');
-    const ss = String(date.getSeconds()).padStart(2, '0');
+    // Shift epoch by +7h, then read UTC components — works on any host TZ.
+    const gmt7 = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+    const yyyy = gmt7.getUTCFullYear();
+    const MM = String(gmt7.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(gmt7.getUTCDate()).padStart(2, '0');
+    const HH = String(gmt7.getUTCHours()).padStart(2, '0');
+    const mm = String(gmt7.getUTCMinutes()).padStart(2, '0');
+    const ss = String(gmt7.getUTCSeconds()).padStart(2, '0');
     return `${yyyy}${MM}${dd}${HH}${mm}${ss}`;
   }
 }
