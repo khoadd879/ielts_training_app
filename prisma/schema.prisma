@@ -68,6 +68,10 @@ model User {
   // Teacher Review
   teacherReviewTickets    TeacherReviewTicket[]
   teacherReviewTicketsAsTeacher TeacherReviewTicket[] @relation("TeacherReviewTickets")
+
+  // Study Planner
+  userDailyTaskCompletions UserDailyTaskCompletion[]
+  userStudyPreference      UserStudyPreference?
 }
 
 model VerificationCode {
@@ -431,6 +435,8 @@ model Grammar {
 
   // Relations
   categories GrammarsOnCategories[]
+  exercises GrammarExercise[]
+  proficiencies UserGrammarProficiency[]
 }
 
 model GrammarsOnCategories {
@@ -444,6 +450,40 @@ model GrammarsOnCategories {
   grammar  Grammar         @relation(fields: [idGrammar], references: [idGrammar], onDelete: Cascade)
 
   @@id([idGrammarCategory, idGrammar])
+}
+
+model GrammarExercise {
+  id        String   @id @default(uuid())
+  idGrammar String
+  type      String   // "error_correction" | "transformation" | "cloze" | "multiple_choice"
+  content   Json
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  grammar   Grammar  @relation(fields: [idGrammar], references: [idGrammar], onDelete: Cascade)
+  userResults UserGrammarExerciseResult[]
+}
+
+model UserGrammarProficiency {
+  idUser      String
+  idGrammar   String
+  proficiency String   // "unknown" | "weak" | "medium" | "strong"
+  updatedAt   DateTime @updatedAt
+
+  grammar     Grammar  @relation(fields: [idGrammar], references: [idGrammar])
+
+  @@id([idUser, idGrammar])
+}
+
+model UserGrammarExerciseResult {
+  id          String   @id @default(uuid())
+  idUser      String
+  idExercise  String
+  answer      String
+  isCorrect   Boolean
+  attemptedAt DateTime @default(now())
+
+  exercise    GrammarExercise @relation(fields: [idExercise], references: [id])
 }
 
 // ============================================================================
@@ -862,4 +902,37 @@ model AuditLog {
   @@index([action, createdAt])
   @@index([targetType, targetId])
   @@index([createdAt])
+}
+
+// ============================================================================
+// STUDY PLANNER
+// ============================================================================
+
+model UserDailyTaskCompletion {
+  id          String    @id @default(uuid())
+  idUser      String
+  idStudyPlan String
+  taskType    String    // 'READING' | 'LISTENING' | 'WRITING' | 'SPEAKING' | 'VOCABULARY' | 'GRAMMAR'
+  date        DateTime  @db.Date
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+
+  user        User      @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+
+  @@unique([idUser, idStudyPlan, taskType, date])
+  @@map("user_daily_task_completion")
+}
+
+model UserStudyPreference {
+  id                    String   @id @default(uuid())
+  idUser                String   @unique
+  dailyMinutesAvailable Int      @default(60)
+  currentStage          String   @default("FOUNDATION")
+  weeksInCurrentStage   Int      @default(0)
+  stageStartDate        DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+
+  @@map("user_study_preference")
 }

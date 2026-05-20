@@ -30,6 +30,7 @@ import { ForumPostLikesModule } from './module/forum-post-likes/forum-post-likes
 import { ForumCommentLikesModule } from './module/forum-comment-likes/forum-comment-likes.module';
 import { GrammarModule } from './module/grammar/grammar.module';
 import { GrammarCategoriesModule } from './module/grammar-categories/grammar-categories.module';
+import { GrammarExerciseModule } from './module/grammar-exercise/grammar-exercise.module';
 
 import { ReviewStreakModule } from './module/review-streak/review-streak.module';
 import { StreakServiceModule } from './module/streak-service/streak-service.module';
@@ -108,6 +109,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     ForumCommentLikesModule,
     GrammarModule,
     GrammarCategoriesModule,
+    GrammarExerciseModule,
 
     ReviewStreakModule,
 
