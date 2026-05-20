@@ -56,6 +56,62 @@ export class CreditsService {
 
   // ===== Transaction Operations =====
 
+  /**
+   * Internal: provision credits from a verified PaymentTransaction.
+   * Must be called inside a Prisma `$transaction` so the same `tx` is shared
+   * with PaymentService — atomicity is the caller's responsibility.
+   */
+  async creditFromPayment(
+    tx: any,
+    payment: {
+      idTransaction: string;
+      idUser: string;
+      idCreditPackage: string | null;
+    },
+  ): Promise<{ idTransaction: string }> {
+    if (!payment.idCreditPackage) {
+      throw new BadRequestException('Payment has no credit package');
+    }
+
+    const pkg = await tx.creditPackage.findUnique({
+      where: { idPackage: payment.idCreditPackage },
+    });
+    if (!pkg) {
+      throw new NotFoundException('Credit package vanished');
+    }
+
+    let balance = await tx.creditBalance.findUnique({
+      where: { idUser: payment.idUser },
+    });
+    if (!balance) {
+      balance = await tx.creditBalance.create({
+        data: { idUser: payment.idUser, totalCredits: 0, usedCredits: 0 },
+      });
+    }
+
+    await tx.creditBalance.update({
+      where: { idUser: payment.idUser },
+      data: { totalCredits: balance.totalCredits + pkg.creditAmount },
+    });
+
+    const creditTx = await tx.creditTransaction.create({
+      data: {
+        idUser: payment.idUser,
+        idPackage: pkg.idPackage,
+        creditsAmount: pkg.creditAmount,
+        transactionType: 'PURCHASE',
+        description: `VNPay purchase ${pkg.name}`,
+        status: 'COMPLETED',
+      },
+    });
+
+    return { idTransaction: creditTx.idTransaction };
+  }
+
+  /**
+   * @deprecated Direct credit purchase without payment is no longer allowed.
+   * Use POST /payment/vnpay/create instead.
+   */
   async purchaseCredits(idUser: string, dto: PurchaseCreditsDto) {
     const pkg = await this.db.creditPackage.findUnique({
       where: { idPackage: dto.idPackage },
