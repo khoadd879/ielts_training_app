@@ -46,7 +46,7 @@ import { CreditsModule } from './module/credits/credits.module';
 import { TeacherReviewModule } from './module/teacher-review/teacher-review.module';
 import { SystemConfigModule } from './module/system-config/system-config.module';
 import { AuditLogModule } from './module/audit-log/audit-log.module';
-// import { StudyPlannerModule } from './module/study-planner/study-planner.module'; // TODO: re-enable after merging origin/study-planner
+import { StudyPlannerModule } from './module/study-planner/study-planner.module';
 import { PaymentModule } from './module/payment/payment.module';
 
 import * as redisStore from 'cache-manager-redis-store';
@@ -136,7 +136,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
     RabbitMQModule,
     DashboardModule,
-    // StudyPlannerModule, // TODO: re-enable after merging origin/study-planner
+    StudyPlannerModule,
     PaymentModule,
   ],
   controllers: [AppController],
