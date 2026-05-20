@@ -8,11 +8,17 @@ import {
   Request,
   Res,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { Public } from 'src/decorator/customize';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { CreatePaymentResponseDto } from './dto/create-payment-response.dto';
 import type { Response } from 'express';
 
 @ApiTags('payment')
@@ -30,7 +36,16 @@ export class PaymentController {
   @Post('vnpay/create')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async createPayment(@Request() req: any, @Body() dto: CreatePaymentDto) {
+  @ApiOperation({
+    summary: 'Create VNPay payment URL',
+    description:
+      'Persists a PENDING PaymentTransaction and returns the VNPay payment URL. Frontend must navigate via `window.location.href = paymentUrl` (do NOT fetch — VNPay does not allow cross-origin XHR). The actual credit/subscription is granted later when VNPay calls /payment/vnpay/ipn.',
+  })
+  @ApiOkResponse({ type: CreatePaymentResponseDto })
+  async createPayment(
+    @Request() req: any,
+    @Body() dto: CreatePaymentDto,
+  ): Promise<CreatePaymentResponseDto> {
     const { userId } = req.user;
     const forwarded = (req.headers['x-forwarded-for'] as string | undefined)
       ?.split(',')[0]
