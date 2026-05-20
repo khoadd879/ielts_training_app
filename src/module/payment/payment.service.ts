@@ -1,9 +1,16 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DatabaseService } from 'src/database/database.service';
 import { VnpayUtils } from './payment.utils';
 
 @Injectable()
 export class PaymentService {
+  private readonly logger = new Logger(PaymentService.name);
   private readonly vnpTmnCode: string;
   private readonly vnpHashSecret: string;
   private readonly vnpReturnUrl: string;
@@ -11,57 +18,115 @@ export class PaymentService {
   private readonly isSandbox: boolean;
 
   // VNPay endpoints
-  private readonly VNP_URL = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
+  private readonly VNP_URL =
+    'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
   private readonly VNP_API_URL =
     'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction';
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly db: DatabaseService,
+  ) {
     this.vnpTmnCode = this.configService.get('VNPAY_TMN_CODE') ?? '';
     this.vnpHashSecret = this.configService.get('VNPAY_HASH_SECRET') ?? '';
     this.vnpReturnUrl = this.configService.get('VNPAY_RETURN_URL') ?? '';
     this.vnpIpnUrl = this.configService.get('VNPAY_IPN_URL') ?? '';
-    this.isSandbox = this.configService.get('VNPAY_SANDBOX', 'true') === 'true';
+    this.isSandbox =
+      this.configService.get('VNPAY_SANDBOX', 'true') === 'true';
+
+    if (!this.vnpTmnCode || !this.vnpHashSecret || !this.vnpReturnUrl) {
+      this.logger.error(
+        'VNPay env vars missing: VNPAY_TMN_CODE / VNPAY_HASH_SECRET / VNPAY_RETURN_URL',
+      );
+    }
   }
 
   /**
-   * Create VNPay payment URL for credit package purchase
+   * Create VNPay payment URL for a credit or subscription package.
+   *
+   * Persists a PENDING PaymentTransaction row that is the source of truth
+   * for everything that follows (return URL, IPN, reconciliation).
    */
   async createPaymentUrl(params: {
     idUser: string;
     idPackage: string;
     packageType: 'CREDIT' | 'SUBSCRIPTION';
-    amount: number; // Amount in VND (not *100)
-    orderInfo: string;
     ipAddress: string;
     bankCode?: string;
-  }): Promise<{ paymentUrl: string; txnRef: string }> {
-    const {
-      idUser,
-      idPackage,
-      packageType,
-      amount,
-      orderInfo,
-      ipAddress,
-      bankCode,
-    } = params;
+  }): Promise<{
+    paymentUrl: string;
+    idTransaction: string;
+    vnpTxnRef: string;
+  }> {
+    const { idUser, idPackage, packageType, ipAddress, bankCode } = params;
 
-    const txnRef = `${packageType}_${idUser}_${idPackage}_${Date.now()}`;
+    // 1. Look up package + price from DB (no client-supplied amount)
+    let amount: number;
+    let orderInfo: string;
+    let idCreditPackage: string | null = null;
+    let idSubscriptionPackage: string | null = null;
+
+    if (packageType === 'CREDIT') {
+      const pkg = await this.db.creditPackage.findUnique({
+        where: { idPackage },
+      });
+      if (!pkg || !pkg.isActive) {
+        throw new NotFoundException('Credit package not found or inactive');
+      }
+      amount = pkg.price;
+      orderInfo = `Mua ${pkg.creditAmount} credits - ${pkg.name}`;
+      idCreditPackage = pkg.idPackage;
+    } else {
+      const pkg = await this.db.subscriptionPackage.findUnique({
+        where: { idPackage },
+      });
+      if (!pkg || !pkg.isActive) {
+        throw new NotFoundException(
+          'Subscription package not found or inactive',
+        );
+      }
+      amount = pkg.price;
+      orderInfo = `Goi ${pkg.name}`;
+      idSubscriptionPackage = pkg.idPackage;
+    }
+
+    if (amount <= 0) {
+      throw new BadRequestException('Package price must be > 0');
+    }
+
+    // 2. Persist PENDING transaction (single source of truth)
     const now = new Date();
-    const expireDate = new Date(now.getTime() + 15 * 60 * 1000); // 15 min expiry
+    const expireDate = new Date(now.getTime() + 15 * 60 * 1000); // 15 min
+    const vnpTxnRef = `${packageType}_${idUser.slice(0, 8)}_${Date.now()}`;
 
+    const tx = await this.db.paymentTransaction.create({
+      data: {
+        idUser,
+        packageType,
+        idCreditPackage,
+        idSubscriptionPackage,
+        amount,
+        paymentMethod: 'VNPAY',
+        status: 'PENDING',
+        vnpTxnRef,
+        ipAddress,
+      },
+    });
+
+    // 3. Build VNPay params
     const vnpParams: Record<string, string | number> = {
       vnp_Version: '2.1.0',
       vnp_Command: 'pay',
       vnp_TmnCode: this.vnpTmnCode,
-      vnp_Amount: amount * 100, // Convert to cents (no decimals)
+      vnp_Amount: Math.round(amount * 100),
       vnp_CurrCode: 'VND',
       vnp_Locale: 'vn',
       vnp_IpAddr: ipAddress,
       vnp_OrderInfo: orderInfo,
-      vnp_OrderType: 'topup', // Category: topup, bill, etc.
+      vnp_OrderType: 'topup',
       vnp_ReturnUrl: this.vnpReturnUrl,
       vnp_ExpireDate: this.formatDate(expireDate),
-      vnp_TxnRef: txnRef,
+      vnp_TxnRef: vnpTxnRef,
       vnp_CreateDate: this.formatDate(now),
     };
 
@@ -69,13 +134,12 @@ export class PaymentService {
       vnpParams['vnp_BankCode'] = bankCode;
     }
 
-    // Generate signature
+    // 4. Sign + build URL using identical encoding scheme
     vnpParams['vnp_SecureHash'] = VnpayUtils.generateSignature(
       vnpParams,
       this.vnpHashSecret,
     );
 
-    // Build payment URL — use the same URL-encoding scheme as the signed payload
     const queryString = Object.keys(vnpParams)
       .map(
         (k) =>
@@ -86,7 +150,7 @@ export class PaymentService {
       .join('&');
     const paymentUrl = `${this.VNP_URL}?${queryString}`;
 
-    return { paymentUrl, txnRef };
+    return { paymentUrl, idTransaction: tx.idTransaction, vnpTxnRef };
   }
 
   /**

@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { PaymentService } from './payment.service';
+import { DatabaseService } from 'src/database/database.service';
 
 describe('PaymentService', () => {
   let service: PaymentService;
@@ -9,10 +10,8 @@ describe('PaymentService', () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         PaymentService,
-        {
-          provide: ConfigService,
-          useValue: { get: () => '' },
-        },
+        { provide: ConfigService, useValue: { get: () => '' } },
+        { provide: DatabaseService, useValue: {} },
       ],
     }).compile();
     service = moduleRef.get(PaymentService);

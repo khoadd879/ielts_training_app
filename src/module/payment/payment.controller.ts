@@ -21,39 +21,29 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   /**
-   * Create VNPay payment URL and redirect user
+   * Create VNPay payment URL.
+   * Returns JSON `{ paymentUrl, idTransaction, vnpTxnRef }` so the frontend
+   * can navigate via `window.location.href` (avoids browser CORS preflight
+   * that fetch/axios would trigger when chasing a 302 cross-origin).
    * POST /payment/vnpay/create
    */
   @Post('vnpay/create')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async createPayment(
-    @Request() req: any,
-    @Body() dto: CreatePaymentDto,
-    @Res() res: Response,
-  ) {
+  async createPayment(@Request() req: any, @Body() dto: CreatePaymentDto) {
     const { userId } = req.user;
     const forwarded = (req.headers['x-forwarded-for'] as string | undefined)
       ?.split(',')[0]
       ?.trim();
     const ipAddress = forwarded || req.ip || '0.0.0.0';
 
-    // Get package details to determine amount
-    // TODO: Call CreditsService or SubscriptionService to get price
-
-    const { paymentUrl, txnRef } = await this.paymentService.createPaymentUrl({
+    return this.paymentService.createPaymentUrl({
       idUser: userId,
       idPackage: dto.idPackage,
       packageType: dto.packageType,
-      amount: 50000, // TODO: Get from package price
-      orderInfo: 'Purchase AI Grading Credits',
       ipAddress,
       bankCode: dto.bankCode,
     });
-
-    // Store txnRef in session or cache for verification on return
-    // For now, redirect directly
-    return res.redirect(paymentUrl);
   }
 
   /**
