@@ -45,6 +45,7 @@ export class PaymentController {
       amount: 50000, // TODO: Get from package price
       orderInfo: 'Purchase AI Grading Credits',
       ipAddress,
+      bankCode: dto.bankCode,
     });
 
     // Store txnRef in session or cache for verification on return
@@ -60,16 +61,17 @@ export class PaymentController {
   @Get('vnpay/return')
   async vnpayReturn(@Query() query: any, @Res() res: Response) {
     const result = await this.paymentService.handleVnpayReturn(query);
+    const frontend = process.env.FRONTEND_URL || '';
 
     if (result.success) {
-      // Redirect to success page with query params
       return res.redirect(
-        `/payment/success?txnRef=${result.txnRef}&amount=${result.amount}`,
+        `${frontend}/payment/success?txnRef=${result.txnRef}&amount=${result.amount}`,
       );
     } else {
-      // Redirect to failure page
       return res.redirect(
-        `/payment/failed?message=${encodeURIComponent(result.message)}`,
+        `${frontend}/payment/failed?message=${encodeURIComponent(
+          result.message,
+        )}`,
       );
     }
   }

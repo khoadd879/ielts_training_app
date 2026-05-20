@@ -2,28 +2,30 @@ import * as crypto from 'crypto';
 
 export class VnpayUtils {
   /**
-   * Sort object keys alphabetically and build query string
+   * Sort object keys alphabetically and build URL-encoded query string.
+   * Excludes vnp_SecureHash and vnp_SecureHashType.
+   * Uses encodeURIComponent so spaces become %20 (matching VNPay spec & official samples).
    */
-  static sortAndBuildQueryString(params: Record<string, string | number>): string {
+  static sortAndBuildQueryString(
+    params: Record<string, string | number>,
+  ): string {
     const sortedKeys = Object.keys(params).sort((a, b) => a.localeCompare(b));
     const queryParts: string[] = [];
 
     for (const key of sortedKeys) {
-      if (
-        key !== 'vnp_SecureHash' &&
-        params[key] !== undefined &&
-        params[key] !== null &&
-        params[key] !== ''
-      ) {
-        queryParts.push(`${key}=${params[key]}`);
-      }
+      if (key === 'vnp_SecureHash' || key === 'vnp_SecureHashType') continue;
+      const value = params[key];
+      if (value === undefined || value === null || value === '') continue;
+      queryParts.push(
+        `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
+      );
     }
 
     return queryParts.join('&');
   }
 
   /**
-   * Generate HMAC SHA512 signature
+   * Generate HMAC SHA512 signature (uppercase hex).
    */
   static generateSignature(
     params: Record<string, string | number>,
@@ -36,7 +38,8 @@ export class VnpayUtils {
   }
 
   /**
-   * Verify VNPay response signature
+   * Verify VNPay response signature. Case-insensitive comparison because
+   * VNPay sends lowercase hex on some endpoints.
    */
   static verifySignature(
     params: Record<string, string | number>,
@@ -45,12 +48,7 @@ export class VnpayUtils {
     const receivedHash = params['vnp_SecureHash'];
     if (!receivedHash) return false;
 
-    const { vnp_SecureHash, ...paramsWithoutHash } = params;
-    const calculatedHash = this.generateSignature(
-      paramsWithoutHash,
-      secretKey,
-    );
-
-    return calculatedHash === receivedHash;
+    const calculatedHash = this.generateSignature(params, secretKey);
+    return calculatedHash.toUpperCase() === String(receivedHash).toUpperCase();
   }
 }

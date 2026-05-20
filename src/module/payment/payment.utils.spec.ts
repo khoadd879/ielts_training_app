@@ -22,6 +22,23 @@ describe('VnpayUtils', () => {
       });
       expect(qs).toBe('vnp_D=kept');
     });
+
+    it('URL-encodes spaces and Vietnamese chars in values', () => {
+      const qs = VnpayUtils.sortAndBuildQueryString({
+        vnp_OrderInfo: 'Thanh toan don hang',
+        vnp_TxnRef: 'T1',
+      });
+      expect(qs).toBe('vnp_OrderInfo=Thanh%20toan%20don%20hang&vnp_TxnRef=T1');
+    });
+
+    it('also strips vnp_SecureHashType', () => {
+      const qs = VnpayUtils.sortAndBuildQueryString({
+        vnp_TxnRef: 'T1',
+        vnp_SecureHash: 'IGN',
+        vnp_SecureHashType: 'SHA512',
+      });
+      expect(qs).toBe('vnp_TxnRef=T1');
+    });
   });
 
   describe('signature roundtrip', () => {
@@ -49,5 +66,30 @@ describe('VnpayUtils', () => {
       params.vnp_Amount = 999;
       expect(VnpayUtils.verifySignature(params, secret)).toBe(false);
     });
+
+    it('verify is case-insensitive on hash hex (VNPay sends lowercase)', () => {
+      const params: any = { vnp_TxnRef: 'T1', vnp_Amount: 100 };
+      const hash = VnpayUtils.generateSignature(params, secret);
+      params.vnp_SecureHash = hash.toLowerCase();
+      expect(VnpayUtils.verifySignature(params, secret)).toBe(true);
+    });
+
+    it('verify ignores vnp_SecureHashType field if VNPay sends it', () => {
+      const params: any = { vnp_TxnRef: 'T1', vnp_Amount: 100 };
+      params.vnp_SecureHash = VnpayUtils.generateSignature(params, secret);
+      params.vnp_SecureHashType = 'SHA512';
+      expect(VnpayUtils.verifySignature(params, secret)).toBe(true);
+    });
+
+    it('verify works for params with Vietnamese OrderInfo', () => {
+      const params: any = {
+        vnp_TxnRef: 'T1',
+        vnp_Amount: 100,
+        vnp_OrderInfo: 'Mua 10 credits goi Demo',
+      };
+      params.vnp_SecureHash = VnpayUtils.generateSignature(params, secret);
+      expect(VnpayUtils.verifySignature(params, secret)).toBe(true);
+    });
   });
 });
+

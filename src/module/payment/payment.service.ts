@@ -33,9 +33,17 @@ export class PaymentService {
     amount: number; // Amount in VND (not *100)
     orderInfo: string;
     ipAddress: string;
+    bankCode?: string;
   }): Promise<{ paymentUrl: string; txnRef: string }> {
-    const { idUser, idPackage, packageType, amount, orderInfo, ipAddress } =
-      params;
+    const {
+      idUser,
+      idPackage,
+      packageType,
+      amount,
+      orderInfo,
+      ipAddress,
+      bankCode,
+    } = params;
 
     const txnRef = `${packageType}_${idUser}_${idPackage}_${Date.now()}`;
     const now = new Date();
@@ -57,16 +65,26 @@ export class PaymentService {
       vnp_CreateDate: this.formatDate(now),
     };
 
+    if (bankCode) {
+      vnpParams['vnp_BankCode'] = bankCode;
+    }
+
     // Generate signature
     vnpParams['vnp_SecureHash'] = VnpayUtils.generateSignature(
       vnpParams,
       this.vnpHashSecret,
     );
 
-    // Build payment URL
-    const paymentUrl = `${this.VNP_URL}?${new URLSearchParams(
-      vnpParams as any,
-    ).toString()}`;
+    // Build payment URL — use the same URL-encoding scheme as the signed payload
+    const queryString = Object.keys(vnpParams)
+      .map(
+        (k) =>
+          `${encodeURIComponent(k)}=${encodeURIComponent(
+            String(vnpParams[k]),
+          )}`,
+      )
+      .join('&');
+    const paymentUrl = `${this.VNP_URL}?${queryString}`;
 
     return { paymentUrl, txnRef };
   }
