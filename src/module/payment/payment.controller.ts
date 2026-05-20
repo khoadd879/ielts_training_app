@@ -33,7 +33,10 @@ export class PaymentController {
     @Res() res: Response,
   ) {
     const { userId } = req.user;
-    const ipAddress = dto.ipAddress || req.ip;
+    const forwarded = (req.headers['x-forwarded-for'] as string | undefined)
+      ?.split(',')[0]
+      ?.trim();
+    const ipAddress = forwarded || req.ip || '0.0.0.0';
 
     // Get package details to determine amount
     // TODO: Call CreditsService or SubscriptionService to get price
