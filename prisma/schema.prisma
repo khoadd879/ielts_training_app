@@ -58,6 +58,9 @@ model User {
   // Subscriptions
   subscriptions UserSubscription[]
 
+  // Payments
+  paymentTransactions PaymentTransaction[]
+
   // Forum
   forumThreads      ForumThreads[]
   forumPosts        ForumPost[]
@@ -584,7 +587,8 @@ model CreditPackage {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  transactions CreditTransaction[]
+  transactions        CreditTransaction[]
+  paymentTransactions PaymentTransaction[]
 
   @@index([isActive, sortOrder])
 }
@@ -619,6 +623,7 @@ model CreditTransaction {
   package             CreditPackage? @relation(fields: [idPackage], references: [idPackage])
   creditBalance       CreditBalance? @relation(fields: [creditBalanceIdUser], references: [idUser])
   creditBalanceIdUser String?
+  paymentTransaction  PaymentTransaction?
 
   @@index([idUser, createdAt])
   @@index([transactionType, createdAt])
@@ -645,7 +650,8 @@ model SubscriptionPackage {
   updatedAt    DateTime     @updatedAt
 
   // Relations
-  subscriptions UserSubscription[]
+  subscriptions       UserSubscription[]
+  paymentTransactions PaymentTransaction[]
 
   @@index([isActive, sortOrder])
   @@index([billingCycle])
@@ -675,9 +681,68 @@ model UserSubscription {
   // Relations
   user    User                @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   package SubscriptionPackage @relation(fields: [idPackage], references: [idPackage])
+  paymentTransaction PaymentTransaction?
 
   @@index([idUser, status])
   @@index([expiresAt])
+}
+
+// ============================================================================
+// PAYMENT (VNPay/MoMo/etc. attempts — single source of truth)
+// ============================================================================
+
+model PaymentTransaction {
+  idTransaction         String             @id @default(uuid())
+  idUser                String
+  packageType           PaymentPackageType
+  idCreditPackage       String?
+  idSubscriptionPackage String?
+  amount                Float // in VND
+  priceUnit             String             @default("VND")
+  paymentMethod         PaymentMethod      @default(VNPAY)
+  status                PaymentStatus      @default(PENDING)
+
+  // VNPay-specific (kept here so we don't grow another table)
+  vnpTxnRef        String  @unique // e.g. "CREDIT_<idUser>_<idPackage>_<ts>"
+  vnpTransactionNo String? // VNPay's own transaction id (vnp_TransactionNo)
+  vnpResponseCode  String? // "00" = success
+  vnpBankCode      String?
+  vnpPayDate       String? // raw vnp_PayDate string from VNPay
+  rawCallback      Json? // full IPN/return payload for audit
+
+  // Result links — populated only after successful IPN
+  idCreditTransaction String? @unique
+  idSubscription      String? @unique
+
+  ipAddress    String?
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  paidAt       DateTime?
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  user                User                 @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  creditPackage       CreditPackage?       @relation(fields: [idCreditPackage], references: [idPackage])
+  subscriptionPackage SubscriptionPackage? @relation(fields: [idSubscriptionPackage], references: [idPackage])
+  creditTransaction   CreditTransaction?   @relation(fields: [idCreditTransaction], references: [idTransaction])
+  subscription        UserSubscription?    @relation(fields: [idSubscription], references: [idSubscription])
+
+  @@index([idUser, status])
+  @@index([status, createdAt])
+  @@index([vnpTxnRef])
+}
+
+enum PaymentStatus {
+  PENDING // URL generated, waiting for callback
+  SUCCESS // IPN verified, provisioning done
+  FAILED // VNPay returned non-"00" or signature invalid
+  EXPIRED // 15-min window passed without callback
+  REFUNDED // Manual reversal
+}
+
+enum PaymentPackageType {
+  CREDIT
+  SUBSCRIPTION
 }
 
 enum CreditTransType {
