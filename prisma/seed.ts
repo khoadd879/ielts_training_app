@@ -789,6 +789,141 @@ async function seedSystemConfig() {
   console.log('  ✔  System config: assign_mode seeded')
 }
 
+// ============================================================================
+// GRAMMAR TOPICS & EXERCISES
+// ============================================================================
+
+async function seedGrammarTopics() {
+  console.log('\n🌿  Seeding Grammar Topics & Exercises...')
+
+  // Grammar Topics
+  const topics = [
+    {
+      idGrammar: 'conditionals',
+      title: 'Conditionals',
+      explanation: 'Câu điều kiện trong tiếng Anh gồm 4 loại:\n\n• Type 0 (Zero Conditional): Sự thật hiển nhiên - If + Present Simple, will + V\n• Type 1 (First Conditional): Tình huống có thể xảy ra - If + Present Simple, will + V\n• Type 2 (Second Conditional): Tình huống giả định ở hiện tại - If + Past Simple, would + V\n• Type 3 (Third Conditional): Tình huống giả định ở quá khứ - If + Past Perfect, would have + V2',
+      level: Level.Mid,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'If I was you, I would help.', correct: 'If I were you, I would help.', explanation: 'Use "were" not "was" for unreal present situations (Type 2).' },
+        { type: 'error_correction', wrong: 'If she studied harder, she will pass.', correct: 'If she studied harder, she would pass.', explanation: 'Type 2 requires "would" not "will".' },
+        { type: 'cloze', sentence: 'If it ___ (rain) tomorrow, I will stay home.', answer: 'rains', hint: 'Type 1 - present simple for real condition' },
+        { type: 'cloze', sentence: 'If I ___ (be) rich, I would travel the world.', answer: 'were', hint: 'Type 2 - past simple for unreal present' },
+        { type: 'transformation', prompt: 'She didn\'t study. She failed.', instruction: 'Use "unless"', correct: 'Unless she studied, she would have failed.' },
+        { type: 'multiple_choice', question: 'Choose the correct sentence:', options: ['If I was you, I would help.', 'If I were you, I would help.', 'If I am you, I would help.', 'If I be you, I would help.'], correct: 1 }
+      ])
+    },
+    {
+      idGrammar: 'tenses',
+      title: 'Verb Tenses',
+      explanation: 'Các thì trong tiếng Anh:\n\n• Present Simple: Sự việc xảy ra thường xuyên\n• Past Simple: Sự việc xảy ra trong quá khứ đã kết thúc\n• Present Perfect: Sự việc bắt đầu trong quá khứ và còn tiếp tục đến hiện tại\n• Past Perfect: Sự việc xảy ra trước một thời điểm trong quá khứ',
+      level: Level.Low,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'I have went to school.', correct: 'I have gone to school.', explanation: 'Past participle "gone" not "went" with present perfect.' },
+        { type: 'error_correction', wrong: 'She yesterday went to the market.', correct: 'She went to the market yesterday.', explanation: 'Time expressions go at the end, not at the beginning for Past Simple.' },
+        { type: 'cloze', sentence: 'I ___ (live) in Hanoi since 2010.', answer: 'have lived', hint: 'Present perfect - started in past, still ongoing' },
+        { type: 'cloze', sentence: 'By the time I arrived, she ___ (leave).', answer: 'had left', hint: 'Past perfect - action completed before another past action' },
+        { type: 'transformation', prompt: 'He started school in 2015. He is still a student.', instruction: 'Use present perfect', correct: 'He has been a student since 2015.' },
+        { type: 'multiple_choice', question: 'Choose the correct sentence:', options: ['I have went to London.', 'I have gone to London.', 'I have go to London.', 'I had went to London.'], correct: 1 }
+      ])
+    },
+    {
+      idGrammar: 'articles',
+      title: 'Articles',
+      explanation: 'Mạo từ trong tiếng Anh:\n\n• a/an: Dùng cho danh từ đếm được số ít, chưa xác định\n• the: Dùng khi đã xác định rõ đối tượng\n• (no article): Với danh từ không đếm được hoặc danh từ số nhiều chỉ định chung\n\nSự khác nhau giữa "a" và "an": a + nguyên âm (aeiou) → an',
+      level: Level.Low,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'I am a honest person.', correct: 'I am an honest person.', explanation: 'Use "an" before words starting with vowel sound.' },
+        { type: 'error_correction', wrong: 'The life is beautiful.', correct: 'Life is beautiful.', explanation: 'Abstract nouns and general statements don\'t use articles.' },
+        { type: 'cloze', sentence: 'She is ___ university student.', answer: 'a', hint: 'a + consonant sound' },
+        { type: 'cloze', sentence: '___ sun rises in the east.', answer: 'The', hint: 'Unique object - only one sun' },
+        { type: 'transformation', prompt: 'I saw a movie. The movie was interesting.', instruction: 'Combine with "which"', correct: 'I saw a movie which was interesting.' },
+        { type: 'multiple_choice', question: 'Choose the correct sentence:', options: ['She is a honest person.', 'She is an honest person.', 'She is honest person.', 'She is the honest person.'], correct: 1 }
+      ])
+    },
+    {
+      idGrammar: 'passive-voice',
+      title: 'Passive Voice',
+      explanation: 'Câu bị động trong tiếng Anh:\n\n• Cấu trúc: Subject + be + past participle\n• Dùng khi người/nận vật nhận tác động của hành động\n\nCác thì trong bị động:\n• Present Simple: am/is/are + V3\n• Past Simple: was/were + V3\n• Present Perfect: has/have + been + V3\n• Future: will + be + V3',
+      level: Level.Mid,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'The letter was send yesterday.', correct: 'The letter was sent yesterday.', explanation: '"Send" → "sent" (V3) trong bị động.' },
+        { type: 'error_correction', wrong: 'The house is built by workers.', correct: 'The house is being built by workers.', explanation: 'Dùng "being" khi hành động đang diễn ra.' },
+        { type: 'cloze', sentence: 'The cake ___ (make) by my mother.', answer: 'is made', hint: 'Present simple passive' },
+        { type: 'cloze', sentence: 'The windows ___ (clean) last week.', answer: 'were cleaned', hint: 'Past simple passive' },
+        { type: 'transformation', prompt: 'Someone broke the window yesterday.', instruction: 'Use past simple passive', correct: 'The window was broken yesterday.' },
+        { type: 'multiple_choice', question: 'Choose the correct passive:', options: ['The letter was sent yesterday.', 'The letter was send yesterday.', 'The letter is sent yesterday.', 'The letter was sending yesterday.'], correct: 0 }
+      ])
+    }
+  ]
+
+  for (const topic of topics) {
+    await prisma.grammar.upsert({
+      where: { idGrammar: topic.idGrammar },
+      update: {},
+      create: topic
+    })
+
+    // Create exercises from commonMistakes
+    const exercises = topic.commonMistakes as any[]
+    exercises.forEach((ex, index) => {
+      // This won't work directly - need to create GrammarExercise separately
+    })
+
+    console.log('  ✔  Grammar topic:', topic.title)
+  }
+
+  // Now create GrammarExercise records
+  const exerciseData = [
+    // Conditionals
+    { idGrammar: 'conditionals', type: 'error_correction', order: 0, content: { wrong: 'If I was you, I would help.', correct: 'If I were you, I would help.', explanation: 'Use "were" not "was" for unreal present situations (Type 2).' } },
+    { idGrammar: 'conditionals', type: 'error_correction', order: 1, content: { wrong: 'If she studied harder, she will pass.', correct: 'If she studied harder, she would pass.', explanation: 'Type 2 requires "would" not "will".' } },
+    { idGrammar: 'conditionals', type: 'cloze', order: 2, content: { sentence: 'If it ___ (rain) tomorrow, I will stay home.', answer: 'rains', hint: 'Type 1 - present simple for real condition' } },
+    { idGrammar: 'conditionals', type: 'cloze', order: 3, content: { sentence: 'If I ___ (be) rich, I would travel the world.', answer: 'were', hint: 'Type 2 - past simple for unreal present' } },
+    { idGrammar: 'conditionals', type: 'transformation', order: 4, content: { prompt: 'She didn\'t study. She failed.', instruction: 'Use "unless"', correct: 'Unless she studied, she would have failed.' } },
+    { idGrammar: 'conditionals', type: 'multiple_choice', order: 5, content: { question: 'Choose the correct sentence:', options: ['If I was you, I would help.', 'If I were you, I would help.', 'If I am you, I would help.', 'If I be you, I would help.'], correct: 1 } },
+
+    // Tenses
+    { idGrammar: 'tenses', type: 'error_correction', order: 0, content: { wrong: 'I have went to school.', correct: 'I have gone to school.', explanation: 'Past participle "gone" not "went" with present perfect.' } },
+    { idGrammar: 'tenses', type: 'error_correction', order: 1, content: { wrong: 'She yesterday went to the market.', correct: 'She went to the market yesterday.', explanation: 'Time expressions go at the end, not at the beginning for Past Simple.' } },
+    { idGrammar: 'tenses', type: 'cloze', order: 2, content: { sentence: 'I ___ (live) in Hanoi since 2010.', answer: 'have lived', hint: 'Present perfect - started in past, still ongoing' } },
+    { idGrammar: 'tenses', type: 'cloze', order: 3, content: { sentence: 'By the time I arrived, she ___ (leave).', answer: 'had left', hint: 'Past perfect - action completed before another past action' } },
+    { idGrammar: 'tenses', type: 'transformation', order: 4, content: { prompt: 'He started school in 2015. He is still a student.', instruction: 'Use present perfect', correct: 'He has been a student since 2015.' } },
+    { idGrammar: 'tenses', type: 'multiple_choice', order: 5, content: { question: 'Choose the correct sentence:', options: ['I have went to London.', 'I have gone to London.', 'I have go to London.', 'I had went to London.'], correct: 1 } },
+
+    // Articles
+    { idGrammar: 'articles', type: 'error_correction', order: 0, content: { wrong: 'I am a honest person.', correct: 'I am an honest person.', explanation: 'Use "an" before words starting with vowel sound.' } },
+    { idGrammar: 'articles', type: 'error_correction', order: 1, content: { wrong: 'The life is beautiful.', correct: 'Life is beautiful.', explanation: 'Abstract nouns and general statements don\'t use articles.' } },
+    { idGrammar: 'articles', type: 'cloze', order: 2, content: { sentence: 'She is ___ university student.', answer: 'a', hint: 'a + consonant sound' } },
+    { idGrammar: 'articles', type: 'cloze', order: 3, content: { sentence: '___ sun rises in the east.', answer: 'The', hint: 'Unique object - only one sun' } },
+    { idGrammar: 'articles', type: 'transformation', order: 4, content: { prompt: 'I saw a movie. The movie was interesting.', instruction: 'Combine with "which"', correct: 'I saw a movie which was interesting.' } },
+    { idGrammar: 'articles', type: 'multiple_choice', order: 5, content: { question: 'Choose the correct sentence:', options: ['She is a honest person.', 'She is an honest person.', 'She is honest person.', 'She is the honest person.'], correct: 1 } },
+
+    // Passive Voice
+    { idGrammar: 'passive-voice', type: 'error_correction', order: 0, content: { wrong: 'The letter was send yesterday.', correct: 'The letter was sent yesterday.', explanation: '"Send" → "sent" (V3) trong bị động.' } },
+    { idGrammar: 'passive-voice', type: 'error_correction', order: 1, content: { wrong: 'The house is built by workers.', correct: 'The house is being built by workers.', explanation: 'Dùng "being" khi hành động đang diễn ra.' } },
+    { idGrammar: 'passive-voice', type: 'cloze', order: 2, content: { sentence: 'The cake ___ (make) by my mother.', answer: 'is made', hint: 'Present simple passive' } },
+    { idGrammar: 'passive-voice', type: 'cloze', order: 3, content: { sentence: 'The windows ___ (clean) last week.', answer: 'were cleaned', hint: 'Past simple passive' } },
+    { idGrammar: 'passive-voice', type: 'transformation', order: 4, content: { prompt: 'Someone broke the window yesterday.', instruction: 'Use past simple passive', correct: 'The window was broken yesterday.' } },
+    { idGrammar: 'passive-voice', type: 'multiple_choice', order: 5, content: { question: 'Choose the correct passive:', options: ['The letter was sent yesterday.', 'The letter was send yesterday.', 'The letter is sent yesterday.', 'The letter was sending yesterday.'], correct: 0 } },
+  ]
+
+  for (const ex of exerciseData) {
+    await prisma.grammarExercise.upsert({
+      where: { id: `${ex.idGrammar}-${ex.order}` },
+      update: {},
+      create: {
+        id: `${ex.idGrammar}-${ex.order}`,
+        idGrammar: ex.idGrammar,
+        type: ex.type,
+        order: ex.order,
+        content: ex.content
+      }
+    })
+  }
+
+  console.log('  ✔  Grammar exercises seeded:', exerciseData.length, 'exercises')
+}
+
 async function main() {
   console.log('🌱  Starting seed...')
 
@@ -819,6 +954,9 @@ async function main() {
     },
   })
   console.log('  ✔  Seed user credit balance: 3 free credits')
+
+  // Seed grammar topics and exercises
+  await seedGrammarTopics()
 
   // Seed system config
   await seedSystemConfig()
