@@ -66,14 +66,21 @@ export class PaymentController {
 
   /**
    * VNPay return URL (browser redirected here after payment).
-   * Display-only — actual provisioning happens in IPN.
+   * Provisions credit/subscription (idempotent with IPN), then either
+   * redirects to FRONTEND_URL/payment/{success,failed} if configured, or
+   * returns JSON for direct API/Swagger testing.
    * GET /payment/vnpay/return
    */
   @Public()
   @Get('vnpay/return')
   async vnpayReturn(@Query() query: any, @Res() res: Response) {
     const result = await this.paymentService.handleVnpayReturn(query);
-    const frontend = process.env.FRONTEND_URL || '';
+    const frontend = process.env.FRONTEND_URL;
+
+    if (!frontend) {
+      // Demo / no-frontend mode — render JSON so the result is visible in browser.
+      return res.status(result.success ? 200 : 400).json(result);
+    }
 
     if (result.success) {
       return res.redirect(

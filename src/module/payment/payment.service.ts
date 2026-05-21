@@ -156,8 +156,12 @@ export class PaymentService {
   }
 
   /**
-   * Browser return — display-only. Provisioning is done by IPN, not here,
-   * because the user can close the tab before this fires.
+   * Browser return — display flow.
+   *
+   * Provisioning is done by IPN by default (since the user can close the tab
+   * before this fires). However, in dev/demo we also provision here when
+   * VNPay's IPN URL hasn't been registered for the merchant yet — handler is
+   * idempotent against IPN, so no double-credit if both fire.
    */
   async handleVnpayReturn(
     query: Record<string, string>,
@@ -176,6 +180,14 @@ export class PaymentService {
     const amount = parseInt(query['vnp_Amount'], 10) / 100;
 
     if (responseCode === '00') {
+      // Best-effort provision; ignore result, IPN will retry if this fails.
+      try {
+        await this.handleVnpayIpn(query);
+      } catch (err: any) {
+        this.logger.warn(
+          `Return-side provisioning failed for ${vnpTxnRef}: ${err.message}`,
+        );
+      }
       return {
         success: true,
         message: 'Payment successful',
