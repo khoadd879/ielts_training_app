@@ -25,6 +25,11 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       CLOUDINARY_NAME: ${CLOUDINARY_NAME}
       AI_MICROSERVICE_SECRET: ${AI_MICROSERVICE_SECRET}
+      VNPAY_TMN_CODE: ${VNPAY_TMN_CODE}
+      VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET}
+      VNPAY_RETURN_URL: ${VNPAY_RETURN_URL}
+      VNPAY_IPN_URL: ${VNPAY_IPN_URL}
+      VNPAY_SANDBOX: ${VNPAY_SANDBOX:-true}
       NODE_ENV: ${NODE_ENV:-production}
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6380
@@ -41,6 +46,24 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # ngrok tunnel — exposes ielts_training_app (localhost:3000) on a stable
+  # public URL so VNPay's IPN callback can reach the local backend.
+  # Required for VNPay sandbox: VNPay refuses to call http://localhost.
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    network_mode: host
+    command:
+      - "http"
+      - "--domain=${NGROK_DOMAIN}"
+      - "3000"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    depends_on:
+      ielts_training_app:
+        condition: service_started
+    restart: unless-stopped
 
   # Redis
   redis:

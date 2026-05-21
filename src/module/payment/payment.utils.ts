@@ -2,9 +2,17 @@ import * as crypto from 'crypto';
 
 export class VnpayUtils {
   /**
+   * URL-encode a value the way VNPay's reference implementation does:
+   * encodeURIComponent + replace %20 with '+'. VNPay's verifier signs with
+   * '+' for spaces; encoding them as %20 produces the dreaded code=70.
+   */
+  static encode(value: string): string {
+    return encodeURIComponent(value).replace(/%20/g, '+');
+  }
+
+  /**
    * Sort object keys alphabetically and build URL-encoded query string.
    * Excludes vnp_SecureHash and vnp_SecureHashType.
-   * Uses encodeURIComponent so spaces become %20 (matching VNPay spec & official samples).
    */
   static sortAndBuildQueryString(
     params: Record<string, string | number>,
@@ -16,9 +24,7 @@ export class VnpayUtils {
       if (key === 'vnp_SecureHash' || key === 'vnp_SecureHashType') continue;
       const value = params[key];
       if (value === undefined || value === null || value === '') continue;
-      queryParts.push(
-        `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
-      );
+      queryParts.push(`${this.encode(key)}=${this.encode(String(value))}`);
     }
 
     return queryParts.join('&');

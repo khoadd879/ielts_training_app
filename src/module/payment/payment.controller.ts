@@ -50,7 +50,10 @@ export class PaymentController {
     const forwarded = (req.headers['x-forwarded-for'] as string | undefined)
       ?.split(',')[0]
       ?.trim();
-    const ipAddress = forwarded || req.ip || '0.0.0.0';
+    const rawIp = forwarded || req.ip || '127.0.0.1';
+    // VNPay sandbox dislikes IPv6 / IPv4-mapped IPv6 — collapse to IPv4.
+    const ipAddress =
+      rawIp.startsWith('::ffff:') ? rawIp.slice(7) : rawIp.includes(':') ? '127.0.0.1' : rawIp;
 
     return this.paymentService.createPaymentUrl({
       idUser: userId,

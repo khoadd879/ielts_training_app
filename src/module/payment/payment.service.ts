@@ -147,9 +147,7 @@ export class PaymentService {
     const queryString = Object.keys(vnpParams)
       .map(
         (k) =>
-          `${encodeURIComponent(k)}=${encodeURIComponent(
-            String(vnpParams[k]),
-          )}`,
+          `${VnpayUtils.encode(k)}=${VnpayUtils.encode(String(vnpParams[k]))}`,
       )
       .join('&');
     const paymentUrl = `${this.VNP_URL}?${queryString}`;
