@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
 import { SubmitReviewDto, GetDueReviewDto, GetTierRecommendationDto } from './dto/review.dto';
+import { CompleteDailyVocabDto, VocabAnswerDto, GetDailyVocabDto } from './dto/vocab-daily.dto';
 import { DatabaseService } from 'src/database/database.service';
 import axios, { AxiosError } from 'axios';
 import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
@@ -504,5 +505,290 @@ Yêu cầu:
       meaning: result.meaning,
       example: result.example,
     };
+  }
+
+  /**
+   * Get daily vocabulary for exercise
+   * Filter: tier 1 or 2, status != 'mastered', idUser IS NULL (system vocab)
+   * Priority: lower frequencyRank + not reviewed recently
+   */
+  async getDailyVocab(getDailyVocabDto: GetDailyVocabDto) {
+    const { idUser, limit = 10 } = getDailyVocabDto;
+
+    // Get user's target band to determine preferred tier
+    const user = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const targetBand = user.targetBandScore || 5.5;
+    const preferredTiers = targetBand >= 6.5 ? [2, 1] : [1, 2];
+
+    // Get random vocab from preferred tiers (NOT filtered by idUser - shared pool)
+    let vocabList = await this.databaseService.vocabulary.findMany({
+      where: {
+        tier: { in: preferredTiers },
+      },
+      take: limit * 3, // Get more to randomize
+    });
+
+    // Shuffle and pick 'limit' items
+    vocabList.sort(() => Math.random() - 0.5);
+    vocabList = vocabList.slice(0, limit);
+
+    // If not enough, get from any tier
+    if (vocabList.length < limit) {
+      const existingIds = vocabList.map(v => v.idVocab);
+      const moreVocab = await this.databaseService.vocabulary.findMany({
+        where: {
+          idVocab: { notIn: existingIds },
+        },
+        take: limit - vocabList.length,
+      });
+      vocabList.push(...moreVocab);
+    }
+
+    // Shuffle for randomness
+    vocabList.sort(() => Math.random() - 0.5);
+
+    return vocabList.map(v => ({
+      idVocab: v.idVocab,
+      word: v.word,
+      phonetic: v.phonetic,
+      meaning: v.meaning,
+      VocabType: v.VocabType,
+    }));
+  }
+
+  /**
+   * Complete daily vocabulary exercise
+   * Update SM-2 fields based on correct/incorrect answers
+   */
+  async completeDailyVocab(completeDailyVocabDto: CompleteDailyVocabDto) {
+    const { idUser, answers } = completeDailyVocabDto;
+
+    const results: Array<{ vocabId: string; word: string; status: string; isCorrect: boolean }> = [];
+    let correctCount = 0;
+    let incorrectCount = 0;
+
+    for (const answer of answers) {
+      const { vocabId, isCorrect } = answer;
+
+      // Get vocabulary to find corresponding user vocab or create one
+      const systemVocab = await this.databaseService.vocabulary.findUnique({
+        where: { idVocab: vocabId },
+      });
+
+      if (!systemVocab) {
+        continue;
+      }
+
+      // Find or create user vocabulary record
+      let userVocab = await this.databaseService.vocabulary.findFirst({
+        where: {
+          idUser,
+          word: systemVocab.word,
+        },
+      });
+
+      if (!userVocab) {
+        // Create user vocabulary based on system vocab
+        userVocab = await this.databaseService.vocabulary.create({
+          data: {
+            idUser,
+            word: systemVocab.word,
+            meaning: systemVocab.meaning,
+            phonetic: systemVocab.phonetic,
+            VocabType: systemVocab.VocabType,
+            tier: systemVocab.tier,
+            frequencyRank: systemVocab.frequencyRank,
+            status: 'new',
+            timesReviewed: 0,
+            easinessFactor: 2.5,
+            interval: 1,
+          },
+        });
+      }
+
+      // Apply SM-2 algorithm
+      let easinessFactor = userVocab.easinessFactor;
+      let interval = userVocab.interval;
+      let timesReviewed = userVocab.timesReviewed || 0;
+      let status = userVocab.status;
+
+      if (isCorrect) {
+        easinessFactor = Math.min(2.5, easinessFactor + 0.1);
+        interval = Math.round(interval * easinessFactor);
+        correctCount++;
+      } else {
+        easinessFactor = Math.max(1.3, easinessFactor - 0.2);
+        interval = 1;
+        incorrectCount++;
+      }
+
+      // Update status based on interval
+      if (interval >= 21) {
+        status = 'mastered';
+      } else if (interval >= 7) {
+        status = 'review';
+      } else if (interval >= 1) {
+        status = 'learning';
+      }
+
+      // Calculate next review date
+      const nextReviewAt = new Date();
+      nextReviewAt.setDate(nextReviewAt.getDate() + interval);
+
+      const updated = await this.databaseService.vocabulary.update({
+        where: { idVocab: userVocab.idVocab },
+        data: {
+          timesReviewed: timesReviewed + 1,
+          easinessFactor,
+          interval,
+          nextReviewAt,
+          status,
+          lastReviewed: new Date(),
+        },
+      });
+
+      results.push({
+        vocabId: updated.idVocab,
+        word: updated.word,
+        status: updated.status,
+        isCorrect,
+      });
+    }
+
+    return {
+      summary: {
+        total: answers.length,
+        correct: correctCount,
+        incorrect: incorrectCount,
+      },
+      results,
+    };
+  }
+
+  /**
+   * Get vocabulary statistics for a user
+   */
+  async getVocabStats(idUser: string) {
+    // Tier 1: High frequency 3k words
+    const tier1Total = await this.databaseService.vocabulary.count({
+      where: {
+        idUser: '',
+        tier: 1,
+      },
+    });
+
+    const tier1Mastered = await this.databaseService.vocabulary.count({
+      where: {
+        idUser,
+        tier: 1,
+        status: 'mastered',
+      },
+    });
+
+    // Tier 2: AWL 570 words
+    const tier2Total = await this.databaseService.vocabulary.count({
+      where: {
+        idUser: '',
+        tier: 2,
+      },
+    });
+
+    const tier2Mastered = await this.databaseService.vocabulary.count({
+      where: {
+        idUser,
+        tier: 2,
+        status: 'mastered',
+      },
+    });
+
+    return {
+      tier1Progress: {
+        mastered: tier1Mastered,
+        total: tier1Total,
+        percentage: tier1Total > 0 ? Math.round((tier1Mastered / tier1Total) * 10000) / 100 : 0,
+      },
+      tier2Progress: {
+        mastered: tier2Mastered,
+        total: tier2Total,
+        percentage: tier2Total > 0 ? Math.round((tier2Mastered / tier2Total) * 10000) / 100 : 0,
+      },
+    };
+  }
+
+  async getRandomWords(idUser: string, count: number, mode: string) {
+    // Get vocabulary words with status != 'mastered' for user
+    const words = await this.databaseService.vocabulary.findMany({
+      where: {
+        idUser,
+        status: { not: 'mastered' }
+      },
+      take: count,
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Shuffle the results
+    const shuffled = words.sort(() => Math.random() - 0.5).slice(0, count);
+
+    // For multiple mode: add wrong options
+    if (mode === 'multiple') {
+      for (const word of shuffled) {
+        const wrongOptions = await this.databaseService.vocabulary.findMany({
+          where: { idVocab: { not: word.idVocab } },
+          take: 3,
+          orderBy: { createdAt: 'desc' }
+        });
+        (word as any).options = [word.word, ...wrongOptions.map(w => w.word)].sort(() => Math.random() - 0.5);
+      }
+    }
+
+    return shuffled;
+  }
+
+  async submitPractice(idUser: string, mode: string, answers: any[]) {
+    // Update SM-2 for each word based on isCorrect
+    for (const answer of answers) {
+      const vocab = await this.databaseService.vocabulary.findUnique({
+        where: { idVocab: answer.idVocab }
+      });
+
+      if (vocab) {
+        let easinessFactor = vocab.easinessFactor || 2.5;
+        let interval = vocab.interval || 1;
+        let timesReviewed = vocab.timesReviewed || 0;
+
+        // SM-2 algorithm
+        if (answer.isCorrect) {
+          if (interval === 1) interval = 6;
+          else if (interval < 30) interval = Math.round(interval * easinessFactor);
+          else interval = Math.round(interval * easinessFactor);
+          easinessFactor = Math.max(1.3, easinessFactor + 0.1);
+        } else {
+          interval = 1;
+          easinessFactor = Math.max(1.3, easinessFactor - 0.2);
+        }
+
+        await this.databaseService.vocabulary.update({
+          where: { idVocab: answer.idVocab },
+          data: {
+            easinessFactor,
+            interval,
+            timesReviewed: timesReviewed + 1,
+            status: interval > 21 ? 'mastered' : interval > 1 ? 'review' : 'learning'
+          }
+        });
+      }
+    }
+
+    const correct = answers.filter(a => a.isCorrect).length;
+    return { summary: { correct, incorrect: answers.length - correct, total: answers.length } };
   }
 }

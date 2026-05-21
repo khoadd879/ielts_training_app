@@ -51,6 +51,7 @@ import { QuestionTypePerformanceModule } from './module/question-type-performanc
 import { GrammarTrackingModule } from './module/grammar-tracking/grammar-tracking.module';
 import { PaymentModule } from './module/payment/payment.module';
 import { SubscriptionModule } from './module/subscription/subscription.module';
+import { WeaknessModule } from './module/weakness/weakness.module';
 
 import * as redisStore from 'cache-manager-redis-store';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -144,6 +145,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     GrammarTrackingModule,
     PaymentModule,
     SubscriptionModule,
+    WeaknessModule,
   ],
   controllers: [AppController],
   providers: [

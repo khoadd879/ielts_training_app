@@ -1,5 +1,25 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 
+const GRAMMAR_TOPIC_IDS: Record<string, string> = {
+  'subject_verb': 'Subject-Verb Agreement',
+  'verb_tenses': 'Verb Tenses',
+  'articles': 'Articles (a/an/the)',
+  'prepositions': 'Prepositions',
+  'conditionals': 'Conditionals',
+  'passive_voice': 'Passive Voice',
+  'relative_clauses': 'Relative Clauses',
+  'sentence_structure': 'Sentence Structure',
+  'word_forms': 'Word Forms',
+  'connectors': 'Connectors/Coherence',
+};
+
+export interface GrammarViolation {
+  topicId: string;
+  userSentence: string;
+  correctedSentence: string;
+  explanation?: string;
+}
+
 export class NeonService {
   private prisma: PrismaClient;
 
@@ -127,6 +147,50 @@ export class NeonService {
         where: { idSubscription: sub.idSubscription },
         data: {
           creditsUsedThisPeriod: Math.max(0, sub.creditsUsedThisPeriod - refundAmount),
+        },
+      });
+    }
+  }
+
+  async saveGrammarViolations(
+    userId: string,
+    source: 'WRITING' | 'SPEAKING',
+    submissionId: string,
+    grammarViolations: GrammarViolation[],
+  ): Promise<void> {
+    for (const v of grammarViolations) {
+      const topicTitle = GRAMMAR_TOPIC_IDS[v.topicId];
+      if (!topicTitle) continue;
+
+      // Find grammar id by title
+      const grammar = await this.prisma.grammar.findFirst({
+        where: { title: { contains: topicTitle.split(' ')[0] } },
+      });
+
+      if (!grammar) continue;
+
+      // Create violation record
+      await this.prisma.userGrammarViolation.create({
+        data: {
+          idUser: userId,
+          source,
+          idGrammar: grammar.idGrammar,
+          submissionId,
+          userSentence: v.userSentence,
+          correctedSentence: v.correctedSentence,
+        },
+      });
+
+      // Update proficiency wrong count
+      await this.prisma.userGrammarProficiency.upsert({
+        where: { idUser_idGrammar: { idUser, idGrammar: grammar.idGrammar } },
+        update: { wrongCount: { increment: 1 } },
+        create: {
+          idUser,
+          idGrammar: grammar.idGrammar,
+          proficiency: 'unknown',
+          wrongCount: 1,
+          totalAttempts: 1,
         },
       });
     }

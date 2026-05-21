@@ -6,11 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { GrammarService } from './grammar.service';
 import { CreateGrammarDto } from './dto/create-grammar.dto';
 import { UpdateGrammarDto } from './dto/update-grammar.dto';
+import { SubmitGrammarPracticeDto } from './dto/practice-grammar.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { Public } from 'src/decorator/customize';
 
 @ApiBearerAuth()
 @Controller('grammar')
@@ -51,6 +54,11 @@ export class GrammarController {
     return this.grammarService.findAll();
   }
 
+  @Get('categories/system')
+  findSystemCategories() {
+    return this.grammarService.findSystemCategories();
+  }
+
   @Get('grammar-by-user-category/:idGrammarCategory/:idUser')
   findOne(
     @Param('idGrammarCategory') idGrammarCategory: string,
@@ -83,5 +91,20 @@ export class GrammarController {
       idGrammar,
       idUser,
     );
+  }
+
+  @Get('practice/random')
+  async getPracticeRandom(
+    @Query('idUser') idUser: string,
+    @Query('count') count: number = 10
+  ) {
+    const exercises = await this.grammarService.getRandomExercises(idUser, count);
+    return { data: exercises };
+  }
+
+  @Post('practice/submit')
+  async submitPractice(@Body() body: SubmitGrammarPracticeDto) {
+    const result = await this.grammarService.submitPractice(body.idUser, body.answers);
+    return result;
   }
 }

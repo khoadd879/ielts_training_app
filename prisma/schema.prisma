@@ -74,7 +74,14 @@ model User {
 
   // Study Planner
   userDailyTaskCompletions UserDailyTaskCompletion[]
-  userStudyPreference      UserStudyPreference?
+  userStudyPreference      UserStudyPreference[]
+
+  // Question Type Performance
+  questionTypePerformances QuestionTypePerformance[]
+
+  // Grammar Tracking
+  grammarProficiencies UserGrammarProficiency[]
+  grammarViolations  UserGrammarViolation[]
 }
 
 model VerificationCode {
@@ -440,6 +447,7 @@ model Grammar {
   categories GrammarsOnCategories[]
   exercises GrammarExercise[]
   proficiencies UserGrammarProficiency[]
+  violations UserGrammarViolation[]
 }
 
 model GrammarsOnCategories {
@@ -477,6 +485,7 @@ model UserGrammarProficiency {
   updatedAt   DateTime @updatedAt
 
   grammar     Grammar  @relation(fields: [idGrammar], references: [idGrammar])
+  user        User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@id([idUser, idGrammar])
 }
@@ -492,6 +501,9 @@ model UserGrammarViolation {
   correctedSentence String
 
   createdAt DateTime @default(now())
+
+  grammar    Grammar @relation(fields: [idGrammar], references: [idGrammar])
+  user      User    @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@index([idUser, idGrammar])
 }
@@ -1005,6 +1017,8 @@ model QuestionTypePerformance {
   errorRate     Float @default(0)
 
   lastAttemptAt DateTime?
+
+  user     User    @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@unique([idUser, skillType, questionType])
 }

@@ -55,7 +55,7 @@ export class GrammarTrackingService {
 
       // Update proficiency wrong count
       await this.db.userGrammarProficiency.upsert({
-        where: { idUser_idGrammar: { idUser, idGrammar: grammar.idGrammar } },
+        where: { idUser_idGrammar: { idUser: userId, idGrammar: grammar.idGrammar } },
         update: { wrongCount: { increment: 1 } },
         create: {
           idUser: userId,

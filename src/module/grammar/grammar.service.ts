@@ -128,6 +128,77 @@ export class GrammarService {
     };
   }
 
+  async findSystemCategories() {
+    const data = await this.databaseService.grammarCategory.findMany({
+      where: { idUser: null },
+      include: {
+        grammars: {
+          include: { grammar: true }
+        }
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+    return {
+      message: 'System categories retrieved successfully',
+      data,
+      status: 200
+    };
+  }
+
+  async getRandomExercises(idUser: string, count: number = 10) {
+    const exercises = await this.databaseService.grammarExercise.findMany({
+      take: count,
+      orderBy: {
+        createdAt: 'desc'
+      },
+      include: {
+        grammar: true
+      }
+    });
+
+    // Shuffle and limit to count
+    return exercises.sort(() => Math.random() - 0.5).slice(0, count).map(ex => ({
+      id: ex.id,
+      idGrammar: ex.idGrammar,
+      type: ex.type,
+      content: ex.content,
+      title: ex.grammar.title
+    }));
+  }
+
+  async submitPractice(idUser: string, answers: any[]) {
+    // Update UserGrammarProficiency for each answer
+    for (const answer of answers) {
+      const exercise = await this.databaseService.grammarExercise.findUnique({
+        where: { id: answer.exerciseId }
+      });
+
+      if (exercise) {
+        await this.databaseService.userGrammarProficiency.upsert({
+          where: {
+            idUser_idGrammar: { idUser, idGrammar: exercise.idGrammar }
+          },
+          update: {
+            totalAttempts: { increment: 1 },
+            correctCount: answer.isCorrect ? { increment: 1 } : undefined,
+            wrongCount: answer.isCorrect ? undefined : { increment: 1 }
+          },
+          create: {
+            idUser,
+            idGrammar: exercise.idGrammar,
+            totalAttempts: 1,
+            correctCount: answer.isCorrect ? 1 : 0,
+            wrongCount: answer.isCorrect ? 0 : 1,
+            proficiency: 'unknown'
+          }
+        });
+      }
+    }
+
+    const correct = answers.filter(a => a.isCorrect).length;
+    return { summary: { correct, incorrect: answers.length - correct, total: answers.length } };
+  }
+
   async findAllInUserCategory(idGrammarCategory: string, idUser: string) {
     const category = await this.databaseService.grammarCategory.findFirst({
       where: { idGrammarCategory, idUser },
