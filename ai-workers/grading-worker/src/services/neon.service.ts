@@ -183,10 +183,10 @@ export class NeonService {
 
       // Update proficiency wrong count
       await this.prisma.userGrammarProficiency.upsert({
-        where: { idUser_idGrammar: { idUser, idGrammar: grammar.idGrammar } },
+        where: { idUser_idGrammar: { idUser: userId, idGrammar: grammar.idGrammar } },
         update: { wrongCount: { increment: 1 } },
         create: {
-          idUser,
+          idUser: userId,
           idGrammar: grammar.idGrammar,
           proficiency: 'unknown',
           wrongCount: 1,

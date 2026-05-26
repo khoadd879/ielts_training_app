@@ -185,7 +185,7 @@ export class QuestionMetadataValidator {
       );
     }
 
-    return result.data as ValidatedMetadata;
+    return result.data;
   }
 
   static validateMultiple(
