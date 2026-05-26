@@ -9,6 +9,7 @@ import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
 import { SubmitReviewDto, GetDueReviewDto, GetTierRecommendationDto } from './dto/review.dto';
 import { CompleteDailyVocabDto, VocabAnswerDto, GetDailyVocabDto } from './dto/vocab-daily.dto';
+import { GetDailySessionDto } from './dto/get-daily-session.dto';
 import { DatabaseService } from 'src/database/database.service';
 import axios, { AxiosError } from 'axios';
 import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
@@ -101,22 +102,45 @@ export class VocabularyService {
   async submitReview(submitReviewDto: SubmitReviewDto) {
     const { idVocab, idUser, quality } = submitReviewDto;
 
-    const vocabulary = await this.databaseService.vocabulary.findUnique({
+    const systemVocab = await this.databaseService.vocabulary.findUnique({
       where: { idVocab },
     });
 
-    if (!vocabulary) {
+    if (!systemVocab) {
       throw new BadRequestException('Vocabulary not found');
     }
 
-    if (vocabulary.idUser !== idUser) {
-      throw new BadRequestException('Vocabulary does not belong to user');
+    // Find or create user vocabulary record (for system vocab)
+    let userVocab = await this.databaseService.vocabulary.findFirst({
+      where: {
+        idUser,
+        word: systemVocab.word,
+      },
+    });
+
+    if (!userVocab) {
+      // Create user vocabulary based on system vocab
+      userVocab = await this.databaseService.vocabulary.create({
+        data: {
+          idUser,
+          word: systemVocab.word,
+          meaning: systemVocab.meaning,
+          phonetic: systemVocab.phonetic,
+          VocabType: systemVocab.VocabType,
+          tier: systemVocab.tier,
+          frequencyRank: systemVocab.frequencyRank,
+          status: 'new',
+          timesReviewed: 0,
+          easinessFactor: 2.5,
+          interval: 1,
+        },
+      });
     }
 
     // Get current SM-2 values
-    const repetitions = vocabulary.timesReviewed || 0;
-    const easiness = vocabulary.easinessFactor || 2.5;
-    const interval = vocabulary.interval || 1;
+    const repetitions = userVocab.timesReviewed || 0;
+    const easiness = userVocab.easinessFactor || 2.5;
+    const interval = userVocab.interval || 1;
 
     // Calculate new SM-2 values
     const result = this.sm2(quality, repetitions, easiness, interval);
@@ -126,7 +150,7 @@ export class VocabularyService {
     nextReviewAt.setDate(nextReviewAt.getDate() + result.interval);
 
     // Determine new status based on repetitions and quality
-    let status = vocabulary.status || 'new';
+    let status = userVocab.status || 'new';
     if (quality < 3) {
       status = 'learning';
     } else if (result.repetitions >= 5 && result.easiness >= 2.5) {
@@ -138,7 +162,7 @@ export class VocabularyService {
     }
 
     const updated = await this.databaseService.vocabulary.update({
-      where: { idVocab },
+      where: { idVocab: userVocab.idVocab },
       data: {
         timesReviewed: result.repetitions,
         easinessFactor: result.easiness,
@@ -670,6 +694,146 @@ Yêu cầu:
       },
       results,
     };
+  }
+
+  /**
+   * Get daily session words: due review + new words to fill quota
+   */
+  async getDailySessionWords(getDailySessionDto: GetDailySessionDto) {
+    const { idUser, quota = 15 } = getDailySessionDto;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Get due words (overdue first, then new words with null nextReviewAt)
+    const dueWords = await this.databaseService.vocabulary.findMany({
+      where: {
+        idUser,
+        status: { not: 'mastered' },
+        OR: [
+          { nextReviewAt: { lte: today } },
+          { nextReviewAt: null },
+        ],
+      },
+      orderBy: [
+        { nextReviewAt: 'asc' },
+        { createdAt: 'asc' },
+      ],
+      take: quota,
+    });
+
+    const dueCount = dueWords.length;
+
+    // 2. If need more words, fill with new system words
+    let newCount = 0;
+    let newWords: any[] = [];
+
+    if (dueCount < quota) {
+      const slotsNeeded = quota - dueCount;
+
+      const userWordTexts = await this.databaseService.vocabulary.findMany({
+        where: { idUser },
+        select: { word: true },
+      });
+      const existingWords = new Set(userWordTexts.map(w => w.word.toLowerCase()));
+
+      newWords = await this.databaseService.vocabulary.findMany({
+        where: {
+          idUser: '',
+          word: { notIn: Array.from(existingWords) },
+          tier: { in: [1, 2] },
+        },
+        take: slotsNeeded * 3,
+        orderBy: { idVocab: 'desc' },
+      });
+
+      newWords.sort(() => Math.random() - 0.5);
+      newWords = newWords.slice(0, slotsNeeded).map(v => ({
+        ...v,
+        isNew: true,
+      }));
+      newCount = newWords.length;
+    }
+
+    const allWords = [...dueWords.map(w => ({ ...w, isNew: false })), ...newWords];
+
+    const result: any[] = [];
+    const dueOnly = allWords.filter(w => !w.isNew);
+    const newOnly = allWords.filter(w => w.isNew);
+
+    for (let i = 0; i < Math.max(dueOnly.length, newOnly.length); i++) {
+      if (i < dueOnly.length) result.push(dueOnly[i]);
+      if (i < newOnly.length) result.push(newOnly[i]);
+    }
+
+    return {
+      words: result.map(v => ({
+        idVocab: v.idVocab,
+        word: v.word,
+        phonetic: v.phonetic,
+        meaning: v.meaning,
+        VocabType: v.VocabType,
+        example: v.example,
+        isNew: v.isNew,
+        status: v.status,
+      })),
+      dueCount,
+      newCount,
+      sessionDate: today.toISOString(),
+    };
+  }
+
+  /**
+   * Save a word to user's collection
+   */
+  async saveToCollection(idUser: string, vocabId: string, topicId?: string) {
+    const sourceVocab = await this.databaseService.vocabulary.findUnique({
+      where: { idVocab: vocabId },
+    });
+
+    if (!sourceVocab) {
+      throw new BadRequestException('Word not found');
+    }
+
+    const existing = await this.databaseService.vocabulary.findFirst({
+      where: {
+        idUser,
+        word: { equals: sourceVocab.word, mode: 'insensitive' },
+      },
+    });
+
+    if (existing) {
+      if (topicId) {
+        await this.databaseService.vocabulary.update({
+          where: { idVocab: existing.idVocab },
+          data: { idTopic: topicId },
+        });
+      }
+      return { message: 'Word already in collection', idVocab: existing.idVocab };
+    }
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const newVocab = await this.databaseService.vocabulary.create({
+      data: {
+        idUser,
+        word: sourceVocab.word,
+        meaning: sourceVocab.meaning,
+        phonetic: sourceVocab.phonetic,
+        VocabType: sourceVocab.VocabType,
+        example: sourceVocab.example,
+        tier: sourceVocab.tier,
+        frequencyRank: sourceVocab.frequencyRank,
+        idTopic: topicId || null,
+        status: 'new',
+        nextReviewAt: tomorrow,
+        timesReviewed: 0,
+        easinessFactor: 2.5,
+        interval: 1,
+      },
+    });
+
+    return { message: 'Word saved to collection', idVocab: newVocab.idVocab };
   }
 
   /**

@@ -17,6 +17,7 @@ import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { AddVocabularyToTopicDto } from './dto/add-vocabulary-to-topic.dto';
 import { SubmitReviewDto, GetDueReviewDto, GetTierRecommendationDto } from './dto/review.dto';
 import { GetDailyVocabDto, CompleteDailyVocabDto } from './dto/vocab-daily.dto';
+import { GetDailySessionDto } from './dto/get-daily-session.dto';
 
 @ApiBearerAuth()
 @Controller('vocabulary')
@@ -93,6 +94,20 @@ export class VocabularyController {
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   completeDailyVocab(@Body() body: CompleteDailyVocabDto) {
     return this.vocabularyService.completeDailyVocab(body);
+  }
+
+  @Get('daily-session')
+  getDailySession(@Query() query: GetDailySessionDto) {
+    return this.vocabularyService.getDailySessionWords(query);
+  }
+
+  @Post('save-to-collection')
+  saveToCollection(
+    @Body('idUser') idUser: string,
+    @Body('vocabId') vocabId: string,
+    @Body('topicId') topicId?: string,
+  ) {
+    return this.vocabularyService.saveToCollection(idUser, vocabId, topicId);
   }
 
   @Get('stats/:userId')
