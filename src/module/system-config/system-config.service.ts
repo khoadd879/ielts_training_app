@@ -163,4 +163,50 @@ export class SystemConfigService {
       });
     }
   }
+
+  // Study Planner Config
+  private readonly DEFAULT_STUDY_PLANNER_CONFIG = {
+    grammarPercentByStage: {
+      FOUNDATION: 25,
+      SKILL_BUILDING: 18,
+      INTEGRATION: 13,
+      EXAM_PREP: 10,
+    },
+    vocabMinutes: 8,
+    grammarFloorMinutes: 5,
+    priorityWeights: {
+      1: [100],
+      2: [50, 50],
+      3: [40, 30, 30],
+      4: [40, 30, 20, 10],
+    },
+  };
+
+  async getStudyPlannerConfig(): Promise<any> {
+    const value = await this.getConfig('study_planner_config');
+    return value || this.DEFAULT_STUDY_PLANNER_CONFIG;
+  }
+
+  async setStudyPlannerConfig(
+    config: any,
+    actorId?: string,
+    actorName?: string,
+    actorRole?: Role,
+  ): Promise<void> {
+    const before = await this.getStudyPlannerConfig();
+    await this.setConfig('study_planner_config', config);
+
+    if (this.auditLogService && actorId) {
+      await this.auditLogService.createEntry({
+        actorId,
+        actorName,
+        actorRole: actorRole || Role.ADMIN,
+        action: 'STUDY_PLANNER_CONFIG_UPDATE',
+        targetType: 'SystemConfig',
+        targetId: 'study_planner_config',
+        beforeValue: before,
+        afterValue: config,
+      });
+    }
+  }
 }

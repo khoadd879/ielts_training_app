@@ -108,6 +108,7 @@ export class GrammarController {
     return result;
   }
 
+  @Public()
   @Get('dashboard')
   async getDashboard(@Query('idUser') idUser: string) {
     const result = await this.grammarService.getDashboard(idUser);

@@ -39,6 +39,13 @@ export class CalculatePlanDto {
   @Min(1)
   @Max(4)
   studyHoursPerDay?: number;
+
+  @ApiPropertyOptional({ description: 'History months for band calculation (3, 6, or 12)', minimum: 1, maximum: 12, default: 6 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(12)
+  historyMonths?: number = 6;
 }
 
 export class GetPlanDto {
