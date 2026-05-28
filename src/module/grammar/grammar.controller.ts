@@ -107,4 +107,37 @@ export class GrammarController {
     const result = await this.grammarService.submitPractice(body.idUser, body.answers);
     return result;
   }
+
+  @Get('dashboard')
+  async getDashboard(@Query('idUser') idUser: string) {
+    const result = await this.grammarService.getDashboard(idUser);
+    return result.data;
+  }
+
+  @Get(':idGrammar/practice')
+  async getPracticeByTopic(
+    @Param('idGrammar') idGrammar: string,
+    @Query('count') count: number = 10
+  ) {
+    return this.grammarService.getPracticeByTopic(idGrammar, count);
+  }
+
+  @Get(':idGrammar/due-reviews')
+  async getDueReviews(
+    @Param('idGrammar') idGrammar: string,
+    @Query('idUser') idUser: string
+  ) {
+    return this.grammarService.getDueReviews(idUser, idGrammar);
+  }
+
+  @Post('violation')
+  async saveViolation(@Body() body: {
+    idUser: string;
+    idGrammar: string;
+    source: string;
+    userSentence: string;
+    correctedSentence: string;
+  }) {
+    return this.grammarService.saveViolation(body);
+  }
 }

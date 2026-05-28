@@ -1,0 +1,11698 @@
+// seed-cambridge-19-reviewed.js
+// Source: https://ielts-fighter.com/reading/tu-vung-cambridge-ielts-19_mt1641797974.html
+// Crawled: 2026-05-21
+// Total words: 1,662
+
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+const CAMBRIDGE_IELTS_19 = [
+  {
+    "word": "incredible",
+    "phonetic": "/ɪnˈkredəbl/",
+    "type": "adj",
+    "meaning": "đáng kinh ngạc",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "achievement",
+    "phonetic": "/əˈtʃiːvmənt/",
+    "type": "n",
+    "meaning": "thành tựu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "remarkable",
+    "phonetic": "/rɪˈmɑːkəbl/",
+    "type": "adj",
+    "meaning": "đáng chú ý, khác thường",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "period",
+    "phonetic": "/ˈpɪəriəd/",
+    "type": "n",
+    "meaning": "giai đoạn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "competing",
+    "phonetic": "/kəmˈpiːtɪŋ/",
+    "type": "v",
+    "meaning": "cạnh tranh, thi đấu",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "regarded as",
+    "phonetic": "/rɪˈɡɑːdɪd æz/",
+    "type": "phr",
+    "meaning": "được xem là, coi là",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "talented",
+    "phonetic": "/ˈtæləntɪd/",
+    "type": "adj",
+    "meaning": "tài năng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "outsider",
+    "phonetic": "/ˌaʊtˈsaɪdə/",
+    "type": "n",
+    "meaning": "người ngoài cuộc (ít cơ hội thắng)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "major tournaments",
+    "phonetic": "/ˈmeɪdʒə ˈtʊənəmənts/",
+    "type": "n",
+    "meaning": "các giải đấu lớn (grand slams)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "transformation",
+    "phonetic": "/ˌtrænsfəˈmeɪʃn/",
+    "type": "n",
+    "meaning": "sự biến đổi, thay đổi hoàn toàn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "account for",
+    "phonetic": "/əˈkaʊnt fɔː/",
+    "type": "v",
+    "meaning": "giải thích cho, là nguyên nhân",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "visible",
+    "phonetic": "/ˈvɪzəbl/",
+    "type": "adj",
+    "meaning": "có thể thấy được, rõ ràng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "widely publicised",
+    "phonetic": "/ˈwaɪdli ˈpʌblɪsaɪzd/",
+    "type": "adj.phr",
+    "meaning": "được công bố/đưa tin rộng rãi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "coaching team",
+    "phonetic": "/ˈkəʊtʃɪŋ tiːm/",
+    "type": "n",
+    "meaning": "đội ngũ huấn luyện",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "impact",
+    "phonetic": "/ˈɪmpækt/",
+    "type": "n",
+    "meaning": "tác động, ảnh hưởng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "playing style",
+    "phonetic": "/ˈpleɪɪŋ staɪl/",
+    "type": "n",
+    "meaning": "phong cách chơi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "subtle",
+    "phonetic": "/ˈsʌtl/",
+    "type": "adj",
+    "meaning": "tinh tế, khó nhận ra",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "unnoticed",
+    "phonetic": "/ˌʌnˈnəʊtɪst/",
+    "type": "adj",
+    "meaning": "không được chú ý đến",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "consist of",
+    "phonetic": "/kənˈsɪst əv/",
+    "type": "v",
+    "meaning": "bao gồm",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "verticals (mains)",
+    "phonetic": "/ˈvɜːtɪkəlz/",
+    "type": "n",
+    "meaning": "dây dọc (của vợt)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "horizontals (crosses)",
+    "phonetic": "/ˌhɒrɪˈzɒntlz/",
+    "type": "n",
+    "meaning": "dây ngang (của vợt)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "synthetic",
+    "phonetic": "/sɪnˈθetɪk/",
+    "type": "adj",
+    "meaning": "tổng hợp, nhân tạo",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "switch to",
+    "phonetic": "/swɪtʃ tuː/",
+    "type": "v",
+    "meaning": "chuyển sang",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "underestimate",
+    "phonetic": "/ˌʌndərˈestɪmeɪt/",
+    "type": "v",
+    "meaning": "đánh giá thấp",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "modification",
+    "phonetic": "/ˌmɒdɪfɪˈkeɪʃn/",
+    "type": "n",
+    "meaning": "sự điều chỉnh, sửa đổi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "tweak",
+    "phonetic": "/twiːk/",
+    "type": "v",
+    "meaning": "tinh chỉnh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "customise",
+    "phonetic": "/ˈkʌstəmaɪz/",
+    "type": "v",
+    "meaning": "tùy chỉnh (theo yêu cầu riêng)",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "specific",
+    "phonetic": "/spəˈsɪfɪk/",
+    "type": "adj",
+    "meaning": "cụ thể, riêng biệt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "performance maximisation",
+    "phonetic": "/pəˈfɔːməns ˌmæksɪmaɪˈzeɪʃn/",
+    "type": "n",
+    "meaning": "tối đa hóa hiệu suất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "elite",
+    "phonetic": "/ɪˈliːt/",
+    "type": "adj/n",
+    "meaning": "tinh hoa, nhóm xuất sắc nhất",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "readily available",
+    "phonetic": "/ˈredɪli əˈveɪləbl/",
+    "type": "adj",
+    "meaning": "có sẵn, dễ tiếp cận",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "individually",
+    "phonetic": "/ˌɪndɪˈvɪdʒuəli/",
+    "type": "adv",
+    "meaning": "một cách riêng lẻ",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "specifications",
+    "phonetic": "/ˌspesɪfɪˈkeɪʃnz/",
+    "type": "n",
+    "meaning": "thông số kỹ thuật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "manufacturer",
+    "phonetic": "/ˌmænjuˈfæktʃərə/",
+    "type": "n",
+    "meaning": "nhà sản xuất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "frame",
+    "phonetic": "/freɪm/",
+    "type": "n",
+    "meaning": "khung vợt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "thorough",
+    "phonetic": "/ˈtʌrə/",
+    "type": "adj",
+    "meaning": "kỹ lưỡng, tỉ mỉ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "process",
+    "phonetic": "/ˈprəʊses/",
+    "type": "n",
+    "meaning": "quy trình",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "adjust",
+    "phonetic": "/əˈdʒʌst/",
+    "type": "v",
+    "meaning": "điều chỉnh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "experiment with",
+    "phonetic": "/ɪkˈsperɪmənt wɪð/",
+    "type": "v",
+    "meaning": "thử nghiệm với",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "average",
+    "phonetic": "/ˈævərɪdʒ/",
+    "type": "adj/n",
+    "meaning": "trung bình",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "denser",
+    "phonetic": "/ˈdensə/",
+    "type": "adj",
+    "meaning": "dày hơn, đặc hơn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "string pattern",
+    "phonetic": "/strɪŋ ˈpætən/",
+    "type": "n",
+    "meaning": "mật độ/cấu trúc dây vợt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "primary",
+    "phonetic": "/ˈpraɪməri/",
+    "type": "adj",
+    "meaning": "chính, chủ yếu",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "increasingly",
+    "phonetic": "/ɪnˈkriːsɪŋli/",
+    "type": "adv",
+    "meaning": "ngày càng tăng",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "creative",
+    "phonetic": "/kriˈeɪtɪv/",
+    "type": "adj",
+    "meaning": "sáng tạo",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "maximise",
+    "phonetic": "/ˈmæksɪmaɪz/",
+    "type": "v",
+    "meaning": "tối đa hóa",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "competitive advantage",
+    "phonetic": "/kəmˈpetətɪv ədˈvɑːntɪdʒ/",
+    "type": "n",
+    "meaning": "lợi thế cạnh tranh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "amateur",
+    "phonetic": "/ˈæmətə/",
+    "type": "n/adj",
+    "meaning": "nghiệp dư",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "generate",
+    "phonetic": "/ˈdʒenəreɪt/",
+    "type": "v",
+    "meaning": "tạo ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "topspin",
+    "phonetic": "/ˈtɒpspɪn/",
+    "type": "n",
+    "meaning": "độ xoáy xuôi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "banned",
+    "phonetic": "/bænd/",
+    "type": "v (p2)",
+    "meaning": "bị cấm",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "International Tennis Federation",
+    "phonetic": "/ˌɪntəˈnæʃnəl ˈtenɪs ˌfedəˈreɪʃn/",
+    "type": "n",
+    "meaning": "liên đoàn quần vợt quốc tế",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "regularity",
+    "phonetic": "/ˌreɡjuˈlærəti/",
+    "type": "n",
+    "meaning": "sự phổ biến đều đặn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "aspect",
+    "phonetic": "/ˈæspekt/",
+    "type": "n",
+    "meaning": "khía cạnh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "significance",
+    "phonetic": "/sɪɡˈnɪfɪkəns/",
+    "type": "n",
+    "meaning": "tầm quan trọng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "equally",
+    "phonetic": "/ˈiːkwəli/",
+    "type": "adv",
+    "meaning": "một cách ngang bằng",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "nutrition",
+    "phonetic": "/njuˈtrɪʃn/",
+    "type": "n",
+    "meaning": "dinh dưỡng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "string bed",
+    "phonetic": "/strɪŋ bed/",
+    "type": "n",
+    "meaning": "mặt dây vợt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "tension",
+    "phonetic": "/ˈtenʃn/",
+    "type": "n",
+    "meaning": "độ căng (dây vợt)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "install",
+    "phonetic": "/ɪnˈstɔːl/",
+    "type": "v",
+    "meaning": "lắp đặt, căng (dây)",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "factors",
+    "phonetic": "/ˈfæktəz/",
+    "type": "n",
+    "meaning": "các yếu tố",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "climatic conditions",
+    "phonetic": "/klaɪˈmætɪk kənˈdɪʃnz/",
+    "type": "n",
+    "meaning": "điều kiện khí hậu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "surface",
+    "phonetic": "/ˈsɜːfɪs/",
+    "type": "n",
+    "meaning": "mặt sân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "natural gut",
+    "phonetic": "/ˈnætʃrəl ɡʌt/",
+    "type": "n",
+    "meaning": "dây ruột tự nhiên",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "intestines",
+    "phonetic": "/ɪnˈtestɪnz/",
+    "type": "n",
+    "meaning": "ruột (động vật)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "durable",
+    "phonetic": "/ˈdjʊərəbl/",
+    "type": "adj",
+    "meaning": "bền",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "affordable",
+    "phonetic": "/əˈfɔːdəbl/",
+    "type": "adj",
+    "meaning": "giá cả phải chăng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "nylon",
+    "phonetic": "/ˈnaɪlɒn/",
+    "type": "n",
+    "meaning": "ni-lông",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "Kevlar",
+    "phonetic": "/ˈkev.lɑːr/",
+    "type": "n",
+    "meaning": "vật liệu Kevlar (tên thương hiệu)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "stiff",
+    "phonetic": "/stɪf/",
+    "type": "adj",
+    "meaning": "cứng, ít đàn hồi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "co-polyester",
+    "phonetic": "/ˌkəʊ pɒliˈestə/",
+    "type": "n",
+    "meaning": "dây nhựa tổng hợp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "additives",
+    "phonetic": "/ˈædɪtɪvz/",
+    "type": "n",
+    "meaning": "chất phụ gia",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "enhance",
+    "phonetic": "/ɪnˈhɑːns/",
+    "type": "v",
+    "meaning": "nâng cao, cải thiện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "hybrid set-up",
+    "phonetic": "/ˈhaɪbrɪd set ʌp/",
+    "type": "n",
+    "meaning": "cấu hình lai (kết hợp dây)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "widely used",
+    "phonetic": "/ˈwaɪdli juːzd/",
+    "type": "adj",
+    "meaning": "được dùng rộng rãi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "battle it out",
+    "phonetic": "/ˈbætl ɪt aʊt/",
+    "type": "phr v",
+    "meaning": "đấu/so kè quyết liệt",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "indicate",
+    "phonetic": "/ˈɪndɪkeɪt/",
+    "type": "v",
+    "meaning": "chỉ ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "spin",
+    "phonetic": "/spɪn/",
+    "type": "n",
+    "meaning": "độ xoáy",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "revolutionise",
+    "phonetic": "/ˌrevəˈluːʃənaɪz/",
+    "type": "v",
+    "meaning": "cách mạng hóa",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "development",
+    "phonetic": "/dɪˈveləpmənt/",
+    "type": "n",
+    "meaning": "sự phát triển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "basic",
+    "phonetic": "/ˈbeɪsɪk/",
+    "type": "adj",
+    "meaning": "cơ bản",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "go beyond",
+    "phonetic": "/ɡəʊ bɪˈjɒnd/",
+    "type": "phr v",
+    "meaning": "vượt xa hơn mức cơ bản",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "serving power",
+    "phonetic": "/ˈsɜːvɪŋ ˈpaʊə/",
+    "type": "n",
+    "meaning": "sức mạnh cú giao bóng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "attributed to",
+    "phonetic": "/əˈtrɪbjuːtɪd tuː/",
+    "type": "phr",
+    "meaning": "được cho là do/nhờ vào",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "lead weights",
+    "phonetic": "/led weɪts/",
+    "type": "n",
+    "meaning": "tạ chì",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "manufacturing process",
+    "phonetic": "/ˌmænjuˈfæktərɪŋ ˈprəʊses/",
+    "type": "n",
+    "meaning": "quá trình sản xuất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "handle",
+    "phonetic": "/ˈhændl/",
+    "type": "n",
+    "meaning": "tay cầm, cán vợt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "preferences",
+    "phonetic": "/ˈprefərənsɪz/",
+    "type": "n",
+    "meaning": "sở thích cá nhân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mould",
+    "phonetic": "/məʊld/",
+    "type": "v",
+    "meaning": "đúc, tạo khuôn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "grip",
+    "phonetic": "/ɡrɪp/",
+    "type": "n",
+    "meaning": "lớp quấn cán/tay cầm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "uncomfortable",
+    "phonetic": "/ʌnˈkʌmftəbl/",
+    "type": "adj",
+    "meaning": "không thoải mái",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "customisation",
+    "phonetic": "/ˌkʌstəmaɪˈzeɪʃn/",
+    "type": "n",
+    "meaning": "sự tùy chỉnh (theo yêu cầu)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "standards",
+    "phonetic": "/ˈstændədz/",
+    "type": "n",
+    "meaning": "tiêu chuẩn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "anticipated",
+    "phonetic": "/ænˈtɪsɪpeɪtɪd/",
+    "type": "v (p2)",
+    "meaning": "được dự đoán trước",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "wooden frames",
+    "phonetic": "/ˈwʊdn freɪmz/",
+    "type": "n",
+    "meaning": "khung gỗ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "future",
+    "phonetic": "/ˈfjuːtʃə/",
+    "type": "n",
+    "meaning": "tương lai",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "pirates",
+    "phonetic": "/ˈpaɪrəts/",
+    "type": "n",
+    "meaning": "cướp biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "Mediterranean",
+    "phonetic": "/ˌmedɪtəˈreɪniən/",
+    "type": "n",
+    "meaning": "Địa Trung Hải (tên riêng)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "attacking",
+    "phonetic": "/əˈtækɪŋ/",
+    "type": "v",
+    "meaning": "tấn công",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "pursuers",
+    "phonetic": "/pəˈsjuːəz/",
+    "type": "n",
+    "meaning": "người truy đuổi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "millennia",
+    "phonetic": "/mɪˈleniə/",
+    "type": "n",
+    "meaning": "các thiên niên kỷ (số nhiều)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mentions",
+    "phonetic": "/ˈmenʃənz/",
+    "type": "v",
+    "meaning": "đề cập",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "image",
+    "phonetic": "/ˈɪmɪdʒ/",
+    "type": "n",
+    "meaning": "hình ảnh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "crew",
+    "phonetic": "/kruː/",
+    "type": "n",
+    "meaning": "thủy thủ đoàn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "misfits",
+    "phonetic": "/ˈmɪsfɪts/",
+    "type": "n",
+    "meaning": "những kẻ lạc loài",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "daredevils",
+    "phonetic": "/ˈdeədevlz/",
+    "type": "n",
+    "meaning": "những kẻ liều lĩnh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "adventurers",
+    "phonetic": "/ədˈventʃərəz/",
+    "type": "n",
+    "meaning": "người thích phiêu lưu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "command",
+    "phonetic": "/kəˈmɑːnd/",
+    "type": "v",
+    "meaning": "chỉ huy, điều khiển",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "Caribbean",
+    "phonetic": "/ˌkærəˈbiːən/",
+    "type": "n",
+    "meaning": "vùng Caribbean (tên riêng)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "swashbucklers",
+    "phonetic": "/ˈswɒʃˌbʌk.lərz/",
+    "type": "n",
+    "meaning": "những kẻ làm liều, tay kiếm phiêu lưu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "prowled",
+    "phonetic": "/praʊld/",
+    "type": "v",
+    "meaning": "lảng vảng, lén lút rình rập",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "raiding",
+    "phonetic": "/ˈreɪdɪŋ/",
+    "type": "v",
+    "meaning": "tấn công, cướp bóc",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "vital",
+    "phonetic": "/ˈvaɪtl/",
+    "type": "adj",
+    "meaning": "quan trọng sống còn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "trade routes",
+    "phonetic": "/treɪd ruːts/",
+    "type": "n",
+    "meaning": "tuyến đường thương mại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "efforts",
+    "phonetic": "/ˈefəts/",
+    "type": "n",
+    "meaning": "nỗ lực",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "ancient states",
+    "phonetic": "/ˈeɪnʃənt steɪts/",
+    "type": "n",
+    "meaning": "các quốc gia cổ đại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "might",
+    "phonetic": "/maɪt/",
+    "type": "n",
+    "meaning": "sức mạnh, quyền lực",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "remained unchanged",
+    "phonetic": "/rɪˈmeɪnd ʌnˈtʃeɪndʒd/",
+    "type": "v.phr",
+    "meaning": "vẫn không thay đổi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "Roman Republic",
+    "phonetic": "/ˈrəʊmən rɪˈpʌblɪk/",
+    "type": "n",
+    "meaning": "Cộng hòa La Mã (tên riêng)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "organise",
+    "phonetic": "/ˈɔːɡənaɪz/",
+    "type": "v",
+    "meaning": "tổ chức",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "massive fleet",
+    "phonetic": "/ˈmæsɪv fliːt/",
+    "type": "n",
+    "meaning": "hạm đội khổng lồ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "eliminate",
+    "phonetic": "/ɪˈlɪmɪneɪt/",
+    "type": "v",
+    "meaning": "loại bỏ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "eradicate",
+    "phonetic": "/ɪˈrædɪkeɪt/",
+    "type": "v",
+    "meaning": "xóa bỏ hoàn toàn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "piracy",
+    "phonetic": "/ˈpaɪrəsi/",
+    "type": "n",
+    "meaning": "hành động cướp biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "general",
+    "phonetic": "/ˈdʒenərəl/",
+    "type": "n",
+    "meaning": "tướng quân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "transforming",
+    "phonetic": "/trænsˈfɔːmɪŋ/",
+    "type": "v",
+    "meaning": "biến đổi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "recorded",
+    "phonetic": "/rɪˈkɔːdɪd/",
+    "type": "v",
+    "meaning": "được ghi nhận",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "reign",
+    "phonetic": "/reɪn/",
+    "type": "n",
+    "meaning": "thời kỳ trị vì",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "reasonable",
+    "phonetic": "/ˈriːznəbl/",
+    "type": "adj",
+    "meaning": "hợp lý",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "predated",
+    "phonetic": "/priːˈdeɪtɪd/",
+    "type": "v",
+    "meaning": "xảy ra trước",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "civilisation",
+    "phonetic": "/ˌsɪvəlaɪˈzeɪʃn/",
+    "type": "n",
+    "meaning": "nền văn minh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "importance",
+    "phonetic": "/ɪmˈpɔːtns/",
+    "type": "n",
+    "meaning": "tầm quan trọng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "geography",
+    "phonetic": "/dʒiˈɒɡrəfi/",
+    "type": "n",
+    "meaning": "địa lý",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "predominantly",
+    "phonetic": "/prɪˈdɒmɪnəntli/",
+    "type": "adv",
+    "meaning": "chủ yếu",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "fertile",
+    "phonetic": "/ˈfɜːtaɪl/",
+    "type": "adj",
+    "meaning": "màu mỡ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "rugged",
+    "phonetic": "/ˈrʌɡɪd/",
+    "type": "adj",
+    "meaning": "gồ ghề, hiểm trở",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "mountainous",
+    "phonetic": "/ˈmaʊntənəs/",
+    "type": "adj",
+    "meaning": "nhiều núi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "inhabitants",
+    "phonetic": "/ˈɪnˈhæbɪtənts/",
+    "type": "n",
+    "meaning": "cư dân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "marine resources",
+    "phonetic": "/məˈriːn rɪˈsɔːsɪz/",
+    "type": "n",
+    "meaning": "tài nguyên biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "possessed",
+    "phonetic": "/pəˈzest/",
+    "type": "v",
+    "meaning": "sở hữu",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "seafaring",
+    "phonetic": "/ˈsiːˌfeərɪŋ/",
+    "type": "adj",
+    "meaning": "đi biển, thuộc về nghề biển",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "unsurpassed",
+    "phonetic": "/ˌʌnsəˈpɑːst/",
+    "type": "adj",
+    "meaning": "vô song, không thể vượt qua",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "coastline",
+    "phonetic": "/ˈkəʊstlaɪn/",
+    "type": "n",
+    "meaning": "đường bờ biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "surprising",
+    "phonetic": "/səˈpraɪzɪŋ/",
+    "type": "adj",
+    "meaning": "đáng ngạc nhiên",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "hardships",
+    "phonetic": "/ˈhɑːdʃɪps/",
+    "type": "n",
+    "meaning": "sự khó khăn, gian khổ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "benefited",
+    "phonetic": "/ˈbenɪfɪtɪd/",
+    "type": "v",
+    "meaning": "có lợi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "coves",
+    "phonetic": "/kəʊvz/",
+    "type": "n",
+    "meaning": "vịnh nhỏ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "undetected",
+    "phonetic": "/ˌʌndɪˈtektɪd/",
+    "type": "adj",
+    "meaning": "không bị phát hiện",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "invention",
+    "phonetic": "/ɪnˈvenʃn/",
+    "type": "n",
+    "meaning": "sự phát minh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "restricted",
+    "phonetic": "/rɪˈstrɪktɪd/",
+    "type": "v/adj",
+    "meaning": "bị hạn chế",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "navigable routes",
+    "phonetic": "/ˈnævɪɡəbl ruːts/",
+    "type": "n",
+    "meaning": "các tuyến đường tàu đi được",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "merchant ship",
+    "phonetic": "/ˈmɜːtʃənt ʃɪp/",
+    "type": "n",
+    "meaning": "tàu buôn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "trap",
+    "phonetic": "/træp/",
+    "type": "n",
+    "meaning": "bẫy",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "laden with",
+    "phonetic": "/ˈleɪdn wɪð/",
+    "type": "adj",
+    "meaning": "chở đầy hàng hóa",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "surrender",
+    "phonetic": "/səˈrendə/",
+    "type": "v",
+    "meaning": "đầu hàng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "retaliation",
+    "phonetic": "/rɪˌtæliˈeɪʃn/",
+    "type": "n",
+    "meaning": "sự trả đũa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "resort to",
+    "phonetic": "/rɪˈzɔːt tuː/",
+    "type": "v.phr",
+    "meaning": "phải dùng đến, nhờ đến",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "services",
+    "phonetic": "/ˈsɜːvɪsɪz/",
+    "type": "n",
+    "meaning": "dịch vụ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "wartime",
+    "phonetic": "/ˈwɔːtaɪm/",
+    "type": "n",
+    "meaning": "thời chiến",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "employing",
+    "phonetic": "/ɪmˈplɔɪɪŋ/",
+    "type": "v",
+    "meaning": "sử dụng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "opponents",
+    "phonetic": "/əˈpəʊnənts/",
+    "type": "n",
+    "meaning": "đối thủ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "pirate fleet",
+    "phonetic": "/ˈpaɪrət fliːt/",
+    "type": "n",
+    "meaning": "đội tàu cướp biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "wave of attack",
+    "phonetic": "/weɪv əv əˈtæk/",
+    "type": "n",
+    "meaning": "đợt tấn công",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "regions",
+    "phonetic": "/ˈriːdʒənz/",
+    "type": "n",
+    "meaning": "các khu vực",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "harbours",
+    "phonetic": "/ˈhɑːbəz/",
+    "type": "n",
+    "meaning": "bến cảng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "boosted",
+    "phonetic": "/buːstɪd/",
+    "type": "v",
+    "meaning": "thúc đẩy, tăng cường",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "economy",
+    "phonetic": "/ɪˈkɒnəmi/",
+    "type": "n",
+    "meaning": "nền kinh tế",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "record",
+    "phonetic": "/ˈrekɔːd/",
+    "type": "n",
+    "meaning": "bản ghi, ghi chép",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rule",
+    "phonetic": "/ruːl/",
+    "type": "n",
+    "meaning": "sự cai trị",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "extracts",
+    "phonetic": "/ˈekstrækts/",
+    "type": "n",
+    "meaning": "trích đoạn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "diplomatic correspondence",
+    "phonetic": "/ˌdɪpləˈmætɪk ˌkɒrəˈspɒndəns/",
+    "type": "n",
+    "meaning": "thư tín ngoại giao",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "allies",
+    "phonetic": "/ˈælaɪz/",
+    "type": "n",
+    "meaning": "đồng minh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "pressing issues",
+    "phonetic": "/ˈpresɪŋ ˈɪʃuːz/",
+    "type": "n",
+    "meaning": "vấn đề cấp bách",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "distinct",
+    "phonetic": "/dɪˈstɪŋkt/",
+    "type": "adj",
+    "meaning": "riêng biệt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "substantial",
+    "phonetic": "/səbˈstænʃl/",
+    "type": "adj",
+    "meaning": "đáng kể",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "disruption",
+    "phonetic": "/dɪsˈrʌpʃn/",
+    "type": "n",
+    "meaning": "sự gián đoạn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "commerce",
+    "phonetic": "/ˈkɒmɜːs/",
+    "type": "n",
+    "meaning": "thương mại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "claims",
+    "phonetic": "/kleɪmz/",
+    "type": "n",
+    "meaning": "lời khẳng định",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "connection",
+    "phonetic": "/kəˈnekʃn/",
+    "type": "n",
+    "meaning": "sự liên quan, kết nối",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "based in",
+    "phonetic": "/beɪst ɪn/",
+    "type": "v.phr",
+    "meaning": "có trụ sở/căn cứ tại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "rejected",
+    "phonetic": "/rɪˈdʒektɪd/",
+    "type": "v",
+    "meaning": "từ chối",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "assured",
+    "phonetic": "/əˈʃɔːd/",
+    "type": "v",
+    "meaning": "cam đoan, đảm bảo",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "subjects",
+    "phonetic": "/ˈsʌbdʒekts/",
+    "type": "n",
+    "meaning": "thần dân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "involved in",
+    "phonetic": "/ɪnˈvɒlvd ɪn/",
+    "type": "v.phr",
+    "meaning": "có liên quan đến",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "experience",
+    "phonetic": "/ɪkˈspɪəriəns/",
+    "type": "n",
+    "meaning": "trải nghiệm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "relied heavily on",
+    "phonetic": "/rɪˈlaɪd ˈhevɪli ɒn/",
+    "type": "v.phr",
+    "meaning": "phụ thuộc nặng nề vào",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "aspects",
+    "phonetic": "/ˈæspekts/",
+    "type": "n",
+    "meaning": "các khía cạnh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "warfare",
+    "phonetic": "/ˈwɔːfeə/",
+    "type": "n",
+    "meaning": "chiến tranh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "condones",
+    "phonetic": "/kənˈdəʊnz/",
+    "type": "v",
+    "meaning": "dung túng, chấp nhận",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "lifestyle",
+    "phonetic": "/ˈlaɪfstaɪl/",
+    "type": "n",
+    "meaning": "lối sống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "historian",
+    "phonetic": "/hɪˈstɔːriən/",
+    "type": "n",
+    "meaning": "nhà sử học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "glorified",
+    "phonetic": "/ˈɡlɔːrɪfaɪd/",
+    "type": "v",
+    "meaning": "tôn vinh, ca ngợi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "daring",
+    "phonetic": "/ˈdeərɪŋ/",
+    "type": "adj",
+    "meaning": "táo bạo, dũng cảm",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "engaging in",
+    "phonetic": "/ɪnˈɡeɪdʒɪŋ ɪn/",
+    "type": "v.phr",
+    "meaning": "tham gia vào",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "activities",
+    "phonetic": "/ækˈtɪvətiz/",
+    "type": "n",
+    "meaning": "các hoạt động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "ambassadors",
+    "phonetic": "/æmˈbæsədəz/",
+    "type": "n",
+    "meaning": "các đại sứ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "detour",
+    "phonetic": "/ˈdiːtʊə/",
+    "type": "n",
+    "meaning": "sự đi đường vòng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "capture",
+    "phonetic": "/ˈkæptʃə/",
+    "type": "v",
+    "meaning": "chiếm giữ, bắt giữ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "onboard",
+    "phonetic": "/ˌɒnˈbɔːd/",
+    "type": "adv",
+    "meaning": "trên tàu",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "liberal approach",
+    "phonetic": "/ˈlɪbərəl əˈprəʊtʃ/",
+    "type": "n",
+    "meaning": "cách tiếp cận thoáng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "tolerated",
+    "phonetic": "/ˈtɒləreɪtɪd/",
+    "type": "v",
+    "meaning": "dung thứ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "attempts",
+    "phonetic": "/əˈtempts/",
+    "type": "n",
+    "meaning": "nỗ lực",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "curtail",
+    "phonetic": "/kɜːˈteɪl/",
+    "type": "v",
+    "meaning": "cắt giảm, hạn chế",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "hampered",
+    "phonetic": "/ˈhæmpəd/",
+    "type": "v",
+    "meaning": "cản trở",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "rising power",
+    "phonetic": "/ˈraɪzɪŋ ˈpaʊə/",
+    "type": "n",
+    "meaning": "sức mạnh đang lên",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "raids",
+    "phonetic": "/reɪdz/",
+    "type": "n",
+    "meaning": "các cuộc tấn công",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "profited",
+    "phonetic": "/ˈprɒfɪtɪd/",
+    "type": "v",
+    "meaning": "thu lợi, hưởng lợi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "steady source",
+    "phonetic": "/ˈstedi sɔːs/",
+    "type": "n",
+    "meaning": "nguồn cung ổn định",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "essential",
+    "phonetic": "/ɪˈsenʃl/",
+    "type": "adj",
+    "meaning": "thiết yếu",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "agriculture",
+    "phonetic": "/ˈæɡrɪkʌltʃə/",
+    "type": "n",
+    "meaning": "nông nghiệp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "industries",
+    "phonetic": "/ˈɪndəstriz/",
+    "type": "n",
+    "meaning": "các ngành công nghiệp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "arrangement",
+    "phonetic": "/əˈreɪndʒmənt/",
+    "type": "n",
+    "meaning": "sự sắp xếp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "citizens",
+    "phonetic": "/ˈsɪtɪzənz/",
+    "type": "n",
+    "meaning": "công dân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "Senate",
+    "phonetic": "/ˈsenət/",
+    "type": "n",
+    "meaning": "Thượng viện (tên riêng)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "culprits",
+    "phonetic": "/ˈkʌlprɪts/",
+    "type": "n",
+    "meaning": "thủ phạm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "encouraging",
+    "phonetic": "/ɪnˈkʌrɪdʒɪŋ/",
+    "type": "v",
+    "meaning": "khuyến khích",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "emboldened",
+    "phonetic": "/ɪmˈbəʊldənd/",
+    "type": "v",
+    "meaning": "làm cho gan dạ, khích lệ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "kidnapped",
+    "phonetic": "/ˈkɪdnæpt/",
+    "type": "v",
+    "meaning": "bị bắt cóc",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "prominent",
+    "phonetic": "/ˈprɒmɪnənt/",
+    "type": "adj",
+    "meaning": "nổi bật, quan trọng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "ransom",
+    "phonetic": "/ˈrænsəm/",
+    "type": "n",
+    "meaning": "tiền chuộc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "dignitaries",
+    "phonetic": "/ˈdɪɡnɪtəriz/",
+    "type": "n",
+    "meaning": "người có chức tước, nhân vật quan trọng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "hostage",
+    "phonetic": "/ˈhɒstɪdʒ/",
+    "type": "n",
+    "meaning": "con tin",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "usefulness",
+    "phonetic": "/ˈjuːsfəlnəs/",
+    "type": "n",
+    "meaning": "tính hữu ích",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "concerted",
+    "phonetic": "/kənˈsɜːtɪd/",
+    "type": "adj",
+    "meaning": "có sự phối hợp, chung sức",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "granted",
+    "phonetic": "/ˈɡrɑːntɪd/",
+    "type": "v",
+    "meaning": "được cấp, ban cho",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "vast funds",
+    "phonetic": "/vɑːst fʌndz/",
+    "type": "n",
+    "meaning": "nguồn tài chính khổng lồ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "combat",
+    "phonetic": "/ˈkɒmbæt/",
+    "type": "v",
+    "meaning": "đối phó, chống lại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "menace",
+    "phonetic": "/ˈmenəs/",
+    "type": "n",
+    "meaning": "mối đe dọa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "districts",
+    "phonetic": "/ˈdɪstrɪkts/",
+    "type": "n",
+    "meaning": "khu vực",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "assigning",
+    "phonetic": "/əˈsaɪnɪŋ/",
+    "type": "v",
+    "meaning": "phân công, ấn định",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "cleansing",
+    "phonetic": "/ˈklenzɪŋ/",
+    "type": "v",
+    "meaning": "quét sạch, làm sạch",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "troops",
+    "phonetic": "/truːps/",
+    "type": "n",
+    "meaning": "quân đội",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "long-term solution",
+    "phonetic": "/lɒŋ tɜːm səˈluːʃn/",
+    "type": "n",
+    "meaning": "giải pháp lâu dài",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "maritime",
+    "phonetic": "/ˈmærɪtaɪm/",
+    "type": "adj",
+    "meaning": "thuộc hàng hải",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "productive",
+    "phonetic": "/prəˈdʌktɪv/",
+    "type": "adj",
+    "meaning": "năng suất cao",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "farmers",
+    "phonetic": "/ˈfɑːməz/",
+    "type": "n",
+    "meaning": "nông dân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "persistence",
+    "phonetic": "/pəˈsɪstəns/",
+    "type": "n",
+    "meaning": "sự dai dẳng, kéo dài",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "peril",
+    "phonetic": "/ˈperəl/",
+    "type": "n",
+    "meaning": "mối nguy hiểm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "misinformation",
+    "phonetic": "/ˌmɪsɪnfəˈmeɪʃn/",
+    "type": "n",
+    "meaning": "thông tin sai lệch",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "verify",
+    "phonetic": "/ˈverɪfaɪ/",
+    "type": "v",
+    "meaning": "xác minh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "discusses",
+    "phonetic": "/dɪˈskʌsɪz/",
+    "type": "v",
+    "meaning": "thảo luận",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "challenges",
+    "phonetic": "/ˈtʃælɪndʒɪz/",
+    "type": "n",
+    "meaning": "những thách thức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "battling",
+    "phonetic": "/ˈbætəlɪŋ/",
+    "type": "v",
+    "meaning": "chống lại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "falsehood",
+    "phonetic": "/ˈfɔːlshʊd/",
+    "type": "n",
+    "meaning": "sự giả dối, điều sai trái",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "deliberately",
+    "phonetic": "/dɪˈlɪbərətli/",
+    "type": "adv",
+    "meaning": "cố ý",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "promoted",
+    "phonetic": "/prəˈməʊtɪd/",
+    "type": "v",
+    "meaning": "được lan truyền, thúc đẩy",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "accidentally",
+    "phonetic": "/ˌæksɪˈdentəli/",
+    "type": "adv",
+    "meaning": "vô tình",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "inevitable",
+    "phonetic": "/ɪnˈevɪtəbl/",
+    "type": "adj",
+    "meaning": "không thể tránh khỏi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "roughly",
+    "phonetic": "/ˈrʌfli/",
+    "type": "adv",
+    "meaning": "xấp xỉ",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "verbal communication",
+    "phonetic": "/ˈvɜːbl kəˌmjuːnɪˈkeɪʃn/",
+    "type": "n",
+    "meaning": "giao tiếp bằng lời",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "deceiving",
+    "phonetic": "/dɪˈsiːvɪŋ/",
+    "type": "v",
+    "meaning": "lừa dối",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "apparent",
+    "phonetic": "/əˈpærənt/",
+    "type": "adj",
+    "meaning": "rõ ràng, có vẻ như",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "opportunity",
+    "phonetic": "/ˌɒpəˈtjuːnəti/",
+    "type": "n",
+    "meaning": "cơ hội",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "gain",
+    "phonetic": "/ɡeɪn/",
+    "type": "v",
+    "meaning": "đạt được",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "strategic",
+    "phonetic": "/strəˈtiːdʒɪk/",
+    "type": "adj",
+    "meaning": "có tính chiến lược",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "advantage",
+    "phonetic": "/ədˈvɑːntɪdʒ/",
+    "type": "n",
+    "meaning": "lợi thế",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "motivate",
+    "phonetic": "/ˈməʊtɪveɪt/",
+    "type": "v",
+    "meaning": "thúc đẩy",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "protect",
+    "phonetic": "/prəˈtekt/",
+    "type": "v",
+    "meaning": "bảo vệ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "interpersonal",
+    "phonetic": "/ˌɪntəˈpɜːsənl/",
+    "type": "adj",
+    "meaning": "giữa các cá nhân",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "bonds",
+    "phonetic": "/bɒndz/",
+    "type": "n",
+    "meaning": "mối gắn kết",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "moreover",
+    "phonetic": "/mɔːˈrəʊvə/",
+    "type": "adv",
+    "meaning": "hơn nữa",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "inadvertently",
+    "phonetic": "/ˌɪnədˈvɜːtəntli/",
+    "type": "adv",
+    "meaning": "vô tình, không chủ ý",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "inaccurate",
+    "phonetic": "/ɪnˈækjərət/",
+    "type": "adj",
+    "meaning": "không chính xác",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "currently",
+    "phonetic": "/ˈkʌrəntli/",
+    "type": "adv",
+    "meaning": "hiện nay",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "era",
+    "phonetic": "/ˈɪərə/",
+    "type": "n",
+    "meaning": "thời đại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "technology",
+    "phonetic": "/tekˈnɒlədʒi/",
+    "type": "n",
+    "meaning": "công nghệ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "enables",
+    "phonetic": "/ɪˈneɪblz/",
+    "type": "v",
+    "meaning": "cho phép",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "audiences",
+    "phonetic": "/ˈɔːdiənsɪz/",
+    "type": "n",
+    "meaning": "khán giả, công chúng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "distributed",
+    "phonetic": "/dɪˈstrɪbjətɪd/",
+    "type": "adj",
+    "meaning": "phân bố",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "across the globe",
+    "phonetic": "/əˈcross ðə ɡləʊb/",
+    "type": "phr",
+    "meaning": "trên toàn cầu",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "potential",
+    "phonetic": "/pəˈtenʃl/",
+    "type": "adj",
+    "meaning": "tiềm năng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "immediate",
+    "phonetic": "/ɪˈmiːdiət/",
+    "type": "adj",
+    "meaning": "tức thì",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "effects",
+    "phonetic": "/ɪˈfekts/",
+    "type": "n",
+    "meaning": "tác động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "widespread",
+    "phonetic": "/ˌwaɪdspred/",
+    "type": "adj",
+    "meaning": "rộng rãi, phổ biến",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "looms larger",
+    "phonetic": "/luːmz ˈlɑːdʒə/",
+    "type": "v.phr",
+    "meaning": "trở nên đáng lo/lớn dần hơn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "means",
+    "phonetic": "/miːnz/",
+    "type": "n",
+    "meaning": "phương tiện, cách thức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "correct",
+    "phonetic": "/kəˈrekt/",
+    "type": "v",
+    "meaning": "sửa, điều chỉnh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "over time",
+    "phonetic": "/ˈəʊvə taɪm/",
+    "type": "adv",
+    "meaning": "theo thời gian",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "patterns",
+    "phonetic": "/ˈpætənz/",
+    "type": "n",
+    "meaning": "mô thức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mass communication",
+    "phonetic": "/mæs kəˌmjuːnɪˈkeɪʃn/",
+    "type": "n",
+    "meaning": "truyền thông đại chúng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "facilitated",
+    "phonetic": "/fəˈsɪlɪteɪtɪd/",
+    "type": "adj",
+    "meaning": "được hỗ trợ, tạo điều kiện",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "spread",
+    "phonetic": "/spred/",
+    "type": "n",
+    "meaning": "sự lan truyền",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "regarding",
+    "phonetic": "/rɪˈɡɑːdɪŋ/",
+    "type": "prep",
+    "meaning": "về, liên quan đến",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "unduly",
+    "phonetic": "/ʌnˈdjuːli/",
+    "type": "adv",
+    "meaning": "quá mức, không hợp lý",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "influence",
+    "phonetic": "/ˈɪnfluəns/",
+    "type": "v",
+    "meaning": "ảnh hưởng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "attitudes",
+    "phonetic": "/ˈætɪtjuːdz/",
+    "type": "n",
+    "meaning": "thái độ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "behavior",
+    "phonetic": "/bɪˈheɪvjə/",
+    "type": "n",
+    "meaning": "hành vi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "leading",
+    "phonetic": "/ˈliːdɪŋ/",
+    "type": "v",
+    "meaning": "dẫn đến",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "correctly informed",
+    "phonetic": "/kəˈrektli ɪnˈfɔːmd/",
+    "type": "adj.phr",
+    "meaning": "được thông tin đúng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "research teams",
+    "phonetic": "/rɪˈsɜːtʃ tiːmz/",
+    "type": "n",
+    "meaning": "nhóm nghiên cứu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "misperceptions",
+    "phonetic": "/ˌmɪspəˈsepʃnz/",
+    "type": "n",
+    "meaning": "sự hiểu lầm, nhận thức sai lệch",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "detrimental",
+    "phonetic": "/ˌdetrɪˈmentl/",
+    "type": "adj",
+    "meaning": "có hại",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "downstream consequences",
+    "phonetic": "/ˌdaʊnstriːm ˈkɒnsɪkwənsɪz/",
+    "type": "n",
+    "meaning": "hệ quả về sau",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "health",
+    "phonetic": "/helθ/",
+    "type": "n",
+    "meaning": "sức khỏe",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "social harmony",
+    "phonetic": "/ˈsəʊʃl ˈhɑːməni/",
+    "type": "n",
+    "meaning": "sự hài hòa xã hội",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "political climate",
+    "phonetic": "/pəˈlɪtɪkl ˈklaɪmət/",
+    "type": "n",
+    "meaning": "bầu không khí chính trị",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "observations",
+    "phonetic": "/ˌɒbzəˈveɪʃnz/",
+    "type": "n",
+    "meaning": "những nhận định, quan sát",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "contemporary",
+    "phonetic": "/kənˈtemprəri/",
+    "type": "adj",
+    "meaning": "đương đại, hiện đại",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "related to",
+    "phonetic": "/rɪˈleɪtɪd tuː/",
+    "type": "adj.phr",
+    "meaning": "liên quan đến",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "environment",
+    "phonetic": "/ɪnˈvaɪrənmənt/",
+    "type": "n",
+    "meaning": "môi trường",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "warrant",
+    "phonetic": "/ˈwɒrənt/",
+    "type": "v",
+    "meaning": "đòi hỏi, cần thiết",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "attention",
+    "phonetic": "/əˈtenʃn/",
+    "type": "n",
+    "meaning": "sự chú ý",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "researchers",
+    "phonetic": "/rɪˈsɜːtʃəz/",
+    "type": "n",
+    "meaning": "nhà nghiên cứu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "policy makers",
+    "phonetic": "/ˈpɒləsi ˌmeɪkəz/",
+    "type": "n",
+    "meaning": "nhà hoạch định chính sách",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "encounter",
+    "phonetic": "/ɪnˈkaʊntə/",
+    "type": "v",
+    "meaning": "gặp phải",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "tend to",
+    "phonetic": "/tend tuː/",
+    "type": "v.phr",
+    "meaning": "có xu hướng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "believe",
+    "phonetic": "/bɪˈliːv/",
+    "type": "v",
+    "meaning": "tin",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "initially",
+    "phonetic": "/ɪˈnɪʃəli/",
+    "type": "adv",
+    "meaning": "ban đầu",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "electronic",
+    "phonetic": "/ɪˌlekˈtrɒnɪk/",
+    "type": "adj",
+    "meaning": "điện tử",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "print media",
+    "phonetic": "/ˈprɪnt ˌmiːdiə/",
+    "type": "n",
+    "meaning": "truyền thông in ấn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "block",
+    "phonetic": "/blɒk/",
+    "type": "v",
+    "meaning": "ngăn chặn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "appears",
+    "phonetic": "/əˈpɪəz/",
+    "type": "v",
+    "meaning": "xuất hiện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "countering",
+    "phonetic": "/ˈkaʊntərɪŋ/",
+    "type": "v",
+    "meaning": "chống lại, phản bác",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "enjoyed wide exposure",
+    "phonetic": "/ɪnˈdʒɔɪd waɪd ɪkˈspəʊʒə/",
+    "type": "v.phr",
+    "meaning": "được tiếp cận rộng rãi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "resource-intensive",
+    "phonetic": "/rɪˈsɔːs ɪnˈtensɪv/",
+    "type": "adj",
+    "meaning": "tốn nhiều tài nguyên",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "estimating",
+    "phonetic": "/ˈestɪmeɪtɪŋ/",
+    "type": "v",
+    "meaning": "ước tính",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "subsequent",
+    "phonetic": "/ˈsʌbsɪkwənt/",
+    "type": "adj",
+    "meaning": "tiếp theo, sau đó",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "tremendous",
+    "phonetic": "/trəˈmendəs/",
+    "type": "adj",
+    "meaning": "to lớn, kinh khủng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "routine",
+    "phonetic": "/ruːˈtiːn/",
+    "type": "adj",
+    "meaning": "thường lệ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "individuals",
+    "phonetic": "/ˌɪndɪˈvɪdʒuəlz/",
+    "type": "n",
+    "meaning": "cá nhân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "come across",
+    "phonetic": "/kʌm əˈkrɒs/",
+    "type": "v.phr",
+    "meaning": "tình cờ gặp",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "mentally",
+    "phonetic": "/ˈmentəli/",
+    "type": "adv",
+    "meaning": "về mặt tinh thần",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "label",
+    "phonetic": "/ˈleɪbl/",
+    "type": "v",
+    "meaning": "dán nhãn, phân loại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "garnered",
+    "phonetic": "/ˈɡɑːnəd/",
+    "type": "v",
+    "meaning": "thu hút",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "philosophical debate",
+    "phonetic": "/ˌfɪləˈsɒfɪkl dɪˈbeɪt/",
+    "type": "n",
+    "meaning": "tranh luận triết học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "dilemma",
+    "phonetic": "/daɪˈlemə/",
+    "type": "n",
+    "meaning": "tình huống tiến thoái lưỡng nan",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "neatly summarized",
+    "phonetic": "/ˈniːtli ˈsʌməraɪzd/",
+    "type": "v.phr",
+    "meaning": "được tóm gọn rõ ràng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "contrast",
+    "phonetic": "/ˈkɒntrɑːst/",
+    "type": "n",
+    "meaning": "sự đối lập",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "engagement",
+    "phonetic": "/ɪnˈɡeɪdʒmənt/",
+    "type": "n",
+    "meaning": "sự tham gia, tiếp cận",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "conflicting",
+    "phonetic": "/kənˈflɪktɪŋ/",
+    "type": "adj",
+    "meaning": "mâu thuẫn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "predictions",
+    "phonetic": "/prɪˈdɪkʃnz/",
+    "type": "n",
+    "meaning": "dự đoán",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "recently",
+    "phonetic": "/ˈriːsntli/",
+    "type": "adv",
+    "meaning": "gần đây",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "tested",
+    "phonetic": "/testɪd/",
+    "type": "v",
+    "meaning": "được kiểm chứng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "robust",
+    "phonetic": "/rəʊˈbʌst/",
+    "type": "adj",
+    "meaning": "chắc chắn, đáng tin cậy",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "argued",
+    "phonetic": "/ˈɑːɡjuːd/",
+    "type": "v",
+    "meaning": "lập luận",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "accepts",
+    "phonetic": "/əkˈsepts/",
+    "type": "v",
+    "meaning": "chấp nhận",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "rejects",
+    "phonetic": "/rɪˈdʒekts/",
+    "type": "v",
+    "meaning": "bác bỏ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "considering",
+    "phonetic": "/kənˈsɪdərɪŋ/",
+    "type": "v",
+    "meaning": "xem xét",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "truth",
+    "phonetic": "/truːθ/",
+    "type": "n",
+    "meaning": "sự thật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "default",
+    "phonetic": "/dɪˈfɔːlt/",
+    "type": "n",
+    "meaning": "mặc định, tự động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "empirically",
+    "phonetic": "/ɪmˈpɪrɪkli/",
+    "type": "adv",
+    "meaning": "theo kinh nghiệm thực tế",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "encode",
+    "phonetic": "/ɪnˈkəʊd/",
+    "type": "v",
+    "meaning": "mã hóa, lưu trữ thông tin",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "separate",
+    "phonetic": "/ˈseprət/",
+    "type": "adj",
+    "meaning": "riêng biệt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "momentarily",
+    "phonetic": "/ˌməʊmənˈterəli/",
+    "type": "adv",
+    "meaning": "trong chốc lát",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "later",
+    "phonetic": "/ˈleɪtə/",
+    "type": "adv",
+    "meaning": "sau đó",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "tag",
+    "phonetic": "/tæɡ/",
+    "type": "v",
+    "meaning": "gắn nhãn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "consistent with",
+    "phonetic": "/kənˈsɪstənt wɪð/",
+    "type": "adj.phr",
+    "meaning": "phù hợp với",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "skepticism",
+    "phonetic": "/ˈskeptɪsɪzəm/",
+    "type": "n",
+    "meaning": "thái độ hoài nghi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mental resources",
+    "phonetic": "/ˈmentl rɪˈsɔːsɪz/",
+    "type": "n",
+    "meaning": "nguồn lực tinh thần",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "physically reside",
+    "phonetic": "/ˈfɪzɪkli rɪˈzaɪd/",
+    "type": "v.phr",
+    "meaning": "tồn tại về mặt vật lý",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "perceiving",
+    "phonetic": "/pəˈsiːvɪŋ/",
+    "type": "v",
+    "meaning": "nhận thức",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "preemptively",
+    "phonetic": "/priˈemptɪvli/",
+    "type": "adv",
+    "meaning": "ngăn chặn trước",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "without being blocked",
+    "phonetic": "/wɪˈðaʊt biːɪŋ blɒkt/",
+    "type": "phr",
+    "meaning": "không bị chặn lại",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "in support of this",
+    "phonetic": "/ɪn səˈpɔːt əv ðɪs/",
+    "type": "phr",
+    "meaning": "để ủng hộ điều này",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "nature",
+    "phonetic": "/ˈneɪtʃə/",
+    "type": "n",
+    "meaning": "bản chất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "structures",
+    "phonetic": "/ˈstrʌktʃəz/",
+    "type": "n",
+    "meaning": "cấu trúc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "regulatory",
+    "phonetic": "/ˈreɡjələtəri/",
+    "type": "adj",
+    "meaning": "điều chỉnh, quy định",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "agencies",
+    "phonetic": "/ˈeɪdʒənsiz/",
+    "type": "n",
+    "meaning": "cơ quan",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "focus on",
+    "phonetic": "/ˈfəʊkəs ɒn/",
+    "type": "v.phr",
+    "meaning": "tập trung vào",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "post hoc",
+    "phonetic": "/ˌpəʊst ˈhɒk/",
+    "type": "adj",
+    "meaning": "sau khi sự việc xảy ra",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "detection",
+    "phonetic": "/dɪˈtekʃn/",
+    "type": "n",
+    "meaning": "sự phát hiện",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "broadcast information",
+    "phonetic": "/ˈbrɔːdkɑːst ˌɪnfəˈmeɪʃn/",
+    "type": "n",
+    "meaning": "thông tin phát sóng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "considerable",
+    "phonetic": "/kənˈsɪdərəbl/",
+    "type": "adj",
+    "meaning": "đáng kể",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "monitoring",
+    "phonetic": "/ˈmɒnɪtərɪŋ/",
+    "type": "n",
+    "meaning": "sự giám sát",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "notification",
+    "phonetic": "/ˌnəʊtɪfɪˈkeɪʃn/",
+    "type": "n",
+    "meaning": "sự thông báo",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "functions",
+    "phonetic": "/ˈfʌŋkʃnz/",
+    "type": "n",
+    "meaning": "chức năng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "typically",
+    "phonetic": "/ˈtɪpɪkli/",
+    "type": "adv",
+    "meaning": "thường là",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "involve",
+    "phonetic": "/ɪnˈvɒlv/",
+    "type": "v",
+    "meaning": "bao gồm",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "censoring",
+    "phonetic": "/ˈsensərɪŋ/",
+    "type": "n",
+    "meaning": "sự kiểm duyệt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "oversees",
+    "phonetic": "/ˌəʊvəˈsiːz/",
+    "type": "v",
+    "meaning": "giám sát",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "direct-to-consumer",
+    "phonetic": "/dəˌrekt tə kənˈsjuːmə/",
+    "type": "adj",
+    "meaning": "trực tiếp đến người dùng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "prescription drug advertising",
+    "phonetic": "/prɪˈskrɪpʃn drʌɡ ˈædvətaɪzɪŋ/",
+    "type": "n",
+    "meaning": "quảng cáo thuốc kê đơn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mechanisms",
+    "phonetic": "/ˈmekənɪzəmz/",
+    "type": "n",
+    "meaning": "cơ chế",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "apparent violation",
+    "phonetic": "/əˈpærənt ˌvaɪəˈleɪʃn/",
+    "type": "n",
+    "meaning": "sự vi phạm rõ ràng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "guidelines",
+    "phonetic": "/ˈɡaɪdlaɪnz/",
+    "type": "n",
+    "meaning": "hướng dẫn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "laudable",
+    "phonetic": "/ˈlɔːdəbl/",
+    "type": "adj",
+    "meaning": "đáng khen ngợi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "airwaves",
+    "phonetic": "/ˈeəweɪvz/",
+    "type": "n",
+    "meaning": "sóng phát thanh/truyền hình",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "successfully corrected",
+    "phonetic": "/səkˈsesfəli kəˈrektɪd/",
+    "type": "v.phr",
+    "meaning": "được sửa thành công",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "continue to affect",
+    "phonetic": "/kənˈtɪnjuː tu əˈfekt/",
+    "type": "v.phr",
+    "meaning": "tiếp tục ảnh hưởng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "campaign",
+    "phonetic": "/kæmˈpeɪn/",
+    "type": "n",
+    "meaning": "chiến dịch",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "corrective",
+    "phonetic": "/kəˈrektɪv/",
+    "type": "adj",
+    "meaning": "mang tính sửa sai",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "rhetorically",
+    "phonetic": "/rɪˈtɒrɪkli/",
+    "type": "adv",
+    "meaning": "một cách hùng biện",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "compelling",
+    "phonetic": "/kəmˈpelɪŋ/",
+    "type": "adj",
+    "meaning": "thuyết phục",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "planning",
+    "phonetic": "/ˈplænɪŋ/",
+    "type": "n",
+    "meaning": "sự lên kế hoạch",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "accomplish",
+    "phonetic": "/əˈkʌmplɪʃ/",
+    "type": "v",
+    "meaning": "hoàn thành",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "necessary reach",
+    "phonetic": "/ˈnesəsəri riːtʃ/",
+    "type": "n",
+    "meaning": "độ phủ cần thiết",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "frequency",
+    "phonetic": "/ˈfriːkwənsi/",
+    "type": "n",
+    "meaning": "tần suất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "persuasive",
+    "phonetic": "/pəˈsweɪsɪv/",
+    "type": "adj",
+    "meaning": "có sức thuyết phục",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "comprehend",
+    "phonetic": "/ˌkɒmprɪˈhend/",
+    "type": "v",
+    "meaning": "hiểu",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "frame messages",
+    "phonetic": "/freɪm ˈmesɪdʒɪz/",
+    "type": "v.phr",
+    "meaning": "định hình thông điệp",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "accessible",
+    "phonetic": "/əkˈsesəbl/",
+    "type": "adj",
+    "meaning": "dễ tiếp cận, dễ hiểu",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "sensitize",
+    "phonetic": "/ˈsensɪtaɪz/",
+    "type": "v",
+    "meaning": "làm cho nhận thức được",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "unaware",
+    "phonetic": "/ˌʌnəˈweə/",
+    "type": "adj",
+    "meaning": "không nhận thức được",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "utility",
+    "phonetic": "/juːˈtɪləti/",
+    "type": "n",
+    "meaning": "tính hữu ích",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "media literacy",
+    "phonetic": "/ˈmiːdiə ˈlɪtərəsi/",
+    "type": "n",
+    "meaning": "kiến thức truyền thông",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "elementary school",
+    "phonetic": "/ˌelɪˈmentri skuːl/",
+    "type": "n",
+    "meaning": "trường tiểu học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "fake news",
+    "phonetic": "/feɪk njuːz/",
+    "type": "n",
+    "meaning": "tin giả",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "journalists",
+    "phonetic": "/ˈdʒɜːnəlɪsts/",
+    "type": "n",
+    "meaning": "nhà báo",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "scholars",
+    "phonetic": "/ˈskɒləz/",
+    "type": "n",
+    "meaning": "học giả",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "distinguish between",
+    "phonetic": "/dɪˈstɪŋɡwɪʃ bɪˈtwiːn/",
+    "type": "v.phr",
+    "meaning": "phân biệt giữa",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "demonstrably",
+    "phonetic": "/dɪˈmɒnstrəbli/",
+    "type": "adv",
+    "meaning": "có thể chứng minh được",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "based in fact",
+    "phonetic": "/beɪst ɪn fækt/",
+    "type": "adj.phr",
+    "meaning": "dựa trên sự thật",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "scanning",
+    "phonetic": "/ˈskænɪŋ/",
+    "type": "v",
+    "meaning": "đọc lướt",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "processing",
+    "phonetic": "/ˈprəʊsesɪŋ/",
+    "type": "v",
+    "meaning": "xử lý",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "passionately",
+    "phonetic": "/ˈpæʃənətli/",
+    "type": "adv",
+    "meaning": "đầy nhiệt huyết",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "developing",
+    "phonetic": "/dɪˈveləpɪŋ/",
+    "type": "v",
+    "meaning": "phát triển",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "solutions",
+    "phonetic": "/səˈluːʃnz/",
+    "type": "n",
+    "meaning": "giải pháp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "remedies",
+    "phonetic": "/ˈremədiz/",
+    "type": "n",
+    "meaning": "biện pháp khắc phục",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "undoubtedly",
+    "phonetic": "/ʌnˈdaʊtɪdli/",
+    "type": "adv",
+    "meaning": "chắc chắn",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "arduous",
+    "phonetic": "/ˈɑːdjuəs/",
+    "type": "adj",
+    "meaning": "gian nan",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "theoretical",
+    "phonetic": "/ˌθɪəˈretɪkl/",
+    "type": "adj",
+    "meaning": "mang tính lý thuyết",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "consideration",
+    "phonetic": "/kənˌsɪdəˈreɪʃn/",
+    "type": "n",
+    "meaning": "sự cân nhắc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "maintenance",
+    "phonetic": "/ˈmeɪntənəns/",
+    "type": "n",
+    "meaning": "sự duy trì",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "consistent",
+    "phonetic": "/kənˈsɪstənt/",
+    "type": "adj",
+    "meaning": "nhất quán",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "recognition",
+    "phonetic": "/ˌrekəɡˈnɪʃn/",
+    "type": "n",
+    "meaning": "sự nhận thức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "claims",
+    "phonetic": "/kleɪmz/",
+    "type": "n",
+    "meaning": "những tuyên bố",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "prominence",
+    "phonetic": "/ˈprɒmɪnəns/",
+    "type": "n",
+    "meaning": "sự nổi bật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "insufficiently",
+    "phonetic": "/ˌɪnsəˈfɪʃntli/",
+    "type": "adv",
+    "meaning": "không đầy đủ",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "scientific consensus",
+    "phonetic": "/ˌsaɪəntɪfɪk kənˈsensəs/",
+    "type": "n",
+    "meaning": "đồng thuận khoa học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "social reality",
+    "phonetic": "/ˈsəʊʃl riˈæləti/",
+    "type": "n",
+    "meaning": "thực tế xã hội",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "countered",
+    "phonetic": "/ˈkaʊntəd/",
+    "type": "v",
+    "meaning": "bị phản bác",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "arises",
+    "phonetic": "/əˈraɪzɪz/",
+    "type": "v",
+    "meaning": "nảy sinh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "human fallibility",
+    "phonetic": "/ˈhjuːmən ˌfælɪˈbɪləti/",
+    "type": "n",
+    "meaning": "tính dễ sai của con người",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "overcome",
+    "phonetic": "/ˌəʊvəˈkʌm/",
+    "type": "v",
+    "meaning": "vượt qua",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "coordinated efforts",
+    "phonetic": "/kəʊˈɔːdɪneɪtɪd ˈefəts/",
+    "type": "n",
+    "meaning": "nỗ lực phối hợp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "singular",
+    "phonetic": "/ˈsɪŋɡjələ/",
+    "type": "adj",
+    "meaning": "đơn lẻ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "one-time",
+    "phonetic": "/ˌwʌn ˈtaɪm/",
+    "type": "adj",
+    "meaning": "một lần duy nhất",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "panacea",
+    "phonetic": "/ˌpænəˈsiːə/",
+    "type": "n",
+    "meaning": "giải pháp vạn năng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "hope to offer",
+    "phonetic": "/həʊp tu ˈɒfə/",
+    "type": "v.phr",
+    "meaning": "hy vọng đưa ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "industrial revolution",
+    "phonetic": "/ɪnˈdʌstriəl ˌrevəˈluːʃn/",
+    "type": "n",
+    "meaning": "Cách mạng Công nghiệp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "largely",
+    "phonetic": "/ˈlɑːdʒli/",
+    "type": "adv",
+    "meaning": "phần lớn",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "rural",
+    "phonetic": "/ˈrʊərəl/",
+    "type": "adj",
+    "meaning": "thuộc về nông thôn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "agrarian",
+    "phonetic": "/əˈɡreəriən/",
+    "type": "adj",
+    "meaning": "thuộc về nông nghiệp",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "society",
+    "phonetic": "/səˈsaɪəti/",
+    "type": "n",
+    "meaning": "xã hội",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "transformed",
+    "phonetic": "/trænsˈfɔːmd/",
+    "type": "v",
+    "meaning": "được biến đổi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "industrialised",
+    "phonetic": "/ɪnˈdʌstriəlaɪzd/",
+    "type": "adj",
+    "meaning": "công nghiệp hóa",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "urban",
+    "phonetic": "/ˈɜːbən/",
+    "type": "adj",
+    "meaning": "thuộc về thành thị",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "crafted",
+    "phonetic": "/krɑːftɪd/",
+    "type": "v",
+    "meaning": "được chế tác thủ công",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "produced",
+    "phonetic": "/prəˈdjuːst/",
+    "type": "v",
+    "meaning": "được sản xuất",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "mass quantity",
+    "phonetic": "/mæs ˈkwɒntəti/",
+    "type": "n",
+    "meaning": "số lượng lớn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "factories",
+    "phonetic": "/ˈfæktriz/",
+    "type": "n",
+    "meaning": "nhà máy",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "steam power",
+    "phonetic": "/stiːm ˈpaʊə/",
+    "type": "n",
+    "meaning": "năng lượng hơi nước",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "introduction",
+    "phonetic": "/ˌɪntrəˈdʌkʃn/",
+    "type": "n",
+    "meaning": "sự giới thiệu, ra đời",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "manufacturing techniques",
+    "phonetic": "/ˌmænjuˈfæktʃərɪŋ tekˈniːks/",
+    "type": "n",
+    "meaning": "kỹ thuật sản xuất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "textiles",
+    "phonetic": "/ˈtekstaɪlz/",
+    "type": "n",
+    "meaning": "ngành dệt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "iron-making",
+    "phonetic": "/ˈaɪən ˌmeɪkɪŋ/",
+    "type": "n",
+    "meaning": "luyện sắt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "industries",
+    "phonetic": "/ˈɪndəstriz/",
+    "type": "n",
+    "meaning": "các ngành công nghiệp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "foundations",
+    "phonetic": "faʊnˈdeɪʃnz/",
+    "type": "n",
+    "meaning": "nền tảng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "date back",
+    "phonetic": "/deɪt bæk/",
+    "type": "phr v",
+    "meaning": "bắt nguồn từ",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "inventor",
+    "phonetic": "/ɪnˈventə/",
+    "type": "n",
+    "meaning": "nhà phát minh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "designed",
+    "phonetic": "/dɪˈzaɪnd/",
+    "type": "v",
+    "meaning": "thiết kế",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "modern",
+    "phonetic": "/ˈmɒdn/",
+    "type": "adj",
+    "meaning": "hiện đại",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "engine",
+    "phonetic": "/ˈendʒɪn/",
+    "type": "n",
+    "meaning": "động cơ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "originally",
+    "phonetic": "/əˈrɪdʒənəli/",
+    "type": "adv",
+    "meaning": "ban đầu",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "pumped",
+    "phonetic": "/pʌmpt/",
+    "type": "v",
+    "meaning": "bơm",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "mines",
+    "phonetic": "/maɪnz/",
+    "type": "n",
+    "meaning": "mỏ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "adapt",
+    "phonetic": "/əˈdæpt/",
+    "type": "v",
+    "meaning": "cải tiến, điều chỉnh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "models",
+    "phonetic": "/ˈmɒdlz/",
+    "type": "n",
+    "meaning": "mô hình",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "efficient",
+    "phonetic": "/ɪˈfɪʃnt/",
+    "type": "adj",
+    "meaning": "hiệu quả",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "manufacturer",
+    "phonetic": "/ˌmænjuˈfæktʃərə/",
+    "type": "n",
+    "meaning": "nhà sản xuất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "driven by",
+    "phonetic": "/ˈdrɪvn baɪ/",
+    "type": "v.phr",
+    "meaning": "được vận hành bởi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "strokes",
+    "phonetic": "/strəʊks/",
+    "type": "n",
+    "meaning": "chuyển động piston",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mechanism",
+    "phonetic": "/ˈmekənɪzəm/",
+    "type": "n",
+    "meaning": "cơ chế",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "connected to",
+    "phonetic": "/kəˈnektɪd tuː/",
+    "type": "v.phr",
+    "meaning": "kết nối với",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "rotary",
+    "phonetic": "/ˈrəʊtəri/",
+    "type": "adj",
+    "meaning": "quay tròn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "produced motion",
+    "phonetic": "/prəˈdjuːst ˈməʊʃn/",
+    "type": "v.phr",
+    "meaning": "tạo chuyển động",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "key",
+    "phonetic": "/kiː/",
+    "type": "adj",
+    "meaning": "then chốt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "allow",
+    "phonetic": "/əˈlaʊ/",
+    "type": "v",
+    "meaning": "cho phép",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "demand",
+    "phonetic": "/dɪˈmɑːnd/",
+    "type": "n",
+    "meaning": "nhu cầu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "coal",
+    "phonetic": "/kəʊl/",
+    "type": "n",
+    "meaning": "than đá",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "energy source",
+    "phonetic": "/ˈenədʒi sɔːs/",
+    "type": "n",
+    "meaning": "nguồn năng lượng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "grew rapidly",
+    "phonetic": "/ɡruː ˈræpɪdli/",
+    "type": "v.phr",
+    "meaning": "tăng nhanh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "transportation",
+    "phonetic": "/ˌtrænspɔːˈteɪʃn/",
+    "type": "n",
+    "meaning": "vận tải",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "locomotive",
+    "phonetic": "/ˌləʊkəˈməʊtɪv/",
+    "type": "n",
+    "meaning": "đầu máy xe lửa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "transported",
+    "phonetic": "/trænˈspɔːtɪd/",
+    "type": "v",
+    "meaning": "vận chuyển",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "industrial centres",
+    "phonetic": "/ɪnˈdʌstriəl ˈsentəz/",
+    "type": "n",
+    "meaning": "trung tâm công nghiệp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "passengers",
+    "phonetic": "/ˈpæsɪndʒəz/",
+    "type": "n",
+    "meaning": "hành khách",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "boats",
+    "phonetic": "/bəʊts/",
+    "type": "n",
+    "meaning": "thuyền",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "ships",
+    "phonetic": "/ʃɪps/",
+    "type": "n",
+    "meaning": "tàu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "widely used",
+    "phonetic": "/ˈwaɪdli juːzd/",
+    "type": "adj",
+    "meaning": "được sử dụng rộng rãi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "canal",
+    "phonetic": "/kəˈnæl/",
+    "type": "n",
+    "meaning": "kênh đào",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "carry goods",
+    "phonetic": "/ˈkæri ɡʊdz/",
+    "type": "v.phr",
+    "meaning": "vận chuyển hàng hóa",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "Atlantic",
+    "phonetic": "/ətˈlæntɪk/",
+    "type": "n",
+    "meaning": "Đại Tây Dương",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "prior to",
+    "phonetic": "/ˈpraɪə tuː/",
+    "type": "prep",
+    "meaning": "trước khi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "cottage industry",
+    "phonetic": "/ˈkɒtɪdʒ ˈɪndəstri/",
+    "type": "n",
+    "meaning": "ngành sản xuất nhỏ tại gia",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "business",
+    "phonetic": "/ˈbɪznəs/",
+    "type": "n",
+    "meaning": "ngành kinh doanh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "performed",
+    "phonetic": "/pəˈfɔːmd/",
+    "type": "v",
+    "meaning": "thực hiện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "workshops",
+    "phonetic": "/ˈwɜːkʃɒps/",
+    "type": "n",
+    "meaning": "xưởng nhỏ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "spinners",
+    "phonetic": "/ˈspɪnəz/",
+    "type": "n",
+    "meaning": "thợ kéo sợi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "weavers",
+    "phonetic": "/ˈwiːvəz/",
+    "type": "n",
+    "meaning": "thợ dệt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "dyers",
+    "phonetic": "/ˈdaɪəz/",
+    "type": "n",
+    "meaning": "thợ nhuộm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "innovation",
+    "phonetic": "/ˌɪnəˈveɪʃn/",
+    "type": "n",
+    "meaning": "đổi mới, sáng kiến",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "weaving",
+    "phonetic": "/ˈwiːvɪŋ/",
+    "type": "n",
+    "meaning": "việc dệt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "spinning",
+    "phonetic": "/ˈspinning/",
+    "type": "n",
+    "meaning": "việc kéo sợi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "yarn",
+    "phonetic": "/jɑːn/",
+    "type": "n",
+    "meaning": "sợi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "thread",
+    "phonetic": "/θred/",
+    "type": "n",
+    "meaning": "chỉ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "labour",
+    "phonetic": "/ˈleɪbə/",
+    "type": "n",
+    "meaning": "lao động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mechanised",
+    "phonetic": "/ˈmekənaɪzd/",
+    "type": "adj",
+    "meaning": "cơ giới hóa",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "required",
+    "phonetic": "/rɪˈkwaɪəd/",
+    "type": "v",
+    "meaning": "yêu cầu",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "opened",
+    "phonetic": "/ˈəʊpənd/",
+    "type": "v",
+    "meaning": "mở ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "meet demand",
+    "phonetic": "/miːt dɪˈmɑːnd/",
+    "type": "v.phr",
+    "meaning": "đáp ứng nhu cầu",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "abroad",
+    "phonetic": "/əˈbrɔːd/",
+    "type": "adv",
+    "meaning": "nước ngoài",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "underwent",
+    "phonetic": "/ˌʌndəˈwent/",
+    "type": "v",
+    "meaning": "trải qua",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "major change",
+    "phonetic": "/ˈmeɪdʒə tʃeɪndʒ/",
+    "type": "n",
+    "meaning": "thay đổi lớn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "adopted",
+    "phonetic": "/əˈdɒptɪd/",
+    "type": "v",
+    "meaning": "áp dụng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "techniques",
+    "phonetic": "/tekˈniːks/",
+    "type": "n",
+    "meaning": "kỹ thuật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "smelting",
+    "phonetic": "/ˈsmeltɪŋ/",
+    "type": "n",
+    "meaning": "luyện kim (nấu chảy quặng)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "iron ore",
+    "phonetic": "/ˈaɪən ɔː/",
+    "type": "n",
+    "meaning": "quặng sắt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "coke",
+    "phonetic": "/kəʊk/",
+    "type": "n",
+    "meaning": "than cốc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "traditional",
+    "phonetic": "/trəˈdɪʃənl/",
+    "type": "adj",
+    "meaning": "truyền thống",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "charcoal",
+    "phonetic": "/ˈtʃɑːkəʊl/",
+    "type": "n",
+    "meaning": "than củi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "method",
+    "phonetic": "/ˈmeθəd/",
+    "type": "n",
+    "meaning": "phương pháp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "metals",
+    "phonetic": "/ˈmetlz/",
+    "type": "n",
+    "meaning": "kim loại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "quality",
+    "phonetic": "/ˈkwɒləti/",
+    "type": "n",
+    "meaning": "chất lượng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "expand",
+    "phonetic": "/ɪkˈspænd/",
+    "type": "v",
+    "meaning": "mở rộng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "in response to",
+    "phonetic": "/ɪn rɪˈspɒns tuː/",
+    "type": "v.phr",
+    "meaning": "đáp lại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "communication",
+    "phonetic": "/kəˌmjuːnɪˈkeɪʃn/",
+    "type": "n",
+    "meaning": "giao tiếp, truyền thông",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "methods",
+    "phonetic": "/ˈmeθədz/",
+    "type": "n",
+    "meaning": "các phương thức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "increasingly",
+    "phonetic": "/ɪnˈkriːsɪŋli/",
+    "type": "adv",
+    "meaning": "ngày càng",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "efficiently",
+    "phonetic": "/ɪˈfɪʃntli/",
+    "type": "adv",
+    "meaning": "hiệu quả",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "distances",
+    "phonetic": "/ˈdɪstənsɪz/",
+    "type": "n",
+    "meaning": "khoảng cách",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "inventors",
+    "phonetic": "/ɪnˈventəz/",
+    "type": "n",
+    "meaning": "nhà phát minh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "patented",
+    "phonetic": "/ˈpeɪtəntɪd/",
+    "type": "v",
+    "meaning": "đăng ký bản quyền",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "telegraphy",
+    "phonetic": "/təˈleɡrəfi/",
+    "type": "n",
+    "meaning": "điện báo",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "system",
+    "phonetic": "/ˈsɪstəm/",
+    "type": "n",
+    "meaning": "hệ thống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "versions",
+    "phonetic": "/ˈvɜːʃnz/",
+    "type": "n",
+    "meaning": "phiên bản",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "signalling",
+    "phonetic": "/ˈsɪɡnəlɪŋ/",
+    "type": "n",
+    "meaning": "hệ thống tín hiệu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "essential",
+    "phonetic": "/ɪˈsenʃl/",
+    "type": "adj",
+    "meaning": "thiết yếu",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "avoid",
+    "phonetic": "/əˈvɔɪd/",
+    "type": "v",
+    "meaning": "tránh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "collisions",
+    "phonetic": "/kəˈlɪʒnz/",
+    "type": "n",
+    "meaning": "va chạm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "impact",
+    "phonetic": "/ˈɪmpækt/",
+    "type": "n",
+    "meaning": "tác động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "immense",
+    "phonetic": "/ɪˈmens/",
+    "type": "adj",
+    "meaning": "to lớn, khổng lồ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "accelerated",
+    "phonetic": "/əkˈseləreɪtɪd/",
+    "type": "v",
+    "meaning": "tăng nhanh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "industrialisation",
+    "phonetic": "/ɪnˌdʌstriəlaɪˈzeɪʃn/",
+    "type": "n",
+    "meaning": "công nghiệp hóa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rise",
+    "phonetic": "/raɪz/",
+    "type": "n",
+    "meaning": "sự gia tăng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "urbanisation",
+    "phonetic": "/ˌɜːbənaɪˈzeɪʃn/",
+    "type": "n",
+    "meaning": "đô thị hóa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "overcrowded",
+    "phonetic": "/ˌəʊvəˈkraʊdɪd/",
+    "type": "adj",
+    "meaning": "quá đông đúc",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "pollution",
+    "phonetic": "/pəˈluːʃn/",
+    "type": "n",
+    "meaning": "ô nhiễm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "inadequate",
+    "phonetic": "/ɪnˈædɪkwət/",
+    "type": "adj",
+    "meaning": "không đầy đủ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "sanitation",
+    "phonetic": "/ˌsænɪˈteɪʃn/",
+    "type": "n",
+    "meaning": "vệ sinh công cộng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "economic output",
+    "phonetic": "/ˌiːkəˈnɒmɪk ˈaʊtpʊt/",
+    "type": "n",
+    "meaning": "sản lượng kinh tế",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "standard of living",
+    "phonetic": "/ˈstændəd əv ˈlɪvɪŋ/",
+    "type": "n",
+    "meaning": "mức sống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "middle class",
+    "phonetic": "/ˈmɪdl klɑːs/",
+    "type": "n",
+    "meaning": "tầng lớp trung lưu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "upper class",
+    "phonetic": "/ˈʌpə klɑːs/",
+    "type": "n",
+    "meaning": "tầng lớp thượng lưu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "continued to struggle",
+    "phonetic": "/kənˈtɪnjuːd tu ˈstrʌɡl/",
+    "type": "v.phr",
+    "meaning": "tiếp tục vật lộn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "conditions",
+    "phonetic": "/kənˈdɪʃnz/",
+    "type": "n",
+    "meaning": "điều kiện",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "extremely",
+    "phonetic": "/ɪkˈstriːmli/",
+    "type": "adv",
+    "meaning": "cực kỳ",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "dangerous",
+    "phonetic": "/ˈdeɪndʒərəs/",
+    "type": "adj",
+    "meaning": "nguy hiểm",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "wage",
+    "phonetic": "/weɪdʒ/",
+    "type": "n",
+    "meaning": "tiền công, lương",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "opposition",
+    "phonetic": "/ˌɒpəˈzɪʃn/",
+    "type": "n",
+    "meaning": "sự phản đối",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mechanised looms",
+    "phonetic": "/ˈmekənaɪzd luːmz/",
+    "type": "n",
+    "meaning": "máy dệt cơ giới",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "unskilled",
+    "phonetic": "/ʌnˈskɪld/",
+    "type": "adj",
+    "meaning": "không có tay nghề",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "operators",
+    "phonetic": "/ˈɒpəreɪtəz/",
+    "type": "n",
+    "meaning": "người vận hành",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "livelihood",
+    "phonetic": "/ˈlaɪvlihʊd/",
+    "type": "n",
+    "meaning": "kế sinh nhai",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rob",
+    "phonetic": "/rɒb/",
+    "type": "v",
+    "meaning": "cướp đi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "apprentice",
+    "phonetic": "/əˈprentɪs/",
+    "type": "n",
+    "meaning": "người học việc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rumoured",
+    "phonetic": "/ˈruːməd/",
+    "type": "v",
+    "meaning": "được đồn đại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "wrecked",
+    "phonetic": "/rekt/",
+    "type": "v",
+    "meaning": "phá hủy",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "instances",
+    "phonetic": "/ˈɪnstənsɪz/",
+    "type": "n",
+    "meaning": "trường hợp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "practice",
+    "phonetic": "/ˈpræktɪs/",
+    "type": "n",
+    "meaning": "hoạt động, lệ thường",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "attacked",
+    "phonetic": "/əˈtækt/",
+    "type": "v",
+    "meaning": "tấn công",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "burned",
+    "phonetic": "/bɜːnd/",
+    "type": "v",
+    "meaning": "đốt",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "guards",
+    "phonetic": "/ɡɑːdz/",
+    "type": "n",
+    "meaning": "bảo vệ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "soldiers",
+    "phonetic": "/ˈsəʊldʒəz/",
+    "type": "n",
+    "meaning": "binh lính",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "employers",
+    "phonetic": "/ɪmˈplɔɪəz/",
+    "type": "n",
+    "meaning": "chủ lao động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "installing",
+    "phonetic": "/ɪnˈstɔːlɪŋ/",
+    "type": "v",
+    "meaning": "lắp đặt",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "government",
+    "phonetic": "/ˈɡʌvənmənt/",
+    "type": "n",
+    "meaning": "chính phủ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "responded",
+    "phonetic": "/rɪˈspɒndɪd/",
+    "type": "v",
+    "meaning": "phản ứng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "uprisings",
+    "phonetic": "/ˈʌpraɪzɪŋz/",
+    "type": "n",
+    "meaning": "cuộc nổi dậy",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "resistance",
+    "phonetic": "/rɪˈzɪstəns/",
+    "type": "n",
+    "meaning": "sự kháng cự, chống đối",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "punishable",
+    "phonetic": "/ˈpʌnɪʃəbl/",
+    "type": "adj",
+    "meaning": "có thể bị trừng phạt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "death",
+    "phonetic": "/deθ/",
+    "type": "n",
+    "meaning": "cái chết",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "peak",
+    "phonetic": "/piːk/",
+    "type": "n",
+    "meaning": "đỉnh điểm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "arrested",
+    "phonetic": "/əˈrestɪd/",
+    "type": "v",
+    "meaning": "bị bắt",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "hanged",
+    "phonetic": "/hæŋd/",
+    "type": "v",
+    "meaning": "bị treo cổ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "transported",
+    "phonetic": "/trænˈspɔːtɪd/",
+    "type": "v",
+    "meaning": "bị lưu đày (sang Australia)",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "vanished",
+    "phonetic": "/ˈvænɪʃt/",
+    "type": "v",
+    "meaning": "biến mất",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "athlete",
+    "phonetic": "/ˈæθliːt/",
+    "type": "n",
+    "meaning": "vận động viên",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "professional",
+    "phonetic": "/prəˈfeʃənl/",
+    "type": "adj",
+    "meaning": "chuyên nghiệp",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "physical demands",
+    "phonetic": "/ˈfɪzɪkl dɪˈmɑːndz/",
+    "type": "n",
+    "meaning": "yêu cầu/đòi hỏi về thể chất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "handle",
+    "phonetic": "/ˈhændl/",
+    "type": "v",
+    "meaning": "xử lý, chịu đựng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "face pressure",
+    "phonetic": "/feɪs ˈpreʃə/",
+    "type": "v.phr",
+    "meaning": "đối mặt với áp lực",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "psychological",
+    "phonetic": "/ˌsaɪkəˈlɒdʒɪkl/",
+    "type": "adj",
+    "meaning": "thuộc về tâm lý",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "competition",
+    "phonetic": "/ˌkɒmpəˈtɪʃn/",
+    "type": "n",
+    "meaning": "sự thi đấu, cạnh tranh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "social media",
+    "phonetic": "/ˈsəʊʃl ˈmiːdiə/",
+    "type": "n",
+    "meaning": "mạng xã hội",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "withdrawal",
+    "phonetic": "/wɪðˈdrɔːəl/",
+    "type": "n",
+    "meaning": "sự rút lui, bỏ cuộc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "tournament",
+    "phonetic": "/ˈtʊənəmənt/",
+    "type": "n",
+    "meaning": "giải đấu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "regulate",
+    "phonetic": "/ˈreɡjəleɪt/",
+    "type": "v",
+    "meaning": "điều chỉnh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "breathing",
+    "phonetic": "/ˈbriːðɪŋ/",
+    "type": "n",
+    "meaning": "hơi thở, sự hô hấp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "heart rate",
+    "phonetic": "/hɑːt reɪt/",
+    "type": "n",
+    "meaning": "nhịp tim",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "attribute to",
+    "phonetic": "/əˈtrɪbjuːt tuː/",
+    "type": "v.phr",
+    "meaning": "quy cho",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "accumulation",
+    "phonetic": "/əˌkjuːmjəˈleɪʃn/",
+    "type": "n",
+    "meaning": "sự tích tụ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "excitement",
+    "phonetic": "/ɪkˈsaɪtmənt/",
+    "type": "n",
+    "meaning": "sự phấn khích",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "buzz",
+    "phonetic": "/bʌz/",
+    "type": "n",
+    "meaning": "sự náo nhiệt, hưng phấn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "performance stress",
+    "phonetic": "/pəˈfɔːməns stres/",
+    "type": "n",
+    "meaning": "áp lực thành tích",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "unavoidable",
+    "phonetic": "/ˌʌnəˈvɔɪdəbl/",
+    "type": "adj",
+    "meaning": "không thể tránh khỏi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "dictate",
+    "phonetic": "/dɪkˈteɪt/",
+    "type": "v",
+    "meaning": "quyết định, chi phối",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "respond to",
+    "phonetic": "/rɪˈspɒnd tuː/",
+    "type": "v.phr",
+    "meaning": "phản ứng với",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "exchange",
+    "phonetic": "/ɪksˈtʃeɪndʒ/",
+    "type": "n",
+    "meaning": "sự tương tác, trao đổi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "demands",
+    "phonetic": "/dɪˈmɑːndz/",
+    "type": "n",
+    "meaning": "các yêu cầu, đòi hỏi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "resources",
+    "phonetic": "/rɪˈsɔːsiz/",
+    "type": "n",
+    "meaning": "nguồn lực (khả năng ứng phó)",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mental effort",
+    "phonetic": "/ˈmentl ˈefət/",
+    "type": "n",
+    "meaning": "nỗ lực tinh thần",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "succeed",
+    "phonetic": "/səkˈsiːd/",
+    "type": "v",
+    "meaning": "thành công",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "potential",
+    "phonetic": "/pəˈtenʃl/",
+    "type": "adj",
+    "meaning": "tiềm ẩn, tiềm năng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "injury",
+    "phonetic": "/ˈɪndʒəri/",
+    "type": "n",
+    "meaning": "chấn thương",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "ability to cope with",
+    "phonetic": "/əˈbɪləti tu kəʊp wɪð/",
+    "type": "n.phr",
+    "meaning": "khả năng ứng phó với",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "competitor",
+    "phonetic": "/kəmˈpetɪtə/",
+    "type": "n",
+    "meaning": "đối thủ thi đấu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "degree of confidence",
+    "phonetic": "/dɪˈɡriː əv ˈkɒnfɪdəns/",
+    "type": "n",
+    "meaning": "mức độ tự tin",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "control the outcome",
+    "phonetic": "/kənˈtrəʊl ði ˈaʊtkʌm/",
+    "type": "v.phr",
+    "meaning": "kiểm soát kết quả",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "look forward to",
+    "phonetic": "/lʊk ˈfɔːwəd tuː/",
+    "type": "v.phr",
+    "meaning": "mong chờ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "circumstances",
+    "phonetic": "/ˈsɜːkəmstənsiz/",
+    "type": "n",
+    "meaning": "hoàn cảnh, tình huống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "positively",
+    "phonetic": "/ˈpɒzətɪvli/",
+    "type": "adv",
+    "meaning": "tích cực",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "negatively",
+    "phonetic": "/ˈneɡətɪvli/",
+    "type": "adv",
+    "meaning": "tiêu cực",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "response",
+    "phonetic": "/rɪˈspɒns/",
+    "type": "n",
+    "meaning": "phản ứng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "state",
+    "phonetic": "/steɪt/",
+    "type": "n",
+    "meaning": "trạng thái",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "challenge",
+    "phonetic": "/ˈtʃælɪndʒ/",
+    "type": "n",
+    "meaning": "trạng thái thách thức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "threat",
+    "phonetic": "/θret/",
+    "type": "n",
+    "meaning": "trạng thái đe dọa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "skilful",
+    "phonetic": "/ˈskɪlfl/",
+    "type": "adj",
+    "meaning": "khéo léo, giỏi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "opponent",
+    "phonetic": "/əˈpəʊnənt/",
+    "type": "n",
+    "meaning": "đối thủ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "tackle",
+    "phonetic": "/ˈtækl/",
+    "type": "v",
+    "meaning": "giải quyết, xử lý",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "essentially",
+    "phonetic": "/ɪˈsenʃəli/",
+    "type": "adv",
+    "meaning": "về cơ bản",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "influence",
+    "phonetic": "/ˈɪnfluəns/",
+    "type": "v",
+    "meaning": "ảnh hưởng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "production",
+    "phonetic": "/prəˈdʌkʃn/",
+    "type": "n",
+    "meaning": "sự sản sinh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "adrenaline",
+    "phonetic": "/əˈdrenəlɪn/",
+    "type": "n",
+    "meaning": "hooc-môn adrenaline",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "cortisol",
+    "phonetic": "/ˈkɔːtɪzɒl/",
+    "type": "n",
+    "meaning": "hooc-môn cortisol",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "stress hormones",
+    "phonetic": "/stres ˈhɔːməʊnz/",
+    "type": "n",
+    "meaning": "hoóc-môn căng thẳng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "amount of blood",
+    "phonetic": "/əˈmaʊnt əv blʌd/",
+    "type": "n",
+    "meaning": "lượng máu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "expand",
+    "phonetic": "/ɪkˈspænd/",
+    "type": "v",
+    "meaning": "giãn nở",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "blood vessels",
+    "phonetic": "/blʌd ˈveslz/",
+    "type": "n",
+    "meaning": "mạch máu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "muscles",
+    "phonetic": "/ˈmʌslz/",
+    "type": "n",
+    "meaning": "cơ bắp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "decrease of pressure",
+    "phonetic": "/ˈdiːkriːs əv ˈpreʃə/",
+    "type": "n",
+    "meaning": "sự giảm áp lực",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "consistently related to",
+    "phonetic": "/kənˈsɪstəntli rɪˈleɪtɪd tuː/",
+    "type": "adj.phr",
+    "meaning": "luôn liên quan tới",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "superior",
+    "phonetic": "/suːˈpɪəriə/",
+    "type": "adj",
+    "meaning": "vượt trội",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "inhibit",
+    "phonetic": "/ɪnˈhɪbɪt/",
+    "type": "v",
+    "meaning": "ức chế, ngăn chặn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "blood pressure",
+    "phonetic": "/blʌd ˈpreʃə/",
+    "type": "n",
+    "meaning": "huyết áp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "anxious",
+    "phonetic": "/ˈæŋkʃəs/",
+    "type": "adj",
+    "meaning": "lo âu",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "associated with",
+    "phonetic": "/əˈsəʊsieɪtɪd wɪð/",
+    "type": "adj.phr",
+    "meaning": "có liên quan đến",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "unsuccessful serves",
+    "phonetic": "/ˌʌnsəkˈsesfl sɜːvz/",
+    "type": "n",
+    "meaning": "cú giao bóng không thành công",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "anxiety",
+    "phonetic": "/æŋˈzaɪəti/",
+    "type": "n",
+    "meaning": "sự lo âu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "perspiration",
+    "phonetic": "/ˌpɜːspəˈreɪʃn/",
+    "type": "n",
+    "meaning": "sự đổ mồ hôi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "palpitations",
+    "phonetic": "/ˌpælpɪˈteɪʃnz/",
+    "type": "n",
+    "meaning": "tim đập nhanh, hồi hộp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "tremor",
+    "phonetic": "/ˈtremə/",
+    "type": "n",
+    "meaning": "sự run rẩy",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "shortness of breath",
+    "phonetic": "/ˈʃɔːtnəs əv breθ/",
+    "type": "n",
+    "meaning": "chứng khó thở",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "headaches",
+    "phonetic": "/ˈhedeɪks/",
+    "type": "n",
+    "meaning": "đau đầu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "nausea",
+    "phonetic": "/ˈnɔːziə/",
+    "type": "n",
+    "meaning": "cảm giác buồn nôn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "stomach pain",
+    "phonetic": "/ˈstʌmək peɪn/",
+    "type": "n",
+    "meaning": "đau bụng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "weakness",
+    "phonetic": "/ˈwiːknəs/",
+    "type": "n",
+    "meaning": "sự yếu sức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "desire to escape",
+    "phonetic": "/dɪˈzaɪə tu ɪˈskeɪp/",
+    "type": "n",
+    "meaning": "mong muốn thoát khỏi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "concentration",
+    "phonetic": "/ˌkɒnsnˈtreɪʃn/",
+    "type": "n",
+    "meaning": "sự tập trung",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "self-control",
+    "phonetic": "/self kənˈtrəʊl/",
+    "type": "n",
+    "meaning": "sự tự kiểm soát",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "overthinking",
+    "phonetic": "/ˌəʊvəˈθɪŋkɪŋ/",
+    "type": "n",
+    "meaning": "suy nghĩ quá mức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "intensity",
+    "phonetic": "/ɪnˈtensəti/",
+    "type": "n",
+    "meaning": "cường độ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "manifest",
+    "phonetic": "/ˈmænɪfest/",
+    "type": "v",
+    "meaning": "biểu hiện, thể hiện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "nervousness",
+    "phonetic": "/ˈnɜːvəsnəs/",
+    "type": "n",
+    "meaning": "sự hồi hộp, lo lắng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "damaging to",
+    "phonetic": "/ˈdæmɪdʒɪŋ tuː/",
+    "type": "adj.phr",
+    "meaning": "gây hại cho",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "mental health",
+    "phonetic": "/ˈmentl helθ/",
+    "type": "n",
+    "meaning": "sức khỏe tinh thần",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "repeated episodes",
+    "phonetic": "/rɪˈpiːtɪd ˈepɪsəʊdz/",
+    "type": "n",
+    "meaning": "các đợt lặp lại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "depression",
+    "phonetic": "/dɪˈpreʃn/",
+    "type": "n",
+    "meaning": "trầm cảm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "promote",
+    "phonetic": "/prəˈməʊt/",
+    "type": "v",
+    "meaning": "thúc đẩy, khuyến khích",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "coaches",
+    "phonetic": "/ˈkəʊtʃɪz/",
+    "type": "n",
+    "meaning": "huấn luyện viên",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "physiological",
+    "phonetic": "/ˌfɪziəˈlɒdʒɪkl/",
+    "type": "adj",
+    "meaning": "thuộc về sinh lý",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "rather than",
+    "phonetic": "/ˈrɑːðə ðæn/",
+    "type": "conj",
+    "meaning": "thay vì",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "nerves",
+    "phonetic": "/nɜːvz/",
+    "type": "n",
+    "meaning": "sự căng thẳng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "visualisation",
+    "phonetic": "/ˌvɪʒuəlaɪˈzeɪʃn/",
+    "type": "n",
+    "meaning": "sự hình dung",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mental picture",
+    "phonetic": "/ˈmentl ˈpɪktʃə/",
+    "type": "n",
+    "meaning": "hình ảnh trong đầu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "recreate",
+    "phonetic": "/ˌriːkriˈeɪt/",
+    "type": "v",
+    "meaning": "tái hiện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "deal with stress",
+    "phonetic": "/diːl wɪð stres/",
+    "type": "v.phr",
+    "meaning": "đối phó với căng thẳng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "peers",
+    "phonetic": "/pɪəz/",
+    "type": "n",
+    "meaning": "bạn đồng lứa, người cùng cấp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "sense of competition",
+    "phonetic": "/sens əv ˌkɒmpəˈtɪʃn/",
+    "type": "n",
+    "meaning": "cảm giác cạnh tranh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "practise",
+    "phonetic": "/ˈpræktɪs/",
+    "type": "v",
+    "meaning": "thực hành, luyện tập",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "inquiry",
+    "phonetic": "/ɪnˈkwaɪəri/",
+    "type": "n",
+    "meaning": "cuộc điều tra, sự tìm hiểu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "gifted",
+    "phonetic": "/ˈɡɪftɪd/",
+    "type": "adj",
+    "meaning": "có năng khiếu, tài năng thiên bẩm",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "genius",
+    "phonetic": "/ˈdʒiːniəs/",
+    "type": "n",
+    "meaning": "thiên tài",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "equivalent",
+    "phonetic": "/ɪˈkwɪvələnt/",
+    "type": "n/adj",
+    "meaning": "sự tương đương, tương đương",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "assume",
+    "phonetic": "/əˈsjuːm/",
+    "type": "v",
+    "meaning": "cho rằng, giả định",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "extraordinary",
+    "phonetic": "/ɪkˈstrɔːdnri/",
+    "type": "adj",
+    "meaning": "phi thường, đặc biệt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "sphere",
+    "phonetic": "/sfɪə/",
+    "type": "n",
+    "meaning": "lĩnh vực, phạm vi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "emerges",
+    "phonetic": "/ɪˈmɜːdʒɪz/",
+    "type": "v",
+    "meaning": "hiện ra, lộ rõ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "selective",
+    "phonetic": "/sɪˈlektɪv/",
+    "type": "adj",
+    "meaning": "chọn lọc khắt khe",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "fascinate",
+    "phonetic": "/ˈfæsɪneɪt/",
+    "type": "v",
+    "meaning": "cuốn hút, quyến rũ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "hooked",
+    "phonetic": "/hʊkt/",
+    "type": "adj",
+    "meaning": "say mê, bị cuốn vào",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "curious",
+    "phonetic": "/ˈkjʊəriəs/",
+    "type": "n",
+    "meaning": "tò mò, ham học hỏi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "resolute",
+    "phonetic": "/ˈrezəluːt/",
+    "type": "adj",
+    "meaning": "kiên quyết, cứng rắn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "setbacks",
+    "phonetic": "/ˈsetbæks/",
+    "type": "n",
+    "meaning": "trở ngại, thất bại nhỏ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rewarding",
+    "phonetic": "/rɪˈwɔːdɪŋ/",
+    "type": "adj",
+    "meaning": "đáng giá, bổ ích",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "discovery",
+    "phonetic": "/dɪˈskʌvəri/",
+    "type": "n",
+    "meaning": "sự khám phá",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "trail",
+    "phonetic": "/treɪl/",
+    "type": "n",
+    "meaning": "đường mòn, dấu vết",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "original",
+    "phonetic": "/əˈrɪdʒənl/",
+    "type": "adj",
+    "meaning": "độc đáo, nguyên bản",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "unexceptional",
+    "phonetic": "/ˌʌnɪkˈsepʃənl/",
+    "type": "adj",
+    "meaning": "bình thường, không nổi bật",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "struggled",
+    "phonetic": "/ˈstrʌɡld/",
+    "type": "v",
+    "meaning": "vật lộn, gặp khó khăn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "initially",
+    "phonetic": "/ɪˈnɪʃəli/",
+    "type": "adv",
+    "meaning": "ban đầu",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "plug away",
+    "phonetic": "/plʌɡ əˈweɪ/",
+    "type": "phr v",
+    "meaning": "kiên trì làm việc chăm chỉ",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "eventually",
+    "phonetic": "/ɪˈventʃuəli/",
+    "type": "adv",
+    "meaning": "cuối cùng",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "rewrote",
+    "phonetic": "/ˌriːˈrəʊt/",
+    "type": "v",
+    "meaning": "viết lại, thay đổi tận gốc",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "theory of relativity",
+    "phonetic": "/ˈθɪəri əv ˌreləˈtɪvəti/",
+    "type": "n",
+    "meaning": "thuyết tương đối",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "considerable",
+    "phonetic": "/kənˈsɪdərəbl/",
+    "type": "adj",
+    "meaning": "đáng kể",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "high performance",
+    "phonetic": "/haɪ pəˈfɔːməns/",
+    "type": "n",
+    "meaning": "hiệu suất cao, thành tích cao",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "tested intelligence",
+    "phonetic": "/ˈtestɪd ɪnˈtelɪdʒəns/",
+    "type": "n",
+    "meaning": "trí thông minh qua kiểm tra",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "flexible",
+    "phonetic": "/ˈfleksəbl/",
+    "type": "adj",
+    "meaning": "linh hoạt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "neural pathways",
+    "phonetic": "/ˈnjʊərəl ˈpɑːθweɪz/",
+    "type": "n",
+    "meaning": "đường dẫn thần kinh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "fixed",
+    "phonetic": "/fɪkst/",
+    "type": "adj",
+    "meaning": "cố định",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "contemporary",
+    "phonetic": "/kənˈtemprəri/",
+    "type": "n",
+    "meaning": "bạn cùng thời, đồng trang lứa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "jury is out",
+    "phonetic": "/ˈdʒʊəri ɪz aʊt/",
+    "type": "idiom",
+    "meaning": "chưa có kết luận cuối cùng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "innate",
+    "phonetic": "/ɪˈneɪt/",
+    "type": "adj",
+    "meaning": "bẩm sinh",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "replicable",
+    "phonetic": "/ˈreplɪkəbl/",
+    "type": "adj",
+    "meaning": "có thể lặp lại, nhân rộng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "traits",
+    "phonetic": "/treɪts/",
+    "type": "n",
+    "meaning": "đặc điểm tính cách",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "collaborated on",
+    "phonetic": "/kəˈlæbəreɪtɪd ɒn/",
+    "type": "v.phr",
+    "meaning": "hợp tác làm gì",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "neuroscience",
+    "phonetic": "/ˈnjʊərəʊˌsaɪəns/",
+    "type": "n",
+    "meaning": "khoa học thần kinh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "attitudes",
+    "phonetic": "/ˈætɪtjuːdz/",
+    "type": "n",
+    "meaning": "thái đ���",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "approaches",
+    "phonetic": "/əˈprəʊtʃɪz/",
+    "type": "n",
+    "meaning": "các cách tiếp cận",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "attributes",
+    "phonetic": "/əˈtrɪbjuːts/",
+    "type": "n",
+    "meaning": "phẩm chất, đặc tính",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "persistence",
+    "phonetic": "/pəˈsɪstəns/",
+    "type": "n",
+    "meaning": "sự kiên trì",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "critically",
+    "phonetic": "/ˈkrɪtɪkli/",
+    "type": "adv",
+    "meaning": "cực kỳ quan trọng, then chốt",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "eminent",
+    "phonetic": "/ˈemɪnənt/",
+    "type": "adj",
+    "meaning": "lỗi lạc, xuất chúng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "expertise",
+    "phonetic": "/ˌekspɜːˈtiːz/",
+    "type": "n",
+    "meaning": "chuyên môn cao",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "diverse",
+    "phonetic": "/daɪˈvɜːs/",
+    "type": "adj",
+    "meaning": "đa dạng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "achievements",
+    "phonetic": "/əˈtʃiːvmənts/",
+    "type": "n",
+    "meaning": "thành tựu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "deliberate practice",
+    "phonetic": "/dɪˈlɪbərət ˈpræktɪs/",
+    "type": "n",
+    "meaning": "luyện tập có chủ đích",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "stretches",
+    "phonetic": "/ˈstretʃɪz/",
+    "type": "v",
+    "meaning": "thử thách, kéo giãn giới hạn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "produces the goods",
+    "phonetic": "/prəˈdjuːsɪz ðə ɡʊdz/",
+    "type": "idiom",
+    "meaning": "mang lại kết quả mong đợi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "particularly",
+    "phonetic": "/pəˈtɪkjələli/",
+    "type": "adv",
+    "meaning": "đặc biệt",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "outperform",
+    "phonetic": "/ˌaʊtpəˈfɔːm/",
+    "type": "v",
+    "meaning": "làm tốt hơn, vượt trội hơn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "superior",
+    "phonetic": "/suːˈpɪəriə/",
+    "type": "adj",
+    "meaning": "vượt trội, cấp cao",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "distinguished",
+    "phonetic": "/dɪˈstɪŋɡwɪʃt/",
+    "type": "adj",
+    "meaning": "xuất sắc, kiệt xuất",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "pause for thought",
+    "phonetic": "/pɔːz fə θɔːt/",
+    "type": "idiom",
+    "meaning": "điều đáng suy ngẫm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "disciplines",
+    "phonetic": "/ˈdɪsəplɪnz/",
+    "type": "n",
+    "meaning": "lĩnh vực, ngành học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "neurology",
+    "phonetic": "/njʊəˈrɒlədʒi/",
+    "type": "n",
+    "meaning": "thần kinh học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "pattern",
+    "phonetic": "/ˈpætən/",
+    "type": "n",
+    "meaning": "mô hình, quy luật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "work ethics",
+    "phonetic": "/wɜːk ˈeθɪks/",
+    "type": "n",
+    "meaning": "tinh thần làm việc, đạo đức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "spin-off research",
+    "phonetic": "/ˈspɪn ɒf rɪˈsɜːtʃ/",
+    "type": "n",
+    "meaning": "nghiên cứu phát sinh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "remarkable",
+    "phonetic": "/rɪˈmɑːkəbl/",
+    "type": "adj",
+    "meaning": "đáng chú ý, khác thường",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "poverty",
+    "phonetic": "/ˈpɒvəti/",
+    "type": "n",
+    "meaning": "sự nghèo đói",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "disadvantaged",
+    "phonetic": "/ˌdɪsədˈvɑːntɪdʒd/",
+    "type": "adj",
+    "meaning": "thiệt thòi, yếu thế",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "uncovered",
+    "phonetic": "/ʌnˈkʌvəd/",
+    "type": "v",
+    "meaning": "phát hiện, hé lộ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "evidence",
+    "phonetic": "/ˈevɪdəns/",
+    "type": "n",
+    "meaning": "bằng chứng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "valued",
+    "phonetic": "/ˈvæljuːd/",
+    "type": "v",
+    "meaning": "coi trọng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "immediate family",
+    "phonetic": "/ɪˈmiːdiət ˈfæməli/",
+    "type": "n",
+    "meaning": "gia đình ruột thịt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "extended family",
+    "phonetic": "/ɪkˈstendɪd ˈfæməli/",
+    "type": "n",
+    "meaning": "gia đình đa thế hệ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "epitome",
+    "phonetic": "/ɪˈpɪtəmi/",
+    "type": "n",
+    "meaning": "hình mẫu hoàn hảo",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "determination",
+    "phonetic": "/dɪˌtɜːmɪˈneɪʃn/",
+    "type": "n",
+    "meaning": "sự quyết tâm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "undeterred",
+    "phonetic": "/ˌʌndɪˈtɜːd/",
+    "type": "adj",
+    "meaning": "không nao núng, không nản",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "intellect",
+    "phonetic": "/ˈɪntəlekt/",
+    "type": "n",
+    "meaning": "trí tuệ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "character",
+    "phonetic": "/ˈkærəktə/",
+    "type": "n",
+    "meaning": "phẩm chất, tính cách",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "archaeologists",
+    "phonetic": "/ˌɑːkiˈɒlədʒɪsts/",
+    "type": "n",
+    "meaning": "nhà khảo cổ học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "discover evidence",
+    "phonetic": "/dɪˈskʌvə ˈevɪdəns/",
+    "type": "v.phrase",
+    "meaning": "phát hiện bằng chứng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "prehistoric",
+    "phonetic": "/ˌpriːhɪˈstɒrɪk/",
+    "type": "adj",
+    "meaning": "tiền sử",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "island settlers",
+    "phonetic": "/ˈaɪlənd ˈsetləz/",
+    "type": "n",
+    "meaning": "người định cư trên đảo",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "early April",
+    "phonetic": "/ˈɜːli ˈeɪprəl/",
+    "type": "n",
+    "meaning": "đầu tháng Tư",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "colleagues",
+    "phonetic": "/ˈkɒliːɡz/",
+    "type": "n",
+    "meaning": "đồng nghiệp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "explore",
+    "phonetic": "/ɪkˈsplɔː/",
+    "type": "v",
+    "meaning": "khám phá",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "tropical",
+    "phonetic": "/ˈtrɒpɪkl/",
+    "type": "adj",
+    "meaning": "nhiệt đới",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "province",
+    "phonetic": "/ˈprɒvɪns/",
+    "type": "n",
+    "meaning": "tỉnh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "research team",
+    "phonetic": "/rɪˈsɜːtʃ tiːm/",
+    "type": "n",
+    "meaning": "nhóm nghiên cứu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "discoveries",
+    "phonetic": "/dɪˈskʌvəriz/",
+    "type": "n",
+    "meaning": "những phát hiện",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "suggest",
+    "phonetic": "/səˈdʒest/",
+    "type": "v",
+    "meaning": "cho thấy",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "adept",
+    "phonetic": "/əˈdept/",
+    "type": "adj",
+    "meaning": "giỏi, thành thạo",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "lived on",
+    "phonetic": "/lɪvd ɒn/",
+    "type": "v.phrase",
+    "meaning": "sống trên",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "land and sea",
+    "phonetic": "/lænd ænd siː/",
+    "type": "n",
+    "meaning": "đất liền và biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "dense",
+    "phonetic": "/dens/",
+    "type": "adj",
+    "meaning": "dày đặc, rậm rạp",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "hunting",
+    "phonetic": "/ˈhʌntɪŋ/",
+    "type": "n",
+    "meaning": "việc săn bắn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rainforest",
+    "phonetic": "/ˈreɪnfɒrɪst/",
+    "type": "n",
+    "meaning": "rừng mưa nhiệt đới",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "forage",
+    "phonetic": "/ˈfɒrɪdʒ/",
+    "type": "v",
+    "meaning": "kiếm ăn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "seashore",
+    "phonetic": "/ˈsiːʃɔː/",
+    "type": "n",
+    "meaning": "bờ biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "possibly",
+    "phonetic": "/ˈpɒsəbli/",
+    "type": "adv",
+    "meaning": "có thể",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "voyaging",
+    "phonetic": "/ˈvɔɪɪdʒɪŋ/",
+    "type": "n",
+    "meaning": "việc di chuyển bằng đường biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "excavations",
+    "phonetic": "/ˌekskəˈveɪʃnz/",
+    "type": "n",
+    "meaning": "cuộc khai quật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "part of a project",
+    "phonetic": "/pɑːt əv ə ˈprɒdʒekt/",
+    "type": "n.phrase",
+    "meaning": "một phần của dự án",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "learn more about",
+    "phonetic": "/lɜːn mɔːr əˈbaʊt/",
+    "type": "v.phrase",
+    "meaning": "tìm hiểu thêm về",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "disperse",
+    "phonetic": "/dɪˈspɜːs/",
+    "type": "v",
+    "meaning": "phân tán, lan rộng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "mainland Asia",
+    "phonetic": "/meɪnlænd ˈeɪʒə/",
+    "type": "n",
+    "meaning": "lục địa châu Á",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "archipelago",
+    "phonetic": "/ˌɑːkɪˈpeləɡəʊ/",
+    "type": "n",
+    "meaning": "quần đảo",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "continent",
+    "phonetic": "/ˈkɒntɪnənt/",
+    "type": "n",
+    "meaning": "lục địa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "connected",
+    "phonetic": "/kəˈnektɪd/",
+    "type": "v",
+    "meaning": "kết nối",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "earlier research",
+    "phonetic": "/ˈɜːliə rɪˈsɜːtʃ/",
+    "type": "n",
+    "meaning": "nghiên cứu trước đó",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "northernmost",
+    "phonetic": "/ˈnɔːðəməʊst/",
+    "type": "adj",
+    "meaning": "xa nhất về phía bắc",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "offered",
+    "phonetic": "/ˈɒfəd/",
+    "type": "v",
+    "meaning": "cung cấp",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "easiest",
+    "phonetic": "/ˈiːziɪst/",
+    "type": "adj",
+    "meaning": "dễ nhất",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "migration route",
+    "phonetic": "/maɪˈɡreɪʃn ruːt/",
+    "type": "n",
+    "meaning": "tuyến di cư",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "crucial",
+    "phonetic": "/ˈkruːʃl/",
+    "type": "adj",
+    "meaning": "cực kỳ quan trọng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "stepping stones",
+    "phonetic": "/ˈstepɪŋ stəʊnz/",
+    "type": "idiom",
+    "meaning": "bước đệm, điểm trung chuyển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "island-hopping",
+    "phonetic": "/ˈaɪlənd ˌhɒpɪŋ/",
+    "type": "adj",
+    "meaning": "di chuyển qua nhiều đảo",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "region",
+    "phonetic": "/ˈriːdʒən/",
+    "type": "n",
+    "meaning": "khu vực",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "millennia ago",
+    "phonetic": "/mɪˈleniə əˈɡəʊ/",
+    "type": "adv",
+    "meaning": "cách đây hàng thiên niên kỷ",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "support this idea",
+    "phonetic": "/səˈpɔːt ðɪs aɪˈdɪə/",
+    "type": "v.phrase",
+    "meaning": "ủng hộ ý tưởng này",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "needed",
+    "phonetic": "/ˈniːdɪd/",
+    "type": "v",
+    "meaning": "cần",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "remote area",
+    "phonetic": "/rɪˈməʊt ˈeəriə/",
+    "type": "n",
+    "meaning": "vùng xa xôi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "ancient past",
+    "phonetic": "/ˈeɪnʃənt pɑːst/",
+    "type": "n",
+    "meaning": "quá khứ cổ xưa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "sites",
+    "phonetic": "/saɪts/",
+    "type": "n",
+    "meaning": "địa điểm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "reveal",
+    "phonetic": "/rɪˈviːl/",
+    "type": "v",
+    "meaning": "tiết lộ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "early occupation",
+    "phonetic": "/ˈɜːli ˌɒkjuˈpeɪʃn/",
+    "type": "n",
+    "meaning": "sự cư trú sớm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "just inland",
+    "phonetic": "/dʒʌst ˈɪnlənd/",
+    "type": "adv",
+    "meaning": "ngay phía trong đất liền",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "northern coast",
+    "phonetic": "/ˈnɔːðən kəʊst/",
+    "type": "n",
+    "meaning": "bờ biển phía bắc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "caves",
+    "phonetic": "/keɪvz/",
+    "type": "n",
+    "meaning": "hang động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "containing",
+    "phonetic": "/kənˈteɪnɪŋ/",
+    "type": "v",
+    "meaning": "chứa",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "rock shelters",
+    "phonetic": "/rɒk ˈʃeltəz/",
+    "type": "n",
+    "meaning": "nơi trú ẩn bằng đá",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "suitable",
+    "phonetic": "/ˈsuːtəbl/",
+    "type": "adj",
+    "meaning": "phù hợp",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "excavation",
+    "phonetic": "/ˌekskəˈveɪʃn/",
+    "type": "n",
+    "meaning": "việc khai quật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "permission",
+    "phonetic": "/pəˈmɪʃn/",
+    "type": "n",
+    "meaning": "sự cho phép",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "local people",
+    "phonetic": "/ˈləʊkl ˈpiːpl/",
+    "type": "n",
+    "meaning": "người dân địa phương",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "dug",
+    "phonetic": "/dʌɡ/",
+    "type": "v",
+    "meaning": "đào",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "test excavation",
+    "phonetic": "/test ˌekskəˈveɪʃn/",
+    "type": "n",
+    "meaning": "khai quật thăm dò",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "shelter",
+    "phonetic": "/ˈʃeltə/",
+    "type": "n",
+    "meaning": "nơi trú ẩn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "numerous",
+    "phonetic": "/ˈnjuːmərəs/",
+    "type": "adj",
+    "meaning": "nhiều",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "artefacts",
+    "phonetic": "/ˈɑːtɪfækts/",
+    "type": "n",
+    "meaning": "hiện vật khảo cổ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "fragment",
+    "phonetic": "/ˈfræɡmənt/",
+    "type": "n",
+    "meaning": "mảnh vỡ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "including",
+    "phonetic": "/ɪnˈkluːdɪŋ/",
+    "type": "prep",
+    "meaning": "bao gồm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "axes",
+    "phonetic": "/ˈæksɪz/",
+    "type": "n",
+    "meaning": "rìu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "dating to",
+    "phonetic": "/ˈdeɪtɪŋ tuː/",
+    "type": "v.phrase",
+    "meaning": "có niên đại vào khoảng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "earliest",
+    "phonetic": "/ˈɜːliɪst/",
+    "type": "adj",
+    "meaning": "sớm nhất",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "clam shells",
+    "phonetic": "/klæm ʃelz/",
+    "type": "n",
+    "meaning": "vỏ sò",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "roughly",
+    "phonetic": "/ˈrʌfli/",
+    "type": "adv",
+    "meaning": "xấp xỉ",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "previously",
+    "phonetic": "/ˈpriːviəsli/",
+    "type": "adv",
+    "meaning": "trước đó",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "elsewhere",
+    "phonetic": "/ˌelsˈweə/",
+    "type": "adv",
+    "meaning": "ở nơi khác",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "nearby island",
+    "phonetic": "/ˌnɪəˈbaɪ ˈaɪlənd/",
+    "type": "n",
+    "meaning": "đảo gần đó",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "northeast",
+    "phonetic": "/ˌnɔːθˈiːst/",
+    "type": "n/adv",
+    "meaning": "phía đông bắc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "highly likely",
+    "phonetic": "/ˈhaɪli ˈlaɪkli/",
+    "type": "adj.phrase",
+    "meaning": "rất có khả năng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "construction",
+    "phonetic": "/kənˈstrʌkʃn/",
+    "type": "n",
+    "meaning": "sự xây dựng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "canoes",
+    "phonetic": "/kəˈnuːz/",
+    "type": "n",
+    "meaning": "thuyền độc mộc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "allowing",
+    "phonetic": "/əˈlaʊɪŋ/",
+    "type": "v",
+    "meaning": "cho phép",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "maintain",
+    "phonetic": "/meɪnˈteɪn/",
+    "type": "v",
+    "meaning": "duy trì",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "connections",
+    "phonetic": "/kəˈnekʃnz/",
+    "type": "n",
+    "meaning": "mối liên kết",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "neighbouring islands",
+    "phonetic": "/ˈneɪbərɪŋ ˈaɪləndz/",
+    "type": "n",
+    "meaning": "các đảo lân cận",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "oldest",
+    "phonetic": "/ˈəʊldɪst/",
+    "type": "adj",
+    "meaning": "cổ nhất",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "cultural layers",
+    "phonetic": "/ˈkʌltʃ��rəl ˈleɪəz/",
+    "type": "n",
+    "meaning": "các lớp văn hóa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "provided",
+    "phonetic": "/prəˈvaɪdɪd/",
+    "type": "v",
+    "meaning": "cung cấp",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "record",
+    "phonetic": "/ˈrekɔːd/",
+    "type": "n",
+    "meaning": "hồ sơ, ghi nhận",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "human occupation",
+    "phonetic": "/ˈhjuːmən ˌɒkjuˈpeɪʃn/",
+    "type": "n",
+    "meaning": "sự cư trú của con người",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "dating back",
+    "phonetic": "/ˈdeɪtɪŋ bæk/",
+    "type": "v.phrase",
+    "meaning": "có niên đại ngược về",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "climate",
+    "phonetic": "/ˈklaɪmət/",
+    "type": "n",
+    "meaning": "khí hậu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "drier",
+    "phonetic": "/ˈdraɪə/",
+    "type": "adj",
+    "meaning": "khô hơn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "colder",
+    "phonetic": "/ˈkəʊldə/",
+    "type": "adj",
+    "meaning": "lạnh hơn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "impenetrable",
+    "phonetic": "/ɪmˈpenɪtrəbl/",
+    "type": "adj",
+    "meaning": "không thể xuyên qua",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "less impenetrable",
+    "phonetic": "/les ɪmˈpenɪtrəbl/",
+    "type": "adj.phrase",
+    "meaning": "ít rậm rạp hơn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "sea levels",
+    "phonetic": "/siː ˈlevlz/",
+    "type": "n",
+    "meaning": "mực nước biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "lower",
+    "phonetic": "/ˈləʊə/",
+    "type": "adj",
+    "meaning": "thấp hơn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "encompassing",
+    "phonetic": "/ɪnˈkʌmpəsɪŋ/",
+    "type": "v",
+    "meaning": "bao gồm, bao trùm",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "meaning",
+    "phonetic": "/ˈmiːnɪŋ/",
+    "type": "v",
+    "meaning": "nghĩa là",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "separate",
+    "phonetic": "/ˈseprət/",
+    "type": "adj",
+    "meaning": "tách biệt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "ice age",
+    "phonetic": "/ˈaɪs eɪdʒ/",
+    "type": "n",
+    "meaning": "kỷ băng hà",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "ended",
+    "phonetic": "/ˈendɪd/",
+    "type": "v",
+    "meaning": "kết thúc",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "significantly",
+    "phonetic": "/sɪɡˈnɪfɪkəntli/",
+    "type": "adv",
+    "meaning": "đáng kể",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "warmer",
+    "phonetic": "/ˈwɔːmə/",
+    "type": "adj",
+    "meaning": "ấm hơn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "wetter",
+    "phonetic": "/ˈwetə/",
+    "type": "adj",
+    "meaning": "ẩm ướt hơn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "no doubt",
+    "phonetic": "/nəʊ daʊt/",
+    "type": "adv",
+    "meaning": "chắc chắn",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "thicker",
+    "phonetic": "/ˈθɪkə/",
+    "type": "adj",
+    "meaning": "dày hơn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "according to",
+    "phonetic": "/əˈkɔːdɪŋ tuː/",
+    "type": "prep",
+    "meaning": "theo như",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "coincidence",
+    "phonetic": "/kəʊˈɪnsɪdəns/",
+    "type": "n",
+    "meaning": "sự trùng hợp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "crafted from",
+    "phonetic": "/krɑːftɪd frɒm/",
+    "type": "v.phrase",
+    "meaning": "được chế tác từ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "heavy-duty",
+    "phonetic": "/ˌhevi ˈdjuːti/",
+    "type": "adj",
+    "meaning": "dùng cho việc nặng, bền chắc",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "appear",
+    "phonetic": "/əˈpɪə/",
+    "type": "v",
+    "meaning": "xuất hiện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "in response to",
+    "phonetic": "/ɪn rɪˈspɒns tuː/",
+    "type": "phr",
+    "meaning": "đáp lại",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "clearing",
+    "phonetic": "/ˈklɪərɪŋ/",
+    "type": "n/gerund",
+    "meaning": "phát quang",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "modification",
+    "phonetic": "/ˌmɒdɪfɪˈkeɪʃn/",
+    "type": "n",
+    "meaning": "sự cải biến",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "increasingly",
+    "phonetic": "/ɪnˈkriːsɪŋli/",
+    "type": "adv",
+    "meaning": "ngày càng",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "grind into",
+    "phonetic": "/ɡraɪnd ˈɪntuː/",
+    "type": "v.phrase",
+    "meaning": "mài thành",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "compared to",
+    "phonetic": "/kəmˈpeəd tuː/",
+    "type": "prep",
+    "meaning": "so với",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "harder material",
+    "phonetic": "/ˈhɑːdə məˈtɪəriəl/",
+    "type": "n",
+    "meaning": "chất liệu cứng hơn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "sharp edge",
+    "phonetic": "/ʃɑːp edʒ/",
+    "type": "n",
+    "meaning": "cạnh sắc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "for longer",
+    "phonetic": "/fɔː ˈlɒŋɡə/",
+    "type": "adv",
+    "meaning": "trong thời gian lâu hơn",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "judging by",
+    "phonetic": "/ˈdʒʌdʒɪŋ baɪ/",
+    "type": "prep",
+    "meaning": "dựa vào",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "unearth",
+    "phonetic": "/ʌnˈɜːθ/",
+    "type": "v",
+    "meaning": "khai quật, đào lên",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "bones",
+    "phonetic": "/bəʊnz/",
+    "type": "n",
+    "meaning": "xương",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mainly",
+    "phonetic": "/ˈmeɪnli/",
+    "type": "adv",
+    "meaning": "chủ yếu",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "possum-like",
+    "phonetic": "/ˈpɒsəm laɪk/",
+    "type": "adj",
+    "meaning": "giống thú có túi possum",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "creature",
+    "phonetic": "/ˈkriːtʃə/",
+    "type": "n",
+    "meaning": "sinh vật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "grew more dense",
+    "phonetic": "/ɡruː mɔː dens/",
+    "type": "v.phrase",
+    "meaning": "trở nên rậm hơn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "patch",
+    "phonetic": "/pætʃ/",
+    "type": "n",
+    "meaning": "mảnh đất nhỏ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "clear patches of forest",
+    "phonetic": "/klɪə ˈpætʃɪz əv ˈfɒrɪst/",
+    "type": "v.phrase",
+    "meaning": "dọn các khoảng rừng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "make hunting easier",
+    "phonetic": "/meɪk ˈhʌntɪŋ ˈiːziə/",
+    "type": "v.phrase",
+    "meaning": "làm việc săn bắt dễ hơn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "volcanic glass",
+    "phonetic": "/vɒlˈkænɪk ɡlɑːs/",
+    "type": "n",
+    "meaning": "thủy tinh núi lửa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "substance",
+    "phonetic": "/ˈsʌbstəns/",
+    "type": "n",
+    "meaning": "chất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "obsidian",
+    "phonetic": "/əbˈsɪdiễn/",
+    "type": "n",
+    "meaning": "đá obsidian",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "source",
+    "phonetic": "/sɔːs/",
+    "type": "n",
+    "meaning": "nguồn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "particular",
+    "phonetic": "/pəˈtɪkjələ/",
+    "type": "adj",
+    "meaning": "cụ thể",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "beads",
+    "phonetic": "/biːdz/",
+    "type": "n",
+    "meaning": "hạt chuỗi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "similar to",
+    "phonetic": "/ˈsɪmələ tuː/",
+    "type": "adj.phrase",
+    "meaning": "tương tự như",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "found on",
+    "phonetic": "/faʊnd ɒn/",
+    "type": "v.phrase",
+    "meaning": "được tìm thấy trên",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "southern",
+    "phonetic": "/ˈsʌðən/",
+    "type": "adj",
+    "meaning": "phía nam",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "finds",
+    "phonetic": "/faɪndz/",
+    "type": "n",
+    "meaning": "phát hiện",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "again",
+    "phonetic": "/əˈɡen/",
+    "type": "adv",
+    "meaning": "một lần nữa",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "routinely",
+    "phonetic": "/ruːˈtiːnli/",
+    "type": "adv",
+    "meaning": "thường xuyên",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "travelled to",
+    "phonetic": "/ˈtrævld tuː/",
+    "type": "v.phrase",
+    "meaning": "di chuyển tới",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "successfully",
+    "phonetic": "/səkˈsesfəli/",
+    "type": "adv",
+    "meaning": "thành công",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "shelters",
+    "phonetic": "/ˈʃeltəz/",
+    "type": "n",
+    "meaning": "các nơi trú ẩn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "abandon",
+    "phonetic": "/əˈbændən/",
+    "type": "v",
+    "meaning": "bỏ hoang",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "abandoned",
+    "phonetic": "/əˈbændənd/",
+    "type": "v",
+    "meaning": "bị bỏ hoang",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "residents",
+    "phonetic": "/ˈrezɪdənts/",
+    "type": "n",
+    "meaning": "cư dân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "leave completely",
+    "phonetic": "/liːv kəmˈpliːtli/",
+    "type": "v.phrase",
+    "meaning": "rời đi hoàn toàn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "move elsewhere",
+    "phonetic": "/muːv ˌelsˈweə/",
+    "type": "v.phrase",
+    "meaning": "chuyển đi nơi khác",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "undergrowth",
+    "phonetic": "/ˈʌndəɡrəʊθ/",
+    "type": "n",
+    "meaning": "cây bụi rậm tầng thấp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "turned to",
+    "phonetic": "/tɜːnd tuː/",
+    "type": "v.phrase",
+    "meaning": "chuyển sang",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "fishing",
+    "phonetic": "/ˈfɪʃɪŋ/",
+    "type": "n",
+    "meaning": "đánh bắt cá",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "means of survival",
+    "phonetic": "/miːnz əv səˈvaɪvl/",
+    "type": "n",
+    "meaning": "phương thức sinh tồn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "reason",
+    "phonetic": "/ˈriːzn/",
+    "type": "n",
+    "meaning": "lý do",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "departure",
+    "phonetic": "/dɪˈpɑːtʃə/",
+    "type": "n",
+    "meaning": "sự rời đi, di cư",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "evidence for",
+    "phonetic": "/ˈevɪdəns fɔː/",
+    "type": "n.phrase",
+    "meaning": "bằng chứng về",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "use of",
+    "phonetic": "/juːs əv/",
+    "type": "n.phrase",
+    "meaning": "việc sử dụng",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "until",
+    "phonetic": "/ənˈtɪl/",
+    "type": "prep/conj",
+    "meaning": "cho đến khi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "re-occupy",
+    "phonetic": "/ˌriː ˈɒkjuːpaɪ/",
+    "type": "v",
+    "meaning": "tái cư trú",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "owned",
+    "phonetic": "/əʊnd/",
+    "type": "v",
+    "meaning": "sở hữu",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "pottery",
+    "phonetic": "/ˈpɒtəri/",
+    "type": "n",
+    "meaning": "đồ gốm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "items",
+    "phonetic": "/ˈaɪtəmz/",
+    "type": "n",
+    "meaning": "vật phẩm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "made out of",
+    "phonetic": "/meɪd aʊt əv/",
+    "type": "v.phrase",
+    "meaning": "làm từ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "gold and silver",
+    "phonetic": "/ɡəʊld ænd ˈsɪlvə/",
+    "type": "n",
+    "meaning": "vàng và bạc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "in view of",
+    "phonetic": "/ɪn vjuː əv/",
+    "type": "prep",
+    "meaning": "xét theo",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "location",
+    "phonetic": "/ləʊˈkeɪʃn/",
+    "type": "n",
+    "meaning": "vị trí",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "final phase",
+    "phonetic": "/ˈfaɪnl feɪz/",
+    "type": "n",
+    "meaning": "giai đoạn cuối",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "historic trade",
+    "phonetic": "/hɪˈstɒrɪk treɪd/",
+    "type": "n",
+    "meaning": "hoạt động thương mại lịch sử",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "spice",
+    "phonetic": "/spaɪs/",
+    "type": "n",
+    "meaning": "gia vị",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rest of the world",
+    "phonetic": "/rest əv ðə wɜːld/",
+    "type": "n",
+    "meaning": "phần còn lại của thế giới",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "wetlands",
+    "phonetic": "/ˈwetləndz/",
+    "type": "n",
+    "meaning": "vùng đất ngập nước",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "soil",
+    "phonetic": "/sɔɪl/",
+    "type": "n",
+    "meaning": "đất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "surface",
+    "phonetic": "/ˈsɜːfɪs/",
+    "type": "n",
+    "meaning": "bề mặt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "complex",
+    "phonetic": "/ˈkɒmpleks/",
+    "type": "adj",
+    "meaning": "phức tạp",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "ecosystems",
+    "phonetic": "/ˈiːkəʊsɪstəmz/",
+    "type": "n",
+    "meaning": "hệ sinh thái",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "unique",
+    "phonetic": "/juˈniːk/",
+    "type": "adj",
+    "meaning": "độc đáo",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "disappeared",
+    "phonetic": "/ˌdɪsəˈpɪəd/",
+    "type": "v",
+    "meaning": "biến mất",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "converted",
+    "phonetic": "/kənˈvɜːtɪd/",
+    "type": "v",
+    "meaning": "chuyển đổi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "destroyed",
+    "phonetic": "/dɪˈstrɔɪd/",
+    "type": "v",
+    "meaning": "bị phá hủy",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "commercial development",
+    "phonetic": "/kəˈmɜːʃl dɪˈveləpmənt/",
+    "type": "n",
+    "meaning": "phát triển thương mại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "drainage",
+    "phonetic": "/ˈdreɪnɪdʒ/",
+    "type": "n",
+    "meaning": "sự thoát nước",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "extraction",
+    "phonetic": "/ɪkˈstrækʃn/",
+    "type": "n",
+    "meaning": "sự khai thác",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "minerals",
+    "phonetic": "/ˈmɪnərəlz/",
+    "type": "n",
+    "meaning": "khoáng sản",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "peat",
+    "phonetic": "/piːt/",
+    "type": "n",
+    "meaning": "than bùn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "remain",
+    "phonetic": "/rɪˈmeɪn/",
+    "type": "v",
+    "meaning": "còn lại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "damaged",
+    "phonetic": "/ˈdæmɪdʒd/",
+    "type": "v",
+    "meaning": "bị tổn hại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "agricultural",
+    "phonetic": "/ˌæɡrɪˈkʌltʃərəl/",
+    "type": "adj",
+    "meaning": "thuộc nông nghiệp",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "pesticide",
+    "phonetic": "/ˈpestɪsaɪd/",
+    "type": "n",
+    "meaning": "thuốc trừ sâu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "fertilizers",
+    "phonetic": "/ˈfɜːtəlaɪzəz/",
+    "type": "n",
+    "meaning": "phân bón",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "industrial",
+    "phonetic": "/ɪnˈdʌstriəl/",
+    "type": "adj",
+    "meaning": "công nghiệp",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "pollutants",
+    "phonetic": "/pəˈluːtənts/",
+    "type": "n",
+    "meaning": "chất gây ô nhiễm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "construction",
+    "phonetic": "/kənˈstrʌkʃn/",
+    "type": "n",
+    "meaning": "xây dựng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "throughout history",
+    "phonetic": "/θruːˈaʊt ˈhɪstri/",
+    "type": "phr",
+    "meaning": "xuyên suốt lịch sử",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "gathered around",
+    "phonetic": "/ˈɡæðəd əˈraʊnd/",
+    "type": "v.phrase",
+    "meaning": "tụ tập quanh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "fertile",
+    "phonetic": "/ˈfɜːtaɪl/",
+    "type": "adj",
+    "meaning": "màu mỡ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "played a role",
+    "phonetic": "/pleɪd ə rəʊl/",
+    "type": "v.phrase",
+    "meaning": "đóng vai trò",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "consequently",
+    "phonetic": "/ˈkɒnsɪkwəntli/",
+    "type": "adv",
+    "meaning": "do đó",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "considerable",
+    "phonetic": "/kənˈsɪdərəbl/",
+    "type": "adj",
+    "meaning": "đáng kể",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "archaeological",
+    "phonetic": "/ˌɑːkiəˈlɒdʒɪkl/",
+    "type": "adj",
+    "meaning": "thuộc khảo cổ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "communities",
+    "phonetic": "/kəˈmjuːnətiz/",
+    "type": "n",
+    "meaning": "cộng đồng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "directly support",
+    "phonetic": "/dəˈrektli səˈpɔːt/",
+    "type": "v.phrase",
+    "meaning": "hỗ trợ trực tiếp",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "livelihood",
+    "phonetic": "/ˈlaɪvlihʊd/",
+    "type": "n",
+    "meaning": "kế sinh nhai",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "well-being",
+    "phonetic": "/ˌwel ˈbiːɪŋ/",
+    "type": "n",
+    "meaning": "sự an sinh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "millillions of",
+    "phonetic": "/ˈmɪljənz əv/",
+    "type": "n",
+    "meaning": "hàng triệu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "hydrologist",
+    "phonetic": "/haɪˈdrɒlədʒɪst/",
+    "type": "n",
+    "meaning": "nhà thủy văn học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "developing countries",
+    "phonetic": "/dɪˈveləpɪŋ ˈkʌntriz/",
+    "type": "n",
+    "meaning": "các nước đang phát triển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "dependent on",
+    "phonetic": "/dɪˈpendənt ɒn/",
+    "type": "adj.phrase",
+    "meaning": "phụ thuộc vào",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "serve a purpose",
+    "phonetic": "/sɜːv ə ˈpɜːpəs/",
+    "type": "v.phrase",
+    "meaning": "phục vụ mục đích",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "environmental",
+    "phonetic": "/ɪnˌvaɪrənˈmentl/",
+    "type": "adj",
+    "meaning": "thuộc môi trường",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "key tool",
+    "phonetic": "/kiː tuːl/",
+    "type": "n",
+    "meaning": "công cụ quan trọng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mitigating",
+    "phonetic": "/ˈmɪtɪɡeɪtɪŋ/",
+    "type": "v",
+    "meaning": "giảm nhẹ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "climate change",
+    "phonetic": "/ˈklaɪmət tʃeɪndʒ/",
+    "type": "n",
+    "meaning": "biến đổi khí hậu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "planet",
+    "phonetic": "/ˈplænɪt/",
+    "type": "n",
+    "meaning": "hành tinh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "buffer",
+    "phonetic": "/ˈbʌfə/",
+    "type": "n",
+    "meaning": "vật đệm, lá chắn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "coastal areas",
+    "phonetic": "/ˈkəʊstl ˈeəriəz/",
+    "type": "n",
+    "meaning": "khu vực ven biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "sea-level rise",
+    "phonetic": "/siː ˈlevl raɪz/",
+    "type": "n",
+    "meaning": "mực nước biển dâng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "extreme weather",
+    "phonetic": "/ɪkˈstriːm ˈweðə/",
+    "type": "n",
+    "meaning": "thời tiết cực đoan",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "hurricanes",
+    "phonetic": "/ˈhʌrɪkənz/",
+    "type": "n",
+    "meaning": "bão lớn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "flooding",
+    "phonetic": "/ˈflʌdɪŋ/",
+    "type": "n",
+    "meaning": "lũ lụt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "restore",
+    "phonetic": "/rɪˈstɔː/",
+    "type": "v",
+    "meaning": "phục hồi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "forests",
+    "phonetic": "/ˈfɒrɪsts/",
+    "type": "n",
+    "meaning": "rừng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "shelter",
+    "phonetic": "/ˈʃeltə/",
+    "type": "n",
+    "meaning": "nơi trú ẩn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "storms",
+    "phonetic": "/stɔːmz/",
+    "type": "n",
+    "meaning": "bão",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "agencies",
+    "phonetic": "/ˈeɪdʒənsiz/",
+    "type": "n",
+    "meaning": "cơ quan",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "lost",
+    "phonetic": "/lɒst/",
+    "type": "v",
+    "meaning": "bị mất",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "planting",
+    "phonetic": "/ˈplɑːntɪŋ/",
+    "type": "n",
+    "meaning": "trồng cây",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "hectare",
+    "phonetic": "/ˈhekteə/",
+    "type": "n",
+    "meaning": "hecta",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "shade",
+    "phonetic": "/ʃeɪd/",
+    "type": "n",
+    "meaning": "bóng râm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "substantially",
+    "phonetic": "/səbˈstænʃəli/",
+    "type": "adv",
+    "meaning": "đáng kể",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "microclimate",
+    "phonetic": "/ˈmaɪkrəʊˌklaɪmət/",
+    "type": "n",
+    "meaning": "tiểu khí hậu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "implementing",
+    "phonetic": "/ˈɪmplɪmentɪŋ/",
+    "type": "v",
+    "meaning": "thực hiện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "projects",
+    "phonetic": "/ˈprɒdʒekts/",
+    "type": "n",
+    "meaning": "dự án",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "in-demand",
+    "phonetic": "/ɪn dɪˈmɑːnd/",
+    "type": "adj",
+    "meaning": "được ưa chuộng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "commodity",
+    "phonetic": "/kəˈmɒdəti/",
+    "type": "n",
+    "meaning": "hàng hóa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "pulpwood",
+    "phonetic": "/ˈpʌlpwʊd/",
+    "type": "n",
+    "meaning": "gỗ làm giấy",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "waterlogged",
+    "phonetic": "/ˈwɔːtəlɒɡd/",
+    "type": "adj",
+    "meaning": "ngập nước",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "organic",
+    "phonetic": "ɔːˈɡænɪk/",
+    "type": "adj",
+    "meaning": "hữu cơ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "soil layer",
+    "phonetic": "/sɔɪl ˈleɪə/",
+    "type": "n",
+    "meaning": "lớp đất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "targeted",
+    "phonetic": "/ˈtɑːɡɪtɪd/",
+    "type": "v",
+    "meaning": "nhắm vào",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "drained",
+    "phonetic": "/dreɪnd/",
+    "type": "v",
+    "meaning": "rút nước",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "cultivation",
+    "phonetic": "/ˌkʌltɪˈveɪʃn/",
+    "type": "n",
+    "meaning": "canh tác",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "emitters",
+    "phonetic": "/ɪˈmɪtəz/",
+    "type": "n",
+    "meaning": "nguồn phát thải",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "carbon stores",
+    "phonetic": "/ˈkɑːbən stɔːz/",
+    "type": "n",
+    "meaning": "kho lưu trữ carbon",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "global emissions",
+    "phonetic": "/ˈɡləʊbl ɪˈmɪʃnz/",
+    "type": "n",
+    "meaning": "khí thải toàn cầu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "clearance",
+    "phonetic": "/ˈklɪərəns/",
+    "type": "n",
+    "meaning": "dọn sạch, phát quang",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "risk",
+    "phonetic": "/rɪsk/",
+    "type": "n",
+    "meaning": "rủi ro",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "forest fires",
+    "phonetic": "/ˈfɒrɪst ˈfaɪəz/",
+    "type": "n",
+    "meaning": "cháy rừng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "release",
+    "phonetic": "/rɪˈliːs/",
+    "type": "v",
+    "meaning": "thải ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "amounts",
+    "phonetic": "/əˈmaʊnts/",
+    "type": "n",
+    "meaning": "lượng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "biodiversity",
+    "phonetic": "/ˌbaɪəʊdaɪˈvɜːsəti/",
+    "type": "n",
+    "meaning": "đa dạng sinh học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "revenues",
+    "phonetic": "/ˈrevənjuːz/",
+    "type": "n",
+    "meaning": "doanh thu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "decades",
+    "phonetic": "/ˈdekeɪdz/",
+    "type": "n",
+    "meaning": "nhiều thập kỷ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "logging",
+    "phonetic": "/ˈlɒɡɪŋ/",
+    "type": "n",
+    "meaning": "khai thác gỗ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "arrive",
+    "phonetic": "/əˈraɪv/",
+    "type": "v",
+    "meaning": "đến",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "dig",
+    "phonetic": "/dɪɡ/",
+    "type": "v",
+    "meaning": "đào",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "ditch",
+    "phonetic": "/dɪtʃ/",
+    "type": "n",
+    "meaning": "mương, rãnh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "enter",
+    "phonetic": "/ˈentə/",
+    "type": "v",
+    "meaning": "đi vào",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "float",
+    "phonetic": "/fləʊt/",
+    "type": "v",
+    "meaning": "nổi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "logs",
+    "phonetic": "/lɒɡz/",
+    "type": "n",
+    "meaning": "khúc gỗ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "allow for",
+    "phonetic": "/əˈlaʊ fɔː/",
+    "type": "v.phrase",
+    "meaning": "cho phép",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "bacteria",
+    "phonetic": "/bækˈtɪəriə/",
+    "type": "n",
+    "meaning": "vi khuẩn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "fungi",
+    "phonetic": "/ˈfʌŋɡaɪ/",
+    "type": "n",
+    "meaning": "nấm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "break down",
+    "phonetic": "/breɪk daʊn/",
+    "type": "v.phrase",
+    "meaning": "phân hủy",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "methane",
+    "phonetic": "/ˈmiːθeɪn/",
+    "type": "n",
+    "meaning": "khí methane",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "solid matter",
+    "phonetic": "/ˈsɒlɪd ˈmætə/",
+    "type": "n",
+    "meaning": "chất rắn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "move downwards",
+    "phonetic": "/muːv ˈdaʊnwədz/",
+    "type": "v.phrase",
+    "meaning": "dịch chuyển xuống",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "subsidence",
+    "phonetic": "/səbˈsaɪdəns/",
+    "type": "n",
+    "meaning": "sự sụt lún",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "comprises",
+    "phonetic": "/kəmˈpraɪzɪz/",
+    "type": "v",
+    "meaning": "bao gồm",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "alarming",
+    "phonetic": "/əˈlɑːmɪŋ/",
+    "type": "adj",
+    "meaning": "đáng báo động",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "consequences",
+    "phonetic": "/ˈkɒnsɪkwənsɪz/",
+    "type": "n",
+    "meaning": "hậu quả",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "tropics",
+    "phonetic": "/ˈtrɒpɪks/",
+    "type": "n",
+    "meaning": "vùng nhiệt đới",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "subside",
+    "phonetic": "/səbˈsaɪd/",
+    "type": "v",
+    "meaning": "lún xuống",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "centimetres",
+    "phonetic": "/ˈsentɪmiːtəz/",
+    "type": "n",
+    "meaning": "xentimét",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "landscapes",
+    "phonetic": "/ˈlændskeɪps/",
+    "type": "n",
+    "meaning": "cảnh quan",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "catastrophe",
+    "phonetic": "/kəˈtæstrəfi/",
+    "type": "n",
+    "meaning": "thảm họa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "landmass",
+    "phonetic": "/ˈlændmæs/",
+    "type": "n",
+    "meaning": "diện tích đất liền",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "affect",
+    "phonetic": "/əˈfekt/",
+    "type": "v",
+    "meaning": "ảnh hưởng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "documented",
+    "phonetic": "/ˈdɒkjʊmentɪd/",
+    "type": "adj",
+    "meaning": "được ghi nhận",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "subtle",
+    "phonetic": "/ˈsʌtl/",
+    "type": "adj",
+    "meaning": "tinh vi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "impacts",
+    "phonetic": "/ˈɪmpækts/",
+    "type": "n",
+    "meaning": "tác động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "devastating",
+    "phonetic": "/ˈdevəsteɪtɪŋ/",
+    "type": "adj",
+    "meaning": "tàn phá",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "sediment",
+    "phonetic": "/ˈsedɪmənt/",
+    "type": "n",
+    "meaning": "phù sa, trầm tích",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "run-off",
+    "phonetic": "/ˈrʌnɒf/",
+    "type": "n",
+    "meaning": "dòng chảy tràn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "invisible",
+    "phonetic": "/ɪnˈvɪzəbl/",
+    "type": "adj",
+    "meaning": "không nhìn thấy",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "over-extraction",
+    "phonetic": "/ˌəʊvərɪkˈstrækʃn/",
+    "type": "n",
+    "meaning": "sự khai thác quá mức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "shock stories",
+    "phonetic": "/ʃɒk ˈstɔːriz/",
+    "type": "n",
+    "meaning": "tin gây sốc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "seldom",
+    "phonetic": "/ˈseldəm/",
+    "type": "adv",
+    "meaning": "hiếm khi",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "blame",
+    "phonetic": "/bleɪm/",
+    "type": "v",
+    "meaning": "đổ lỗi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "deliberate",
+    "phonetic": "/dɪˈlɪbərət/",
+    "type": "adj",
+    "meaning": "cố ý",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "set out to",
+    "phonetic": "/set aʊt tuː/",
+    "type": "v.phrase",
+    "meaning": "có ý định",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "acknowledge",
+    "phonetic": "/əkˈnɒlɪdʒ/",
+    "type": "v",
+    "meaning": "thừa nhận",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "income generation",
+    "phonetic": "/ˈɪnkʌm ˌdʒenəˈreɪʃn/",
+    "type": "n",
+    "meaning": "tạo thu nhập",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "profit",
+    "phonetic": "/ˈprɒfɪt/",
+    "type": "v",
+    "meaning": "thu lợi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "sustainability",
+    "phonetic": "/səˌsteɪnəˈbɪləti/",
+    "type": "n",
+    "meaning": "tính bền vững",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "planning",
+    "phonetic": "/ˈplænɪŋ/",
+    "type": "n",
+    "meaning": "quy hoạch",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "decision making",
+    "phonetic": "/dɪˈsɪʒn ˌmeɪkɪŋ/",
+    "type": "n",
+    "meaning": "ra quyết định",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "clear rights",
+    "phonetic": "/klɪə raɪts/",
+    "type": "n",
+    "meaning": "quyền rõ ràng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "fortunes",
+    "phonetic": "/ˈfɔːtʃuːnz/",
+    "type": "n",
+    "meaning": "tình trạng, vận mệnh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "attitudes",
+    "phonetic": "/ˈætɪtjuːdz/",
+    "type": "n",
+    "meaning": "thái độ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "priority",
+    "phonetic": "/praɪˈɒrəti/",
+    "type": "n",
+    "meaning": "ưu tiên",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "deny",
+    "phonetic": "/dɪˈnaɪ/",
+    "type": "v",
+    "meaning": "phủ nhận",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "cautiously",
+    "phonetic": "/ˈkɔːʃəsli/",
+    "type": "adv",
+    "meaning": "một cách thận trọng",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "awareness",
+    "phonetic": "/əˈweənəs/",
+    "type": "n",
+    "meaning": "nhận thức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "growing",
+    "phonetic": "/ˈɡrəʊɪŋ/",
+    "type": "adj",
+    "meaning": "đang tăng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "degradation",
+    "phonetic": "/ˌdeɡrəˈdeɪʃn/",
+    "type": "n",
+    "meaning": "sự suy thoái",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rapid pace",
+    "phonetic": "/ˈræpɪd peɪs/",
+    "type": "n",
+    "meaning": "tốc độ nhanh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "impression",
+    "phonetic": "/ɪmˈpreʃn/",
+    "type": "n",
+    "meaning": "ấn tượng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "slowly changing",
+    "phonetic": "/ˈsləʊli ˈtʃeɪndʒɪŋ/",
+    "type": "v.phrase",
+    "meaning": "đang thay đổi dần",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "era",
+    "phonetic": "/ˈɪərə/",
+    "type": "n",
+    "meaning": "kỷ nguyên",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "artificial speech translation",
+    "phonetic": "/ˌɑːtɪˈfɪʃl spiːtʃ trænsˈleɪʃn/",
+    "type": "n",
+    "meaning": "dịch nói tự động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "upon us",
+    "phonetic": "/əˈpɒn ʌs/",
+    "type": "phr",
+    "meaning": "đang đến gần",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "science fiction",
+    "phonetic": "/ˈsaɪəns ˈfɪkʃn/",
+    "type": "n",
+    "meaning": "khoa học viễn tưởng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "enables",
+    "phonetic": "/ɪˈneɪblz/",
+    "type": "v",
+    "meaning": "cho phép",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "effective",
+    "phonetic": "/ɪˈfektɪv/",
+    "type": "adj",
+    "meaning": "hiệu quả",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "noise",
+    "phonetic": "/nɔɪz/",
+    "type": "n",
+    "meaning": "tiếng ồn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "major challenges",
+    "phonetic": "/ˈmeɪdʒə ˈtʃælɪndʒɪz/",
+    "type": "n",
+    "meaning": "thách thức lớn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "recognize",
+    "phonetic": "/ˈrekəɡnaɪz/",
+    "type": "v",
+    "meaning": "nhận diện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "device",
+    "phonetic": "/dɪˈvaɪs/",
+    "type": "n",
+    "meaning": "thiết bị",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "laboratory",
+    "phonetic": "/ləˈbɒrətri/",
+    "type": "n",
+    "meaning": "phòng thí nghiệm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "meeting room",
+    "phonetic": "/ˈmiːtɪŋ ruːm/",
+    "type": "n",
+    "meaning": "phòng họp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "struggle to cope with",
+    "phonetic": "/ˈstrʌɡl tu kəʊp wɪð/",
+    "type": "v.phrase",
+    "meaning": "gặp khó khăn khi xử lý",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "background noise",
+    "phonetic": "/ˈbækɡraʊnd nɔɪz/",
+    "type": "n",
+    "meaning": "tiếng ồn nền",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "surrounding",
+    "phonetic": "/səˈraʊndɪŋ/",
+    "type": "adj",
+    "meaning": "xung quanh",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "professor",
+    "phonetic": "/prəˈfesə/",
+    "type": "n",
+    "meaning": "giáo sư",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "follow",
+    "phonetic": "/ˈfɒləʊ/",
+    "type": "v",
+    "meaning": "theo dõi, hiểu",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "scratchy",
+    "phonetic": "/ˈskrætʃi/",
+    "type": "adj",
+    "meaning": "rè, nhiễu",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "distance",
+    "phonetic": "/ˈdɪstəns/",
+    "type": "n",
+    "meaning": "khoảng cách",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "obstacle",
+    "phonetic": "/ˈɒbstəkl/",
+    "type": "n",
+    "meaning": "trở ngại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "communication",
+    "phonetic": "/kəˌmjuːnɪˈkeɪʃn/",
+    "type": "n",
+    "meaning": "giao tiếp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "native language",
+    "phonetic": "/ˈneɪtɪv ˈlæŋɡwɪdʒ/",
+    "type": "n",
+    "meaning": "tiếng mẹ đẻ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "comfortably",
+    "phonetic": "/ˈkʌmftəbli/",
+    "type": "adv",
+    "meaning": "một cách thoải mái",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "institute",
+    "phonetic": "/ˈɪnstɪtjuːt/",
+    "type": "n",
+    "meaning": "viện nghiên cứu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "colleagues",
+    "phonetic": "/ˈkɒliːɡz/",
+    "type": "n",
+    "meaning": "đồng nghiệp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "computer science",
+    "phonetic": "/kəmˈpjuːtə ˈsaɪəns/",
+    "type": "n",
+    "meaning": "khoa học máy tính",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "lectures",
+    "phonetic": "/ˈlektʃəz/",
+    "type": "n",
+    "meaning": "bài giảng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "students",
+    "phonetic": "/ˈstjuːdənts/",
+    "type": "n",
+    "meaning": "sinh viên",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "electronic translator",
+    "phonetic": "/ɪˌlekˈtrɒnɪk trænsˈleɪtə/",
+    "type": "n",
+    "meaning": "thiết bị dịch điện tử",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "system",
+    "phonetic": "/ˈsɪstəm/",
+    "type": "n",
+    "meaning": "hệ thống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "generates",
+    "phonetic": "/ˈdʒenəreɪts/",
+    "type": "v",
+    "meaning": "tạo ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "text",
+    "phonetic": "/tekst/",
+    "type": "n",
+    "meaning": "văn bản",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "laptops",
+    "phonetic": "/ˈlæptɒps/",
+    "type": "n",
+    "meaning": "máy tính xách tay",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "process",
+    "phonetic": "/ˈprəʊses/",
+    "type": "n",
+    "meaning": "quy trình",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "similar to",
+    "phonetic": "/ˈsɪmələ tuː/",
+    "type": "adj.phrase",
+    "meaning": "tương tự",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "subtitling",
+    "phonetic": "/ˈsʌbˌtaɪtlɪŋ/",
+    "type": "n",
+    "meaning": "chèn phụ đề",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "clearly",
+    "phonetic": "/ˈklɪəli/",
+    "type": "adv",
+    "meaning": "rõ ràng",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "compete with",
+    "phonetic": "/kəmˈpiːt wɪð/",
+    "type": "v.phrase",
+    "meaning": "cạnh tranh với",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "chatter",
+    "phonetic": "/ˈtʃætə/",
+    "type": "n",
+    "meaning": "tiếng ồn ào",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "idea",
+    "phonetic": "aɪˈdɪə/",
+    "type": "n",
+    "meaning": "ý tưởng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "featured",
+    "phonetic": "/ˈfiːtʃəd/",
+    "type": "v",
+    "meaning": "được giới thiệu",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "listener",
+    "phonetic": "/ˈlɪsənə/",
+    "type": "n",
+    "meaning": "người nghe",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "understand",
+    "phonetic": "/ˌʌndəˈstænd/",
+    "type": "v",
+    "meaning": "hiểu",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "universe",
+    "phonetic": "/ˈjuːnɪvɜːs/",
+    "type": "n",
+    "meaning": "vũ trụ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "represent",
+    "phonetic": "/ˌreprɪˈzent/",
+    "type": "v",
+    "meaning": "đại diện cho",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "technology enthusiasts",
+    "phonetic": "/tekˈnɒlədʒi ɪnˈθjuːziæsts/",
+    "type": "n",
+    "meaning": "người đam mê công nghệ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "dream of",
+    "phonetic": "/driːm əv/",
+    "type": "v.phrase",
+    "meaning": "mơ về",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "practically realizable",
+    "phonetic": "/ˈpræktɪkli ˌrɪəˈlaɪzəbl/",
+    "type": "adj.phrase",
+    "meaning": "có thể thực hiện trên thực tế",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "objects",
+    "phonetic": "/ˈɒbdʒekts/",
+    "type": "n",
+    "meaning": "đồ vật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "flat enough",
+    "phonetic": "/flæt ɪˈnʌf/",
+    "type": "adj.phrase",
+    "meaning": "đủ phẳng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "hang on walls",
+    "phonetic": "/hæŋ ɒn wɔːlz/",
+    "type": "v.phrase",
+    "meaning": "treo lên tường",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "commonplace",
+    "phonetic": "/ˈkɒmənpleɪs/",
+    "type": "adj",
+    "meaning": "phổ biến",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "prototype",
+    "phonetic": "/ˈprəʊtətaɪp/",
+    "type": "n",
+    "meaning": "mẫu thử",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "appear",
+    "phonetic": "/əˈpɪə/",
+    "type": "v",
+    "meaning": "xuất hiện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "advances",
+    "phonetic": "/ədˈvɑːnsɪz/",
+    "type": "n",
+    "meaning": "sự tiến bộ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "voice recognition",
+    "phonetic": "/vɔɪs ˌrekəɡˈnɪʃn/",
+    "type": "n",
+    "meaning": "nhận diện giọng nói",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "stage",
+    "phonetic": "/steɪdʒ/",
+    "type": "n",
+    "meaning": "giai đoạn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "eye-catching novelties",
+    "phonetic": "/ˈaɪ kætʃɪŋ ˈnɒvltiz/",
+    "type": "n.phrase",
+    "meaning": "những điều mới lạ thu hút",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "steps towards",
+    "phonetic": "/steps təˈwɔːdz/",
+    "type": "n.phrase",
+    "meaning": "bước tiến tới",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "language-transparent",
+    "phonetic": "/ˈlæŋɡwɪdʒ trænsˈpærənt/",
+    "type": "adj",
+    "meaning": "không còn rào cản ngôn ngữ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "society",
+    "phonetic": "/səˈsaɪəti/",
+    "type": "n",
+    "meaning": "xã hội",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "domestic devices",
+    "phonetic": "/dəˈmestɪk dɪˈvaɪsɪz/",
+    "type": "n",
+    "meaning": "thiết bị gia dụng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "applications",
+    "phonetic": "/ˌæplɪˈkeɪʃnz/",
+    "type": "n",
+    "meaning": "ứng dụng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "hotel check-ins",
+    "phonetic": "/həʊˈtel tʃek ɪnz/",
+    "type": "n",
+    "meaning": "thủ tục nhận phòng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "alternative",
+    "phonetic": "/ɔːlˈtɜːnətɪv/",
+    "type": "n",
+    "meaning": "sự thay thế",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "traveler’s English",
+    "phonetic": "/ˈtrævələz ˈɪŋɡlɪʃ/",
+    "type": "n",
+    "meaning": "tiếng Anh du lịch",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "efficiency",
+    "phonetic": "/ɪˈfɪʃnsi/",
+    "type": "n",
+    "meaning": "hiệu suất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "social function",
+    "phonetic": "/ˈsəʊʃl ˈfʌŋkʃn/",
+    "type": "n",
+    "meaning": "chức năng xã hội",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "professionals",
+    "phonetic": "/prəˈfeʃənəlz/",
+    "type": "n",
+    "meaning": "người chuyên nghiệp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "inclined to",
+    "phonetic": "/ɪnˈklaɪnd tuː/",
+    "type": "adj.phrase",
+    "meaning": "có xu hướng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "patient",
+    "phonetic": "/ˈpeɪʃnt/",
+    "type": "adj",
+    "meaning": "kiên nhẫn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "conversation",
+    "phonetic": "/ˌkɒnvəˈseɪʃn/",
+    "type": "n",
+    "meaning": "cuộc hội thoại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "redress",
+    "phonetic": "/rɪˈdres/",
+    "type": "v",
+    "meaning": "khắc phục",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "founder",
+    "phonetic": "/ˈfaʊndə/",
+    "type": "n",
+    "meaning": "người sáng lập",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "CEO",
+    "phonetic": "/ˌsiː iː ˈəʊ/",
+    "type": "n",
+    "meaning": "giám đốc điều hành",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "preparing",
+    "phonetic": "/prɪˈpeərɪŋ/",
+    "type": "v",
+    "meaning": "chuẩn bị",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "model",
+    "phonetic": "/ˈmɒdl/",
+    "type": "n",
+    "meaning": "mô hình",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "entails",
+    "phonetic": "/ɪnˈteɪlz/",
+    "type": "v",
+    "meaning": "bao gồm, kéo theo",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "performance improvements",
+    "phonetic": "/pəˈfɔːməns ɪmˈpruːvmənts/",
+    "type": "n",
+    "meaning": "cải thiện hiệu suất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "accuracy",
+    "phonetic": "/ˈækjərəsi/",
+    "type": "n",
+    "meaning": "độ chính xác",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "delivery",
+    "phonetic": "/dɪˈlɪvəri/",
+    "type": "n",
+    "meaning": "sự truyền tải",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "speakers",
+    "phonetic": "/ˈspiːkəz/",
+    "type": "n",
+    "meaning": "người nói",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "earpieces",
+    "phonetic": "/ˈɪəpiːsɪz/",
+    "type": "n",
+    "meaning": "tai nghe nhỏ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "sharing",
+    "phonetic": "/ˈʃeərɪŋ/",
+    "type": "n",
+    "meaning": "sự chia sẻ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "barrier",
+    "phonetic": "/ˈbæriə/",
+    "type": "n",
+    "meaning": "rào cản",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "stranger",
+    "phonetic": "/ˈstreɪndʒə/",
+    "type": "n",
+    "meaning": "người lạ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "unexpected",
+    "phonetic": "/ˌʌnɪkˈspektɪd/",
+    "type": "adj",
+    "meaning": "bất ngờ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "solved",
+    "phonetic": "/sɒlvd/",
+    "type": "v",
+    "meaning": "giải quyết",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "prevalent",
+    "phonetic": "/ˈprevələnt/",
+    "type": "adj",
+    "meaning": "phổ biến, thịnh hành",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "sufficiently",
+    "phonetic": "/səˈfɪʃntli/",
+    "type": "adv",
+    "meaning": "đủ",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "likely to",
+    "phonetic": "/ˈlaɪkli tuː/",
+    "type": "adj.phrase",
+    "meaning": "có khả năng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "depend on",
+    "phonetic": "/dɪˈpend ɒn/",
+    "type": "v.phrase",
+    "meaning": "phụ thuộc vào",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "voice-controlled",
+    "phonetic": "/vɔɪs kənˈtrəʊld/",
+    "type": "adj",
+    "meaning": "điều khiển bằng giọng nói",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "highlight",
+    "phonetic": "/ˈhaɪlaɪt/",
+    "type": "v",
+    "meaning": "nhấn mạnh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "significance",
+    "phonetic": "/sɪɡˈnɪfɪkəns/",
+    "type": "n",
+    "meaning": "tầm quan trọng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "nations",
+    "phonetic": "/ˈneɪʃnz/",
+    "type": "n",
+    "meaning": "các quốc gia",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "taken off",
+    "phonetic": "/ˈteɪkən ɒf/",
+    "type": "v.phrase",
+    "meaning": "phát triển mạnh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "range of systems",
+    "phonetic": "/reɪndʒ əv ˈsɪstəmz/",
+    "type": "n",
+    "meaning": "nhiều hệ thống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "long way to go",
+    "phonetic": "/lɒŋ weɪ tu ɡəʊ/",
+    "type": "phr",
+    "meaning": "còn nhiều việc phải làm",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "simultaneous",
+    "phonetic": "/ˌsɪmlˈteɪniəs/",
+    "type": "adj",
+    "meaning": "đồng thời",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "sections",
+    "phonetic": "/ˈsekʃnz/",
+    "type": "n",
+    "meaning": "các phần",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "oblige",
+    "phonetic": "/əˈblaɪdʒ/",
+    "type": "v",
+    "meaning": "bắt buộc",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "pause",
+    "phonetic": "/pɔːz/",
+    "type": "v",
+    "meaning": "tạm dừng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "remarks",
+    "phonetic": "/rɪˈmɑːks/",
+    "type": "n",
+    "meaning": "lời nói",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "offline",
+    "phonetic": "/ˈɒflaɪn/",
+    "type": "adj",
+    "meaning": "ngoại tuyến",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "situations",
+    "phonetic": "/ˌsɪtʃuˈeɪʃnz/",
+    "type": "n",
+    "meaning": "tình huống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "internet access",
+    "phonetic": "/ˈɪntənet ˈækses/",
+    "type": "n",
+    "meaning": "truy cập internet",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "address",
+    "phonetic": "/əˈdres/",
+    "type": "v",
+    "meaning": "giải quyết",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "apprehensions",
+    "phonetic": "/ˌæprɪˈhenʃnz/",
+    "type": "n",
+    "meaning": "lo ngại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "private data",
+    "phonetic": "/ˈpraɪvət ˈdeɪtə/",
+    "type": "n",
+    "meaning": "dữ liệu cá nhân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "accumulating",
+    "phonetic": "/əˈkjuːmjəleɪtɪŋ/",
+    "type": "v",
+    "meaning": "tích lũy",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "servers",
+    "phonetic": "/ˈsɜːvəz/",
+    "type": "n",
+    "meaning": "máy chủ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "processing",
+    "phonetic": "/ˈprəʊsesɪŋ/",
+    "type": "n",
+    "meaning": "xử lý",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "cope with",
+    "phonetic": "/kəʊp wɪð/",
+    "type": "v.phrase",
+    "meaning": "xử lý",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "physical challenges",
+    "phonetic": "/ˈfɪzɪkl ˈtʃælɪndʒɪz/",
+    "type": "n",
+    "meaning": "thách thức vật lý",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "socially aware",
+    "phonetic": "/ˈsəʊʃli əˈweə/",
+    "type": "adj",
+    "meaning": "nhạy cảm xã hội",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "address people",
+    "phonetic": "/əˈdres ˈpiːpl/",
+    "type": "v.phrase",
+    "meaning": "xưng hô phù hợp",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "cultural traditions",
+    "phonetic": "/ˈkʌltʃərəl trəˈdɪʃnz/",
+    "type": "n",
+    "meaning": "truyền thống văn hóa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "academic status",
+    "phonetic": "/ˌækəˈdemɪk ˈsteɪtəs/",
+    "type": "n",
+    "meaning": "địa vị học thuật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "solemn respect",
+    "phonetic": "/ˈsɒləm rɪˈspekt/",
+    "type": "n.phrase",
+    "meaning": "sự tôn trọng trang nghiêm",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "polite",
+    "phonetic": "/pəˈlaɪt/",
+    "type": "adj",
+    "meaning": "lịch sự",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "etiquette-sensitive",
+    "phonetic": "/ˈetɪket ˈsensɪtɪv/",
+    "type": "adj",
+    "meaning": "nhạy cảm về phép tắc",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "cultural norms",
+    "phonetic": "/ˈkʌltʃərəl nɔːmz/",
+    "type": "n",
+    "meaning": "chuẩn mực văn hóa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "preserve",
+    "phonetic": "/prɪˈzɜːv/",
+    "type": "v",
+    "meaning": "bảo tồn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "local customs",
+    "phonetic": "/ˈləʊkl ˈkʌstm/",
+    "type": "n",
+    "meaning": "phong tục địa phương",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "habits",
+    "phonetic": "/ˈhæbɪts/",
+    "type": "n",
+    "meaning": "thói quen",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "first-name terms",
+    "phonetic": "/fɜːst neɪm tɜːmz/",
+    "type": "n",
+    "meaning": "cách gọi tên thân mật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "outsource",
+    "phonetic": "/ˈaʊtsɔːs/",
+    "type": "v",
+    "meaning": "thuê ngoài, giao phó",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "matures",
+    "phonetic": "/məˈtjʊəz/",
+    "type": "v",
+    "meaning": "phát triển hoàn thiện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "seamless",
+    "phonetic": "/ˈsiːmləs/",
+    "type": "adj",
+    "meaning": "liền mạch",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "ubiquitous",
+    "phonetic": "/juːˈbɪkwɪtəs/",
+    "type": "adj",
+    "meaning": "phổ biến khắp nơi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "add value",
+    "phonetic": "/æd ˈvæljuː/",
+    "type": "v.phrase",
+    "meaning": "tăng giá trị",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "conduct",
+    "phonetic": "/kənˈdʌkt/",
+    "type": "v",
+    "meaning": "thực hiện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "family lives",
+    "phonetic": "/ˈfæməli laɪvz/",
+    "type": "n",
+    "meaning": "đời sống gia đình",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "relationships",
+    "phonetic": "/rɪˈleɪʃnʃɪps/",
+    "type": "n",
+    "meaning": "mối quan hệ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "open to question",
+    "phonetic": "/ˈəʊpən tu ˈkwestʃn/",
+    "type": "phr",
+    "meaning": "còn gây tranh cãi",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "noteworthy",
+    "phonetic": "/ˈnəʊtwɜːði/",
+    "type": "adj",
+    "meaning": "đáng chú ý",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "overcome barriers",
+    "phonetic": "/ˌəʊvəˈkʌm ˈbæriəz/",
+    "type": "v.phrase",
+    "meaning": "vượt qua rào cản",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "generations",
+    "phonetic": "/ˌdʒenəˈreɪʃnz/",
+    "type": "n",
+    "meaning": "các thế hệ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "shared language",
+    "phonetic": "/ʃeəd ˈlæŋɡwɪdʒ/",
+    "type": "n",
+    "meaning": "ngôn ngữ chung",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "simulate",
+    "phonetic": "/ˈsɪmjuleɪt/",
+    "type": "v",
+    "meaning": "mô phỏng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "voice-morphing",
+    "phonetic": "/vɔɪs ˈmɔːfɪŋ/",
+    "type": "n",
+    "meaning": "điều chỉnh giọng nói",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "lip movements",
+    "phonetic": "/lɪp ˈmuːvmənts/",
+    "type": "n",
+    "meaning": "chuyển động môi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "dubbed movie",
+    "phonetic": "/dʌbd ˈmuːvi/",
+    "type": "n",
+    "meaning": "phim lồng tiếng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "contrast",
+    "phonetic": "/ˈkɒntrɑːst/",
+    "type": "n",
+    "meaning": "sự đối lập",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "sense of belonging",
+    "phonetic": "/sens əv bɪˈlɒŋɪŋ/",
+    "type": "n",
+    "meaning": "cảm giác thuộc về",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "community",
+    "phonetic": "/kəˈmjuːnəti/",
+    "type": "n",
+    "meaning": "cộng đồng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "lingua franca",
+    "phonetic": "/ˌlɪŋɡwə ˈfræŋkə/",
+    "type": "n",
+    "meaning": "ngôn ngữ chung",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "predecessors",
+    "phonetic": "/ˈpriːdɪsesəz/",
+    "type": "n",
+    "meaning": "tiền bối",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "practical need",
+    "phonetic": "/ˈpræktɪkl niːd/",
+    "type": "n",
+    "meaning": "nhu cầu thực tế",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "diminish",
+    "phonetic": "/dɪˈmɪnɪʃ/",
+    "type": "v",
+    "meaning": "giảm đi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "persist",
+    "phonetic": "/pəˈsɪst/",
+    "type": "v",
+    "meaning": "tồn tại, bền bỉ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "substitute for",
+    "phonetic": "/ˈsʌbstɪtjuːt fɔː/",
+    "type": "n.phrase",
+    "meaning": "sự thay thế cho",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "subtle understanding",
+    "phonetic": "/ˈsʌtl ˌʌndəˈstændɪŋ/",
+    "type": "n",
+    "meaning": "sự hiểu biết tinh tế",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "impact",
+    "phonetic": "/ˈɪmpækt/",
+    "type": "n",
+    "meaning": "tác động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "climate change",
+    "phonetic": "/ˈklaɪmət tʃeɪndʒ/",
+    "type": "n",
+    "meaning": "biến đổi khí hậu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "butterflies",
+    "phonetic": "/ˈbʌtəflaɪz/",
+    "type": "n",
+    "meaning": "bướm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "Britain",
+    "phonetic": "/ˈbrɪtn/",
+    "type": "n",
+    "meaning": "nước Anh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "according to",
+    "phonetic": "/əˈkɔːdɪŋ tuː/",
+    "type": "prep",
+    "meaning": "theo như",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "conservationists",
+    "phonetic": "/ˌkɒnsəˈveɪʃənɪsts/",
+    "type": "n",
+    "meaning": "nhà bảo tồn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "populations",
+    "phonetic": "/ˌpɒpjuˈleɪʃnz/",
+    "type": "n",
+    "meaning": "quần thể",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "species",
+    "phonetic": "/ˈspiːʃiːz/",
+    "type": "n",
+    "meaning": "các loài",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "declined",
+    "phonetic": "/dɪˈklaɪnd/",
+    "type": "v",
+    "meaning": "suy giảm, giảm sút",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "trend",
+    "phonetic": "/trend/",
+    "type": "n",
+    "meaning": "xu hướng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "continues",
+    "phonetic": "/kənˈtɪnjuːz/",
+    "type": "v",
+    "meaning": "tiếp diễn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "unpredictable",
+    "phonetic": "/ˌʌnprɪˈdɪktəbl/",
+    "type": "adj",
+    "meaning": "khó đoán, không thể dự đoán",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "knock-on effect",
+    "phonetic": "/ˈnɒk ɒn ɪˈfekt/",
+    "type": "n",
+    "meaning": "hiệu ứng dây chuyền",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "ecosystem",
+    "phonetic": "/ˈiːkəʊsɪstəm/",
+    "type": "n",
+    "meaning": "hệ sinh thái",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "eggs",
+    "phonetic": "/eɡz/",
+    "type": "n",
+    "meaning": "trứng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "develop into",
+    "phonetic": "/dɪˈveləp ˈɪntuː/",
+    "type": "v.phrase",
+    "meaning": "phát triển thành",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "caterpillars",
+    "phonetic": "/ˈkætəpɪləz/",
+    "type": "n",
+    "meaning": "sâu bướm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "insects",
+    "phonetic": "/ˈɪnsekts/",
+    "type": "n",
+    "meaning": "côn trùng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "second stage",
+    "phonetic": "/ˈsekənd steɪdʒ/",
+    "type": "n",
+    "meaning": "giai đoạn thứ hai",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "lifecycle",
+    "phonetic": "/ˈlaɪfsaɪkl/",
+    "type": "n",
+    "meaning": "vòng đời",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "consume",
+    "phonetic": "/kənˈsjuːm/",
+    "type": "v",
+    "meaning": "tiêu thụ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "vast quantities",
+    "phonetic": "/vɑːst ˈkwɒntətiz/",
+    "type": "n",
+    "meaning": "số lượng lớn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "plant material",
+    "phonetic": "/plɑːnt məˈtɪəriəl/",
+    "type": "n",
+    "meaning": "chất liệu thực vật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "in turn",
+    "phonetic": "/ɪn tɜːn/",
+    "type": "adv",
+    "meaning": "đổi lại, lần lượt",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "prey",
+    "phonetic": "/preɪ/",
+    "type": "n",
+    "meaning": "con mồi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "bats",
+    "phonetic": "/bæts/",
+    "type": "n",
+    "meaning": "dơi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "small mammals",
+    "phonetic": "/smɔːl ˈmæməlz/",
+    "type": "n",
+    "meaning": "động vật có vú nhỏ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "arming themselves with",
+    "phonetic": "/ˈɑːmɪŋ ðəmˈselvz wɪð/",
+    "type": "v.phrase",
+    "meaning": "trang bị cho mình bằng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "understanding",
+    "phonetic": "/ˌʌndəˈstænd/",
+    "type": "n",
+    "meaning": "sự hiểu biết",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "numbers are down",
+    "phonetic": "/ˈnʌmbəz ɑː daʊn/",
+    "type": "v.phrase",
+    "meaning": "số lượng đang giảm",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "hope to",
+    "phonetic": "/həʊp tuː/",
+    "type": "v.phrase",
+    "meaning": "hy vọng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "halt",
+    "phonetic": "/hɔːlt/",
+    "type": "v",
+    "meaning": "ngăn chặn, dừng lại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "reverse",
+    "phonetic": "/rɪˈvɜːs/",
+    "type": "v",
+    "meaning": "đảo ngược",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "outdoor conditions",
+    "phonetic": "/ˌaʊtˈdɔː kənˈdɪʃnz/",
+    "type": "n",
+    "meaning": "điều kiện ngoài trời",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "at any given time",
+    "phonetic": "/ət ˈeni ˈɡɪvn taɪm/",
+    "type": "phr",
+    "meaning": "vào bất kỳ thời điểm nào",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "generally",
+    "phonetic": "/ˈdʒenrəli/",
+    "type": "adv",
+    "meaning": "nhìn chung",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "warmer",
+    "phonetic": "/ˈwɔːmə/",
+    "type": "adj",
+    "meaning": "ấm hơn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "challenge",
+    "phonetic": "/ˈtʃælɪndʒ/",
+    "type": "n",
+    "meaning": "thách thức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "deal with",
+    "phonetic": "/diːl wɪð/",
+    "type": "v.phrase",
+    "meaning": "đối phó với",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "ensuring",
+    "phonetic": "/ɪnˈʃʊərɪŋ/",
+    "type": "v",
+    "meaning": "đảm bảo",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "suit them",
+    "phonetic": "/suːt ðəm/",
+    "type": "v.phrase",
+    "meaning": "phù hợp với chúng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "active",
+    "phonetic": "/ˈæktɪv/",
+    "type": "adj",
+    "meaning": "hoạt động",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "reproduce",
+    "phonetic": "/ˌriːprəˈdjuːs/",
+    "type": "v",
+    "meaning": "sinh sản",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "scientists",
+    "phonetic": "/ˈsaɪəntɪsts/",
+    "type": "n",
+    "meaning": "các nhà khoa học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "timing",
+    "phonetic": "/ˈtaɪmɪŋ/",
+    "type": "n",
+    "meaning": "thời điểm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "phenology",
+    "phonetic": "/fəˈnɒlədʒi/",
+    "type": "n",
+    "meaning": "hiện tượng sinh thái theo mùa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "animal",
+    "phonetic": "/ˈænɪml/",
+    "type": "n",
+    "meaning": "động vật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "plant",
+    "phonetic": "/plɑːnt/",
+    "type": "n",
+    "meaning": "thực vật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "earlier in the year",
+    "phonetic": "/ˈɜːliə rɪn ðə jɪə/",
+    "type": "phr",
+    "meaning": "sớm hơn trong năm",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "advance",
+    "phonetic": "/ədˈvɑːns/",
+    "type": "v/n",
+    "meaning": "tiến lên, thay đổi sớm hơn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "observed",
+    "phonetic": "/əbˈzɜːvd/",
+    "type": "v",
+    "meaning": "được quan sát",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "wide range",
+    "phonetic": "/waɪd reɪndʒ/",
+    "type": "n",
+    "meaning": "phạm vi rộng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "to some extent",
+    "phonetic": "/tu sʌm ɪkˈstent/",
+    "type": "phr",
+    "meaning": "ở một mức độ nào đó",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "average spring temperature",
+    "phonetic": "/ˈævərɪdʒ sprɪŋ ˈtemprətʃə/",
+    "type": "n",
+    "meaning": "nhiệt độ mùa xuân trung bình",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "increased",
+    "phonetic": "/ɪnˈkriːst/",
+    "type": "v",
+    "meaning": "tăng lên",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "roughly",
+    "phonetic": "/ˈrʌfli/",
+    "type": "adv",
+    "meaning": "xấp xỉ",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "on average",
+    "phonetic": "/ɒn ˈævərɪdʒ/",
+    "type": "adv",
+    "meaning": "trung bình",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "keep in line with",
+    "phonetic": "/kiːp ɪn laɪn wɪð/",
+    "type": "v.phrase",
+    "meaning": "duy trì phù hợp với",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "cooler temperatures",
+    "phonetic": "/ˈkuːlə ˈtemprətʃəz/",
+    "type": "n",
+    "meaning": "nhiệt độ mát hơn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "well equipped",
+    "phonetic": "/wel ɪˈkwɪpt/",
+    "type": "adj.phrase",
+    "meaning": "được trang bị tốt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "cope with",
+    "phonetic": "/kəʊp wɪð/",
+    "type": "v.phrase",
+    "meaning": "đương đầu với",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "adjust to",
+    "phonetic": "/əˈdʒʌst tuː/",
+    "type": "v.phrase",
+    "meaning": "điều chỉnh theo",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "under stress",
+    "phonetic": "/ˈʌndə stres/",
+    "type": "adj.phrase",
+    "meaning": "đang chịu áp lực",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "dragged along",
+    "phonetic": "/dræɡd əˈlɒŋ/",
+    "type": "v.phrase",
+    "meaning": "bị kéo theo",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "unwillingly",
+    "phonetic": "/ʌnˈwɪlɪŋli/",
+    "type": "adv",
+    "meaning": "miễn cưỡng",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "unnaturally",
+    "phonetic": "/ʌnˈnætʃrəli/",
+    "type": "adv",
+    "meaning": "một cách bất thường",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "answer",
+    "phonetic": "/ˈɑːnsə/",
+    "type": "n",
+    "meaning": "câu trả lời",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "unknown",
+    "phonetic": "/ʌnˈnəʊn/",
+    "type": "adj",
+    "meaning": "chưa rõ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "study",
+    "phonetic": "/ˈstʌdi/",
+    "type": "n",
+    "meaning": "nghiên cứu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "seeking to",
+    "phonetic": "/ˈsiːkɪŋ tuː/",
+    "type": "v.phrase",
+    "meaning": "nhằm mục đích",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "researchers",
+    "phonetic": "/rɪˈsɜːtʃəz/",
+    "type": "n",
+    "meaning": "nhà nghiên cứu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "pulled together",
+    "phonetic": "/pʊld təˈɡeðə/",
+    "type": "v.phrase",
+    "meaning": "tập hợp lại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "records",
+    "phonetic": "/ˈrekɔːdz/",
+    "type": "n",
+    "meaning": "dữ liệu ghi chép",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "submitted by",
+    "phonetic": "/səbˈmɪtɪd baɪ/",
+    "type": "v.phrase",
+    "meaning": "được gửi bởi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "enthusiasts",
+    "phonetic": "/ɪnˈθjuːziæsts/",
+    "type": "n",
+    "meaning": "người đam mê",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "spend their free time",
+    "phonetic": "/spend ðeə friː taɪm/",
+    "type": "v.phrase",
+    "meaning": "dành thời gian rảnh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "observing",
+    "phonetic": "/əbˈzɜːvɪŋ/",
+    "type": "v",
+    "meaning": "quan sát",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "activities",
+    "phonetic": "/ækˈtɪvətiz/",
+    "type": "n",
+    "meaning": "hoạt động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "provided information",
+    "phonetic": "/prəˈvaɪdɪd ˌɪnfəˈmeɪʃn/",
+    "type": "v.phrase",
+    "meaning": "cung cấp thông tin",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "Great Britain",
+    "phonetic": "/ɡreɪt ˈbrɪtn/",
+    "type": "n",
+    "meaning": "Vương quốc Anh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "estimated",
+    "phonetic": "/ˈestɪmeɪtɪd/",
+    "type": "v",
+    "meaning": "ước tính",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "abundance",
+    "phonetic": "/əˈbʌndəns/",
+    "type": "n",
+    "meaning": "sự phong phú, dồi dào",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "distribution",
+    "phonetic": "/ˌdɪstrɪˈbjuːʃn/",
+    "type": "n",
+    "meaning": "phân bố",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "across this time",
+    "phonetic": "/əˈkrɒs ðɪs taɪm/",
+    "type": "phr",
+    "meaning": "trong suốt khoảng thời gian này",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "crucially",
+    "phonetic": "/ˈkruːʃəli/",
+    "type": "adv",
+    "meaning": "một cách then chốt",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "subtle",
+    "phonetic": "/ˈsʌtl/",
+    "type": "adj",
+    "meaning": "nhẹ, khó nhận thấy",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "adult butterfly",
+    "phonetic": "/ˈædʌlt ˈbʌtəflaɪ/",
+    "type": "n",
+    "meaning": "bướm trưởng thành",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "analyzing",
+    "phonetic": "/ˈænəlaɪzɪŋ/",
+    "type": "v",
+    "meaning": "phân tích",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "trends",
+    "phonetic": "/trendz/",
+    "type": "n",
+    "meaning": "xu hướng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "variable",
+    "phonetic": "/ˈveəriəbl/",
+    "type": "n",
+    "meaning": "biến số",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "discovered",
+    "phonetic": "/dɪˈskʌvəd/",
+    "type": "v",
+    "meaning": "phát hiện ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "flexible",
+    "phonetic": "/ˈfleksəbl/",
+    "type": "adj",
+    "meaning": "linh hoạt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "lifecycles",
+    "phonetic": "/ˈlaɪfsaɪklz/",
+    "type": "n",
+    "meaning": "vòng đời",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "benefit from",
+    "phonetic": "/ˈbenɪfɪt frəm/",
+    "type": "v.phrase",
+    "meaning": "hưởng lợi từ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "emergence",
+    "phonetic": "/ɪˈmɜːdʒəns/",
+    "type": "n",
+    "meaning": "sự xuất hiện",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "driven by",
+    "phonetic": "/ˈdrɪvn baɪ/",
+    "type": "v.phrase",
+    "meaning": "được thúc đẩy bởi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "individual",
+    "phonetic": "/ˌɪndɪˈvɪdʒuəl/",
+    "type": "n",
+    "meaning": "cá thể",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "flying",
+    "phonetic": "/ˈflaɪɪŋ/",
+    "type": "v",
+    "meaning": "bay",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "spring",
+    "phonetic": "/sprɪŋ/",
+    "type": "n",
+    "meaning": "mùa xuân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "grandchildren",
+    "phonetic": "/ˈɡræntʃɪldrən/",
+    "type": "n",
+    "meaning": "thế hệ cháu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "great-grandchildren",
+    "phonetic": "/ˌɡreɪt ˈɡræntʃɪldrən/",
+    "type": "n",
+    "meaning": "thế hệ chắt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "positive",
+    "phonetic": "/ˈpɒzətɪv/",
+    "type": "adj",
+    "meaning": "tích cực",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "northwards extent",
+    "phonetic": "/ˈnɔːθwədz ɪkˈstent/",
+    "type": "n",
+    "meaning": "mức độ mở rộng về phía bắc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "dainty",
+    "phonetic": "/ˈdeɪnti/",
+    "type": "adj",
+    "meaning": "nhỏ nhắn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "colonies",
+    "phonetic": "/ˈkɒləniz/",
+    "type": "n",
+    "meaning": "quần thể, đàn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "hundred strong",
+    "phonetic": "/ˈhʌndrəd strɒŋ/",
+    "type": "phr",
+    "meaning": "số lượng khoảng một trăm",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "summer generations",
+    "phonetic": "/ˈsʌmə ˌdʒenəˈreɪʃnz/",
+    "type": "n",
+    "meaning": "thế hệ mùa hè",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "complete a cycle",
+    "phonetic": "/kəmˈpliːt ə ˈsaɪkl/",
+    "type": "v.phrase",
+    "meaning": "hoàn thành một chu kỳ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "reproductive cycle",
+    "phonetic": "/ˌriːprəˈdʌktɪv ˈsaɪkl/",
+    "type": "n",
+    "meaning": "chu kỳ sinh sản",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "autumn",
+    "phonetic": "/ˈɔːtəm/",
+    "type": "n",
+    "meaning": "mùa thu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "population growth",
+    "phonetic": "/ˌpɒpjuˈleɪʃn ɡrəʊθ/",
+    "type": "n",
+    "meaning": "sự gia tăng quần thể",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "single",
+    "phonetic": "/ˈsɪŋɡl/",
+    "type": "adj",
+    "meaning": "đơn, một",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "restricted",
+    "phonetic": "/rɪˈstrɪktɪd/",
+    "type": "adj",
+    "meaning": "hạn chế",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "evidence of",
+    "phonetic": "/ˈevɪdəns əv/",
+    "type": "n.phrase",
+    "meaning": "bằng chứng về",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "benefit",
+    "phonetic": "/ˈbenɪfɪt/",
+    "type": "n",
+    "meaning": "lợi ích",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "emerging earlier",
+    "phonetic": "/ɪˈmɜːdʒɪŋ ˈɜːliə/",
+    "type": "v.phrase",
+    "meaning": "xuất hiện sớm hơn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "worryingly",
+    "phonetic": "/ˈwʌriɪŋli/",
+    "type": "adv",
+    "meaning": "đáng lo ngại",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "specialize in",
+    "phonetic": "/ˈspeʃəlaɪz ɪn/",
+    "type": "v.phrase",
+    "meaning": "chuyên về",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "habitat",
+    "phonetic": "/ˈhæbɪtæt/",
+    "type": "n",
+    "meaning": "môi trường sống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "specific habitat types",
+    "phonetic": "/spəˈsɪfɪk ˈhæbɪtæt taɪps/",
+    "type": "n",
+    "meaning": "các kiểu môi trường sống cụ thể",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "preferred diet",
+    "phonetic": "/prɪˈfɜːd ˈdaɪət/",
+    "type": "n",
+    "meaning": "chế độ ăn ưa thích",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "tended to",
+    "phonetic": "/ˈtendɪd tuː/",
+    "type": "v.phrase",
+    "meaning": "có xu hướng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "at harm",
+    "phonetic": "/ət hɑːm/",
+    "type": "adj.phrase",
+    "meaning": "bị tổn hại",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "beautiful",
+    "phonetic": "/ˈbjuːtəfl/",
+    "type": "adj",
+    "meaning": "đẹp",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "described as",
+    "phonetic": "/dɪˈskraɪbd æz/",
+    "type": "v.phrase",
+    "meaning": "được mô tả là",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "endangered",
+    "phonetic": "/ɪnˈdeɪndʒəd/",
+    "type": "adj",
+    "meaning": "có nguy cơ tuyệt chủng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "found only in",
+    "phonetic": "/faʊnd ˈəʊnli ɪn/",
+    "type": "v.phrase",
+    "meaning": "chỉ được tìm thấy ở",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "coppiced woodland",
+    "phonetic": "/ˈkɒpɪst ˈwʊdlənd/",
+    "type": "n",
+    "meaning": "rừng khai thác theo chu kỳ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "limestone pavement",
+    "phonetic": "/ˈlaɪmstəʊn ˈpeɪvmənt/",
+    "type": "n",
+    "meaning": "địa hình đá vôi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "single-generation",
+    "phonetic": "/ˌsɪŋɡl ˌdʒenəˈreɪʃn/",
+    "type": "adj",
+    "meaning": "chỉ có một thế hệ mỗi năm",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "suggests that",
+    "phonetic": "/səˈdʒests ðæt/",
+    "type": "v.phrase",
+    "meaning": "gợi ý rằng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "undoubtedly",
+    "phonetic": "/ʌnˈdaʊtɪdli/",
+    "type": "adv",
+    "meaning": "chắc chắn",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "sole cause",
+    "phonetic": "/səʊl kɔːz/",
+    "type": "n",
+    "meaning": "nguyên nhân duy nhất",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "played a part in",
+    "phonetic": "/pleɪd ə pɑːt ɪn/",
+    "type": "v.phrase",
+    "meaning": "góp phần vào",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "downfall",
+    "phonetic": "/ˈdaʊnfɔːl/",
+    "type": "n",
+    "meaning": "sự suy tàn, suy sụp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "not lost",
+    "phonetic": "/nɒt lɒst/",
+    "type": "adj.phrase",
+    "meaning": "chưa phải vô vọng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "capacity",
+    "phonetic": "/kəˈpæsəti/",
+    "type": "n",
+    "meaning": "khả năng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "continental Europe",
+    "phonetic": "/ˌkɒntɪˈnentl ˈjʊərəp/",
+    "type": "n",
+    "meaning": "châu Âu lục địa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "sufficiently",
+    "phonetic": "/səˈfɪʃntli/",
+    "type": "adv",
+    "meaning": "đủ",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "continues to warm",
+    "phonetic": "/kənˈtɪnjuːz tu wɔːm/",
+    "type": "v.phrase",
+    "meaning": "tiếp tục ấm lên",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "switch to",
+    "phonetic": "/swɪtʃ tuː/",
+    "type": "v.phrase",
+    "meaning": "chuyển sang",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "multiple generations",
+    "phonetic": "/ˈmʌltɪpl ˌdʒenəˈreɪʃnz/",
+    "type": "n",
+    "meaning": "nhiều thế hệ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "extract benefits",
+    "phonetic": "/ɪkˈstrækt ˈbenɪfɪts/",
+    "type": "v.phrase",
+    "meaning": "tận dụng lợi ích",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "additional warmth",
+    "phonetic": "/əˈdɪʃənl wɔːmθ/",
+    "type": "n",
+    "meaning": "sự ấm lên thêm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "potentially",
+    "phonetic": "/pəˈtenʃəli/",
+    "type": "adv",
+    "meaning": "có khả năng",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "leading to",
+    "phonetic": "/ˈliːdɪŋ tuː/",
+    "type": "v.phrase",
+    "meaning": "dẫn đến",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "more immediately",
+    "phonetic": "/mɔːr ɪˈmiːdiətli/",
+    "type": "adv",
+    "meaning": "trực tiếp hơn",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "knowledge",
+    "phonetic": "/ˈnɒlɪdʒ/",
+    "type": "n",
+    "meaning": "kiến thức",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "spot",
+    "phonetic": "/spɒt/",
+    "type": "v",
+    "meaning": "nhận ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "warning sign",
+    "phonetic": "/ˈwɔːnɪŋ saɪn/",
+    "type": "n",
+    "meaning": "dấu hiệu cảnh báo",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "at risk",
+    "phonetic": "/ət rɪsk/",
+    "type": "adj.phrase",
+    "meaning": "có nguy cơ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "sought-after",
+    "phonetic": "/ˌsɔːt ˈɑːftə/",
+    "type": "adj",
+    "meaning": "được săn tìm",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "experienced",
+    "phonetic": "/ɪkˈspɪəriənst/",
+    "type": "v",
+    "meaning": "trải qua",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "significant increase",
+    "phonetic": "/sɪɡˈnɪfɪkənt ɪnˈkriːs/",
+    "type": "n",
+    "meaning": "sự gia tăng đáng kể",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "considerable decline",
+    "phonetic": "/kənˈsɪdərəbl dɪˈklaɪn/",
+    "type": "n",
+    "meaning": "sự suy giảm đáng kể",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "solely",
+    "phonetic": "/ˈsəʊlli/",
+    "type": "adv",
+    "meaning": "chỉ duy nhất",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "due to",
+    "phonetic": "/djuː tuː/",
+    "type": "prep",
+    "meaning": "do, bởi vì",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "deep-sea mining",
+    "phonetic": "/ˌdiːp siː ˈmaɪnɪŋ/",
+    "type": "n",
+    "meaning": "khai thác đáy biển sâu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "ocean floor",
+    "phonetic": "/ˈəʊʃn flɔː/",
+    "type": "n",
+    "meaning": "đáy đại dương",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "habitats",
+    "phonetic": "/ˈhæbɪtæts/",
+    "type": "n",
+    "meaning": "môi trường sống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "at risk",
+    "phonetic": "/ət rɪsk/",
+    "type": "adj.phr",
+    "meaning": "có nguy cơ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "hunger for",
+    "phonetic": "/ˈhʌŋɡə fɔː/",
+    "type": "n.phr",
+    "meaning": "nhu cầu lớn về",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "marine minerals",
+    "phonetic": "/məˈriːn ˈmɪnərəlz/",
+    "type": "n",
+    "meaning": "khoáng sản biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "microbe",
+    "phonetic": "/ˈmaɪkrəʊb/",
+    "type": "n",
+    "meaning": "vi sinh vật",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "pathogenic",
+    "phonetic": "/ˌpæθəˈdʒenɪk/",
+    "type": "adj",
+    "meaning": "gây bệnh",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "laboratory",
+    "phonetic": "/ləˈbɒrətri/",
+    "type": "n",
+    "meaning": "phòng thí nghiệm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "breakthrough",
+    "phonetic": "/ˈbreɪkθruː/",
+    "type": "n",
+    "meaning": "bước đột phá",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "fight against",
+    "phonetic": "/faɪt əˈɡenst/",
+    "type": "v.phr",
+    "meaning": "chống lại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "antibiotic-resistant",
+    "phonetic": "/ˌæntibaɪˈɒtɪk rɪˈzɪstənt/",
+    "type": "adj",
+    "meaning": "kháng kháng sinh",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "superbugs",
+    "phonetic": "/ˈsuːpəbʌɡz/",
+    "type": "n",
+    "meaning": "siêu vi khuẩn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "responsible for",
+    "phonetic": "/rɪˈspɒnsəbl fɔː/",
+    "type": "adj.phr",
+    "meaning": "chịu trách nhiệm cho",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "previously unknown",
+    "phonetic": "/ˈpriːviəsli ʌnˈnəʊn/",
+    "type": "adj.phr",
+    "meaning": "chưa từng được biết đến",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "boosting",
+    "phonetic": "/ˈbuːstɪŋ/",
+    "type": "v",
+    "meaning": "tăng cường, thúc đẩy",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "life-saving medicine",
+    "phonetic": "/ˈlaɪf seɪvɪŋ ˈmedsn/",
+    "type": "n",
+    "meaning": "thuốc cứu sống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "view as",
+    "phonetic": "/vjuː æz/",
+    "type": "v.phr",
+    "meaning": "coi là",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "wealth of",
+    "phonetic": "/welθ əv/",
+    "type": "n.phr",
+    "meaning": "số lượng lớn",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "undocumented species",
+    "phonetic": "/ʌnˈdɒkjʊmentɪd ˈspiːʃiːz/",
+    "type": "n",
+    "meaning": "các loài chưa được ghi nhận",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "prospecting ground",
+    "phonetic": "/ˈprɒspektɪŋ ɡraʊnd/",
+    "type": "n",
+    "meaning": "khu vực khai thác tiềm năng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "fear that",
+    "phonetic": "/fɪə ðæt/",
+    "type": "v.phr",
+    "meaning": "lo ngại rằng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "rush to",
+    "phonetic": "/rʌʃ tuː/",
+    "type": "v.phr",
+    "meaning": "vội vàng làm gì",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "exploit",
+    "phonetic": "/ɪkˈsplɔɪt/",
+    "type": "v",
+    "meaning": "khai thác",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "equally rich",
+    "phonetic": "/ˈiːkwəli rɪtʃ/",
+    "type": "adj",
+    "meaning": "giàu tương đương",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "metal resources",
+    "phonetic": "/ˈmetl rɪˈsɔːsɪz/",
+    "type": "n",
+    "meaning": "tài nguyên kim loại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "bioactive potential",
+    "phonetic": "/ˌbaɪəʊˈæktɪv pəˈtenʃl/",
+    "type": "n",
+    "meaning": "tiềm năng hoạt tính sinh học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "urge a halt",
+    "phonetic": "/ɜːdʒ ə hɔːlt/",
+    "type": "v.phr",
+    "meaning": "kêu gọi dừng lại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "weigh up",
+    "phonetic": "/weɪ ʌp/",
+    "type": "v.phr",
+    "meaning": "cân cân nhắc",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "pros and cons",
+    "phonetic": "/prəʊz ænd kɒnz/",
+    "type": "n",
+    "meaning": "ưu và nhược điểm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "sustainability",
+    "phonetic": "/səˌsteɪnəˈbɪləti/",
+    "type": "n",
+    "meaning": "tính bền vững",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "economic potential",
+    "phonetic": "/ˌiːkəˈnɒmɪk pəˈtenʃl/",
+    "type": "n",
+    "meaning": "tiềm năng kinh tế",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "argue that",
+    "phonetic": "/ˈɑːɡjuː ðæt/",
+    "type": "v.phr",
+    "meaning": "lập luận rằng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "remotely operated vehicles",
+    "phonetic": "/rɪˈməʊtli ˈɒpəreɪtɪd ˈviːəklz/",
+    "type": "n",
+    "meaning": "phương tiện điều khiển từ xa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "spotted",
+    "phonetic": "/ˈspɒtɪd/",
+    "type": "v",
+    "meaning": "phát hiện",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "sea cucumbers",
+    "phonetic": "/ˈsiː ˌkjuːkʌmbəz/",
+    "type": "n",
+    "meaning": "hải sâm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rare",
+    "phonetic": "/reə/",
+    "type": "adj",
+    "meaning": "hiếm",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "octopus",
+    "phonetic": "/ˈɒktəpəs/",
+    "type": "n",
+    "meaning": "bạch tuộc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "off the coast",
+    "phonetic": "/ɒf ðə kəʊst/",
+    "type": "prep",
+    "meaning": "ngoài khơi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "lifesaving potential",
+    "phonetic": "/ˈlaɪfseɪvɪŋ pəˈtenʃl/",
+    "type": "n",
+    "meaning": "tiềm năng cứu sống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "estimate",
+    "phonetic": "/ˈestɪmeɪt/",
+    "type": "v",
+    "meaning": "ước tính",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "decade",
+    "phonetic": "/ˈdekeɪd/",
+    "type": "n",
+    "meaning": "thập kỷ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "newly discovered",
+    "phonetic": "/ˈnjuːli dɪˈskʌvəd/",
+    "type": "adj",
+    "meaning": "mới được phát hiện",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "race towards",
+    "phonetic": "/reɪs təˈwɔːdz/",
+    "type": "n.phr",
+    "meaning": "cuộc chạy đua hướng tới",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "commercial mining",
+    "phonetic": "/kəˈmɜːʃl ˈmaɪnɪŋ/",
+    "type": "n",
+    "meaning": "khai thác thương mại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "ocean abyss",
+    "phonetic": "/ˈəʊʃn əˈbɪs/",
+    "type": "n",
+    "meaning": "vực sâu đại dương",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "begun",
+    "phonetic": "/bɪˈɡʌn/",
+    "type": "v",
+    "meaning": "đã bắt đầu",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "nickel, cobalt",
+    "phonetic": "/ˈnɪkl, ˈkəʊbɔːlt/",
+    "type": "n",
+    "meaning": "niken, coban",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rare earth metals",
+    "phonetic": "/reər ɜːθ ˈmetlz/",
+    "type": "n",
+    "meaning": "kim loại đất hiếm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "contain",
+    "phonetic": "/kənˈteɪn/",
+    "type": "v",
+    "meaning": "chứa",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "combined",
+    "phonetic": "/kəmˈbaɪnd/",
+    "type": "adj",
+    "meaning": "kết hợp",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "according to",
+    "phonetic": "/əˈkɔːdɪŋ tuː/",
+    "type": "prep",
+    "meaning": "theo như",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "survey",
+    "phonetic": "/ˈsɜːveɪ/",
+    "type": "n",
+    "meaning": "khảo sát",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "corporations",
+    "phonetic": "/ˌkɔːpəˈreɪʃnz/",
+    "type": "n",
+    "meaning": "tập đoàn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "exploration",
+    "phonetic": "/ˌekspləˈreɪʃn/",
+    "type": "n",
+    "meaning": "thăm dò",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "help diversify",
+    "phonetic": "/help daɪˈvɜːsɪfaɪ/",
+    "type": "v.phr",
+    "meaning": "giúp đa dạng hóa",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "demand for",
+    "phonetic": "/dɪˈmɑːnd fɔː/",
+    "type": "n",
+    "meaning": "nhu cầu về",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "soaring",
+    "phonetic": "/ˈsɔːrɪŋ/",
+    "type": "adj",
+    "meaning": "tăng vọt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "power technology",
+    "phonetic": "/ˈpaʊə tekˈnɒlədʒi/",
+    "type": "v.phr",
+    "meaning": "cung cấp năng lượng cho công nghệ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "yield",
+    "phonetic": "/jiːld/",
+    "type": "v",
+    "meaning": "tạo ra, mang lại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "ore",
+    "phonetic": "/ɔː/",
+    "type": "n",
+    "meaning": "quặng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "waste",
+    "phonetic": "/weɪst/",
+    "type": "n",
+    "meaning": "chất thải",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "methods of extraction",
+    "phonetic": "/ˈmeθədz əv ɪkˈstrækʃn/",
+    "type": "n",
+    "meaning": "các phương pháp khai thác",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "employ",
+    "phonetic": "/ɪmˈplɔɪ/",
+    "type": "v",
+    "meaning": "sử dụng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "machinery",
+    "phonetic": "/məˈʃiːnəri/",
+    "type": "n",
+    "meaning": "máy móc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "terrestrial mining",
+    "phonetic": "/təˈrestriəl ˈmaɪnɪŋ/",
+    "type": "n",
+    "meaning": "khai thác trên đất liền",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "excavate",
+    "phonetic": "/ˈekskəveɪt/",
+    "type": "v",
+    "meaning": "khai quật",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "depths",
+    "phonetic": "/depθs/",
+    "type": "n",
+    "meaning": "độ sâu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "seawater slurry",
+    "phonetic": "/ˈsiːwɔːtə ˈslʌri/",
+    "type": "n",
+    "meaning": "bùn nước biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "solid particles",
+    "phonetic": "/ˈsɒlɪd ˈpɑːtɪklz/",
+    "type": "n",
+    "meaning": "hạt rắn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "sea surface",
+    "phonetic": "/siː ˈsɜːfɪs/",
+    "type": "n",
+    "meaning": "mặt biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "de-watered",
+    "phonetic": "/diː ˈwɔːtəd/",
+    "type": "adj",
+    "meaning": "tách nước",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "transferred to",
+    "phonetic": "/trænsˈfɜːd tuː/",
+    "type": "v.phr",
+    "meaning": "chuyển sang",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "vessel",
+    "phonetic": "/ˈvesl/",
+    "type": "n",
+    "meaning": "tàu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "pumped back",
+    "phonetic": "/pʌmpt bæk/",
+    "type": "v.phr",
+    "meaning": "bơm trở lại",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "discharged",
+    "phonetic": "/dɪsˈtʃɑːdʒd/",
+    "type": "v",
+    "meaning": "thải ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "urge caution",
+    "phonetic": "/ɜːdʒ ˈkɔːʃn/",
+    "type": "v.phr",
+    "meaning": "kêu gọi thận trọng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "massive",
+    "phonetic": "/ˈmæsɪv/",
+    "type": "adj",
+    "meaning": "rất lớn",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "unknown",
+    "phonetic": "/ʌnˈnəʊn/",
+    "type": "adj",
+    "meaning": "chưa biết",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "ramifications",
+    "phonetic": "/ˌræmɪfɪˈkeɪʃnz/",
+    "type": "n",
+    "meaning": "hậu quả",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "nearby communities",
+    "phonetic": "/ˈnɪəbaɪ kəˈmjuːnətiz/",
+    "type": "n",
+    "meaning": "cộng đồng lân cận",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "regulatory framework",
+    "phonetic": "/ˈreɡjələtəri ˈfreɪmwɜːk/",
+    "type": "n",
+    "meaning": "khung pháp lý",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "not yet drafted",
+    "phonetic": "/nɒt jet ˈdrɑːftɪd/",
+    "type": "adj",
+    "meaning": "chưa được soạn thảo",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "resource scrambles",
+    "phonetic": "/rɪˈsɔːs ˈskræmblz/",
+    "type": "n",
+    "meaning": "cuộc tranh giành tài nguyên",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "share features with",
+    "phonetic": "/ʃeə ˈfiːtʃəz wɪð/",
+    "type": "v.phr",
+    "meaning": "có đặc điểm giống",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "disregard for",
+    "phonetic": "/ˌdɪsrɪˈɡɑːd fɔː/",
+    "type": "n.phr",
+    "meaning": "sự phớt lờ",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "social impacts",
+    "phonetic": "/ˈsəʊʃl ˈɪmpækts/",
+    "type": "n",
+    "meaning": "tác động xã hội",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "marginalisation",
+    "phonetic": "/ˌmɑːdʒɪnəlaɪˈzeɪʃn/",
+    "type": "n",
+    "meaning": "sự gạt ra ngoài lề",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "indigenous peoples",
+    "phonetic": "/ɪnˈdɪdʒənəs ˈpiːplz/",
+    "type": "n",
+    "meaning": "người bản địa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "knowledge of",
+    "phonetic": "/ˈnɒlɪdʒ əv/",
+    "type": "n.phr",
+    "meaning": "kiến thức về",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "extremely limited",
+    "phonetic": "/ɪkˈstriːmli ˈlɪmɪtɪd/",
+    "type": "adj",
+    "meaning": "rất hạn chế",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "mapped",
+    "phonetic": "/mæpt/",
+    "type": "v",
+    "meaning": "được lập bản đồ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "greater detail",
+    "phonetic": "/ˈɡreɪtə ˈdiːteɪl/",
+    "type": "n",
+    "meaning": "chi tiết hơn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "remark",
+    "phonetic": "/rɪˈmɑːk/",
+    "type": "v",
+    "meaning": "nhận xét",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "respect to",
+    "phonetic": "/rɪˈspekt tuː/",
+    "type": "prep",
+    "meaning": "liên quan đến",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "research",
+    "phonetic": "/rɪˈsɜːtʃ/",
+    "type": "n",
+    "meaning": "nghiên cứu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "suggest",
+    "phonetic": "/səˈdʒest/",
+    "type": "v",
+    "meaning": "cho thấy",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "hydrothermal vents",
+    "phonetic": "/ˌhaɪdrəʊˈθɜːml vents/",
+    "type": "n",
+    "meaning": "miệng phun thủy nhiệt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "crucial impacts",
+    "phonetic": "/ˈkruːʃl ˈɪmpækts/",
+    "type": "n",
+    "meaning": "tác động quan trọng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "global climate",
+    "phonetic": "/ˈɡləʊbl ˈklaɪmət/",
+    "type": "n",
+    "meaning": "khí hậu toàn cầu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "mineral-rich",
+    "phonetic": "/ˈmɪnərəl rɪtʃ/",
+    "type": "adj",
+    "meaning": "giàu khoáng sản",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "surroundings",
+    "phonetic": "/səˈraʊndɪŋz/",
+    "type": "n",
+    "meaning": "môi trường xung quanh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "well-known",
+    "phonetic": "/wel nəʊn/",
+    "type": "adj",
+    "meaning": "nổi tiếng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "crustaceans",
+    "phonetic": "/krʌˈsteɪʃnz/",
+    "type": "n",
+    "meaning": "động vật giáp xác",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "tubeworms",
+    "phonetic": "/ˈtjuːbwɜːmz/",
+    "type": "n",
+    "meaning": "giun ống",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "including",
+    "phonetic": "/ɪnˈkluːdɪŋ/",
+    "type": "prep",
+    "meaning": "bao gồm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "pose a threat",
+    "phonetic": "/pəʊz ə θret/",
+    "type": "v.phr",
+    "meaning": "gây ra mối đe dọa",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "vital functions",
+    "phonetic": "/ˈvaɪtl ˈfʌŋkʃnz/",
+    "type": "n",
+    "meaning": "chức năng thiết yếu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "produce",
+    "phonetic": "/prəˈdjuːs/",
+    "type": "v",
+    "meaning": "tạo ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "sediment plumes",
+    "phonetic": "/ˈsedɪmənt pluːmz/",
+    "type": "n",
+    "meaning": "các đám trầm tích",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "waste discharge",
+    "phonetic": "/weɪst dɪsˈtʃɑːdʒ/",
+    "type": "n",
+    "meaning": "việc thải chất thải",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "significantly",
+    "phonetic": "/sɪɡˈnɪfɪkəntli/",
+    "type": "adv",
+    "meaning": "đáng kể",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "disturbing",
+    "phonetic": "/dɪˈstɜːbɪŋ/",
+    "type": "v",
+    "meaning": "làm xáo trộn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "seafloor environment",
+    "phonetic": "/ˈsiːflɔː ɪnˈvaɪrənmənt/",
+    "type": "n",
+    "meaning": "môi trường đáy biển",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "scientists are clear",
+    "phonetic": "/ˈsaɪəntɪsts ɑː klɪə/",
+    "type": "v.phr",
+    "meaning": "các nhà khoa học khẳng định rõ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "occupy",
+    "phonetic": "/ˈɒkjupaɪ/",
+    "type": "v",
+    "meaning": "chiếm",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "planet",
+    "phonetic": "/ˈplænɪt/",
+    "type": "n",
+    "meaning": "hành tinh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "relatively unexplored",
+    "phonetic": "/ˈrelətɪvli ˌʌnɪkˈsplɔːd/",
+    "type": "adj",
+    "meaning": "tương đối chưa được khám phá",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "chief executive",
+    "phonetic": "/tʃiːf ɪɡˈzekjətɪv/",
+    "type": "n",
+    "meaning": "giám đốc điều hành",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "makes sense",
+    "phonetic": "/meɪks sens/",
+    "type": "v.phr",
+    "meaning": "hợp lý",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "untapped potential",
+    "phonetic": "/ˌʌnˈtæpt pəˈtenʃl/",
+    "type": "n",
+    "meaning": "tiềm năng chưa khai thác",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "environmentally sustainable",
+    "phonetic": "/ɪnˌvaɪrənˈmentəli səˈsteɪnəbl/",
+    "type": "adj",
+    "meaning": "bền vững về môi trường",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "continually",
+    "phonetic": "/kənˈtɪnjuəli/",
+    "type": "adv",
+    "meaning": "liên tục",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "depleting land resources",
+    "phonetic": "/dɪˈpliːtɪŋ lænd rɪˈsɔːsɪz/",
+    "type": "n",
+    "meaning": "tài nguyên đất đang cạn kiệt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rising needs",
+    "phonetic": "/ˈraɪzɪŋ niːdz/",
+    "type": "n",
+    "meaning": "nhu cầu gia tăng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "environmental impacts",
+    "phonetic": "/ɪnˌvaɪrənˈmentl ˈɪmpækts/",
+    "type": "n",
+    "meaning": "tác động môi trường",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "critics",
+    "phonetic": "/ˈkrɪtɪks/",
+    "type": "n",
+    "meaning": "những người chỉ trích",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "exotic ecosystems",
+    "phonetic": "/ɪɡˈzɒtɪk ˈiːkəʊsɪstəmz/",
+    "type": "n",
+    "meaning": "hệ sinh thái kỳ lạ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "little-known",
+    "phonetic": "/ˈlɪtl nəʊn/",
+    "type": "adj",
+    "meaning": "ít được biết đến",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "protected",
+    "phonetic": "/prəˈtektɪd/",
+    "type": "v",
+    "meaning": "được bảo vệ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "assault on",
+    "phonetic": "/əˈsɔːlt ɒn/",
+    "type": "n.phr",
+    "meaning": "sự tấn công vào",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "ecosystems",
+    "phonetic": "/ˈiːkəʊsɪstəmz/",
+    "type": "n",
+    "meaning": "hệ sinh thái",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "inflicted by",
+    "phonetic": "/ɪnˈflɪktɪd baɪ/",
+    "type": "v.phr",
+    "meaning": "do gây ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "active vents",
+    "phonetic": "/ˈæktɪv vents/",
+    "type": "n",
+    "meaning": "miệng phun hoạt động",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "off-limits",
+    "phonetic": "/ˌɒf ˈlɪmɪts/",
+    "type": "adj",
+    "meaning": "cấm",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "biotechnology spin-offs",
+    "phonetic": "/ˌbaɪəʊtekˈnɒlədʒi ˈspɪn ɒfs/",
+    "type": "n",
+    "meaning": "ứng dụng công nghệ sinh học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "strict controls",
+    "phonetic": "/strɪkt kənˈtrəʊlz/",
+    "type": "n",
+    "meaning": "kiểm soát nghiêm ngặt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "in place",
+    "phonetic": "/ɪn pleɪs/",
+    "type": "phr",
+    "meaning": "được áp dụng",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "unselfish",
+    "phonetic": "/ʌnˈselfɪʃ/",
+    "type": "adj",
+    "meaning": "không ích kỷ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "gene",
+    "phonetic": "/dʒiːn/",
+    "type": "n",
+    "meaning": "gen",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "psychologist",
+    "phonetic": "/saɪˈkɒlədʒɪst/",
+    "type": "n",
+    "meaning": "nhà tâm lý học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "self-centred",
+    "phonetic": "/ˌself ˈsentəd/",
+    "type": "adj",
+    "meaning": "ích kỷ, chỉ nghĩ cho bản thân",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "assumption",
+    "phonetic": "/əˈsʌmpʃn/",
+    "type": "n",
+    "meaning": "giả định",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "essentially",
+    "phonetic": "/ɪˈsenʃəli/",
+    "type": "adv",
+    "meaning": "về bản chất",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "human beings",
+    "phonetic": "/ˈhjuːmən ˈbiːɪŋz/",
+    "type": "n",
+    "meaning": "con người",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "apparently",
+    "phonetic": "/əˈpærəntli/",
+    "type": "adv",
+    "meaning": "dường như",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "ruthless",
+    "phonetic": "/ˈruːθləs/",
+    "type": "adj",
+    "meaning": "tàn nhẫn, nhẫn tâm",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "impulses",
+    "phonetic": "/ˈɪmpʌlsɪz/",
+    "type": "n",
+    "meaning": "xung lực, thôi thúc",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "compete",
+    "phonetic": "/kəmˈpiːt/",
+    "type": "v",
+    "meaning": "cạnh tranh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "resources",
+    "phonetic": "/rɪˈzɔːsɪz/",
+    "type": "n",
+    "meaning": "tài nguyên",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "accumulate",
+    "phonetic": "/əˈkjuːmjəleɪt/",
+    "type": "v",
+    "meaning": "tích lũy, gom góp",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "possessions",
+    "phonetic": "/pəˈzeʃnz/",
+    "type": "n",
+    "meaning": "tài sản, của cải",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "kind",
+    "phonetic": "/kaɪnd/",
+    "type": "adj",
+    "meaning": "tử tế",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "ulterior motives",
+    "phonetic": "/ʌlˈtɪəriə ˈməʊtɪvz/",
+    "type": "n.phr",
+    "meaning": "động cơ thầm kín",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "managed to",
+    "phonetic": "/ˈmænɪdʒd tuː/",
+    "type": "v.phr",
+    "meaning": "đã xoay xở để",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "control",
+    "phonetic": "/kənˈtrəʊl/",
+    "type": "v",
+    "meaning": "kiểm soát",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "transcend",
+    "phonetic": "/trænˈsend/",
+    "type": "v",
+    "meaning": "vượt qua, vượt lên trên",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "innate",
+    "phonetic": "/ɪˈneɪt/",
+    "type": "adj",
+    "meaning": "bẩm sinh, vốn có",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "selfishness",
+    "phonetic": "/ˈselfɪʃnəs/",
+    "type": "n",
+    "meaning": "sự ích kỷ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "brutality",
+    "phonetic": "/bruːˈtæləti/",
+    "type": "n",
+    "meaning": "sự tàn bạo",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "bleak",
+    "phonetic": "/bliːk/",
+    "type": "adj",
+    "meaning": "ảm đạm",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "human nature",
+    "phonetic": "/ˌhjuːmən ˈneɪtʃə/",
+    "type": "n",
+    "meaning": "bản chất con người",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "closely associated with",
+    "phonetic": "/ˈkləʊsli əˈsəʊsieɪtɪd wɪð/",
+    "type": "adj.phr",
+    "meaning": "gắn liền chặt chẽ với",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "science writer",
+    "phonetic": "/ˈsaɪəns ˈraɪtə/",
+    "type": "n",
+    "meaning": "nhà văn khoa học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "justify",
+    "phonetic": "/ˈdʒʌstɪfaɪ/",
+    "type": "v",
+    "meaning": "biện minh, bào chữa",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "fitted with",
+    "phonetic": "/ˈfɪtɪd wɪð/",
+    "type": "v.phr",
+    "meaning": "phù hợp với",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "competitive",
+    "phonetic": "/kəmˈpetətɪv/",
+    "type": "adj",
+    "meaning": "mang tính cạnh tranh",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "individualistic",
+    "phonetic": "/ˌɪndɪˌvɪdʒuəˈlɪstɪk/",
+    "type": "adj",
+    "meaning": "cá nhân chủ nghĩa",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "ethos",
+    "phonetic": "/ˈiːθɒs/",
+    "type": "n",
+    "meaning": "tinh thần, hệ giá trị",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "prevalent",
+    "phonetic": "/ˈprevələnt/",
+    "type": "adj",
+    "meaning": "phổ biến, thịnh hành",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "reference to",
+    "phonetic": "/ˈrefrəns tuː/",
+    "type": "n.phr",
+    "meaning": "sự viện dẫn đến",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "field",
+    "phonetic": "/fiːld/",
+    "type": "n",
+    "meaning": "lĩnh vực",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "evolutionary psychology",
+    "phonetic": "/ˌevəˈluːʃənri saɪˈkɒlədʒi/",
+    "type": "n",
+    "meaning": "tâm lý học tiến hóa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "theorises",
+    "phonetic": "/ˈθɪəraɪzɪz/",
+    "type": "v",
+    "meaning": "đưa ra giả thuyết",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "present-day",
+    "phonetic": "/ˌpreznt ˈdeɪ/",
+    "type": "adj",
+    "meaning": "ngày nay",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "traits",
+    "phonetic": "/treɪts/",
+    "type": "n",
+    "meaning": "đặc điểm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "prehistoric times",
+    "phonetic": "/ˌpriːhɪˈstɒrɪk taɪmz/",
+    "type": "n",
+    "meaning": "thời tiền sử",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "termed",
+    "phonetic": "/tɜːmd/",
+    "type": "v",
+    "meaning": "được gọi là",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "adaptedness",
+    "phonetic": "/əˈdæptɪdnəs/",
+    "type": "n",
+    "meaning": "sự thích nghi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "prehistory",
+    "phonetic": "/ˌpriːˈhɪstri/",
+    "type": "n",
+    "meaning": "thời tiền sử",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "period",
+    "phonetic": "/ˈpɪəriəd/",
+    "type": "n",
+    "meaning": "giai đoạn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "intense",
+    "phonetic": "/ɪnˈtens/",
+    "type": "adj",
+    "meaning": "dữ dội, khắc nghiệt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "brutal",
+    "phonetic": "/ˈbruːtl/",
+    "type": "adj",
+    "meaning": "tàn bạo, khốc liệt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "battle",
+    "phonetic": "/ˈbætl/",
+    "type": "n",
+    "meaning": "cuộc chiến đấu",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "aggression",
+    "phonetic": "/əˈɡreʃn/",
+    "type": "n",
+    "meaning": "sự hung hăng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "survived",
+    "phonetic": "/səˈvaɪvd/",
+    "type": "v",
+    "meaning": "sống sót",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "survival",
+    "phonetic": "/səˈvaɪvl/",
+    "type": "n",
+    "meaning": "sự sinh tồn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "depended on",
+    "phonetic": "/dɪˈpendɪd ɒn/",
+    "type": "v.phr",
+    "meaning": "phụ thuộc vào",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "access to",
+    "phonetic": "/ˈækses tuː/",
+    "type": "n.phr",
+    "meaning": "quyền tiếp cận",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "bound to",
+    "phonetic": "/baʊnd tuː/",
+    "type": "adj.phr",
+    "meaning": "chắc chắn sẽ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "conflict",
+    "phonetic": "/ˈkɒnflɪkt/",
+    "type": "n",
+    "meaning": "xung đột",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "rival",
+    "phonetic": "/ˈraɪvl/",
+    "type": "adj",
+    "meaning": "đối thủ, cạnh tranh",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "warfare",
+    "phonetic": "/ˈwɔːfeə/",
+    "type": "n",
+    "meaning": "chiến tranh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "logical",
+    "phonetic": "/ˈlɒdʒɪkl/",
+    "type": "adj",
+    "meaning": "hợp lý",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "in fact",
+    "phonetic": "/ɪn fækt/",
+    "type": "adv",
+    "meaning": "thực ra",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "rests on",
+    "phonetic": "/rests ɒn/",
+    "type": "v.phr",
+    "meaning": "dựa trên",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "desperate struggle",
+    "phonetic": "/ˈdespərət ˈstrʌɡl/",
+    "type": "n",
+    "meaning": "cuộc vật lộn tuyệt vọng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "important to remember",
+    "phonetic": "/ɪmˈpɔːtənt tu rɪˈmembə/",
+    "type": "phr",
+    "meaning": "điều quan trọng cần nhớ",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "era",
+    "phonetic": "/ˈɪərə/",
+    "type": "n",
+    "meaning": "thời đại",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "sparsely populated",
+    "phonetic": "/ˈspɑːsli ˈpɒpjuleɪtɪd/",
+    "type": "adj",
+    "meaning": "thưa dân",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "according to",
+    "phonetic": "/əˈkɔːdɪŋ tuː/",
+    "type": "prep",
+    "meaning": "theo như",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "estimates",
+    "phonetic": "/ˈestɪməts/",
+    "type": "n",
+    "meaning": "ước tính",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "population",
+    "phonetic": "/ˌpɒpjuˈleɪʃn/",
+    "type": "n",
+    "meaning": "dân số",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "whole world",
+    "phonetic": "/həʊl wɜːld/",
+    "type": "n",
+    "meaning": "toàn thế giới",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "less than",
+    "phonetic": "/les ðæn/",
+    "type": "prep",
+    "meaning": "ít hơn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "hunter-gatherers",
+    "phonetic": "/ˈhʌntə ˌɡæðərəz/",
+    "type": "n",
+    "meaning": "người săn bắt hái lượm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "lived by",
+    "phonetic": "/lɪvd baɪ/",
+    "type": "v.phr",
+    "meaning": "sống bằng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "wild animals",
+    "phonetic": "/waɪld ˈænɪməlz/",
+    "type": "n",
+    "meaning": "động vật hoang dã",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "collecting",
+    "phonetic": "/kəˈlektɪŋ/",
+    "type": "v",
+    "meaning": "thu lượm",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "wild plants",
+    "phonetic": "/waɪld plɑːnts/",
+    "type": "n",
+    "meaning": "thực vật hoang dã",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "population densities",
+    "phonetic": "/ˌpɒpjuˈleɪʃn ˈdensətiz/",
+    "type": "n",
+    "meaning": "mật độ dân số",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "unlikely",
+    "phonetic": "/ʌnˈlaɪkli/",
+    "type": "adj",
+    "meaning": "khó có khả năng",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "groups",
+    "phonetic": "/ɡruːps/",
+    "type": "n",
+    "meaning": "nhóm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "competitiveness",
+    "phonetic": "/kəmˈpetətɪvnəs/",
+    "type": "n",
+    "meaning": "tính cạnh tranh",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "significant evidence",
+    "phonetic": "/sɪɡˈnɪfɪkənt ˈevɪdəns/",
+    "type": "n",
+    "meaning": "bằng chứng đáng kể",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "back this notion",
+    "phonetic": "/bæk ðɪs ˈnəʊʃn/",
+    "type": "v.phr",
+    "meaning": "ủng hộ quan điểm này",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "contemporary",
+    "phonetic": "/kənˈtemprəri/",
+    "type": "adj",
+    "meaning": "đương đại",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "anthropologist",
+    "phonetic": "/ˌænθrəˈpɒlədʒɪst/",
+    "type": "n",
+    "meaning": "nhà nhân chủng học",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "characterized by",
+    "phonetic": "/ˈkærəktəraɪzd baɪ/",
+    "type": "v.phr",
+    "meaning": "được đặc trưng bởi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "extreme",
+    "phonetic": "/ɪkˈstriːm/",
+    "type": "adj",
+    "meaning": "cực độ",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "political",
+    "phonetic": "/pəˈlɪtɪkl/",
+    "type": "adj",
+    "meaning": "chính trị",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "sexual",
+    "phonetic": "/ˈsekʃuəl/",
+    "type": "adj",
+    "meaning": "thuộc giới tính",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "egalitarianism",
+    "phonetic": "/iˌɡælɪˈteəriənɪzəm/",
+    "type": "n",
+    "meaning": "chủ nghĩa bình đẳng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "individuals",
+    "phonetic": "/ˌɪndɪˈvɪdʒuəlz/",
+    "type": "n",
+    "meaning": "cá nhân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "property",
+    "phonetic": "/ˈpɒpəti/",
+    "type": "n",
+    "meaning": "tài sản",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "ethical",
+    "phonetic": "/ˈeθɪkl/",
+    "type": "adj",
+    "meaning": "thuộc về đạo đức",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "obligation",
+    "phonetic": "/ˌɒblɪˈɡeɪʃn/",
+    "type": "n",
+    "meaning": "nghĩa vụ, trách nhiệm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "share everything",
+    "phonetic": "/ʃeər ˈevriθɪŋ/",
+    "type": "v.phr",
+    "meaning": "chia sẻ mọi thứ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "methods",
+    "phonetic": "/ˈmeθədz/",
+    "type": "n",
+    "meaning": "phương pháp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "preserving",
+    "phonetic": "/prɪˈzɜːvɪŋ/",
+    "type": "v",
+    "meaning": "duy trì",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "ensuring",
+    "phonetic": "/ɪnˈʃʊərɪŋ/",
+    "type": "v",
+    "meaning": "đảm bảo",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "disparities",
+    "phonetic": "/dɪˈspærətiz/",
+    "type": "n",
+    "meaning": "sự chênh lệch",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "status",
+    "phonetic": "/ˈsteɪtəs/",
+    "type": "n",
+    "meaning": "địa vị",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "arise",
+    "phonetic": "/əˈraɪz/",
+    "type": "v",
+    "meaning": "nảy sinh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "swap",
+    "phonetic": "/swɒp/",
+    "type": "v",
+    "meaning": "trao đổi",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "arrows",
+    "phonetic": "/ˈærəʊz/",
+    "type": "n",
+    "meaning": "mũi tên",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "acclaim",
+    "phonetic": "/əˈkleɪm/",
+    "type": "n",
+    "meaning": "sự ca ngợi",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "fired",
+    "phonetic": "/ˈfaɪəd/",
+    "type": "v",
+    "meaning": "bắn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "belongs to",
+    "phonetic": "/bɪˈlɒŋz tuː/",
+    "type": "v.phr",
+    "meaning": "thuộc về",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "domineering",
+    "phonetic": "/ˌdɒmɪˈnɪərɪŋ/",
+    "type": "adj",
+    "meaning": "độc đoán, áp đặt",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "ostracise",
+    "phonetic": "/ˈɒstrəsaɪz/",
+    "type": "v",
+    "meaning": "khai trừ, tẩy chay",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "offender",
+    "phonetic": "/əˈfendə/",
+    "type": "n",
+    "meaning": "người vi phạm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "society",
+    "phonetic": "/səˈsaɪəti/",
+    "type": "n",
+    "meaning": "xã hội",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "typically",
+    "phonetic": "/ˈtɪpɪkli/",
+    "type": "adv",
+    "meaning": "thường thì",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "dictate",
+    "phonetic": "/dɪkˈteɪt/",
+    "type": "v",
+    "meaning": "áp đặt, ra lệnh",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "worldwide",
+    "phonetic": "/ˌwɜːldˈwaɪd/",
+    "type": "adv",
+    "meaning": "trên toàn thế giới",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "benefit from",
+    "phonetic": "/ˈbenɪfɪt frɒm/",
+    "type": "v.phr",
+    "meaning": "hưởng lợi từ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "high level",
+    "phonetic": "/haɪ ˈlevl/",
+    "type": "n",
+    "meaning": "mức độ cao",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "autonomy",
+    "phonetic": "/ɔːˈtɒnəmi/",
+    "type": "n",
+    "meaning": "quyền tự chủ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "select",
+    "phonetic": "/sɪˈlekt/",
+    "type": "v",
+    "meaning": "lựa chọn",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "marriage partners",
+    "phonetic": "/ˈmærɪdʒ ˌpɑːtnəz/",
+    "type": "n",
+    "meaning": "bạn đời",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "decide",
+    "phonetic": "/dɪˈsaɪd/",
+    "type": "v",
+    "meaning": "quyết định",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "choose to",
+    "phonetic": "/tʃuːz tuː/",
+    "type": "v.phr",
+    "meaning": "chọn làm",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "marriage",
+    "phonetic": "/ˈmærɪdʒ/",
+    "type": "n",
+    "meaning": "hôn nhân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "breaks down",
+    "phonetic": "/breɪks daʊn/",
+    "type": "v.phr",
+    "meaning": "đổ vỡ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "custody rights",
+    "phonetic": "/ˈkʌstədi raɪts/",
+    "type": "n",
+    "meaning": "quyền nuôi con",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "believe that",
+    "phonetic": "/bɪˈliːv ðæt/",
+    "type": "v.phr",
+    "meaning": "tin rằng",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "normal",
+    "phonetic": "/ˈnɔːml/",
+    "type": "adj",
+    "meaning": "bình thường",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "population growth",
+    "phonetic": "/ˌpɒpjuˈleɪʃn ɡrəʊθ/",
+    "type": "n",
+    "meaning": "sự gia tăng dân số",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "led to",
+    "phonetic": "/led tuː/",
+    "type": "v.phr",
+    "meaning": "dẫn đến",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "agriculture",
+    "phonetic": "/ˈæɡrɪkʌltʃə/",
+    "type": "n",
+    "meaning": "nông nghiệp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "settled lifestyle",
+    "phonetic": "/ˈsetld ˈlaɪfstaɪl/",
+    "type": "n",
+    "meaning": "lối sống định cư",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "in view of",
+    "phonetic": "/ɪn vjuː əv/",
+    "type": "prep",
+    "meaning": "xét theo",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "male domination",
+    "phonetic": "/meɪl ˌdɒmɪˈneɪʃn/",
+    "type": "n",
+    "meaning": "sự thống trị của nam giới",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "selected by evolution",
+    "phonetic": "/sɪˈlektɪd baɪ ˌiːvəˈluːʃn/",
+    "type": "v.phr",
+    "meaning": "được chọn lọc bởi tiến hóa",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "little benefit",
+    "phonetic": "/ˈlɪtl ˈbenɪfɪt/",
+    "type": "n",
+    "meaning": "ít lợi ích",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "behaved selfishly",
+    "phonetic": "/bɪˈheɪvd ˈselfɪʃli/",
+    "type": "v.phr",
+    "meaning": "hành xử ích kỷ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "less likely to survive",
+    "phonetic": "/les ˈlaɪkli tu səˈvaɪv/",
+    "type": "adj.phr",
+    "meaning": "ít có khả năng sống sót",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "makes more sense",
+    "phonetic": "/meɪks mɔː sens/",
+    "type": "phr",
+    "meaning": "hợp lý hơn",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "cooperation",
+    "phonetic": "/kəʊˌɒpəˈreɪʃn/",
+    "type": "n",
+    "meaning": "sự hợp tác",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "altruism",
+    "phonetic": "/ˈæltruɪzəm/",
+    "type": "n",
+    "meaning": "lòng vị tha",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "peacefulness",
+    "phonetic": "/ˈpiːsfəlnəs/",
+    "type": "n",
+    "meaning": "sự ôn hòa",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "characteristics",
+    "phonetic": "/ˌkærəktəˈrɪstɪks/",
+    "type": "n",
+    "meaning": "đặc điểm",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "presumably",
+    "phonetic": "/prɪˈzjuːməbli/",
+    "type": "adv",
+    "meaning": "có lẽ",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "negative",
+    "phonetic": "/ˈneɡətɪv/",
+    "type": "adj",
+    "meaning": "tiêu cực",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "later development",
+    "phonetic": "/ˈleɪtə dɪˈveləpmənt/",
+    "type": "n",
+    "meaning": "sự phát triển về sau",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "environmental factors",
+    "phonetic": "/ɪnˌvaɪrənˈmentl ˈfæktəz/",
+    "type": "n",
+    "meaning": "yếu tố môi trường",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "psychological factors",
+    "phonetic": "/ˌsaɪkəˈlɒdʒɪkl ˈfæktəz/",
+    "type": "n",
+    "meaning": "yếu tố tâm lý",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "repeatedly",
+    "phonetic": "/rɪˈpiːtɪdli/",
+    "type": "adv",
+    "meaning": "lặp đi lặp lại",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "natural habitats",
+    "phonetic": "/ˈnætʃrəl ˈhæbɪtæts/",
+    "type": "n",
+    "meaning": "môi trường sống tự nhiên",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "primates",
+    "phonetic": "/ˈpraɪmeɪts/",
+    "type": "n",
+    "meaning": "động vật linh trưởng",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "apes",
+    "phonetic": "/eɪps/",
+    "type": "n",
+    "meaning": "loài vượn",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "gorillas",
+    "phonetic": "/ɡəˈrɪləz/",
+    "type": "n",
+    "meaning": "khỉ đột",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "disrupted",
+    "phonetic": "/dɪsˈrʌptɪd/",
+    "type": "v",
+    "meaning": "bị phá vỡ",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "violent",
+    "phonetic": "/ˈvaɪələnt/",
+    "type": "adj",
+    "meaning": "bạo lực",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "hierarchical",
+    "phonetic": "/ˌhaɪəˈrɑːkɪkl/",
+    "type": "adj",
+    "meaning": "có thứ bậc, tôn ti",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "the same thing",
+    "phonetic": "/ðə seɪm θɪŋ/",
+    "type": "phr",
+    "meaning": "điều tương tự",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "happened to",
+    "phonetic": "/ˈhæpənd tuː/",
+    "type": "v.phr",
+    "meaning": "xảy ra với",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "end of",
+    "phonetic": "/end əv/",
+    "type": "n.phr",
+    "meaning": "sự kết thúc của",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "advent of",
+    "phonetic": "/ˈædvent əv/",
+    "type": "n.phr",
+    "meaning": "sự ra đời của",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "farming",
+    "phonetic": "/ˈfɑːmɪŋ/",
+    "type": "n",
+    "meaning": "nông nghiệp",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "connected to",
+    "phonetic": "/kəˈnektɪd tuː/",
+    "type": "v.phr",
+    "meaning": "gắn với",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "occurred",
+    "phonetic": "/əˈkɜːd/",
+    "type": "v",
+    "meaning": "xảy ra",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "sense of individuality",
+    "phonetic": "/sens əv ˌɪndɪˌvɪdʒuˈæləti/",
+    "type": "n",
+    "meaning": "ý thức cá nhân",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "separateness",
+    "phonetic": "/ˈseprətnəs/",
+    "type": "n",
+    "meaning": "sự tách biệt",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "ultimately",
+    "phonetic": "/ˈʌltɪmətli/",
+    "type": "adv",
+    "meaning": "cuối cùng",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "patriarchy",
+    "phonetic": "/ˈpeɪtriɑːki/",
+    "type": "n",
+    "meaning": "chế độ phụ hệ",
+    "VocabType": "NOUN"
+  },
+  {
+    "word": "at any rate",
+    "phonetic": "/æt ˈeni reɪt/",
+    "type": "phr",
+    "meaning": "dù sao đi nữa",
+    "VocabType": "PHRASE"
+  },
+  {
+    "word": "appear to have developed",
+    "phonetic": "/əˈpɪə tu həv dɪˈveləpt/",
+    "type": "v.phr",
+    "meaning": "có vẻ đã phát triển",
+    "VocabType": "VERB"
+  },
+  {
+    "word": "recently",
+    "phonetic": "/ˈriːsntli/",
+    "type": "adv",
+    "meaning": "gần đây",
+    "VocabType": "ADVERB"
+  },
+  {
+    "word": "feasible",
+    "phonetic": "/ˈfiːzəbl/",
+    "type": "adj",
+    "meaning": "khả thi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "adaptive",
+    "phonetic": "/əˈdæptɪv/",
+    "type": "adj",
+    "meaning": "mang tính thích nghi",
+    "VocabType": "ADJECTIVE"
+  },
+  {
+    "word": "evolutionary terms",
+    "phonetic": "/ˌiːvəˈluːʃənri tɜːmz/",
+    "type": "n",
+    "meaning": "khái niệm tiến hóa",
+    "VocabType": "NOUN"
+  }
+];
+
+async function ensureSystemUser() {
+  const systemUser = await prisma.user.findFirst({ where: { email: 'system@ielts-app.local' } });
+  if (systemUser) return systemUser.idUser;
+  const created = await prisma.user.create({
+    data: {
+      email: 'system@ielts-app.local',
+      nameUser: 'System',
+      password: 'SYSTEM_PLACEHOLDER',
+      role: 'ADMIN',
+      isActive: true,
+      accountType: 'LOCAL',
+      gender: 'Male',
+    },
+  });
+  return created.idUser;
+}
+
+async function seed() {
+  console.log('=== Seeding 1662 Cambridge IELTS 19 words ===');
+  const systemUserId = await ensureSystemUser();
+
+  const existing = await prisma.vocabulary.findMany({ where: { tier: 3 }, select: { word: true } });
+  const existingWords = new Set(existing.map(w => w.word.toLowerCase()));
+
+  const newWords = CAMBRIDGE_IELTS_19.filter(w => !existingWords.has(w.word.toLowerCase()));
+  console.log('New words to insert: ' + newWords.length);
+
+  let inserted = 0;
+  for (let i = 0; i < newWords.length; i += 100) {
+    const batch = newWords.slice(i, i + 100);
+    await prisma.vocabulary.createMany({
+      data: batch.map((w, idx) => ({
+        word: w.word,
+        phonetic: w.phonetic,
+        meaning: w.meaning,
+        VocabType: w.VocabType,
+        level: 'High',
+        tier: 3,
+        frequencyRank: 5001 + i + idx,
+        idUser: systemUserId,
+        status: 'new',
+      })),
+      skipDuplicates: true,
+    });
+    inserted += batch.length;
+    console.log('Progress: ' + inserted + '/' + newWords.length);
+  }
+
+  console.log('Done! Inserted ' + inserted + ' words');
+  await prisma.$disconnect();
+}
+
+seed().catch(console.error);

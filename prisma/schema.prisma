@@ -7,81 +7,53 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================================================
-// USER & AUTH
-// ============================================================================
-
 model User {
-  idUser      String      @id @default(uuid())
-  nameUser    String?
-  email       String      @unique
-  password    String
-  phoneNumber String?
-  address     String?
-  role        Role        @default(USER)
-  avatar      String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  accountType AccountType @default(LOCAL)
-  isActive    Boolean     @default(false)
-  gender      Gender      @default(Male)
-
-  // Gamification
-  level         Level     @default(Low)
-  xp            Int       @default(0)
-  xpToNext      Int       @default(100)
-  currentStreak Int       @default(0)
-  lastStudiedAt DateTime?
-  longestStreak Int       @default(0)
-
-  // IELTS targets
-  targetBandScore Float?
-  targetExamDate  DateTime?
-
-  // Relations
-  verificationCodes       VerificationCode[]
-  tests                   Test[]
-  userTestResults         UserTestResult[]
-  userAnswers             UserAnswer[]
-  userWritingSubmissions  UserWritingSubmission[]
-  userSpeakingSubmissions UserSpeakingSubmission[]
-
-  // Vocabulary & Grammar
-  topics            Topic[]
-  vocabularies      Vocabulary[]
-  grammarCategories GrammarCategory[]
-
-  // Credits
-  creditBalance      CreditBalance?
-  creditTransactions CreditTransaction[]
-
-  // Subscriptions
-  subscriptions UserSubscription[]
-
-  // Payments
-  paymentTransactions PaymentTransaction[]
-
-  // Forum
-  forumThreads      ForumThreads[]
-  forumPosts        ForumPost[]
-  forumComments     ForumComment[]
-  forumPostLikes    ForumPostLikes[]
-  forumCommentLikes ForumCommentLikes[]
-
-  // Teacher Review
-  teacherReviewTickets    TeacherReviewTicket[]
-  teacherReviewTicketsAsTeacher TeacherReviewTicket[] @relation("TeacherReviewTickets")
-
-  // Study Planner
-  userDailyTaskCompletions UserDailyTaskCompletion[]
-  userStudyPreference      UserStudyPreference[]
-
-  // Question Type Performance
-  questionTypePerformances QuestionTypePerformance[]
-
-  // Grammar Tracking
-  grammarProficiencies UserGrammarProficiency[]
-  grammarViolations  UserGrammarViolation[]
+  idUser                        String                    @id @default(uuid())
+  nameUser                      String?
+  email                         String                    @unique
+  password                      String
+  phoneNumber                   String?
+  address                       String?
+  role                          Role                      @default(USER)
+  avatar                        String?
+  createdAt                     DateTime                  @default(now())
+  updatedAt                     DateTime                  @updatedAt
+  accountType                   AccountType               @default(LOCAL)
+  isActive                      Boolean                   @default(false)
+  gender                        Gender                    @default(Male)
+  level                         Level                     @default(Low)
+  xp                            Int                       @default(0)
+  xpToNext                      Int                       @default(100)
+  currentStreak                 Int                       @default(0)
+  lastStudiedAt                 DateTime?
+  longestStreak                 Int                       @default(0)
+  targetBandScore               Float?
+  targetExamDate                DateTime?
+  creditBalance                 CreditBalance?
+  creditTransactions            CreditTransaction[]
+  forumComments                 ForumComment[]
+  forumCommentLikes             ForumCommentLikes[]
+  forumPosts                    ForumPost[]
+  forumPostLikes                ForumPostLikes[]
+  forumThreads                  ForumThreads[]
+  grammarCategories             GrammarCategory[]
+  paymentTransactions           PaymentTransaction[]
+  questionTypePerformances      QuestionTypePerformance[]
+  teacherReviewTicketsAsTeacher TeacherReviewTicket[]     @relation("TeacherReviewTickets")
+  teacherReviewTickets          TeacherReviewTicket[]
+  tests                         Test[]
+  topics                        Topic[]
+  userAnswers                   UserAnswer[]
+  grammarProficiencies          UserGrammarProficiency[]
+  grammarViolations             UserGrammarViolation[]
+  userSpeakingSubmissions       UserSpeakingSubmission[]
+  subscriptions                 UserSubscription[]
+  userTestResults               UserTestResult[]
+  userWritingSubmissions        UserWritingSubmission[]
+  verificationCodes             VerificationCode[]
+  vocabularies                  Vocabulary[]
+  userDailyTaskCompletions      UserDailyTaskCompletion[]
+  userStudyPreference           UserStudyPreference?
 }
 
 model VerificationCode {
@@ -94,48 +66,45 @@ model VerificationCode {
   user       User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 }
 
-// ============================================================================
-// EXAM CORE — Test → Part → Passage / QuestionGroup → Question
-// ============================================================================
-
 model Test {
-  idTest         String   @id @default(uuid())
-  idUser         String
-  title          String
-  description    String?
-  img            String?
-  testType       TestType
-  duration       Int /// Total duration in seconds
-  numberQuestion Int /// Total number of questions
-  audioUrl       String? /// Master audio URL (for Listening tests)
-  level          Level    @default(Low)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relations
-  user            User             @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  idTest          String           @id @default(uuid())
+  idUser          String
+  title           String
+  description     String?
+  img             String?
+  testType        TestType
+  /// Total duration in seconds
+  duration        Int
+  /// Total number of questions
+  numberQuestion  Int
+  /// Master audio URL (for Listening tests)
+  audioUrl        String?
+  level           Level            @default(Low)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   parts           Part[]
-  writingTasks    WritingTask[]
   speakingTasks   SpeakingTask[]
+  user            User             @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   userTestResults UserTestResult[]
+  writingTasks    WritingTask[]
 
   @@index([testType, level])
 }
 
 model Part {
-  idPart    String   @id @default(uuid())
-  idTest    String
-  namePart  String /// e.g. "Part 1", "Section 1"
-  order     Int      @default(0)
-  audioUrl  String? /// Part-level audio (for Listening)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
+  idPart         String          @id @default(uuid())
+  idTest         String
+  /// e.g. "Part 1", "Section 1"
+  namePart       String
+  order          Int             @default(0)
+  /// Part-level audio (for Listening)
+  audioUrl       String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   test           Test            @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
   passage        Passage?
-  questionGroups QuestionGroup[]
   questions      Question[]
+  questionGroups QuestionGroup[]
 
   @@unique([idTest, order])
   @@index([idTest])
@@ -145,16 +114,16 @@ model Passage {
   idPassage       String   @id @default(uuid())
   idPart          String   @unique
   title           String
-  content         String /// Full passage text (HTML/Markdown)
+  /// Full passage text (HTML/Markdown)
+  content         String
   image           String?
   description     String?
-  audioUrl        String? /// Passage-level audio (for Listening passages)
+  /// Passage-level audio (for Listening passages)
+  audioUrl        String?
   numberParagraph Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
-  // Relations
-  part Part @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
+  part            Part     @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
 }
 
 /// A group of questions sharing the same type and instructions.
@@ -162,17 +131,19 @@ model Passage {
 model QuestionGroup {
   idQuestionGroup String       @id @default(uuid())
   idPart          String
-  title           String /// Group heading shown to students
-  instructions    String? /// Detailed instructions for the group
-  questionType    QuestionType /// All questions in this group share this type
-  imageUrl        String? /// Image for the group (e.g. map, diagram)
+  /// Group heading shown to students
+  title           String
+  /// Detailed instructions for the group
+  instructions    String?
+  /// All questions in this group share this type
+  questionType    QuestionType
+  /// Image for the group (e.g. map, diagram)
+  imageUrl        String?
   order           Int          @default(0)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
-
-  // Relations
-  part      Part       @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
-  questions Question[]
+  questions       Question[]
+  part            Part         @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
 
   @@index([idPart, order])
 }
@@ -182,358 +153,321 @@ model QuestionGroup {
 /// (options, correct answers, coordinates, word banks, etc.).
 /// Use the `questionType` discriminator to interpret the metadata.
 model Question {
-  idQuestion      String       @id @default(uuid())
+  idQuestion      String        @id @default(uuid())
   idQuestionGroup String
   idPart          String
-  questionNumber  Int /// Global question number within the test
-  content         String /// Question text / prompt
-  questionType    QuestionType /// Discriminator — mirrors the group type but can differ
-  metadata        Json         @db.JsonB /// Type-specific payload (see TS interfaces)
-  order           Int          @default(0)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  // Relations
-  questionGroup QuestionGroup @relation(fields: [idQuestionGroup], references: [idQuestionGroup], onDelete: Cascade)
-  part          Part          @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
-  userAnswers   UserAnswer[]
+  /// Global question number within the test
+  questionNumber  Int
+  /// Question text / prompt
+  content         String
+  /// Discriminator — mirrors the group type but can differ
+  questionType    QuestionType
+  /// Type-specific payload (see TS interfaces)
+  metadata        Json
+  order           Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  part            Part          @relation(fields: [idPart], references: [idPart], onDelete: Cascade)
+  questionGroup   QuestionGroup @relation(fields: [idQuestionGroup], references: [idQuestionGroup], onDelete: Cascade)
+  userAnswers     UserAnswer[]
 
   @@index([idQuestionGroup, order])
   @@index([idPart, questionNumber])
 }
 
-// ============================================================================
-// EXAM CORE — Writing & Speaking Task Definitions
-// ============================================================================
-
 model WritingTask {
-  idWritingTask String          @id @default(uuid())
-  idTest        String
-  title         String
-  taskType      WritingTaskType
-  timeLimit     Int /// Time limit in seconds
-  image         String? /// Stimulus image (charts, graphs for Task 1)
-  instructions  String? /// Task instructions
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-
-  // Relations
-  test                   Test                    @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  idWritingTask          String                  @id @default(uuid())
+  idTest                 String
+  title                  String
+  taskType               WritingTaskType
+  /// Time limit in seconds
+  timeLimit              Int
+  /// Stimulus image (charts, graphs for Task 1)
+  image                  String?
+  /// Task instructions
+  instructions           String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
   userWritingSubmissions UserWritingSubmission[]
+  test                   Test                    @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
 }
 
 model SpeakingTask {
-  idSpeakingTask String           @id @default(uuid())
-  idTest         String
-  title          String
-  part           SpeakingPartType
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-
-  // Relations
-  test            Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  idSpeakingTask  String                   @id @default(uuid())
+  idTest          String
+  title           String
+  part            SpeakingPartType
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
   questions       SpeakingQuestion[]
+  test            Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
   userSubmissions UserSpeakingSubmission[]
 
   @@unique([idTest, part])
 }
 
 model SpeakingQuestion {
-  idSpeakingQuestion String  @id @default(uuid())
+  idSpeakingQuestion String       @id @default(uuid())
   idSpeakingTask     String
-  topic              String? /// e.g. "Hometown", "Work/Study"
-  prompt             String? /// Question text
-  subPrompts         Json? /// Cue card bullet points (Part 2)
-  preparationTime    Int     @default(0)
-  speakingTime       Int     @default(120)
-  order              Int     @default(0)
-
-  // Relations
-  speakingTask SpeakingTask @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
+  /// e.g. "Hometown", "Work/Study"
+  topic              String?
+  /// Question text
+  prompt             String?
+  /// Cue card bullet points (Part 2)
+  subPrompts         Json?
+  preparationTime    Int          @default(0)
+  speakingTime       Int          @default(120)
+  order              Int          @default(0)
+  speakingTask       SpeakingTask @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
 
   @@index([idSpeakingTask, order])
 }
 
-// ============================================================================
-// USER TEST RESULTS & ANSWERS
-// ============================================================================
-
 model UserTestResult {
-  idTestResult   String     @id @default(uuid())
-  idUser         String
-  idTest         String
-  score          Int?       @default(0) /// Raw score (out of 40 for R/L)
-  totalCorrect   Int?       @default(0)
-  totalQuestions Int?       @default(0)
-  rawScore       Int?       @default(0)
-  bandScore      Float      @default(0)
-  duration       Int        @default(0) /// Actual time spent in seconds
-  status         TestStatus @default(IN_PROGRESS)
-  level          Level      @default(Low)
-  startedAt      DateTime   @default(now())
-  finishedAt     DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-
-  // Relations
-  user                 User                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  test                 Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
-  userAnswers          UserAnswer[]
-  writingSubmissions   UserWritingSubmission[]
-  speakingSubmissions  UserSpeakingSubmission[]
+  idTestResult         String                   @id @default(uuid())
+  idUser               String
+  idTest               String
+  /// Raw score (out of 40 for R/L)
+  score                Int?                     @default(0)
+  totalCorrect         Int?                     @default(0)
+  totalQuestions       Int?                     @default(0)
+  rawScore             Int?                     @default(0)
+  bandScore            Float                    @default(0)
+  /// Actual time spent in seconds
+  duration             Int                      @default(0)
+  status               TestStatus               @default(IN_PROGRESS)
+  level                Level                    @default(Low)
+  startedAt            DateTime                 @default(now())
+  finishedAt           DateTime?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
   teacherReviewTickets TeacherReviewTicket[]
+  userAnswers          UserAnswer[]
+  speakingSubmissions  UserSpeakingSubmission[]
+  test                 Test                     @relation(fields: [idTest], references: [idTest], onDelete: Cascade)
+  user                 User                     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  writingSubmissions   UserWritingSubmission[]
 
   @@index([idUser, status, finishedAt])
   @@index([idTest, createdAt])
 }
 
 model UserAnswer {
-  idUserAnswer  String       @id @default(uuid())
+  idUserAnswer  String         @id @default(uuid())
   idUser        String
   idQuestion    String
   idTestResult  String
-  answerType    QuestionType /// Mirrors the question type for easy filtering
-  answerPayload Json         @db.JsonB /// Structured answer (text, selected option index, matching pairs, etc.)
-  isCorrect     Boolean      @default(false)
-  submittedAt   DateTime     @default(now())
-
-  // Relations
-  user       User           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  question   Question       @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
-  testResult UserTestResult @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
+  /// Mirrors the question type for easy filtering
+  answerType    QuestionType
+  /// Structured answer (text, selected option index, matching pairs, etc.)
+  answerPayload Json
+  isCorrect     Boolean        @default(false)
+  submittedAt   DateTime       @default(now())
+  question      Question       @relation(fields: [idQuestion], references: [idQuestion], onDelete: Cascade)
+  testResult    UserTestResult @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
+  user          User           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@unique([idQuestion, idUser, idTestResult])
   @@index([idTestResult, isCorrect])
 }
 
-// ============================================================================
-// ASYNC SUBMISSIONS — Writing (AI-graded via RabbitMQ)
-// ============================================================================
-
 model UserWritingSubmission {
-  idWritingSubmission String  @id @default(uuid())
+  idWritingSubmission String          @id @default(uuid())
   idUser              String
   idWritingTask       String
   idTestResult        String?
-
-  submissionText String /// The student's essay
-
-  // Async grading state machine
-  aiGradingStatus    GradingStatus @default(PENDING)
-  aiOverallScore     Float? /// Band score (0.0 – 9.0)
-  aiDetailedFeedback Json?         @db.JsonB /// { ta, cc, lr, gra } with scores + comments
-  submittedAt        DateTime      @default(now())
-  gradedAt           DateTime? /// Set when AI worker returns result
-
-  // Relations
-  user        User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  writingTask WritingTask     @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
-  testResult  UserTestResult? @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
-
-  // Credits - FK stored here, relation via idWritingSubmission in CreditTransaction
+  /// The student's essay
+  submissionText      String
+  aiGradingStatus     GradingStatus   @default(PENDING)
+  /// Band score (0.0 – 9.0)
+  aiOverallScore      Float?
+  /// { ta, cc, lr, gra } with scores + comments
+  aiDetailedFeedback  Json?
+  submittedAt         DateTime        @default(now())
+  /// Set when AI worker returns result
+  gradedAt            DateTime?
   idCreditTransaction String?
+  testResult          UserTestResult? @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
+  user                User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  writingTask         WritingTask     @relation(fields: [idWritingTask], references: [idWritingTask], onDelete: Cascade)
 
   @@index([idUser, aiGradingStatus, submittedAt])
-  @@index([aiGradingStatus]) // For worker polling
+  @@index([aiGradingStatus])
 }
 
-// ============================================================================
-// ASYNC SUBMISSIONS — Speaking (AI-graded via RabbitMQ)
-// ============================================================================
-
 model UserSpeakingSubmission {
-  idSpeakingSubmission String  @id @default(uuid())
+  idSpeakingSubmission String          @id @default(uuid())
   idUser               String
   idSpeakingTask       String
   idTestResult         String?
-
-  audioUrl   String /// Uploaded audio file URL
-  transcript String? /// AI-generated transcript
-
-  // Async grading state machine
-  aiGradingStatus    GradingStatus @default(PENDING)
-  aiOverallScore     Float? /// Band score (0.0 – 9.0)
-  aiDetailedFeedback Json?         @db.JsonB /// { fc, lr, gra, pronunciation } with scores + comments
-  submittedAt        DateTime      @default(now())
-  gradedAt           DateTime? /// Set when AI worker returns result
-
-  // Relations
-  user         User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  speakingTask SpeakingTask    @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
-  testResult   UserTestResult? @relation(fields: [idTestResult], references: [idTestResult])
-
-  // Credits - FK stored here, relation via idSpeakingSubmission in CreditTransaction
-  idCreditTransaction String?
+  /// Uploaded audio file URL
+  audioUrl             String
+  /// AI-generated transcript
+  transcript           String?
+  aiGradingStatus      GradingStatus   @default(PENDING)
+  /// Band score (0.0 – 9.0)
+  aiOverallScore       Float?
+  /// { fc, lr, gra, pronunciation } with scores + comments
+  aiDetailedFeedback   Json?
+  submittedAt          DateTime        @default(now())
+  /// Set when AI worker returns result
+  gradedAt             DateTime?
+  idCreditTransaction  String?
+  speakingTask         SpeakingTask    @relation(fields: [idSpeakingTask], references: [idSpeakingTask], onDelete: Cascade)
+  testResult           UserTestResult? @relation(fields: [idTestResult], references: [idTestResult])
+  user                 User            @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@index([idUser, aiGradingStatus, submittedAt])
-  @@index([aiGradingStatus]) // For worker polling
+  @@index([aiGradingStatus])
 }
 
-// ============================================================================
-// VOCABULARY & GRAMMAR
-// ============================================================================
-
 model Vocabulary {
-  idVocab       String    @id @default(uuid())
-  word          String
-  phonetic      String?
-  meaning       String
-  example       String?
-  VocabType     VocabType
-  level         Level?
-  correctStreak Int       @default(0)
-  lastReviewed  DateTime?
-  xp            Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  idUser        String
-  idTopic       String?
-
-  // SM-2 Spaced Repetition
-  timesReviewed    Int       @default(0)
-  easinessFactor   Float     @default(2.5)
-  interval         Int       @default(1) // days until next review
-  nextReviewAt     DateTime?
-  status           String    @default("new") // new|learning|review|mastered
-
-  // Vocabulary Tier System (1: high-freq 3k words, 2: AWL 570 words, 3: specialized)
-  tier            Int @default(1)
-  frequencyRank   Int?
-
-  // Relations
-  topic Topic? @relation(fields: [idTopic], references: [idTopic], onDelete: Cascade)
-  user  User   @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  idVocab        String    @id @default(uuid())
+  word           String
+  phonetic       String?
+  meaning        String
+  example        String?
+  VocabType      VocabType
+  level          Level?
+  correctStreak  Int       @default(0)
+  lastReviewed   DateTime?
+  xp             Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  idUser         String
+  idTopic        String?
+  timesReviewed  Int       @default(0)
+  easinessFactor Float     @default(2.5)
+  interval       Int       @default(1)
+  nextReviewAt   DateTime?
+  status         String    @default("new")
+  tier           Int       @default(1)
+  frequencyRank  Int?
+  topic          Topic?    @relation(fields: [idTopic], references: [idTopic], onDelete: Cascade)
+  user           User      @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 }
 
 model Topic {
-  idTopic   String   @id @default(uuid())
-  nameTopic String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  idUser    String
-
-  // Relations
+  idTopic    String       @id @default(uuid())
+  nameTopic  String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  idUser     String
   user       User         @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   vocabulary Vocabulary[]
 }
 
 model GrammarCategory {
-  idGrammarCategory String   @id @default(uuid())
+  idGrammarCategory String                 @id @default(uuid())
   name              String
   description       String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
   idUser            String?
-
-  // Relations
-  user     User?                  @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  grammars GrammarsOnCategories[]
+  user              User?                  @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  grammars          GrammarsOnCategories[]
 
   @@unique([idUser, name])
 }
 
 model Grammar {
-  idGrammar      String   @id @default(uuid())
+  idGrammar      String                   @id @default(uuid())
   title          String
   explanation    String
-  level          Level    @default(Low)
+  level          Level                    @default(Low)
   commonMistakes Json?
   examples       Json?
-  order          Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relations
-  categories GrammarsOnCategories[]
-  exercises GrammarExercise[]
-  proficiencies UserGrammarProficiency[]
-  violations UserGrammarViolation[]
+  order          Int                      @default(0)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  exercises      GrammarExercise[]
+  categories     GrammarsOnCategories[]
+  proficiencies  UserGrammarProficiency[]
+  violations     UserGrammarViolation[]
 }
 
 model GrammarsOnCategories {
   idGrammarCategory String
   idGrammar         String
-  assignedAt        DateTime @default(now())
+  assignedAt        DateTime        @default(now())
   assignedBy        String
-
-  // Relations
-  category GrammarCategory @relation(fields: [idGrammarCategory], references: [idGrammarCategory], onDelete: Cascade)
-  grammar  Grammar         @relation(fields: [idGrammar], references: [idGrammar], onDelete: Cascade)
+  category          GrammarCategory @relation(fields: [idGrammarCategory], references: [idGrammarCategory], onDelete: Cascade)
+  grammar           Grammar         @relation(fields: [idGrammar], references: [idGrammar], onDelete: Cascade)
 
   @@id([idGrammarCategory, idGrammar])
 }
 
 model GrammarExercise {
-  id        String   @id @default(uuid())
-  idGrammar String
-  type      String   // "error_correction" | "transformation" | "cloze" | "multiple_choice"
-  content   Json
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-
-  grammar   Grammar  @relation(fields: [idGrammar], references: [idGrammar], onDelete: Cascade)
+  id          String                      @id @default(uuid())
+  idGrammar   String
+  type        String
+  content     Json
+  order       Int                         @default(0)
+  createdAt   DateTime                    @default(now())
+  grammar     Grammar                     @relation(fields: [idGrammar], references: [idGrammar], onDelete: Cascade)
   userResults UserGrammarExerciseResult[]
 }
 
 model UserGrammarProficiency {
-  idUser      String
-  idGrammar   String
-  proficiency String   // "unknown" | "weak" | "medium" | "strong"
-  totalAttempts Int @default(0)
-  correctCount  Int @default(0)
-  wrongCount    Int @default(0)
-  updatedAt   DateTime @updatedAt
-
-  grammar     Grammar  @relation(fields: [idGrammar], references: [idGrammar])
-  user        User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  idUser        String
+  idGrammar     String
+  proficiency   String
+  totalAttempts Int      @default(0)
+  correctCount  Int      @default(0)
+  wrongCount    Int      @default(0)
+  updatedAt     DateTime @updatedAt
+  violations    Int      @default(0)
+  grammar       Grammar  @relation(fields: [idGrammar], references: [idGrammar])
+  user          User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@id([idUser, idGrammar])
 }
 
 model UserGrammarViolation {
-  id            String @id @default(uuid())
-  idUser        String
-  source        String // "WRITING" | "SPEAKING"
-  idGrammar     String
-
-  submissionId  String
-  userSentence String
+  id                String   @id @default(uuid())
+  idUser            String
+  source            String
+  idGrammar         String
+  submissionId      String
+  userSentence      String
   correctedSentence String
-
-  createdAt DateTime @default(now())
-
-  grammar    Grammar @relation(fields: [idGrammar], references: [idGrammar])
-  user      User    @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  grammar           Grammar  @relation(fields: [idGrammar], references: [idGrammar])
+  user              User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@index([idUser, idGrammar])
 }
 
 model UserGrammarExerciseResult {
-  id          String   @id @default(uuid())
+  id          String          @id @default(uuid())
   idUser      String
   idExercise  String
   answer      String
   isCorrect   Boolean
-  attemptedAt DateTime @default(now())
-
+  attemptedAt DateTime        @default(now())
   exercise    GrammarExercise @relation(fields: [idExercise], references: [id])
 }
 
-// ============================================================================
-// FORUM
-// ============================================================================
+model UserGrammarExerciseSR {
+  id           String   @id @default(uuid())
+  idUser       String
+  idExercise   String
+  interval     Int      @default(1)
+  nextReviewAt DateTime
+  easeFactor   Float    @default(2.5)
+
+  @@unique([idUser, idExercise])
+}
 
 model ForumThreads {
-  idForumThreads String   @id @default(uuid())
+  idForumThreads String      @id @default(uuid())
   idUser         String
   title          String
   content        String
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-
-  // Relations
-  user      User        @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  forumPost ForumPost[]
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+  forumPost      ForumPost[]
+  user           User        @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 }
 
 model ForumPost {
@@ -542,81 +476,67 @@ model ForumPost {
   idUser           String
   content          String
   file             String?
-  moderationStatus ForumModerationStatus @default(PENDING)
-  moderationScore  Int?
-  moderationMeta   Json?                 @db.JsonB
-  reviewedBy       String?
-  reviewedAt       DateTime?
   created_at       DateTime              @default(now())
   updated_at       DateTime              @updatedAt
-
-  // Relations
-  forumThreads   ForumThreads     @relation(fields: [idForumThreads], references: [idForumThreads], onDelete: Cascade)
-  user           User             @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  forumComment   ForumComment[]
-  forumPostLikes ForumPostLikes[]
+  moderationStatus ForumModerationStatus @default(PENDING)
+  moderationScore  Int?
+  moderationMeta   Json?
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  forumComment     ForumComment[]
+  forumThreads     ForumThreads          @relation(fields: [idForumThreads], references: [idForumThreads], onDelete: Cascade)
+  user             User                  @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  forumPostLikes   ForumPostLikes[]
 
   @@index([idForumThreads, created_at])
   @@index([moderationStatus, created_at])
 }
 
 model ForumComment {
-  idForumComment String   @id @default(uuid())
-  idForumPost    String
-  idUser         String
-  content        String
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-
-  // Relations
+  idForumComment    String              @id @default(uuid())
+  idForumPost       String
+  idUser            String
+  content           String
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
   forumPost         ForumPost           @relation(fields: [idForumPost], references: [idForumPost], onDelete: Cascade)
   user              User                @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
   forumCommentLikes ForumCommentLikes[]
 }
 
 model ForumPostLikes {
-  idForumPostLikes String   @id @default(uuid())
+  idForumPostLikes String    @id @default(uuid())
   idForumPost      String
   idUser           String
-  created_at       DateTime @default(now())
-
-  // Relations
-  forumPost ForumPost @relation(fields: [idForumPost], references: [idForumPost], onDelete: Cascade)
-  user      User      @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  created_at       DateTime  @default(now())
+  forumPost        ForumPost @relation(fields: [idForumPost], references: [idForumPost], onDelete: Cascade)
+  user             User      @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@unique([idForumPost, idUser])
 }
 
 model ForumCommentLikes {
-  idForumCommentLikes String   @id @default(uuid())
+  idForumCommentLikes String       @id @default(uuid())
   idForumComment      String
   idUser              String
-  created_at          DateTime @default(now())
-
-  // Relations
-  forumComment ForumComment @relation(fields: [idForumComment], references: [idForumComment], onDelete: Cascade)
-  user         User         @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  created_at          DateTime     @default(now())
+  forumComment        ForumComment @relation(fields: [idForumComment], references: [idForumComment], onDelete: Cascade)
+  user                User         @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@unique([idForumComment, idUser])
 }
 
-// ============================================================================
-// CREDITS & MONETIZATION
-// ============================================================================
-
 model CreditPackage {
-  idPackage    String   @id @default(uuid())
-  name         String   @unique
-  description  String?
-  creditAmount Int
-  price        Float
-  priceUnit    String   @default("VND") // VND, USD
-  isActive     Boolean  @default(true)
-  sortOrder    Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
+  idPackage           String               @id @default(uuid())
+  name                String               @unique
+  description         String?
+  creditAmount        Int
+  price               Float
+  priceUnit           String               @default("VND")
+  isActive            Boolean              @default(true)
+  sortOrder           Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   transactions        CreditTransaction[]
   paymentTransactions PaymentTransaction[]
 
@@ -624,20 +544,18 @@ model CreditPackage {
 }
 
 model CreditBalance {
-  idUser        String @id @default(uuid())
-  totalCredits  Int    @default(0)
-  usedCredits   Int    @default(0)
-  frozenCredits Int    @default(0) // Reserved for pending submissions
-
-  // Relations
-  user         User                @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  transactions CreditTransaction[]
+  idUser        String              @id @default(uuid())
+  totalCredits  Int                 @default(0)
+  usedCredits   Int                 @default(0)
+  frozenCredits Int                 @default(0)
+  user          User                @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  transactions  CreditTransaction[]
 
   @@index([idUser])
 }
 
 model CreditTransaction {
-  idTransaction        String            @id @default(uuid())
+  idTransaction        String              @id @default(uuid())
   idUser               String
   idPackage            String?
   creditsAmount        Int
@@ -645,129 +563,196 @@ model CreditTransaction {
   description          String?
   idWritingSubmission  String?
   idSpeakingSubmission String?
-  status               CreditTransStatus @default(PENDING)
-  createdAt            DateTime          @default(now())
-
-  // Relations
-  user                User           @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  package             CreditPackage? @relation(fields: [idPackage], references: [idPackage])
-  creditBalance       CreditBalance? @relation(fields: [creditBalanceIdUser], references: [idUser])
-  creditBalanceIdUser String?
-  paymentTransaction  PaymentTransaction?
+  status               CreditTransStatus   @default(PENDING)
+  createdAt            DateTime            @default(now())
+  creditBalanceIdUser  String?
+  creditBalance        CreditBalance?      @relation(fields: [creditBalanceIdUser], references: [idUser])
+  package              CreditPackage?      @relation(fields: [idPackage], references: [idPackage])
+  user                 User                @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  paymentTransaction   PaymentTransaction?
 
   @@index([idUser, createdAt])
   @@index([transactionType, createdAt])
 }
 
-// ============================================================================
-// SUBSCRIPTION (Pay-as-you-go credits + Subscription tiers)
-// ============================================================================
-
 model SubscriptionPackage {
-  idPackage    String       @id @default(uuid())
-  name         String       @unique // "Monthly Pro", "Annual Premium"
-  description  String?
-  billingCycle BillingCycle @default(MONTHLY) // MONTHLY, ANNUAL
-  price        Float
-  priceUnit    String       @default("VND")
-  creditsQuota Int          @default(0) // 0 = unlimited
-  features     String[] // ["AI Writing", "AI Speaking", "Priority Queue"]
-  badge        String? // "Popular", "Best Value"
-  isActive     Boolean      @default(true)
-  isFeatured   Boolean      @default(false)
-  sortOrder    Int          @default(0)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  // Relations
-  subscriptions       UserSubscription[]
+  idPackage           String               @id @default(uuid())
+  name                String               @unique
+  description         String?
+  billingCycle        BillingCycle         @default(MONTHLY)
+  price               Float
+  priceUnit           String               @default("VND")
+  creditsQuota        Int                  @default(0)
+  features            String[]
+  badge               String?
+  isActive            Boolean              @default(true)
+  isFeatured          Boolean              @default(false)
+  sortOrder           Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   paymentTransactions PaymentTransaction[]
+  subscriptions       UserSubscription[]
 
   @@index([isActive, sortOrder])
   @@index([billingCycle])
 }
 
 model UserSubscription {
-  idSubscription String             @id @default(uuid())
-  idUser         String
-  idPackage      String
-  status         SubscriptionStatus @default(ACTIVE)
-  startedAt      DateTime           @default(now())
-  expiresAt      DateTime // End of billing period
-  nextBillingAt  DateTime? // For recurring billing
-  autoRenew      Boolean            @default(true)
-
-  // Quota tracking (for limited subscriptions)
-  creditsUsedThisPeriod  Int @default(0)
-  creditsQuotaThisPeriod Int @default(0)
-
-  // Payment
-  paymentRef    String? // Payment gateway reference
-  paymentMethod PaymentMethod? // MOMO, VNPAY, STRIPE, etc.
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user    User                @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  package SubscriptionPackage @relation(fields: [idPackage], references: [idPackage])
-  paymentTransaction PaymentTransaction?
+  idSubscription         String              @id @default(uuid())
+  idUser                 String
+  idPackage              String
+  status                 SubscriptionStatus  @default(ACTIVE)
+  startedAt              DateTime            @default(now())
+  expiresAt              DateTime
+  nextBillingAt          DateTime?
+  autoRenew              Boolean             @default(true)
+  creditsUsedThisPeriod  Int                 @default(0)
+  creditsQuotaThisPeriod Int                 @default(0)
+  paymentRef             String?
+  paymentMethod          PaymentMethod?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  paymentTransaction     PaymentTransaction?
+  package                SubscriptionPackage @relation(fields: [idPackage], references: [idPackage])
+  user                   User                @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@index([idUser, status])
   @@index([expiresAt])
 }
 
-// ============================================================================
-// PAYMENT (VNPay/MoMo/etc. attempts — single source of truth)
-// ============================================================================
-
 model PaymentTransaction {
-  idTransaction         String             @id @default(uuid())
+  idTransaction         String               @id @default(uuid())
   idUser                String
   packageType           PaymentPackageType
   idCreditPackage       String?
   idSubscriptionPackage String?
-  amount                Float // in VND
-  priceUnit             String             @default("VND")
-  paymentMethod         PaymentMethod      @default(VNPAY)
-  status                PaymentStatus      @default(PENDING)
-
-  // VNPay-specific (kept here so we don't grow another table)
-  vnpTxnRef        String  @unique // e.g. "CREDIT_<idUser>_<idPackage>_<ts>"
-  vnpTransactionNo String? // VNPay's own transaction id (vnp_TransactionNo)
-  vnpResponseCode  String? // "00" = success
-  vnpBankCode      String?
-  vnpPayDate       String? // raw vnp_PayDate string from VNPay
-  rawCallback      Json? // full IPN/return payload for audit
-
-  // Result links — populated only after successful IPN
-  idCreditTransaction String? @unique
-  idSubscription      String? @unique
-
-  ipAddress    String?
-  errorMessage String?
-  createdAt    DateTime  @default(now())
-  paidAt       DateTime?
-  updatedAt    DateTime  @updatedAt
-
-  // Relations
-  user                User                 @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-  creditPackage       CreditPackage?       @relation(fields: [idCreditPackage], references: [idPackage])
-  subscriptionPackage SubscriptionPackage? @relation(fields: [idSubscriptionPackage], references: [idPackage])
-  creditTransaction   CreditTransaction?   @relation(fields: [idCreditTransaction], references: [idTransaction])
-  subscription        UserSubscription?    @relation(fields: [idSubscription], references: [idSubscription])
+  amount                Float
+  priceUnit             String               @default("VND")
+  paymentMethod         PaymentMethod        @default(VNPAY)
+  status                PaymentStatus        @default(PENDING)
+  vnpTxnRef             String               @unique
+  vnpTransactionNo      String?
+  vnpResponseCode       String?
+  vnpBankCode           String?
+  vnpPayDate            String?
+  rawCallback           Json?
+  idCreditTransaction   String?              @unique
+  idSubscription        String?              @unique
+  ipAddress             String?
+  errorMessage          String?
+  createdAt             DateTime             @default(now())
+  paidAt                DateTime?
+  updatedAt             DateTime             @updatedAt
+  creditPackage         CreditPackage?       @relation(fields: [idCreditPackage], references: [idPackage])
+  creditTransaction     CreditTransaction?   @relation(fields: [idCreditTransaction], references: [idTransaction])
+  subscriptionPackage   SubscriptionPackage? @relation(fields: [idSubscriptionPackage], references: [idPackage])
+  subscription          UserSubscription?    @relation(fields: [idSubscription], references: [idSubscription])
+  user                  User                 @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@index([idUser, status])
   @@index([status, createdAt])
   @@index([vnpTxnRef])
 }
 
+model TeacherReviewTicket {
+  idTicket         String              @id @default(uuid())
+  idTestResult     String
+  idUser           String
+  type             ReviewType
+  status           TeacherReviewStatus @default(PENDING)
+  aiBandScore      Float?
+  aiFeedback       Json?
+  idTeacher        String?
+  claimedAt        DateTime?
+  teacherBandScore Float?
+  teacherFeedback  Json?
+  submittedAt      DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  commissionAmount Float?
+  teacher          User?               @relation("TeacherReviewTickets", fields: [idTeacher], references: [idUser])
+  testResult       UserTestResult      @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade)
+  user             User                @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([idTeacher, status])
+  @@index([idUser, status])
+}
+
+model SystemConfig {
+  idConfig   String     @id @unique
+  value      Json
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  assignMode AssignMode @default(MANUAL)
+}
+
+model AuditLog {
+  idAuditLog  String   @id @default(uuid())
+  actorId     String
+  actorName   String?
+  actorRole   Role
+  action      String
+  targetType  String
+  targetId    String?
+  beforeValue Json?
+  afterValue  Json?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+model QuestionTypePerformance {
+  id            String    @id @default(uuid())
+  idUser        String
+  skillType     String
+  questionType  String
+  totalAttempts Int       @default(0)
+  correctCount  Int       @default(0)
+  errorRate     Float     @default(0)
+  lastAttemptAt DateTime?
+  user          User      @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+
+  @@unique([idUser, skillType, questionType])
+}
+
+model UserDailyTaskCompletion {
+  id          String    @id @default(uuid())
+  idUser      String
+  idStudyPlan String
+  taskType    String
+  date        DateTime  @db.Date
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  user        User      @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+
+  @@unique([idUser, idStudyPlan, taskType, date])
+  @@map("user_daily_task_completion")
+}
+
+model UserStudyPreference {
+  id                    String   @id @default(uuid())
+  idUser                String   @unique
+  dailyMinutesAvailable Int      @default(60)
+  updatedAt             DateTime @updatedAt
+  currentStage          String   @default("FOUNDATION")
+  weeksInCurrentStage   Int      @default(0)
+  stageStartDate        DateTime @default(now())
+  user                  User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+
+  @@map("user_study_preference")
+}
+
 enum PaymentStatus {
-  PENDING // URL generated, waiting for callback
-  SUCCESS // IPN verified, provisioning done
-  FAILED // VNPay returned non-"00" or signature invalid
-  EXPIRED // 15-min window passed without callback
-  REFUNDED // Manual reversal
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
+  REFUNDED
 }
 
 enum PaymentPackageType {
@@ -776,20 +761,20 @@ enum PaymentPackageType {
 }
 
 enum CreditTransType {
-  PURCHASE // User mua package
-  USED_WRITING // Dùng cho writing submission
-  USED_SPEAKING // Dùng cho speaking submission
-  REFUND // Hoàn credit (grading fail)
-  EXPIRY // Credit hết hạn
-  BONUS // Credit bonus (promotion, referral)
-  ADMIN_ADJUST // Admin điều chỉnh
+  PURCHASE
+  USED_WRITING
+  USED_SPEAKING
+  REFUND
+  EXPIRY
+  BONUS
+  ADMIN_ADJUST
 }
 
 enum CreditTransStatus {
-  PENDING // Đang xử lý
-  COMPLETED // Hoàn tất
-  FAILED // Thất bại
-  CANCELLED // Bị hủy
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
 
 enum BillingCycle {
@@ -798,10 +783,10 @@ enum BillingCycle {
 }
 
 enum SubscriptionStatus {
-  ACTIVE // Đang sử dụng, quota còn
-  EXPIRED // Hết hạn (không renew được)
-  CANCELLED // User hủy
-  SUSPENDED // Admin suspend
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  SUSPENDED
 }
 
 enum PaymentMethod {
@@ -809,12 +794,8 @@ enum PaymentMethod {
   VNPAY
   STRIPE
   BANK_TRANSFER
-  ADMIN_CREDIT // Admin tặng
+  ADMIN_CREDIT
 }
-
-// ============================================================================
-// ENUMS
-// ============================================================================
 
 enum Role {
   USER
@@ -894,10 +875,14 @@ enum SpeakingPartType {
 
 /// Async grading state machine for AI Worker (RabbitMQ)
 enum GradingStatus {
-  PENDING /// Submission received, queued
-  GRADING /// AI Worker is processing
-  COMPLETED /// Grading finished successfully
-  FAILED /// Grading failed (retry or manual review)
+  /// Submission received, queued
+  PENDING
+  /// AI Worker is processing
+  GRADING
+  /// Grading finished successfully
+  COMPLETED
+  /// Grading failed (retry or manual review)
+  FAILED
 }
 
 enum ForumModerationStatus {
@@ -933,125 +918,4 @@ enum TeacherReviewStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
-}
-
-model TeacherReviewTicket {
-  idTicket         String              @id @default(uuid())
-  idTestResult     String
-  idUser           String
-  type             ReviewType
-  status           TeacherReviewStatus @default(PENDING)
-  aiBandScore      Float?
-  aiFeedback       Json?
-  idTeacher        String?
-  claimedAt        DateTime?
-  teacherBandScore Float?
-  teacherFeedback  Json?
-  submittedAt      DateTime?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  commissionAmount Float?
-
-  // Relations
-  testResult UserTestResult @relation(fields: [idTestResult], references: [idTestResult], onDelete: Cascade, onUpdate: Cascade)
-  user       User           @relation(fields: [idUser], references: [idUser], onDelete: Cascade, onUpdate: Cascade)
-  teacher    User?          @relation("TeacherReviewTickets", fields: [idTeacher], references: [idUser], onDelete: SetNull, onUpdate: Cascade)
-
-  @@index([status, createdAt])
-  @@index([idTeacher, status])
-  @@index([idUser, status])
-}
-
-// ============================================================================
-// SYSTEM CONFIG - Lưu cấu hình hệ thống (commission, assign mode, etc.)
-// ============================================================================
-
-model SystemConfig {
-  idConfig     String     @id // VD: "teacher_review_commission", "assign_mode"
-  value        Json       // VD: { "writing": 50000, "speaking": 40000 }
-  assignMode   AssignMode @default(MANUAL) // Chỉ dùng cho assign_mode record
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  @@unique([idConfig])
-}
-
-// ============================================================================
-// AUDIT LOG - Immutable record of admin actions
-// ============================================================================
-
-model AuditLog {
-  idAuditLog   String    @id @default(uuid())
-  actorId      String    // idUser of who performed the action
-  actorName    String?   // denormalized for readability
-  actorRole    Role      // ADMIN, GIAOVIEN, USER
-  action       String    // e.g., "MODERATION_POLICY_UPDATE", "FORUM_POST_REVIEW"
-  targetType   String    // e.g., "SystemConfig", "ForumPost", "User"
-  targetId     String?   // id of the affected entity
-  beforeValue  Json?     // snapshot before change (null for creates)
-  afterValue   Json?     // snapshot after change (null for deletes)
-  metadata     Json?     @db.JsonB // extra context (ip, user-agent, etc.)
-  createdAt    DateTime  @default(now())
-
-  @@index([actorId, createdAt])
-  @@index([action, createdAt])
-  @@index([targetType, targetId])
-  @@index([createdAt])
-}
-
-// ============================================================================
-// QUESTION TYPE PERFORMANCE
-// ============================================================================
-
-model QuestionTypePerformance {
-  id            String @id @default(uuid())
-  idUser        String
-  skillType     String // "READING" | "LISTENING"
-  questionType  String // QuestionType enum values
-
-  // Stats
-  totalAttempts Int @default(0)
-  correctCount  Int @default(0)
-
-  // Computed
-  errorRate     Float @default(0)
-
-  lastAttemptAt DateTime?
-
-  user     User    @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-
-  @@unique([idUser, skillType, questionType])
-}
-
-// ============================================================================
-// STUDY PLANNER
-// ============================================================================
-
-model UserDailyTaskCompletion {
-  id          String    @id @default(uuid())
-  idUser      String
-  idStudyPlan String
-  taskType    String    // 'READING' | 'LISTENING' | 'WRITING' | 'SPEAKING' | 'VOCABULARY' | 'GRAMMAR'
-  date        DateTime  @db.Date
-  completed   Boolean   @default(false)
-  completedAt DateTime?
-
-  user        User      @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-
-  @@unique([idUser, idStudyPlan, taskType, date])
-  @@map("user_daily_task_completion")
-}
-
-model UserStudyPreference {
-  id                    String   @id @default(uuid())
-  idUser                String   @unique
-  dailyMinutesAvailable Int      @default(60)
-  currentStage          String   @default("FOUNDATION")
-  weeksInCurrentStage   Int      @default(0)
-  stageStartDate        DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  user User @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
-
-  @@map("user_study_preference")
 }

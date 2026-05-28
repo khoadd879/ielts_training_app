@@ -49,6 +49,21 @@ export class UserTestResultController {
     return this.userTestResultService.findAllTestResultByIdUser(idUser);
   }
 
+  @Get('get-skill-status/:idUser')
+  @ApiOperation({
+    summary: 'Lấy trạng thái assessment của 4 kỹ năng',
+    description: 'Trả về nhanh trạng thái đã làm/chưa làm và band của từng skill IELTS',
+  })
+  @ApiParam({
+    name: 'idUser',
+    description: 'ID của người dùng',
+    example: 'uuid-user-1',
+  })
+  @ApiResponse({ status: 200, description: 'Lấy trạng thái skill thành công' })
+  getSkillStatus(@Param('idUser') idUser: string) {
+    return this.userTestResultService.getSkillStatus(idUser);
+  }
+
   @Get('get-test-result/:idTestResult')
   @ApiOperation({
     summary: 'Lấy kết quả bài test theo ID',
