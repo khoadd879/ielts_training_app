@@ -417,6 +417,7 @@ model UserGrammarProficiency {
   wrongCount         Int      @default(0)
   updatedAt          DateTime @updatedAt
   violations         Int      @default(0)
+  correctUsages      Int      @default(0)
   consecutiveCorrect Int      @default(0)
   grammar            Grammar  @relation(fields: [idGrammar], references: [idGrammar])
   user               User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
