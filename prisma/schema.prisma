@@ -409,16 +409,17 @@ model GrammarExercise {
 }
 
 model UserGrammarProficiency {
-  idUser        String
-  idGrammar     String
-  proficiency   String
-  totalAttempts Int      @default(0)
-  correctCount  Int      @default(0)
-  wrongCount    Int      @default(0)
-  updatedAt     DateTime @updatedAt
-  violations    Int      @default(0)
-  grammar       Grammar  @relation(fields: [idGrammar], references: [idGrammar])
-  user          User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+  idUser             String
+  idGrammar          String
+  proficiency        String
+  totalAttempts      Int      @default(0)
+  correctCount       Int      @default(0)
+  wrongCount         Int      @default(0)
+  updatedAt          DateTime @updatedAt
+  violations         Int      @default(0)
+  consecutiveCorrect Int      @default(0)
+  grammar            Grammar  @relation(fields: [idGrammar], references: [idGrammar])
+  user               User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@id([idUser, idGrammar])
 }

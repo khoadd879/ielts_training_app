@@ -146,18 +146,35 @@ export class GrammarService {
   }
 
   // Calculate proficiency level based on violations and exercise results
-  private calculateProficiency(violations: number, correctCount: number, totalAttempts: number, consecutiveCorrect: number): string {
-    if (violations === 0 && (totalAttempts === 0 || correctCount === 0)) {
-      return 'unknown';
-    }
-    const exerciseScore = totalAttempts > 0 ? (correctCount / totalAttempts) * 0.3 : 0;
-    const violationScore = violations * 0.7;
-    const consecutiveBonus = Math.min(consecutiveCorrect * 0.05, 0.2);
-    const totalScore = violationScore + exerciseScore - consecutiveBonus;
+  private calculateProficiency(violations: number, correctCount: number, totalAttempts: number, consecutiveCorrect: number): { level: string, reason: string } {
 
-    if (totalScore > 0.5) return 'weak';
-    if (totalScore > 0.2) return 'medium';
-    return 'strong';
+    if (totalAttempts < 3 && violations === 0 && consecutiveCorrect < 3) {
+      return { level: 'unknown', reason: 'Chưa đủ data' };
+    }
+
+    const accuracy = totalAttempts > 0 ? correctCount / totalAttempts : 0;
+    const accuracyPercent = Math.round(accuracy * 100);
+
+    // ✨ HOÀN THÀNH: streak >= 10 OR (streak >= 5 AND accuracy >= 90%)
+    if (consecutiveCorrect >= 10 || (consecutiveCorrect >= 5 && accuracy >= 0.9)) {
+      return { level: 'hoàn thành', reason: `Streak ${consecutiveCorrect} đúng liên tiếp` };
+    }
+
+    // 🟢 TỐT: streak >= 5 OR (streak >= 3 AND accuracy >= 80%)
+    if (consecutiveCorrect >= 5 || (consecutiveCorrect >= 3 && accuracy >= 0.8)) {
+      return { level: 'tốt', reason: `Streak ${consecutiveCorrect} đúng, accuracy ${accuracyPercent}%` };
+    }
+
+    // 🟡 TRUNG BÌNH: accuracy >= 50% OR streak >= 3
+    if (accuracy >= 0.5 || consecutiveCorrect >= 3) {
+      return { level: 'trung bình', reason: `Accuracy ${accuracyPercent}%` };
+    }
+
+    // 🔴 CẦN CẢI THIỆN
+    if (violations > 0) {
+      return { level: 'cần cải thiện', reason: `Còn ${violations} violations chưa khắc phục` };
+    }
+    return { level: 'cần cải thiện', reason: `Sai nhiều (${accuracyPercent}%)` };
   }
 
   async getDashboard(idUser: string) {
@@ -189,7 +206,7 @@ export class GrammarService {
     const topicsWithProficiency = allTopics.map(topic => {
       const prof = profMap.get(topic.idGrammar);
       const violationCount = violationsMap.get(topic.idGrammar) || 0;
-      const proficiency = this.calculateProficiency(
+      const { level, reason } = this.calculateProficiency(
         violationCount,
         prof?.correctCount || 0,
         prof?.totalAttempts || 0,
@@ -199,10 +216,13 @@ export class GrammarService {
         idGrammar: topic.idGrammar,
         title: topic.title,
         level: topic.level,
-        proficiency,
+        proficiency: level,
+        reason,
         violations: violationCount,
         exercisesWrong: prof?.wrongCount || 0,
-        exercisesCorrect: prof?.correctCount || 0
+        exercisesCorrect: prof?.correctCount || 0,
+        accuracy: (prof?.totalAttempts ?? 0) > 0 ? Math.round(((prof?.correctCount ?? 0) / (prof?.totalAttempts ?? 1)) * 100) : 0,
+        streak: prof?.consecutiveCorrect || 0
       };
     });
 
@@ -214,7 +234,7 @@ export class GrammarService {
 
     // Calculate overall progress
     const total = allTopics.length;
-    const mastered = topicsWithProficiency.filter(t => t.proficiency === 'strong').length;
+    const mastered = topicsWithProficiency.filter(t => t.proficiency === 'hoàn thành').length;
     const percentage = total > 0 ? Math.round((mastered / total) * 100) : 0;
 
     return {
@@ -444,7 +464,7 @@ export class GrammarService {
     });
     if (!prof) return;
 
-    const level = this.calculateProficiency(
+    const { level } = this.calculateProficiency(
       prof.violations,
       prof.correctCount,
       prof.totalAttempts,
