@@ -63,15 +63,37 @@ export class SupabaseService {
     }
   }
 
-  // Helper to create embedding
+  // Helper to create embedding using Gemini API (768 dim to match DB schema)
   private async createEmbedding(text: string): Promise<number[]> {
-    const Groq = require('groq-sdk');
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY_1 || process.env.GROQ_API_KEY });
-    const response = await groq.embeddings.create({
-      model: 'embed-english-v2',
-      input: text
-    });
-    return response.data[0]?.embedding || [];
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.warn('GEMINI_API_KEY not set, embedding disabled');
+      return [];
+    }
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'models/gemini-embedding-001',
+            content: { parts: [{ text }] },
+            outputDimensionality: 768,
+          }),
+        }
+      );
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('Gemini embedding error:', response.status, errText);
+        return [];
+      }
+      const data: any = await response.json();
+      return data?.embedding?.values ?? [];
+    } catch (err) {
+      console.error('Gemini embedding fetch failed:', err);
+      return [];
+    }
   }
 
   private buildSearchTerms(query: string): string[] {

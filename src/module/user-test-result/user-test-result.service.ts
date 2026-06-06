@@ -407,19 +407,31 @@ export class UserTestResultService {
   }
 
   private gradeTFNG(payload: any, metadata: any): boolean {
-    const correctAnswer = metadata.correctAnswer?.toUpperCase()?.trim();
+    const correctAnswer = (metadata.correctAnswer ?? metadata.answer)?.toUpperCase()?.trim();
     const userAnswer = payload.answer?.toUpperCase()?.trim();
     return correctAnswer === userAnswer;
   }
 
   private gradeMatchingHeading(payload: any, metadata: any): boolean {
-    const correctIndex = metadata.correctHeadingIndex;
-    const headings = metadata.headings ?? [];
-    if (correctIndex == null || !headings[correctIndex]) return false;
+    // Format 1: correctHeadingIndex + headings[] (each with .label)
+    if (typeof metadata.correctHeadingIndex === 'number' && Array.isArray(metadata.headings)) {
+      const correctIndex = metadata.correctHeadingIndex;
+      if (!metadata.headings[correctIndex]) return false;
+      const selectedLabel = payload.selectedLabel?.trim()?.toUpperCase();
+      const correctLabel = metadata.headings[correctIndex]?.label?.trim()?.toUpperCase();
+      return selectedLabel === correctLabel;
+    }
 
-    const selectedLabel = payload.selectedLabel?.trim()?.toUpperCase();
-    const correctLabel = headings[correctIndex]?.label?.trim()?.toUpperCase();
-    return selectedLabel === correctLabel;
+    // Format 2: correctHeading (string) + headingBank[]
+    if (metadata.correctHeading && Array.isArray(metadata.headingBank)) {
+      const correctIndex = metadata.headingBank.indexOf(metadata.correctHeading);
+      if (correctIndex === -1) return false;
+      const selectedLabel = payload.selectedLabel?.trim()?.toUpperCase();
+      const correctLabel = metadata.headingBank[correctIndex]?.trim()?.toUpperCase();
+      return selectedLabel === correctLabel;
+    }
+
+    return false;
   }
 
   private gradeMatchingInformation(payload: any, metadata: any): boolean {

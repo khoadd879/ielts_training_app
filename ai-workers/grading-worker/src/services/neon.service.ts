@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 export class NeonService {
   private prisma: PrismaClient;
@@ -18,7 +18,7 @@ export class NeonService {
     data: {
       aiGradingStatus: 'COMPLETED' | 'FAILED';
       aiOverallScore: number;
-      aiDetailedFeedback: Prisma.InputJsonValue;
+      aiDetailedFeedback: any;
       gradedAt: Date;
     },
   ): Promise<void> {
@@ -34,7 +34,7 @@ export class NeonService {
       aiGradingStatus: 'COMPLETED' | 'FAILED';
       transcript?: string;
       aiOverallScore: number;
-      aiDetailedFeedback: Prisma.InputJsonValue;
+      aiDetailedFeedback: any;
       gradedAt: Date;
     },
   ): Promise<void> {

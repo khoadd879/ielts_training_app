@@ -1,19 +1,14 @@
 import {
-  BadGatewayException,
   BadRequestException,
   Injectable,
 } from '@nestjs/common';
 import { CreatePartDto } from './dto/create-part.dto';
 import { UpdatePartDto } from './dto/update-part.dto';
 import { DatabaseService } from 'src/database/database.service';
-import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class PartService {
-  constructor(
-    private readonly databaseService: DatabaseService,
-    private readonly userService: UsersService,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
   async create(createPartDto: CreatePartDto) {
     const { idTest, namePart, order, audioUrl } = createPartDto;
 
@@ -52,6 +47,21 @@ export class PartService {
     const data = await this.databaseService.part.findMany({
       where: { idTest },
       orderBy: { order: 'asc' },
+      include: {
+        // N+1 optimization: include counts so frontend can compute offsets without per-part fetches
+        _count: {
+          select: {
+            questionGroups: true,
+            questions: true,
+          },
+        },
+        // Include passage existence for Reading parts
+        passage: {
+          select: {
+            idPassage: true,
+          },
+        },
+      },
     });
 
     return {
@@ -62,7 +72,7 @@ export class PartService {
   }
 
   async findOne(idPart: string) {
-    const data = await this.databaseService.part.findMany({
+    const data = await this.databaseService.part.findUnique({
       where: {
         idPart,
       },
@@ -77,7 +87,7 @@ export class PartService {
       },
     });
 
-    if (!data || data.length === 0) throw new BadRequestException('Part not found');
+    if (!data) throw new BadRequestException('Part not found');
 
     return {
       message: 'Part retrieved successfully',
@@ -89,12 +99,14 @@ export class PartService {
   async update(idPart: string, updatePartDto: UpdatePartDto) {
     const { idTest, namePart, order, audioUrl } = updatePartDto;
 
-    const existingTest = await this.databaseService.test.findUnique({
-      where: { idTest },
-    });
+    if (idTest) {
+      const existingTest = await this.databaseService.test.findUnique({
+        where: { idTest },
+      });
 
-    if (!existingTest) {
-      throw new BadRequestException('Test not found');
+      if (!existingTest) {
+        throw new BadRequestException('Test not found');
+      }
     }
 
     const existingPart = await this.databaseService.part.findUnique({
@@ -106,7 +118,7 @@ export class PartService {
       },
     });
 
-    if (!existingPart) return new BadRequestException('Part not found');
+    if (!existingPart) throw new BadRequestException('Part not found');
     const data = await this.databaseService.part.update({
       where: { idPart },
       data: {

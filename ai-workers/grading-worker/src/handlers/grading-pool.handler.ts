@@ -13,6 +13,13 @@ const RETRY_CONFIG = {
 const GRADING_MODEL = 'llama-3.3-70b-versatile';
 const TRANSCRIPTION_MODEL = 'whisper-large-v3';
 
+async function downloadAudioBuffer(url: string): Promise<Buffer> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to download audio: ${response.status}`);
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
 interface GradingPoolConfig {
   pool: AIKeyPool;
 }
@@ -178,12 +185,13 @@ export async function processSpeakGradingWithPool(
 
       try {
         console.log(`Transcribing audio for: ${msg.submissionId}`);
-        const response = await groq.chat.completions.create({
+        const audioBuffer = await downloadAudioBuffer(msg.audioUrl);
+        const audioFile = new File([audioBuffer], 'audio.webm', { type: 'audio/webm' });
+        const audioResponse = await groq.audio.transcriptions.create({
+          file: audioFile,
           model: TRANSCRIPTION_MODEL,
-          messages: [{ role: 'user', content: 'Transcribe this audio' }],
         });
-
-        transcript = response.choices[0]?.message?.content || '';
+        transcript = audioResponse.text || '';
         pool.recordSuccess(activeKey.name);
         console.log(`Transcription completed: ${transcript.substring(0, 50)}...`);
         break;

@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Level, TestType } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateTestDto {
+  @IsString()
   @IsNotEmpty()
   @ApiProperty({ example: '123' })
   idUser: string;
@@ -21,15 +22,18 @@ export class CreateTestDto {
   description: string;
 
   @ApiProperty({ example: 60 })
-  @IsNotEmpty({ message: 'Duration is required' })
+  @IsInt()
+  @Min(1)
   duration: number;
 
   @ApiProperty({ example: 'Mid', enum: Level })
   @IsEnum(Level)
+  @IsNotEmpty({ message: 'Level is required' })
   level: Level;
 
   @ApiProperty({ example: 10 })
-  @IsNotEmpty({ message: 'Number of questions is required' })
+  @IsInt()
+  @Min(1)
   numberQuestion: number;
 
   @ApiProperty({ example: 'http://example.com/image.png' })
@@ -37,5 +41,7 @@ export class CreateTestDto {
   img: string;
 
   @ApiProperty({ example: 'http://example.com/audio.mp4' })
+  @IsOptional()
+  @IsString()
   audioUrl: string;
 }

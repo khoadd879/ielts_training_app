@@ -44,6 +44,7 @@ export class QuestionController {
   }
 
   @Patch('update-question/:idQuestion')
+  @UsePipes(ValidateMetadataPipe)
   update(
     @Param('idQuestion') idQuestion: string,
     @Body() updateQuestionDto: UpdateQuestionDto,

@@ -58,17 +58,47 @@ export class ForumCommentService {
     };
   }
 
-  async findAllByIdPost(idForumPost: string) {
+  async findAllByIdPost(idForumPost: string, idUser?: string) {
     await this.existingForumPost(idForumPost);
 
-    const data = await this.databaseService.forumComment.findMany({
-      where: {
-        idForumPost,
+    const comments = await this.databaseService.forumComment.findMany({
+      where: { idForumPost },
+      orderBy: { created_at: 'asc' },
+      include: {
+        user: {
+          select: {
+            idUser: true,
+            nameUser: true,
+            avatar: true,
+          },
+        },
+        _count: {
+          select: { forumCommentLikes: true },
+        },
+        ...(idUser
+          ? {
+              forumCommentLikes: {
+                where: { idUser },
+                select: { idUser: true },
+              },
+            }
+          : {}),
       },
     });
 
+    const data = comments.map((c) => {
+      const { _count, forumCommentLikes, user, ...rest } = c;
+      return {
+        ...rest,
+        author: user,
+        likeCount: _count?.forumCommentLikes ?? 0,
+        isLikedByCurrentUser:
+          Array.isArray(forumCommentLikes) && forumCommentLikes.length > 0,
+      };
+    });
+
     return {
-      message: 'Forum Thread retrieved successfully',
+      message: 'Forum comments retrieved successfully',
       data,
       status: 200,
     };

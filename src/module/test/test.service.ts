@@ -49,7 +49,7 @@ export class TestService {
       where: { idUser },
     });
     if (!existingUser) {
-      throw new BadRequestException('User not found');
+      throw new NotFoundException('User not found');
     }
 
     let imageUrl = img;
@@ -96,22 +96,25 @@ export class TestService {
     }
 
     // Tạo test trong DB
-    const data = await this.databaseService.test.create({
-      data: {
-        idUser,
-        testType,
-        title,
-        description,
-        level,
-        duration: Number(duration),
-        numberQuestion: Number(numberQuestion),
-        img: imageUrl,
-        audioUrl: audio,
-      },
+    const data = await this.databaseService.$transactionWithRetry(async (tx) => {
+      return tx.test.create({
+        data: {
+          idUser,
+          testType,
+          title,
+          description,
+          level,
+          duration: Number(duration),
+          numberQuestion: Number(numberQuestion),
+          img: imageUrl,
+          audioUrl: audio,
+        },
+      });
     });
 
     await Promise.all([
       this.cache.del(`tests_user_${idUser}`),
+      this.cache.del(`test_${data.idTest}`),
       this.cache.del('tests_all'),
     ]);
 
@@ -163,7 +166,32 @@ export class TestService {
       };
     }
 
-    const data = await this.databaseService.test.findMany();
+    // Fetch tests with their attempt count and average band score.
+    // This avoids touching the DB schema — we compute aggregates on read.
+    const [tests, bandAgg] = await Promise.all([
+      this.databaseService.test.findMany({
+        include: {
+          _count: {
+            select: { userTestResults: true },
+          },
+        },
+      }),
+      this.databaseService.userTestResult.groupBy({
+        by: ['idTest'],
+        where: { status: 'FINISHED' },
+        _avg: { bandScore: true },
+      }),
+    ]);
+
+    const avgByTest = new Map(
+      bandAgg.map((row) => [row.idTest, row._avg.bandScore ?? null]),
+    );
+
+    const data = tests.map((t) => ({
+      ...t,
+      attempts: t._count?.userTestResults ?? 0,
+      avgBand: avgByTest.get(t.idTest) ?? null,
+    }));
 
     await this.cache.set(cacheKey, data, 3600); // cache 1 giờ
     return {
@@ -623,6 +651,11 @@ export class TestService {
       },
     });
 
+    await Promise.all([
+      this.cache.del(`tests_user_${dto.idUser}`),
+      this.cache.del('tests_all'),
+    ]);
+
     return {
       message: 'Writing test created successfully',
       data,
@@ -680,6 +713,11 @@ export class TestService {
         },
       },
     });
+
+    await Promise.all([
+      this.cache.del(`tests_user_${dto.idUser}`),
+      this.cache.del('tests_all'),
+    ]);
 
     return {
       message: 'Speaking test created successfully',

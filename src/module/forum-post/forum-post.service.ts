@@ -138,6 +138,20 @@ export class ForumPostService {
     }
   }
 
+  // States where a moderator can still issue a review decision.
+  // APPROVED/REJECTED mean a moderator already decided and the post is "closed"
+  // (use moderator-delete to remove it instead of re-reviewing).
+  // AUTO_APPROVED is filtered out of the queue entirely; the moderator can only
+  // delete it if it is wrong.
+  private isReviewableStatus(status: ForumModerationStatus) {
+    return (
+      status === ForumModerationStatus.PENDING ||
+      status === ForumModerationStatus.NEEDS_REVIEW ||
+      status === ForumModerationStatus.AUTO_REJECTED ||
+      status === ForumModerationStatus.CHANGES_REQUESTED
+    );
+  }
+
   private buildModerationView(post: {
     moderationStatus: ForumModerationStatus;
     moderationScore: number | null;
@@ -488,12 +502,18 @@ ${content}
     const data = await this.databaseService.forumPost.findMany({
       where: {
         idForumThreads,
-        moderationStatus: {
-          in: [
-            ForumModerationStatus.AUTO_APPROVED,
-            ForumModerationStatus.APPROVED,
-          ],
-        },
+        OR: [
+          {
+            moderationStatus: {
+              in: [
+                ForumModerationStatus.AUTO_APPROVED,
+                ForumModerationStatus.APPROVED,
+              ],
+            },
+          },
+          // Author always sees their own posts (incl. pending/rejected)
+          { idUser },
+        ],
       },
       orderBy: { created_at: 'desc' },
       include: {
@@ -644,7 +664,12 @@ ${content}
     const data = await this.databaseService.forumPost.findMany({
       where: {
         moderationStatus: {
-          not: ForumModerationStatus.AUTO_APPROVED,
+          in: [
+            ForumModerationStatus.PENDING,
+            ForumModerationStatus.NEEDS_REVIEW,
+            ForumModerationStatus.AUTO_REJECTED,
+            ForumModerationStatus.CHANGES_REQUESTED,
+          ],
         },
       },
       orderBy: {
@@ -695,6 +720,66 @@ ${content}
     };
   }
 
+  async getModerationHistory(idUser: string) {
+    const reviewer = await this.existingUser(idUser);
+    if (!this.isModeratorRole(reviewer.role)) {
+      throw new ForbiddenException(
+        'You are not allowed to access moderation history',
+      );
+    }
+
+    const data = await this.databaseService.forumPost.findMany({
+      where: {
+        moderationStatus: {
+          in: [ForumModerationStatus.APPROVED, ForumModerationStatus.REJECTED],
+        },
+      },
+      orderBy: { reviewedAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            idUser: true,
+            nameUser: true,
+            avatar: true,
+          },
+        },
+        forumThreads: {
+          select: {
+            idForumThreads: true,
+            title: true,
+          },
+        },
+        _count: {
+          select: {
+            forumPostLikes: true,
+            forumComment: true,
+          },
+        },
+      },
+    });
+
+    const transformedData = data.map((post) => ({
+      idForumPost: post.idForumPost,
+      idForumThreads: post.idForumThreads,
+      threadTitle: post.forumThreads?.title,
+      idUser: post.idUser,
+      content: post.content,
+      file: post.file,
+      created_at: post.created_at,
+      updated_at: post.updated_at,
+      user: post.user,
+      likeCount: post._count.forumPostLikes,
+      commentCount: post._count.forumComment,
+      moderation: this.buildModerationView(post),
+    }));
+
+    return {
+      message: 'Moderation history retrieved successfully',
+      data: transformedData,
+      status: 200,
+    };
+  }
+
   async reviewForumPost(
     idForumPost: string,
     reviewForumPostDto: ReviewForumPostDto,
@@ -711,6 +796,12 @@ ${content}
     });
 
     if (!existingPost) throw new BadRequestException('Forum post not found');
+
+    if (!this.isReviewableStatus(existingPost.moderationStatus)) {
+      throw new BadRequestException(
+        'Bài viết đã được duyệt trước đó, không thể duyệt lại. Dùng xóa bài nếu cần gỡ.',
+      );
+    }
 
     const now = new Date();
     const currentMeta =
@@ -760,6 +851,57 @@ ${content}
 
     return {
       message: 'Forum post deleted successfully',
+      status: 200,
+    };
+  }
+
+  // Moderator-only delete: use to remove AI-approved posts that turned out to
+  // be wrong (spam, abusive, off-topic). Records the action in moderationMeta
+  // so there is an audit trail in the post record before deletion.
+  async moderatorRemoveForumPost(idForumPost: string, idUser: string, note?: string) {
+    const reviewer = await this.existingUser(idUser);
+    if (!this.isModeratorRole(reviewer.role)) {
+      throw new ForbiddenException('You are not allowed to delete forum posts');
+    }
+
+    const existing = await this.databaseService.forumPost.findUnique({
+      where: { idForumPost },
+    });
+    if (!existing) throw new BadRequestException('Forum post not found');
+
+    const currentMeta =
+      (existing.moderationMeta as ForumModerationMeta | null) || {};
+    const now = new Date();
+    const auditMeta: ForumModerationMeta = {
+      ...currentMeta,
+      note: note?.trim() || currentMeta.note || null,
+      evaluatedAt: currentMeta.evaluatedAt ?? now.toISOString(),
+    };
+
+    // Persist audit trail on the record before deletion so we have a log
+    // (best-effort — we ignore failure here so deletion still proceeds).
+    try {
+      await this.databaseService.forumPost.update({
+        where: { idForumPost },
+        data: {
+          moderationStatus: ForumModerationStatus.REJECTED,
+          moderationMeta: auditMeta,
+          reviewedBy: reviewer.nameUser || reviewer.email || reviewer.idUser,
+          reviewedAt: now,
+        },
+      });
+    } catch (e) {
+      this.logger.warn(
+        `Failed to write audit trail before moderator-delete: ${(e as Error).message}`,
+      );
+    }
+
+    await this.databaseService.forumPost.delete({
+      where: { idForumPost },
+    });
+
+    return {
+      message: 'Forum post deleted by moderator successfully',
       status: 200,
     };
   }

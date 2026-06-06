@@ -72,6 +72,11 @@ export class ForumPostController {
     return this.forumPostService.getModerationQueue(idUser);
   }
 
+  @Get('moderation-history/:idUser')
+  getModerationHistory(@Param('idUser') idUser: string) {
+    return this.forumPostService.getModerationHistory(idUser);
+  }
+
   @Patch('moderation-review/:idForumPost')
   reviewForumPost(
     @Param('idForumPost') idForumPost: string,
@@ -124,5 +129,18 @@ export class ForumPostController {
     @Body('idUser') idUser: string,
   ) {
     return this.forumPostService.removeForumPost(idForumPost, idUser);
+  }
+
+  @Delete('moderator-delete-forum-post/:idForumPost/:idUser')
+  moderatorRemove(
+    @Param('idForumPost') idForumPost: string,
+    @Param('idUser') idUser: string,
+    @Body('note') note?: string,
+  ) {
+    return this.forumPostService.moderatorRemoveForumPost(
+      idForumPost,
+      idUser,
+      note,
+    );
   }
 }

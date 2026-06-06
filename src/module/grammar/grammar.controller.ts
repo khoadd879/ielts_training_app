@@ -59,6 +59,19 @@ export class GrammarController {
     return this.grammarService.findAllInUserCategory(idGrammarCategory, idUser);
   }
 
+  @Get('learning-summary/:idUser')
+  learningSummary(@Param('idUser') idUser: string) {
+    return this.grammarService.getLearningSummary(idUser);
+  }
+
+  @Get('learning-topics/:idUser/:idGrammarCategory')
+  learningTopics(
+    @Param('idUser') idUser: string,
+    @Param('idGrammarCategory') idGrammarCategory: string,
+  ) {
+    return this.grammarService.getLearningTopics(idUser, idGrammarCategory);
+  }
+
   @Post('add-grammar-to-category/:idGrammarCategory/:idGrammar/:idUser')
   addGrammarToCategory(
     @Param('idGrammarCategory') idGrammarCategory: string,

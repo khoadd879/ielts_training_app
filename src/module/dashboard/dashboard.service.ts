@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { Role, TestStatus, TestType } from '@prisma/client';
+import { Role, TeacherReviewStatus, TestStatus, TestType } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 
 type SkillType = 'LISTENING' | 'READING' | 'WRITING' | 'SPEAKING';
@@ -44,53 +44,94 @@ export class DashboardService {
         now.getMonth() + 1,
         1,
       );
+      const startOfDay = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      );
+      const sevenDaysAgo = new Date(
+        now.getTime() - 7 * 24 * 60 * 60 * 1000,
+      );
+      const fourteenDaysAgo = new Date(
+        now.getTime() - 14 * 24 * 60 * 60 * 1000,
+      );
 
-      const [totalStudents, testsThisMonth, avgBandScoreResult] =
-        await Promise.all([
-          this.prisma.user.count({
-            where: {
-              role: {
-                in: roles,
-              },
+      const [
+        totalStudents,
+        testsThisMonth,
+        avgBandScoreResult,
+        reviewsThisWeek,
+        reviewsLastWeek,
+        reviewsToday,
+      ] = await Promise.all([
+        this.prisma.user.count({
+          where: {
+            role: {
+              in: roles,
             },
-          }),
-          this.prisma.userTestResult.count({
-            where: {
-              status: TestStatus.FINISHED,
-              finishedAt: {
-                gte: startOfMonth,
-                lt: startOfNextMonth,
-              },
-              user: {
-                is: {
-                  role: {
-                    in: roles,
-                  },
+          },
+        }),
+        this.prisma.userTestResult.count({
+          where: {
+            status: TestStatus.FINISHED,
+            finishedAt: {
+              gte: startOfMonth,
+              lt: startOfNextMonth,
+            },
+            user: {
+              is: {
+                role: {
+                  in: roles,
                 },
               },
             },
-          }),
-          this.prisma.userTestResult.aggregate({
-            where: {
-              status: TestStatus.FINISHED,
-              user: {
-                is: {
-                  role: {
-                    in: roles,
-                  },
+          },
+        }),
+        this.prisma.userTestResult.aggregate({
+          where: {
+            status: TestStatus.FINISHED,
+            user: {
+              is: {
+                role: {
+                  in: roles,
                 },
               },
             },
-            _avg: {
-              bandScore: true,
-            },
-          }),
-        ]);
+          },
+          _avg: {
+            bandScore: true,
+          },
+        }),
+        // Reviews graded in the last 7 days
+        this.prisma.teacherReviewTicket.count({
+          where: {
+            status: TeacherReviewStatus.COMPLETED,
+            updatedAt: { gte: sevenDaysAgo },
+          },
+        }),
+        // Reviews graded in the previous 7-day window (for delta%)
+        this.prisma.teacherReviewTicket.count({
+          where: {
+            status: TeacherReviewStatus.COMPLETED,
+            updatedAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+          },
+        }),
+        // Reviews graded since midnight today
+        this.prisma.teacherReviewTicket.count({
+          where: {
+            status: TeacherReviewStatus.COMPLETED,
+            updatedAt: { gte: startOfDay },
+          },
+        }),
+      ]);
 
       return {
         totalStudents,
         testsThisMonth,
         avgBandScore: this.normalizeBandScore(avgBandScoreResult._avg.bandScore),
+        reviewsThisWeek,
+        reviewsLastWeek,
+        reviewsToday,
       };
     } catch (error) {
       this.handleError(error, 'load overview stats');

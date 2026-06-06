@@ -12,6 +12,11 @@ import {
 import { TestService } from './test.service';
 import { CreateTestDto } from './dto/create-test.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
+import {
+  ImportFullTestDto,
+  CreateWritingTestDto,
+  CreateSpeakingTestDto,
+} from './dto/import-test.dto';
 import { ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Public } from 'src/decorator/customize';
@@ -124,5 +129,27 @@ export class TestController {
   @Delete('delete-test/:idTest')
   remove(@Param('idTest') idTest: string) {
     return this.testService.remove(idTest);
+  }
+
+  // ============================================================================
+  // AI Worker endpoints — mass import entire R/L test from crawler
+  // ============================================================================
+
+  @Post('import-reading-listening')
+  @Public()
+  importReadingListening(@Body() dto: ImportFullTestDto) {
+    return this.testService.importFullReadingListeningTest(dto);
+  }
+
+  @Post('create-writing-test')
+  @Public()
+  createWriting(@Body() dto: CreateWritingTestDto) {
+    return this.testService.createWritingTest(dto);
+  }
+
+  @Post('create-speaking-test')
+  @Public()
+  createSpeaking(@Body() dto: CreateSpeakingTestDto) {
+    return this.testService.createSpeakingTest(dto);
   }
 }

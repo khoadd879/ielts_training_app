@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ForumCommentService } from './forum-comment.service';
 import { CreateForumCommentDto } from './dto/create-forum-comment.dto';
@@ -23,8 +24,11 @@ export class ForumCommentController {
   }
 
   @Get('get-all-by-idForumPost/:idForumPost')
-  findAll(@Param('idForumPost') idForumPost: string) {
-    return this.forumCommentService.findAllByIdPost(idForumPost);
+  findAll(
+    @Param('idForumPost') idForumPost: string,
+    @Query('idUser') idUser?: string,
+  ) {
+    return this.forumCommentService.findAllByIdPost(idForumPost, idUser);
   }
 
   @Get('get-forum-comment/:idForumComment')

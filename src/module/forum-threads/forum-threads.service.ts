@@ -37,7 +37,39 @@ export class ForumThreadsService {
   }
 
   async findAllForumThreads() {
-    const data = await this.databaseService.forumThreads.findMany();
+    const threads = await this.databaseService.forumThreads.findMany({
+      orderBy: { created_at: 'desc' },
+      include: {
+        user: {
+          select: {
+            idUser: true,
+            nameUser: true,
+            avatar: true,
+          },
+        },
+        _count: {
+          select: { forumPost: true },
+        },
+        forumPost: {
+          orderBy: { created_at: 'desc' },
+          take: 1,
+          select: { created_at: true },
+        },
+      },
+    });
+
+    const data = threads.map((t) => ({
+      idForumThreads: t.idForumThreads,
+      idUser: t.idUser,
+      title: t.title,
+      content: t.content,
+      createdAt: t.created_at,
+      updatedAt: t.updated_at,
+      author: t.user,
+      postCount: t._count.forumPost,
+      lastPostAt: t.forumPost[0]?.created_at ?? t.created_at,
+      isHot: t._count.forumPost >= 10,
+    }));
 
     return {
       message: 'Forum Thread retrieved successfully',
@@ -47,13 +79,33 @@ export class ForumThreadsService {
   }
 
   async findForumThread(idForumThreads: string) {
-    const data = await this.databaseService.forumThreads.findUnique({
-      where: {
-        idForumThreads,
+    const thread = await this.databaseService.forumThreads.findUnique({
+      where: { idForumThreads },
+      include: {
+        user: {
+          select: {
+            idUser: true,
+            nameUser: true,
+            avatar: true,
+          },
+        },
+        _count: { select: { forumPost: true } },
       },
     });
 
-    if (!data) throw new BadRequestException('Forum thread not found');
+    if (!thread) throw new BadRequestException('Forum thread not found');
+
+    const data = {
+      idForumThreads: thread.idForumThreads,
+      idUser: thread.idUser,
+      title: thread.title,
+      content: thread.content,
+      createdAt: thread.created_at,
+      updatedAt: thread.updated_at,
+      author: thread.user,
+      postCount: thread._count.forumPost,
+      isHot: thread._count.forumPost >= 10,
+    };
 
     return {
       message: 'Forum Thread retrieved successfully',
