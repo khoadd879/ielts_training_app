@@ -19,11 +19,24 @@ export class PartService {
     if (!existingTest) {
       throw new BadRequestException('Test not found');
     }
+
+    // Auto-assign next order if not provided, to avoid Unique(idTest, order) clash.
+    // Schema enforces @@unique([idTest, order]) so duplicate order in the same test fails.
+    let finalOrder = order;
+    if (finalOrder === undefined || finalOrder === null) {
+      const lastPart = await this.databaseService.part.findFirst({
+        where: { idTest },
+        orderBy: { order: 'desc' },
+        select: { order: true },
+      });
+      finalOrder = lastPart ? lastPart.order + 1 : 0;
+    }
+
     const data = await this.databaseService.part.create({
       data: {
         idTest,
         namePart,
-        order: order ?? 0,
+        order: finalOrder,
         audioUrl: audioUrl ?? null,
       },
     });
