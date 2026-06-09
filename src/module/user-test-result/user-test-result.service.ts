@@ -67,6 +67,52 @@ export class UserTestResultService {
     };
   }
 
+  /**
+   * Lightweight aggregation: per-test best band score and last finishedAt
+   * for a single user. Returns a map keyed by idTest. Used by the /test
+   * discovery page to render the "Best band" card block without pulling
+   * the full test results payload (which includes userAnswers[]).
+   */
+  async getBestBandByTest(idUser: string) {
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+    if (!existingUser) throw new BadRequestException('User not found');
+
+    const rows = await this.databaseService.userTestResult.findMany({
+      where: { idUser, status: TestStatus.FINISHED },
+      select: {
+        idTest: true,
+        bandScore: true,
+        finishedAt: true,
+      },
+    });
+
+    const stats: Record<
+      string,
+      { maxBand: number; lastFinishedAt: Date | null }
+    > = {};
+    for (const r of rows) {
+      const cur = stats[r.idTest];
+      const finishedAt = r.finishedAt;
+      if (!cur || r.bandScore > cur.maxBand) {
+        stats[r.idTest] = { maxBand: r.bandScore, lastFinishedAt: finishedAt };
+      } else if (
+        cur.lastFinishedAt &&
+        finishedAt &&
+        finishedAt > cur.lastFinishedAt
+      ) {
+        cur.lastFinishedAt = finishedAt;
+      }
+    }
+
+    return {
+      message: 'Best band stats retrieved successfully',
+      data: stats,
+      status: 200,
+    };
+  }
+
   async findOne(idTestResult: string) {
     const data = await this.databaseService.userTestResult.findUnique({
       where: { idTestResult },
