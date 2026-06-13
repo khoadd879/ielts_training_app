@@ -10,6 +10,7 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFiles,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   FilesInterceptor,
@@ -25,6 +26,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
+import { Public } from 'src/decorator/customize';
 import { FinishTestWritingDto } from './dto/finish-test-writing.dto';
 import { FinishTestSpeakingDto } from './dto/finish-test-speaking.dto';
 import { SubmitTestDto } from './dto/submit-test.dto';
@@ -47,6 +49,32 @@ export class UserTestResultController {
   @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
   findAllTestResultByIdUser(@Param('idUser') idUser: string) {
     return this.userTestResultService.findAllTestResultByIdUser(idUser);
+  }
+
+  @Get('get-best-band-by-test/:idUser')
+  @ApiOperation({
+    summary: 'Lấy max band + lần làm cuối theo từng test của user',
+    description:
+      'Trả về map { idTest: { maxBand, lastFinishedAt } } chỉ với 3 trường — payload nhỏ, dùng cho /test discovery page. Yêu cầu JWT, idUser trong URL phải khớp với user đang đăng nhập.',
+  })
+  @ApiParam({
+    name: 'idUser',
+    description: 'ID của người dùng (phải khớp với user trong JWT)',
+    example: 'uuid-user-1',
+  })
+  @ApiResponse({ status: 200, description: 'Lấy stats thành công' })
+  @ApiResponse({ status: 403, description: 'Không có quyền xem stats của user khác' })
+  getBestBandByTest(
+    @Param('idUser') idUser: string,
+    @Req() req: { user?: { userId?: string } },
+  ) {
+    const requesterId = req.user?.userId;
+    if (!requesterId || requesterId !== idUser) {
+      throw new ForbiddenException(
+        'Bạn chỉ có thể xem best band của chính mình.',
+      );
+    }
+    return this.userTestResultService.getBestBandByTest(idUser);
   }
 
   @Get('get-test-result/:idTestResult')
