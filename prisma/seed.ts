@@ -793,16 +793,38 @@ async function seedSystemConfig() {
 // GRAMMAR TOPICS & EXERCISES
 // ============================================================================
 
+async function seedGrammarCategories() {
+  console.log('\n📁  Seeding Grammar Categories...')
+
+  // System categories (idUser = null means system-wide)
+  const categories = [
+    { idGrammarCategory: 'basic-grammar', name: 'Basic Grammar', description: 'Ngữ pháp cơ bản cho người mới bắt đầu', idUser: null },
+    { idGrammarCategory: 'intermediate-grammar', name: 'Intermediate', description: 'Ngữ pháp trung cấp với cấu trúc phức tạp hơn', idUser: null },
+    { idGrammarCategory: 'advanced-grammar', name: 'Advanced', description: 'Ngữ pháp nâng cao cho band 7.0+', idUser: null },
+  ]
+
+  for (const cat of categories) {
+    await prisma.grammarCategory.upsert({
+      where: { idGrammarCategory: cat.idGrammarCategory },
+      update: {},
+      create: cat
+    })
+    console.log('  ✔  Category:', cat.name)
+  }
+}
+
 async function seedGrammarTopics() {
   console.log('\n🌿  Seeding Grammar Topics & Exercises...')
 
-  // Grammar Topics
-  const topics = [
+  // ============================================
+  // BASIC GRAMMAR (Level.Low)
+  // ============================================
+  const basicTopics = [
     {
       idGrammar: 'conditionals',
       title: 'Conditionals',
       explanation: 'Câu điều kiện trong tiếng Anh gồm 4 loại:\n\n• Type 0 (Zero Conditional): Sự thật hiển nhiên - If + Present Simple, will + V\n• Type 1 (First Conditional): Tình huống có thể xảy ra - If + Present Simple, will + V\n• Type 2 (Second Conditional): Tình huống giả định ở hiện tại - If + Past Simple, would + V\n• Type 3 (Third Conditional): Tình huống giả định ở quá khứ - If + Past Perfect, would have + V2',
-      level: Level.Mid,
+      level: Level.Low,
       commonMistakes: toJson([
         { type: 'error_correction', wrong: 'If I was you, I would help.', correct: 'If I were you, I would help.', explanation: 'Use "were" not "was" for unreal present situations (Type 2).' },
         { type: 'error_correction', wrong: 'If she studied harder, she will pass.', correct: 'If she studied harder, she would pass.', explanation: 'Type 2 requires "would" not "will".' },
@@ -853,23 +875,324 @@ async function seedGrammarTopics() {
         { type: 'transformation', prompt: 'Someone broke the window yesterday.', instruction: 'Use past simple passive', correct: 'The window was broken yesterday.' },
         { type: 'multiple_choice', question: 'Choose the correct passive:', options: ['The letter was sent yesterday.', 'The letter was send yesterday.', 'The letter is sent yesterday.', 'The letter was sending yesterday.'], correct: 0 }
       ])
+    },
+    {
+      idGrammar: 'subject_verb',
+      title: 'Subject-Verb Agreement',
+      explanation: 'Chủ ngữ và động từ phải hòa hợp về số:\n\n• S + V (số ít)\n• S + V (số nhiều)\n\nTrường hợp đặc biệt: collective nouns, neither/nor, everyone/nobody',
+      level: Level.Low,
+      commonMistakes: toJson([])
+    },
+    {
+      idGrammar: 'prepositions',
+      title: 'Prepositions',
+      explanation: 'Giới từ trong tiếng Anh:\n\n• in: trong, vào (thời gian, không gian)\n• on: trên, vào (ngày, bề mặt)\n• at: tại (thời điểm, nơi chính xác)\n• to/for/from: đến/cho/từ',
+      level: Level.Low,
+      commonMistakes: toJson([])
+    },
+    {
+      idGrammar: 'relative_clauses',
+      title: 'Relative Clauses',
+      explanation: 'Mệnh đề quan hệ:\n\n• who/whom: người\n• which: vật\n• that: người/vật (restrictive)\n• whose: sở hữu\n• commas: non-restrictive',
+      level: Level.Mid,
+      commonMistakes: toJson([])
+    },
+    {
+      idGrammar: 'connectors',
+      title: 'Connectors/Coherence',
+      explanation: 'Từ nối trong viết luận:\n\n• Addition: moreover, furthermore, in addition\n• Contrast: however, nevertheless, although\n• Cause/Effect: therefore, consequently, thus\n• Example: for instance, such as, specifically',
+      level: Level.Mid,
+      commonMistakes: toJson([])
+    },
+    {
+      idGrammar: 'word_forms',
+      title: 'Word Forms',
+      explanation: 'Biến đổi từ loại:\n\n• adjective → noun: important → importance\n• verb → noun: develop → development\n• adjective → verb: pure → purify\n• noun → adjective: success → successful',
+      level: Level.Mid,
+      commonMistakes: toJson([])
+    },
+    {
+      idGrammar: 'indirect_speech',
+      title: 'Indirect Speech',
+      explanation: 'Tường thuật gián tiếp:\n\n• Tense shifts: present → past, will → would\n• Time words: now → then, today → that day\n• Pronoun changes: I → he/she, this → that\n• Commands: said to → told',
+      level: Level.Mid,
+      commonMistakes: toJson([])
+    },
+    {
+      idGrammar: 'modals',
+      title: 'Modals',
+      explanation: 'Động từ khiếm khuyết:\n\n• can/could: khả năng, xin phép\n• may/might: có thể, có lẽ\n• must/have to: bắt buộc\n• should/ought to: nên\n• would: giả định, yêu cầu',
+      level: Level.Low,
+      commonMistakes: toJson([])
+    },
+    {
+      idGrammar: 'reported_speech',
+      title: 'Reported Speech',
+      explanation: 'Câu tường thuật:\n\n• Statements: She said she was tired\n• Questions: She asked where I lived\n• Commands: She told me to wait\n• Tense backshift rules',
+      level: Level.Mid,
+      commonMistakes: toJson([])
+    },
+    {
+      idGrammar: 'quantifiers',
+      title: 'Quantifiers',
+      explanation: 'Lượng từ:\n\n• some/any: một ít/một số\n• many/much/few/little: nhiều/ít (số nhiều/số ít)\n• a lot of/lots of: nhiều\n• each/every: mỗi\n• all/none: tất cả/không ai',
+      level: Level.Low,
+      commonMistakes: toJson([])
+    },
+    {
+      idGrammar: 'comparisons',
+      title: 'Comparisons',
+      explanation: 'So sánh trong tiếng Anh:\n\n• adj + er + than (so sánh hơn)\n• the + adj + est (so sánh nhất)\n• as + adj + as (bằng nhau)\n• less + adj + than (ít hơn)\n• Double comparatives: more and more, adj + er + adj + er',
+      level: Level.Low,
+      commonMistakes: toJson([])
+    },
+    {
+      idGrammar: 'modals',
+      title: 'Modals',
+      explanation: 'Động từ khiếm khuyết:\n\n• can/could: khả năng, xin phép\n• may/might: có thể, có lẽ\n• must/have to: bắt buộc\n• should/ought to: nên\n• would: giả định, yêu cầu',
+      level: Level.Low,
+      commonMistakes: toJson([
+        { type: 'cloze', sentence: 'You ___ study harder to pass the exam.', answer: 'must', hint: 'obligation' },
+        { type: 'error_correction', wrong: 'He can to swim very well.', correct: 'He can swim very well.', explanation: 'Modal + base verb, no "to".' },
+        { type: 'multiple_choice', question: 'Choose the correct sentence:', options: ['She might to be late.', 'She might be late.', 'She might is late.', 'She might be lately.'], correct: 1 },
+        { type: 'cloze', sentence: 'You should ___ your homework first.', answer: 'do', hint: 'should + base verb' },
+        { type: 'error_correction', wrong: 'May I to go now?', correct: 'May I go now?', explanation: 'Modal + subject + base verb.' }
+      ])
+    },
+    {
+      idGrammar: 'quantifiers',
+      title: 'Quantifiers',
+      explanation: 'Lượng từ:\n\n• some/any: một ít/một số\n• many/much/few/little: nhiều/ít (số nhiều/số ít)\n• a lot of/lots of: nhiều\n• each/every: mỗi\n• all/none: tất cả/không ai',
+      level: Level.Low,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'I have any money.', correct: 'I have some money.', explanation: 'Use "some" in positive statements.' },
+        { type: 'cloze', sentence: 'There are ___ students in the class.', answer: 'many', hint: 'many + countable noun' },
+        { type: 'multiple_choice', question: 'Choose the correct:', options: ['I don\'t have much money.', 'I don\'t have many money.', 'I don\'t have many moneys.', 'I don\'t have some money.'], correct: 0 },
+        { type: 'cloze', sentence: '___ person has their own idea.', answer: 'Every', hint: 'every + singular person' },
+        { type: 'error_correction', wrong: 'Few people has come.', correct: 'Few people have come.', explanation: 'Few takes plural verb.' }
+      ])
+    },
+    {
+      idGrammar: 'comparisons',
+      title: 'Comparisons',
+      explanation: 'So sánh trong tiếng Anh:\n\n• adj + er + than (so sánh hơn)\n• the + adj + est (so sánh nhất)\n• as + adj + as (bằng nhau)\n• less + adj + than (ít hơn)\n• Double comparatives: more and more, adj + er + adj + er',
+      level: Level.Low,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'She is more beautiful than him.', correct: 'She is more beautiful than he.', explanation: 'Compare subjects, not objects.' },
+        { type: 'cloze', sentence: 'This book is ___ than that one.', answer: 'more interesting', hint: 'more + adj for longer adjectives' },
+        { type: 'multiple_choice', question: 'Choose the correct:', options: ['He is taller than me.', 'He is taller than I.', 'He is more tall than me.', 'He is tall than me.'], correct: 1 },
+        { type: 'cloze', sentence: 'The ___ girl in the class.', answer: 'most intelligent', hint: 'most + adj for superior' },
+        { type: 'error_correction', wrong: 'She sings more beautifully than anyone.', correct: 'She sings more beautifully than anyone else.', explanation: 'Compare same type, use "else" for others.' }
+      ])
     }
   ]
 
-  for (const topic of topics) {
+  // ============================================
+  // INTERMEDIATE GRAMMAR (Level.Mid)
+  // ============================================
+  const intermediateTopics = [
+    {
+      idGrammar: 'passive-voice',
+      title: 'Passive Voice',
+      explanation: 'Câu bị động trong tiếng Anh:\n\n• Cấu trúc: Subject + be + past participle\n• Dùng khi người/nận vật nhận tác động của hành động\n\nCác thì trong bị động:\n• Present Simple: am/is/are + V3\n• Past Simple: was/were + V3\n• Present Perfect: has/have + been + V3\n• Future: will + be + V3',
+      level: Level.Mid,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'The letter was send yesterday.', correct: 'The letter was sent yesterday.', explanation: '"Send" → "sent" (V3) trong bị động.' },
+        { type: 'error_correction', wrong: 'The house is built by workers.', correct: 'The house is being built by workers.', explanation: 'Dùng "being" khi hành động đang diễn ra.' },
+        { type: 'cloze', sentence: 'The cake ___ (make) by my mother.', answer: 'is made', hint: 'Present simple passive' },
+        { type: 'cloze', sentence: 'The windows ___ (clean) last week.', answer: 'were cleaned', hint: 'Past simple passive' },
+        { type: 'transformation', prompt: 'Someone broke the window yesterday.', instruction: 'Use past simple passive', correct: 'The window was broken yesterday.' },
+        { type: 'multiple_choice', question: 'Choose the correct passive:', options: ['The letter was sent yesterday.', 'The letter was send yesterday.', 'The letter is sent yesterday.', 'The letter was sending yesterday.'], correct: 0 }
+      ])
+    },
+    {
+      idGrammar: 'relative_clauses',
+      title: 'Relative Clauses',
+      explanation: 'Mệnh đề quan hệ:\n\n• who/whom: người\n• which: vật\n• that: người/vật (restrictive)\n• whose: sở hữu\n• commas: non-restrictive',
+      level: Level.Mid,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'The man which lives next door is noisy.', correct: 'The man who lives next door is noisy.', explanation: 'Use who for people, which for things.' },
+        { type: 'error_correction', wrong: 'The reason why he was late is because he missed the bus.', correct: 'The reason why he was late is that he missed the bus.', explanation: 'Use that, not because, after reason.' },
+        { type: 'cloze', sentence: 'The student ___ won the prize is from my class.', answer: 'who', hint: 'who = people' },
+        { type: 'cloze', sentence: 'The book ___ cover is red is mine.', answer: 'whose', hint: 'whose = possessive' },
+        { type: 'multiple_choice', question: 'Choose the correct relative pronoun:', options: ['The book who I read was interesting.', 'The book which I read was interesting.', 'The book whom I read was interesting.', 'The book whose I read was interesting.'], correct: 1 }
+      ])
+    },
+    {
+      idGrammar: 'connectors',
+      title: 'Connectors/Coherence',
+      explanation: 'Từ nối trong viết luận:\n\n• Addition: moreover, furthermore, in addition\n• Contrast: however, nevertheless, although\n• Cause/Effect: therefore, consequently, thus\n• Example: for instance, such as, specifically',
+      level: Level.Mid,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'It was raining; moreover, we got wet.', correct: 'It was raining; consequently, we got wet.', explanation: 'Moreover adds info, consequently shows result.' },
+        { type: 'error_correction', wrong: 'Although it was raining, we went outside.', correct: 'Despite the rain, we went outside.', explanation: 'Despite + noun, although + clause.' },
+        { type: 'cloze', sentence: 'She was tired; ___, she went to bed early.', answer: 'however', hint: 'contrast connector' },
+        { type: 'cloze', sentence: 'Many people struggle; ___ , they give up learning.', answer: 'therefore', hint: 'cause-effect' },
+        { type: 'multiple_choice', question: 'Choose the best connector:', options: ['Furthermore, the project failed.', 'However, the project failed.', 'Nevertheless, the project succeeded.', 'Therefore, the project succeeded.'], correct: 0 }
+      ])
+    },
+    {
+      idGrammar: 'word_forms',
+      title: 'Word Forms',
+      explanation: 'Biến đổi từ loại:\n\n• adjective → noun: important → importance\n• verb → noun: develop → development\n• adjective → verb: pure → purify\n• noun → adjective: success → successful',
+      level: Level.Mid,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'His success was success.', correct: 'His success was evident.', explanation: 'Word form needed - noun vs adjective.' },
+        { type: 'cloze', sentence: 'The ___ of the government was widely praised.', answer: 'decision', hint: 'noun from decide' },
+        { type: 'cloze', sentence: 'It is ___ to make a decision.', answer: 'important', hint: 'adjective from importance' },
+        { type: 'error_correction', wrong: 'The develop of technology is rapid.', correct: 'The development of technology is rapid.', explanation: 'develop → development (noun).' },
+        { type: 'multiple_choice', question: 'Choose the correct word form:', options: ['She has a beautiful beautiful.', 'She has a beautiful beauty.', 'She is beauty.', 'She is beautiful.'], correct: 3 }
+      ])
+    },
+    {
+      idGrammar: 'indirect_speech',
+      title: 'Indirect Speech',
+      explanation: 'Tường thuật gián tiếp:\n\n• Tense shifts: present → past, will → would\n• Time words: now → then, today → that day\n• Pronoun changes: I → he/she, this → that\n• Commands: said to → told',
+      level: Level.Mid,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'He said that he is busy.', correct: 'He said that he was busy.', explanation: 'Past tense backshift (is → was).' },
+        { type: 'error_correction', wrong: '"I am tired," she said.', correct: 'She said she was tired.', explanation: 'Direct to indirect speech transformation.' },
+        { type: 'cloze', sentence: 'She told me that she ___ there before.', answer: 'had been', hint: 'past perfect backshift' },
+        { type: 'cloze', sentence: 'He asked where I ___ the previous day.', answer: 'lived', hint: 'past simple backshift' },
+        { type: 'multiple_choice', question: 'Choose the correct reported speech:', options: ['He said he will come.', 'He said he would come.', 'He said he can come.', 'He said he might come.'], correct: 1 }
+      ])
+    },
+    {
+      idGrammar: 'reported_speech',
+      title: 'Reported Speech',
+      explanation: 'Câu tường thuật:\n\n• Statements: She said she was tired\n• Questions: She asked where I lived\n• Commands: She told me to wait\n• Tense backshift rules',
+      level: Level.Mid,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'He said "I am busy".', correct: 'He said (that) he was busy.', explanation: 'Direct to indirect: tense backshift.' },
+        { type: 'cloze', sentence: 'She asked where I ___', answer: 'lived', hint: 'past simple backshift' },
+        { type: 'error_correction', wrong: 'He said me to wait.', correct: 'He told me to wait.', explanation: 'Commands use "tell" not "say".' },
+        { type: 'cloze', sentence: 'He asked if I ___ coming.', answer: 'was', hint: 'Yes/no question backshift' },
+        { type: 'multiple_choice', question: 'Choose the correct:', options: ['She said she is tired.', 'She said she was tired.', 'She said she will be tired.', 'She said she be tired.'], correct: 1 }
+      ])
+    }
+  ]
+
+  // ============================================
+  // ADVANCED GRAMMAR (Level.High)
+  // ============================================
+  const advancedTopics = [
+    {
+      idGrammar: 'cleft_sentences',
+      title: 'Cleft Sentences',
+      explanation: 'Câu nhấn mạnh (Cleft Sentences) dùng để nhấn mạnh một phần của câu:\n\n• It is/was + emphasize + who/that/which + rest\n• What + subject + verb + is/was + emphasized\n• All + subject + verb + is/was + emphasized\n• The reason + subject + verb + is/was + because\n\nỨng dụng IELTS: Nhấn mạnh ý chính trong Writing Task 2 để thể hiện sự phong phú về ngữ pháp.',
+      level: Level.High,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'It was him who told me.', correct: 'It was he who told me.', explanation: 'Use subject pronoun "he" not "him" after "It is/was".' },
+        { type: 'error_correction', wrong: 'What I dislike is his attitude.', correct: 'What I dislike is his attitude.', explanation: 'Correct structure with possessive adjective.' },
+        { type: 'cloze', sentence: 'It was ___ who solved the problem.', answer: 'she', hint: 'She is the subject pronoun' },
+        { type: 'cloze', sentence: 'All I want ___ a good education.', answer: 'is', hint: 'All + subject + is/was + emphasized' },
+        { type: 'transformation', prompt: 'The government introduced the new policy.', instruction: 'Use cleft sentence with "It was...that"', correct: 'It was the government that introduced the new policy.' },
+        { type: 'multiple_choice', question: 'Choose the correct cleft sentence:', options: ['It was me who called.', 'It was I who called.', 'It was myself who called.', 'It was me which called.'], correct: 1 }
+      ])
+    },
+    {
+      idGrammar: 'inversion',
+      title: 'Inversion',
+      explanation: 'Đảo ngữ - đưa trợ động từ lên trước chủ ngữ:\n\n• Never/Rarely/Seldom + auxiliary + subject\n• Only + time expression + auxiliary + subject\n• Not until + time expression + auxiliary + subject\n• No sooner + had + subject + V3 + than\n• Hardly/Scarcely + had + subject + V3 + when\n• Under no circumstances + auxiliary + subject\n\nỨng dụng IELTS: Tạo ấn tượng mạnh trong Writing và Speaking.',
+      level: Level.High,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'Never I have seen such beauty.', correct: 'Never have I seen such beauty.', explanation: 'Đảo ngữ: auxiliary lên trước subject.' },
+        { type: 'error_correction', wrong: 'Only after she arrived he left.', correct: 'Only after she arrived did he leave.', explanation: 'Đảo ngữ cần có auxiliary "did" sau "Only after".' },
+        { type: 'cloze', sentence: '___ had I arrived than the phone rang.', answer: 'No sooner', hint: 'No sooner...than structure' },
+        { type: 'cloze', sentence: 'Rarely ___ such a talented student.', answer: 'have I seen', hint: 'Rarely + auxiliary + subject' },
+        { type: 'transformation', prompt: 'I had no sooner entered the room than the lights went out.', instruction: 'Keep meaning, use different structure', correct: 'Hardly had I entered the room when the lights went out.' },
+        { type: 'multiple_choice', question: 'Choose the correct inversion:', options: ['Seldom he goes out.', 'Seldom does he go out.', 'Seldom go out he.', 'Seldom he does go out.'], correct: 1 }
+      ])
+    },
+    {
+      idGrammar: 'ellipsis',
+      title: 'Ellipsis & Substitution',
+      explanation: 'Lược bỏ và thay thế để tránh lặp lại:\n\n• So/Neither/Nor + auxiliary + subject (thay thế câu)\n• Do/V-did/does để tránh lặp động từ\n• Sử dụng "one/ones" thay thế danh từ\n• "Had better", "would rather", "ought to" + V\n\nỨng dụng IELTS: Speaking fluency và Writing style tự nhiên.',
+      level: Level.High,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'I like tea and so does John.', correct: 'I like tea and so does John.', explanation: 'Đúng: "so + auxiliary + subject" để đồng ý.' },
+        { type: 'error_correction', wrong: 'She can sing well and so can\'t he.', correct: 'She can sing well but he can\'t.', explanation: 'Khi bất đồng, dùng "but + negative".' },
+        { type: 'cloze', sentence: 'I passed the exam and ___ ___ my sister.', answer: 'so did', hint: 'So + auxiliary + subject' },
+        { type: 'cloze', sentence: 'I don\'t enjoy classical music ___ ___.', answer: 'neither do I', hint: 'Neither + auxiliary + subject' },
+        { type: 'transformation', prompt: 'Can you play piano? Can you play violin?', instruction: 'Use ellipsis to avoid repetition', correct: 'Can you play piano or violin?' },
+        { type: 'multiple_choice', question: 'Choose the correct response:', options: ['I think so.', 'I think that.', 'I think such.', 'I think it.'], correct: 0 }
+      ])
+    },
+    {
+      idGrammar: 'subjunctive',
+      title: 'Subjunctive Mood',
+      explanation: 'Chế độ giả định (Subjunctive):\n\n• Wish + Past Simple/Past Perfect (ước mong thực tại)\n• If only + Past Simple/Past Perfect (ước mong)\n• Rather than + V-ing / would rather + V nguyên mẫu\n• It is vital/essential/important that + subject + (should) V\n• demand/suggest/recommend/order + that + subject + (should) V\n\nỨng dụng IELTS: Diễn tả ước mong, yêu cầu, đề nghị trong Writing.',
+      level: Level.High,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'I wish I was taller.', correct: 'I wish I were taller.', explanation: 'Subjunctive dùng "were" không phải "was" cho unreal present.' },
+        { type: 'error_correction', wrong: 'It is essential that he works hard.', correct: 'It is essential that he (should) work hard.', explanation: 'Sau essential/demand/suggest: bare infinitive.' },
+        { type: 'cloze', sentence: 'I wish I ___ (be) a professional singer.', answer: 'were', hint: 'Wish cho unreal present - dùng "were"' },
+        { type: 'cloze', sentence: 'If only she ___ (study) harder last year.', answer: 'had studied', hint: 'If only + past perfect cho past unreal' },
+        { type: 'transformation', prompt: 'It would be better if you arrived earlier.', instruction: 'Use "I wish"', correct: 'I wish you would arrive earlier.' },
+        { type: 'multiple_choice', question: 'Choose the correct sentence:', options: ['I wish I was there.', 'I wish I were there.', 'I wish I am there.', 'I wish I be there.'], correct: 1 }
+      ])
+    },
+    {
+      idGrammar: 'causal_passive',
+      title: 'Advanced Passive & Causal Passive',
+      explanation: 'Bị động nâng cao:\n\n• Get + V3 (bị động mang nghĩa thay đổi)\n• Have + object + V3 ( sai khiến)\n• Causal passive: let/make/help + object + V nguyên mẫu\n• Being + V3 được dùng làm danh từ\n\nỨng dụng IELTS: Diễn tả quá trình, nguyên nhân-kết quả trong Task 1.',
+      level: Level.High,
+      commonMistakes: toJson([
+        { type: 'error_correction', wrong: 'He got arrested by police.', correct: 'He got arrested.', explanation: 'Get-passive không dùng "by" mà dùng "got + V3".' },
+        { type: 'error_correction', wrong: 'I had my hair cutting.', correct: 'I had my hair cut.', explanation: 'Causal have: have + object + V3.' },
+        { type: 'cloze', sentence: 'The building ___ (repair) last month.', answer: 'is being repaired', hint: 'Being + V3 cho ongoing passive' },
+        { type: 'cloze', sentence: 'She ___ her car ___ yesterday.', answer: 'had, washed', hint: 'Had + object + V3 = sai khiến' },
+        { type: 'transformation', prompt: 'Someone stole my bicycle yesterday.', instruction: 'Use causal passive with "have"', correct: 'I had my bicycle stolen yesterday.' },
+        { type: 'multiple_choice', question: 'Choose the correct sentence:', options: ['He got arrested.', 'He got arresting.', 'He got arrest.', 'He gotten arrested.'], correct: 0 }
+      ])
+    }
+  ]
+
+  // Merge all topics
+  const allTopics = [...basicTopics, ...intermediateTopics, ...advancedTopics]
+
+  // ============================================
+  // GRAMMAR CATEGORIES & JUNCTION TABLE
+  // ============================================
+  const categories = [
+    { idGrammarCategory: 'basic-grammar', name: 'Basic Grammar', description: 'Ngữ pháp cơ bản cho người mới bắt đầu' },
+    { idGrammarCategory: 'intermediate-grammar', name: 'Intermediate', description: 'Ngữ pháp trung cấp với cấu trúc phức tạp hơn' },
+    { idGrammarCategory: 'advanced-grammar', name: 'Advanced', description: 'Ngữ pháp nâng cao cho band 7.0+' },
+  ]
+
+  for (const cat of categories) {
+    await prisma.grammarCategory.upsert({
+      where: { idGrammarCategory: cat.idGrammarCategory },
+      update: {},
+      create: { ...cat, idUser: null }
+    })
+  }
+
+  const categoryAssignmentMap: Record<string, string[]> = {
+    'basic-grammar': ['conditionals', 'tenses', 'articles', 'subject_verb', 'prepositions', 'modals', 'quantifiers', 'comparisons'],
+    'intermediate-grammar': ['passive-voice', 'relative_clauses', 'connectors', 'word_forms', 'indirect_speech', 'reported_speech'],
+    'advanced-grammar': ['cleft_sentences', 'inversion', 'ellipsis', 'subjunctive', 'causal_passive'],
+  }
+
+  for (const topic of allTopics) {
     await prisma.grammar.upsert({
       where: { idGrammar: topic.idGrammar },
       update: {},
       create: topic
     })
+  }
 
-    // Create exercises from commonMistakes
-    const exercises = topic.commonMistakes as any[]
-    exercises.forEach((ex, index) => {
-      // This won't work directly - need to create GrammarExercise separately
-    })
-
-    console.log('  ✔  Grammar topic:', topic.title)
+  // Create GrammarCategory assignments (junction table)
+  for (const [categoryId, grammarIds] of Object.entries(categoryAssignmentMap)) {
+    for (const idGrammar of grammarIds) {
+      await prisma.grammarsOnCategories.upsert({
+        where: {
+          idGrammarCategory_idGrammar: { idGrammarCategory: categoryId, idGrammar }
+        },
+        update: {},
+        create: { idGrammarCategory: categoryId, idGrammar, assignedBy: 'system-seed' }
+      })
+    }
   }
 
   // Now create GrammarExercise records
@@ -905,6 +1228,111 @@ async function seedGrammarTopics() {
     { idGrammar: 'passive-voice', type: 'cloze', order: 3, content: { sentence: 'The windows ___ (clean) last week.', answer: 'were cleaned', hint: 'Past simple passive' } },
     { idGrammar: 'passive-voice', type: 'transformation', order: 4, content: { prompt: 'Someone broke the window yesterday.', instruction: 'Use past simple passive', correct: 'The window was broken yesterday.' } },
     { idGrammar: 'passive-voice', type: 'multiple_choice', order: 5, content: { question: 'Choose the correct passive:', options: ['The letter was sent yesterday.', 'The letter was send yesterday.', 'The letter is sent yesterday.', 'The letter was sending yesterday.'], correct: 0 } },
+
+    // Subject-Verb Agreement exercises (5)
+    { idGrammar: 'subject_verb', type: 'error_correction', order: 0, content: { wrong: 'The team are playing well.', correct: 'The team is playing well.', explanation: 'Collective noun takes singular verb in British English.' } },
+    { idGrammar: 'subject_verb', type: 'cloze', order: 1, content: { sentence: 'Neither the students nor the teacher ___ present.', answer: 'is', hint: ' Neither...nor uses nearest subject' } },
+    { idGrammar: 'subject_verb', type: 'multiple_choice', order: 2, content: { question: 'Choose the correct sentence:', options: ['Everyone have their own idea.', 'Everyone has their own idea.', 'Everyone are having their own idea.', 'Everyone is having their own idea.'], correct: 1 } },
+    { idGrammar: 'subject_verb', type: 'error_correction', order: 3, content: { wrong: 'My friend and me is going.', correct: 'My friend and I are going.', explanation: 'Compound subject uses plural verb.' } },
+    { idGrammar: 'subject_verb', type: 'cloze', order: 4, content: { sentence: 'Either you or I ___ wrong.', answer: 'am', hint: 'Either...or uses nearest subject' } },
+
+    // Prepositions exercises (5)
+    { idGrammar: 'prepositions', type: 'cloze', order: 0, content: { sentence: 'I was born ___ 1995.', answer: 'in', hint: 'in + year' } },
+    { idGrammar: 'prepositions', type: 'cloze', order: 1, content: { sentence: 'She arrived ___ Monday morning.', answer: 'on', hint: 'on + day' } },
+    { idGrammar: 'prepositions', type: 'error_correction', order: 2, content: { wrong: 'I will meet you at Thursday.', correct: 'I will meet you on Thursday.', explanation: 'Use on for days of the week.' } },
+    { idGrammar: 'prepositions', type: 'multiple_choice', order: 3, content: { question: 'Choose the correct preposition:', options: ['She is good at mathematics.', 'She is good in mathematics.', 'She is good with mathematics.', 'She is good for mathematics.'], correct: 0 } },
+    { idGrammar: 'prepositions', type: 'cloze', order: 4, content: { sentence: 'The meeting is ___ 3 o\'clock.', answer: 'at', hint: 'at + time' } },
+
+    // Relative Clauses exercises (5)
+    { idGrammar: 'relative_clauses', type: 'error_correction', order: 0, content: { wrong: 'The man which lives next door is noisy.', correct: 'The man who lives next door is noisy.', explanation: 'Use who for people, which for things.' } },
+    { idGrammar: 'relative_clauses', type: 'multiple_choice', order: 1, content: { question: 'Choose the correct relative pronoun:', options: ['The book who I read was interesting.', 'The book which I read was interesting.', 'The book whom I read was interesting.', 'The book whose I read was interesting.'], correct: 1 } },
+    { idGrammar: 'relative_clauses', type: 'cloze', order: 2, content: { sentence: 'The student ___ won the prize is from my class.', answer: 'who', hint: 'who = people' } },
+    { idGrammar: 'relative_clauses', type: 'error_correction', order: 3, content: { wrong: 'The reason why he was late is because he missed the bus.', correct: 'The reason why he was late is that he missed the bus.', explanation: 'Use that, not because, after reason.' } },
+    { idGrammar: 'relative_clauses', type: 'cloze', order: 4, content: { sentence: 'The book ___ cover is red is mine.', answer: 'whose', hint: 'whose = possessive' } },
+
+    // Connectors exercises (5)
+    { idGrammar: 'connectors', type: 'error_correction', order: 0, content: { wrong: 'It was raining; moreover, we got wet.', correct: 'It was raining; consequently, we got wet.', explanation: 'Moreover adds info, consequently shows result.' } },
+    { idGrammar: 'connectors', type: 'cloze', order: 1, content: { sentence: 'She was tired; ___, she went to bed early.', answer: 'however', hint: 'contrast connector' } },
+    { idGrammar: 'connectors', type: 'multiple_choice', order: 2, content: { question: 'Choose the best connector:', options: ['Furthermore, the project failed.', 'However, the project failed.', 'Nevertheless, the project succeeded.', 'Therefore, the project succeeded.'], correct: 0 } },
+    { idGrammar: 'connectors', type: 'error_correction', order: 3, content: { wrong: 'Although it was raining, we went outside.', correct: 'Despite the rain, we went outside.', explanation: 'Despite + noun, although + clause.' } },
+    { idGrammar: 'connectors', type: 'cloze', order: 4, content: { sentence: 'Many people struggle; ___ , they give up learning.', answer: 'therefore', hint: 'cause-effect' } },
+
+    // Word Forms exercises (5)
+    { idGrammar: 'word_forms', type: 'error_correction', order: 0, content: { wrong: 'His success was success.', correct: 'His success was evident.', explanation: 'Word form needed - noun vs adjective.' } },
+    { idGrammar: 'word_forms', type: 'cloze', order: 1, content: { sentence: 'The ___ of the government was widely praised.', answer: 'decision', hint: 'noun from decide' } },
+    { idGrammar: 'word_forms', type: 'multiple_choice', order: 2, content: { question: 'Choose the correct word form:', options: ['She has a beautiful beautiful.', 'She has a beautiful beauty.', 'She is beauty.', 'She is beautiful.'], correct: 3 } },
+    { idGrammar: 'word_forms', type: 'error_correction', order: 3, content: { wrong: 'The develop of technology is rapid.', correct: 'The development of technology is rapid.', explanation: 'develop → development (noun).' } },
+    { idGrammar: 'word_forms', type: 'cloze', order: 4, content: { sentence: 'It is ___ to make a decision.', answer: 'important', hint: 'adjective from importance' } },
+
+    // Indirect Speech exercises (5)
+    { idGrammar: 'indirect_speech', type: 'error_correction', order: 0, content: { wrong: 'He said that he is busy.', correct: 'He said that he was busy.', explanation: 'Past tense backshift (is → was).' } },
+    { idGrammar: 'indirect_speech', type: 'cloze', order: 1, content: { sentence: 'She told me that she ___ there before.', answer: 'had been', hint: 'past perfect backshift' } },
+    { idGrammar: 'indirect_speech', type: 'multiple_choice', order: 2, content: { question: 'Choose the correct reported speech:', options: ['He said he will come.', 'He said he would come.', 'He said he can come.', 'He said he might come.'], correct: 1 } },
+    { idGrammar: 'indirect_speech', type: 'error_correction', order: 3, content: { wrong: '"I am tired," she said.', correct: 'She said she was tired.', explanation: 'Direct to indirect speech transformation.' } },
+    { idGrammar: 'indirect_speech', type: 'cloze', order: 4, content: { sentence: 'He asked where I ___ the previous day.', answer: 'lived', hint: 'past simple backshift' } },
+
+    // Modals exercises (5)
+    { idGrammar: 'modals', type: 'cloze', order: 0, content: { sentence: 'You ___ study harder to pass the exam.', answer: 'must', hint: 'obligation' } },
+    { idGrammar: 'modals', type: 'error_correction', order: 1, content: { wrong: 'He can to swim very well.', correct: 'He can swim very well.', explanation: 'Modal + base verb, no "to".' } },
+    { idGrammar: 'modals', type: 'multiple_choice', order: 2, content: { question: 'Choose the correct sentence:', options: ['She might to be late.', 'She might be late.', 'She might is late.', 'She might be lately.'], correct: 1 } },
+    { idGrammar: 'modals', type: 'cloze', order: 3, content: { sentence: 'You should ___ your homework first.', answer: 'do', hint: 'should + base verb' } },
+    { idGrammar: 'modals', type: 'error_correction', order: 4, content: { wrong: 'I must not to go there.', correct: 'I must not go there.', explanation: 'Must not + base verb (no "to").' } },
+
+    // Reported Speech exercises (5)
+    { idGrammar: 'reported_speech', type: 'error_correction', order: 0, content: { wrong: 'She said that she is happy.', correct: 'She said that she was happy.', explanation: 'Past backshift required.' } },
+    { idGrammar: 'reported_speech', type: 'cloze', order: 1, content: { sentence: 'He asked me where I ___ lived.', answer: 'did', hint: 'did for question in reported speech' } },
+    { idGrammar: 'reported_speech', type: 'multiple_choice', order: 2, content: { question: 'Choose the correct reported speech:', options: ['He said that he was coming.', 'He said that he is coming.', 'He said that he will come.', 'He said that he coming.'], correct: 0 } },
+    { idGrammar: 'reported_speech', type: 'error_correction', order: 3, content: { wrong: '"Go away!" she said.', correct: 'She told me to go away.', explanation: 'Command to infinitive construction.' } },
+    { idGrammar: 'reported_speech', type: 'cloze', order: 4, content: { sentence: 'She asked me if I ___ come the next day.', answer: 'would', hint: 'will → would in reported' } },
+
+    // Quantifiers exercises (5)
+    { idGrammar: 'quantifiers', type: 'cloze', order: 0, content: { sentence: 'There are ___ apples in the basket.', answer: 'some', hint: 'positive some' } },
+    { idGrammar: 'quantifiers', type: 'error_correction', order: 1, content: { wrong: 'I don\'t have any money.', correct: 'I don\'t have much money.', explanation: 'any → much for uncountable in negative.' } },
+    { idGrammar: 'quantifiers', type: 'multiple_choice', order: 2, content: { question: 'Choose the correct quantifier:', options: ['There are many water.', 'There is a lot of water.', 'There are lots waters.', 'There is much water.'], correct: 1 } },
+    { idGrammar: 'quantifiers', type: 'cloze', order: 3, content: { sentence: '___ people came to the party than expected.', answer: 'Fewer', hint: 'comparative quantifier' } },
+    { idGrammar: 'quantifiers', type: 'error_correction', order: 4, content: { wrong: 'Each of the students have passed.', correct: 'Each of the students has passed.', explanation: 'Each takes singular verb.' } },
+
+    // Comparisons exercises (5)
+    { idGrammar: 'comparisons', type: 'cloze', order: 0, content: { sentence: 'She is ___ than her sister.', answer: 'taller', hint: 'comparative adj' } },
+    { idGrammar: 'comparisons', type: 'error_correction', order: 1, content: { wrong: 'She is more smarter than him.', correct: 'She is smarter than him.', explanation: 'No more with -er comparative.' } },
+    { idGrammar: 'comparisons', type: 'multiple_choice', order: 2, content: { question: 'Choose the correct sentence:', options: ['He is the tallest in his class.', 'He is the most tall in his class.', 'He is taller than all in his class.', 'He is more tallest.'], correct: 0 } },
+    { idGrammar: 'comparisons', type: 'cloze', order: 3, content: { sentence: 'This is ___ as that one.', answer: 'not as good', hint: 'as...as comparison' } },
+    { idGrammar: 'comparisons', type: 'error_correction', order: 4, content: { wrong: 'The weather is getting badder.', correct: 'The weather is getting worse.', explanation: 'Irregular comparative (bad → worse).' } },
+
+    // Cleft Sentences exercises (5)
+    { idGrammar: 'cleft_sentences', type: 'error_correction', order: 0, content: { wrong: 'It was him who told me.', correct: 'It was he who told me.', explanation: 'Use subject pronoun "he" not "him" after "It is/was".' } },
+    { idGrammar: 'cleft_sentences', type: 'cloze', order: 1, content: { sentence: 'It was ___ who solved the problem.', answer: 'she', hint: 'She is the subject pronoun' } },
+    { idGrammar: 'cleft_sentences', type: 'cloze', order: 2, content: { sentence: 'All I want ___ a good education.', answer: 'is', hint: 'All + subject + is/was + emphasized' } },
+    { idGrammar: 'cleft_sentences', type: 'transformation', order: 3, content: { prompt: 'The government introduced the new policy.', instruction: 'Use cleft sentence with "It was...that"', correct: 'It was the government that introduced the new policy.' } },
+    { idGrammar: 'cleft_sentences', type: 'multiple_choice', order: 4, content: { question: 'Choose the correct cleft sentence:', options: ['It was me who called.', 'It was I who called.', 'It was myself who called.', 'It was me which called.'], correct: 1 } },
+
+    // Inversion exercises (5)
+    { idGrammar: 'inversion', type: 'error_correction', order: 0, content: { wrong: 'Never I have seen such beauty.', correct: 'Never have I seen such beauty.', explanation: 'Đảo ngữ: auxiliary lên trước subject.' } },
+    { idGrammar: 'inversion', type: 'error_correction', order: 1, content: { wrong: 'Only after she arrived he left.', correct: 'Only after she arrived did he leave.', explanation: 'Đảo ngữ cần có auxiliary "did" sau "Only after".' } },
+    { idGrammar: 'inversion', type: 'cloze', order: 2, content: { sentence: '___ had I arrived than the phone rang.', answer: 'No sooner', hint: 'No sooner...than structure' } },
+    { idGrammar: 'inversion', type: 'cloze', order: 3, content: { sentence: 'Rarely ___ such a talented student.', answer: 'have I seen', hint: 'Rarely + auxiliary + subject' } },
+    { idGrammar: 'inversion', type: 'transformation', order: 4, content: { prompt: 'I had no sooner entered the room than the lights went out.', instruction: 'Keep meaning, use different structure', correct: 'Hardly had I entered the room when the lights went out.' } },
+
+    // Ellipsis exercises (5)
+    { idGrammar: 'ellipsis', type: 'error_correction', order: 0, content: { wrong: 'I like tea and so does John.', correct: 'I like tea and so does John.', explanation: 'Đúng: "so + auxiliary + subject" để đồng ý.' } },
+    { idGrammar: 'ellipsis', type: 'error_correction', order: 1, content: { wrong: 'She can sing well and so can\'t he.', correct: 'She can sing well but he can\'t.', explanation: 'Khi bất đồng, dùng "but + negative".' } },
+    { idGrammar: 'ellipsis', type: 'cloze', order: 2, content: { sentence: 'I passed the exam and ___ ___ my sister.', answer: 'so did', hint: 'So + auxiliary + subject' } },
+    { idGrammar: 'ellipsis', type: 'cloze', order: 3, content: { sentence: 'I don\'t enjoy classical music ___ ___.', answer: 'neither do I', hint: 'Neither + auxiliary + subject' } },
+    { idGrammar: 'ellipsis', type: 'transformation', order: 4, content: { prompt: 'Can you play piano? Can you play violin?', instruction: 'Use ellipsis to avoid repetition', correct: 'Can you play piano or violin?' } },
+
+    // Subjunctive exercises (5)
+    { idGrammar: 'subjunctive', type: 'error_correction', order: 0, content: { wrong: 'I wish I was taller.', correct: 'I wish I were taller.', explanation: 'Subjunctive dùng "were" không phải "was" cho unreal present.' } },
+    { idGrammar: 'subjunctive', type: 'error_correction', order: 1, content: { wrong: 'It is essential that he works hard.', correct: 'It is essential that he (should) work hard.', explanation: 'Sau essential/demand/suggest: bare infinitive.' } },
+    { idGrammar: 'subjunctive', type: 'cloze', order: 2, content: { sentence: 'I wish I ___ (be) a professional singer.', answer: 'were', hint: 'Wish cho unreal present - dùng "were"' } },
+    { idGrammar: 'subjunctive', type: 'cloze', order: 3, content: { sentence: 'If only she ___ (study) harder last year.', answer: 'had studied', hint: 'If only + past perfect cho past unreal' } },
+    { idGrammar: 'subjunctive', type: 'transformation', order: 4, content: { prompt: 'It would be better if you arrived earlier.', instruction: 'Use "I wish"', correct: 'I wish you would arrive earlier.' } },
+
+    // Causal Passive exercises (5)
+    { idGrammar: 'causal_passive', type: 'error_correction', order: 0, content: { wrong: 'He got arrested by police.', correct: 'He got arrested.', explanation: 'Get-passive không dùng "by" mà dùng "got + V3".' } },
+    { idGrammar: 'causal_passive', type: 'error_correction', order: 1, content: { wrong: 'I had my hair cutting.', correct: 'I had my hair cut.', explanation: 'Causal have: have + object + V3.' } },
+    { idGrammar: 'causal_passive', type: 'cloze', order: 2, content: { sentence: 'The building ___ (repair) last month.', answer: 'is being repaired', hint: 'Being + V3 cho ongoing passive' } },
+    { idGrammar: 'causal_passive', type: 'cloze', order: 3, content: { sentence: 'She ___ her car ___ yesterday.', answer: 'had, washed', hint: 'Had + object + V3 = sai khiến' } },
+    { idGrammar: 'causal_passive', type: 'transformation', order: 4, content: { prompt: 'Someone stole my bicycle yesterday.', instruction: 'Use causal passive with "have"', correct: 'I had my bicycle stolen yesterday.' } },
   ]
 
   for (const ex of exerciseData) {

@@ -127,6 +127,16 @@ export async function processSpeakGrading(
         gradedAt: new Date(),
       });
 
+      // Save grammar violations for tracking
+      if (result.grammarViolations && result.grammarViolations.length > 0) {
+        await neon.saveGrammarViolations(
+          msg.userId,
+          'SPEAKING',
+          msg.submissionId,
+          result.grammarViolations,
+        );
+      }
+
       await neon.disconnect();
       return;
     } catch (error) {

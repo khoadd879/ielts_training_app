@@ -16,6 +16,7 @@ import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { AddVocabularyToTopicDto } from './dto/add-vocabulary-to-topic.dto';
 import { SubmitReviewDto, GetDueReviewDto, GetTierRecommendationDto } from './dto/review.dto';
+import { GetDailyVocabDto, CompleteDailyVocabDto } from './dto/vocab-daily.dto';
 
 @ApiBearerAuth()
 @Controller('vocabulary')
@@ -80,5 +81,41 @@ export class VocabularyController {
   @Get('tier-recommendation')
   getTierRecommendation(@Query() query: GetTierRecommendationDto) {
     return this.vocabularyService.getTierRecommendation(query);
+  }
+
+  // Vocab Daily Exercise Endpoints
+  @Get('daily')
+  getDailyVocab(@Query() query: GetDailyVocabDto) {
+    return this.vocabularyService.getDailyVocab(query);
+  }
+
+  @Post('daily/complete')
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  completeDailyVocab(@Body() body: CompleteDailyVocabDto) {
+    return this.vocabularyService.completeDailyVocab(body);
+  }
+
+  @Get('stats/:userId')
+  getVocabStats(@Param('userId') userId: string) {
+    return this.vocabularyService.getVocabStats(userId);
+  }
+
+  // Practice Endpoints
+  @Get('practice/random')
+  async getPracticeRandom(
+    @Query('idUser') idUser: string,
+    @Query('count') count: number = 20,
+    @Query('mode') mode: 'flashcard' | 'fill' | 'multiple' = 'flashcard'
+  ) {
+    const words = await this.vocabularyService.getRandomWords(idUser, count, mode);
+    return { data: words };
+  }
+
+  @Post('practice/submit')
+  async submitPractice(
+    @Body() body: { idUser: string; mode: string; answers: any[] }
+  ) {
+    const result = await this.vocabularyService.submitPractice(body.idUser, body.mode, body.answers);
+    return result;
   }
 }

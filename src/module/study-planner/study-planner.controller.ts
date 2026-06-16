@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Patch, Body, Query, Param, Headers } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Post, Patch, Body, Query, Param, Headers, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from 'src/decorator/customize';
+import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 import { StudyPlannerService } from './study-planner.service';
 import { CalculatePlanDto, GetPlanDto } from './dto/calculate-plan.dto';
 import { CompleteTaskDto } from './dto/complete-task.dto';
@@ -23,7 +24,8 @@ export class StudyPlannerController {
     }
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get('plan')
   async getUserPlan(@Query() query: GetPlanDto): Promise<any> {
     try {
@@ -35,6 +37,8 @@ export class StudyPlannerController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Patch('preference')
   async updatePreference(
     @Body() dto: UpdatePreferenceDto,
@@ -43,6 +47,8 @@ export class StudyPlannerController {
     return this.studyPlannerService.updateStudyPreference(idUser, dto.dailyMinutesAvailable);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Patch('daily-tasks/:taskId/complete')
   async completeTask(
     @Param('taskId') taskId: string,
