@@ -217,4 +217,56 @@ export class StatisticsService {
       status: 200,
     };
   }
+
+  async getSkillOverview(idUser: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { idUser },
+      select: { targetBandScore: true },
+    });
+    if (!user) throw new BadRequestException('User not found');
+
+    const finishedResults = await this.prisma.userTestResult.findMany({
+      where: { idUser, status: 'FINISHED' },
+      select: {
+        bandScore: true,
+        test: { select: { testType: true } },
+      },
+    });
+
+    const roundToIeltsScore = (score: number): number =>
+      Math.round(score * 2) / 2;
+
+    const targetBand = user.targetBandScore ?? 7.0;
+
+    const skills: Record<
+      string,
+      { currentBand: number | null; targetBand: number }
+    > = {
+      READING: { currentBand: null, targetBand },
+      LISTENING: { currentBand: null, targetBand },
+      WRITING: { currentBand: null, targetBand },
+      SPEAKING: { currentBand: null, targetBand },
+    };
+
+    for (const type of Object.keys(skills)) {
+      const list = finishedResults.filter(
+        (r) => r.test.testType === type,
+      );
+      if (list.length === 0) continue;
+      const avg =
+        list.reduce((a, b) => a + b.bandScore, 0) / list.length;
+      skills[type].currentBand = roundToIeltsScore(avg);
+    }
+
+    return {
+      message: 'Skill overview retrieved successfully',
+      data: {
+        reading: skills.READING,
+        listening: skills.LISTENING,
+        writing: skills.WRITING,
+        speaking: skills.SPEAKING,
+      },
+      status: 200,
+    };
+  }
 }

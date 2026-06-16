@@ -31,6 +31,11 @@ export class StatisticsController {
     return this.statisticsService.getTargetExam(idUser);
   }
 
+  @Get('skill-overview/:idUser')
+  getSkillOverview(@Param('idUser') idUser: string) {
+    return this.statisticsService.getSkillOverview(idUser);
+  }
+
   @Patch('target/:idUser')
   createTarget(
     @Param('idUser') idUser: string,
