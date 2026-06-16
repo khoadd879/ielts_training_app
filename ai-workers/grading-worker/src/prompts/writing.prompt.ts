@@ -1,3 +1,19 @@
+const GRAMMAR_TOPICS_PROMPT = `
+GRAMMAR TOPICS (detect errors in these categories):
+| topicId | Topic Name |
+|---------|------------|
+| subject_verb | Subject-Verb Agreement |
+| verb_tenses | Verb Tenses |
+| articles | Articles |
+| prepositions | Prepositions |
+| conditionals | Conditionals |
+| passive_voice | Passive Voice |
+| relative_clauses | Relative Clauses |
+| sentence_structure | Sentence Structure |
+| word_forms | Word Forms |
+| connectors | Connectors/Coherence |
+`;
+
 export function buildWritingPrompt(
   submissionText: string,
   writingPrompt: string,
@@ -33,12 +49,24 @@ RULES:
 4. Identify specific mistakes. Provide: original text, corrected text, explanation, and which criterion.
 5. Return ONLY pure JSON with camelCase field names.
 
+GRAMMAR TOPIC DETECTION:
+${GRAMMAR_TOPICS_PROMPT}
+
 JSON OUTPUT FORMAT:
 {
   "taskAchievement": { "score": 6.5, "comment": "..." },
   "coherenceAndCohesion": { "score": 6.0, "comment": "..." },
   "lexicalResource": { "score": 6.5, "comment": "..." },
   "grammaticalRangeAndAccuracy": { "score": 6.0, "comment": "..." },
+  "grammarBand": 5.5,
+  "grammarViolations": [
+    {
+      "topicId": "subject_verb",
+      "userSentence": "I goes to school",
+      "correctedSentence": "I go to school",
+      "explanation": "First person singular requires 'go'"
+    }
+  ],
   "generalFeedback": "...",
   "detailedCorrections": [
     {
@@ -58,11 +86,20 @@ ${submissionText}
 `;
 }
 
+export interface GrammarViolation {
+  topicId: string;
+  userSentence: string;
+  correctedSentence: string;
+  explanation: string;
+}
+
 export interface WritingGradingResult {
   taskAchievement: { score: number; comment: string };
   coherenceAndCohesion: { score: number; comment: string };
   lexicalResource: { score: number; comment: string };
   grammaticalRangeAndAccuracy: { score: number; comment: string };
+  grammarBand?: number;
+  grammarViolations?: GrammarViolation[];
   generalFeedback: string;
   detailedCorrections: Array<{
     original: string;
