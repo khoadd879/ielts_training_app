@@ -236,11 +236,11 @@ export class StatisticsService {
     const roundToIeltsScore = (score: number): number =>
       Math.round(score * 2) / 2;
 
-    const targetBand = user.targetBandScore ?? 7.0;
+    const targetBand = user.targetBandScore ?? null;
 
     const skills: Record<
       string,
-      { currentBand: number | null; targetBand: number }
+      { currentBand: number | null; targetBand: number | null }
     > = {
       READING: { currentBand: null, targetBand },
       LISTENING: { currentBand: null, targetBand },
