@@ -9,6 +9,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { VocabularyModule } from './module/vocabulary/vocabulary.module';
+import { WeaknessModule } from './module/weakness/weakness.module';
 
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { TestModule } from './module/test/test.module';
@@ -69,6 +70,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     VocabularyModule,
+    WeaknessModule,
     CloudinaryModule,
     TestModule,
     PdfExamModule,
