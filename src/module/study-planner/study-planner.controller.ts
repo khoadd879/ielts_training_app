@@ -27,10 +27,10 @@ export class StudyPlannerController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get('plan')
-  async getUserPlan(@Query() query: GetPlanDto): Promise<any> {
+  async getUserPlan(@Query() query: GetPlanDto & { historyMonths?: number }): Promise<any> {
     try {
-      console.log('[StudyPlanner] getUserPlan called with:', query.idUser);
-      return await this.studyPlannerService.getUserStudyPlan(query.idUser);
+      console.log('[StudyPlanner] getUserPlan called with:', query.idUser, 'historyMonths:', query.historyMonths);
+      return await this.studyPlannerService.getUserStudyPlan(query.idUser, query.historyMonths);
     } catch (error) {
       console.error('[StudyPlanner] getUserPlan error:', error);
       throw error;

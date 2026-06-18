@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { DatabaseService } from 'src/database/database.service';
 import { CalculatePlanDto } from './dto/calculate-plan.dto';
 import { CompleteTaskDto } from './dto/complete-task.dto';
+import { SystemConfigService } from 'src/module/system-config/system-config.service';
 
 // Stage enum
 export enum Stage {
@@ -193,6 +194,10 @@ interface StudyPlan {
   stageTheme: string;
   stageThemeDescription: string;
   stageNextMilestone?: { stage: string; requirements: string[] };
+  // Missing skills info
+  missingSkills?: string[];
+  missingSkillsWarning?: string;
+  assessedSkills?: { skill: string; band: number | null }[];
 }
 
 interface FourStrandBalance {
@@ -207,6 +212,7 @@ export class StudyPlannerService {
   constructor(
     private readonly db: DatabaseService,
     @Inject(CACHE_MANAGER) private cache: Cache,
+    private readonly systemConfigService: SystemConfigService,
   ) {}
 
   /**
@@ -216,20 +222,22 @@ export class StudyPlannerService {
   async calculatePlan(dto: CalculatePlanDto): Promise<StudyPlan> {
     console.log('[StudyPlannerService] calculatePlan called with:', JSON.stringify(dto));
     try {
-    const { currentBand, targetBand, daysUntilExam, studyMinutesPerDay } = dto;
+    const { currentBand, targetBand: rawTargetBand, daysUntilExam, studyMinutesPerDay = 120 } = dto;
+    let targetBand = rawTargetBand;
 
     // Validate required fields
     if (currentBand === null || currentBand === undefined) {
       throw new BadRequestException('Placement test required. Please take the assessment to determine your current band.');
     }
+    // If targetBand is null, use currentBand (user needs to set target manually later)
     if (targetBand === null || targetBand === undefined) {
-      throw new BadRequestException('Target band required. Please set your target band in settings.');
+      targetBand = currentBand;
     }
     if (daysUntilExam === null || daysUntilExam === undefined) {
       throw new BadRequestException('Target exam date required. Please set your exam date in settings.');
     }
     if (studyMinutesPerDay === null || studyMinutesPerDay === undefined) {
-      throw new BadRequestException('Daily study minutes required. Please set your preferred study time in settings.');
+      targetBand = currentBand; // Also fallback for undefined
     }
 
     const bandGap = targetBand - currentBand;
@@ -239,26 +247,30 @@ export class StudyPlannerService {
     const monthsUntilExam = daysUntilExam / 30;
     const maxPossibleGain = maxMonthlyRate * monthsUntilExam;
 
-    // Calculate 4-strand balance with adaptive ratios
-    const fourStrandBalance = this.calculateFourStrandBalance(studyMinutesPerDay);
+    // Get user proficiency and skill bands for priority calculation
+    const prof = await this.calculateUserProficiency(dto.idUser);
+    const skillBands = await this.getSkillBands(dto.idUser, dto.historyMonths || 6);
+
+    // Calculate 4-strand balance with priority-based ratios
+    const minutes = studyMinutesPerDay ?? 120;
+    const fourStrandBalance = await this.calculateFourStrandBalance(minutes, prof.stage, skillBands);
 
     // Calculate time validation
-    const timeValidation = this.validateTime(currentBand, targetBand, daysUntilExam, studyMinutesPerDay);
+    const timeValidation = this.validateTime(currentBand, targetBand, daysUntilExam, minutes);
 
     // Check if target is realistic (allow 1.5x for challenging but possible)
     const isRealistic = bandGap <= maxPossibleGain * 1.5;
 
     // Generate daily tasks
     console.log('[StudyPlannerService] Calling calculateUserProficiency for:', dto.idUser);
-    const prof = await this.calculateUserProficiency(dto.idUser);
     console.log('[StudyPlannerService] Prof result:', JSON.stringify(prof));
     const theme = this.getWeeklyTheme(prof.stage, Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)));
     console.log('[StudyPlannerService] Theme:', JSON.stringify(theme));
-    const dailyTasks = await this.generateDailyTasks(dto.idUser, prof.stage, theme.theme, studyMinutesPerDay);
+    const dailyTasks = await this.generateDailyTasks(dto.idUser, prof.stage, theme.theme, minutes);
     console.log('[StudyPlannerService] Daily tasks count:', dailyTasks.length);
 
     // Generate weekly plan
-    const weeklyPlan = await this.generateWeeklyPlan(dto.idUser, studyMinutesPerDay, prof.stage, 0);
+    const weeklyPlan = await this.generateWeeklyPlan(dto.idUser, minutes, prof.stage, 0);
     console.log('[StudyPlannerService] Weekly plan count:', weeklyPlan.length);
 
     // Generate response
@@ -271,7 +283,7 @@ export class StudyPlannerService {
       targetBand,
       daysUntilExam,
       maxPossibleGain,
-      dailyMinutes: studyMinutesPerDay,
+      dailyMinutes: minutes,
       timeValidation,
       dailyTasks,
       weeklyPlan,
@@ -279,7 +291,7 @@ export class StudyPlannerService {
       difficultyLevel: this.determineDifficultyLevel(currentBand, targetBand),
       motivationTips: this.generateMotivationTips(currentBand, targetBand, daysUntilExam),
       metacognitivePrompts: this.generateMetacognitivePrompts(),
-      recommendation: this.getRecommendation(studyMinutesPerDay, currentBand, targetBand),
+      recommendation: this.getRecommendation(minutes, currentBand, targetBand),
       userProficiency: prof,
       currentStage: prof.stage,
       stageProgress,
@@ -321,20 +333,127 @@ export class StudyPlannerService {
     return 0.2;
   }
 
-  private calculateFourStrandBalance(dailyMinutes: number): FourStrandBalance {
-    let ratios: FourStrandBalance;
-    if (dailyMinutes <= 60) ratios = { input: 40, output: 40, language: 15, fluency: 5 };
-    else if (dailyMinutes <= 90) ratios = { input: 35, output: 35, language: 20, fluency: 10 };
-    else if (dailyMinutes <= 150) ratios = { input: 35, output: 35, language: 20, fluency: 10 };
-    else if (dailyMinutes <= 210) ratios = { input: 33, output: 33, language: 22, fluency: 12 };
-    else ratios = { input: 30, output: 30, language: 25, fluency: 15 };
+  private async calculateFourStrandBalance(
+    dailyMinutes: number,
+    stage: Stage,
+    skillBands: Record<string, number[]>,
+  ): Promise<FourStrandBalance> {
+    const config = await this.systemConfigService.getStudyPlannerConfig().catch(() => null);
+    const vocabMinutes = config?.vocabMinutes ?? 8;
+    const grammarFloorMinutes = config?.grammarFloorMinutes ?? 5;
+
+    const grammarPercent = await this.getGrammarPercent(stage);
+    const grammarMinutes = Math.max(grammarFloorMinutes, Math.round(dailyMinutes * grammarPercent / 100));
+    const practiceMinutes = Math.max(0, dailyMinutes - vocabMinutes - grammarMinutes);
+
+    // Calculate priority weights based on skill bands (weakest gets highest priority)
+    const weights = this.getPriorityWeights(skillBands);
+    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+
+    // Distribute practice time across skills
+    const skillMinutes: Record<string, number> = {};
+    for (const [skill, weight] of Object.entries(weights)) {
+      skillMinutes[skill] = Math.round(practiceMinutes * weight / totalWeight);
+    }
+
+    // Group into strands
+    const input = (skillMinutes['READING'] || 0) + (skillMinutes['LISTENING'] || 0);
+    const output = (skillMinutes['WRITING'] || 0) + (skillMinutes['SPEAKING'] || 0);
 
     return {
-      input: Math.round(dailyMinutes * ratios.input / 100),
-      output: Math.round(dailyMinutes * ratios.output / 100),
-      language: Math.round(dailyMinutes * ratios.language / 100),
-      fluency: Math.round(dailyMinutes * ratios.fluency / 100),
+      input,
+      output,
+      language: vocabMinutes + grammarMinutes,
+      fluency: practiceMinutes - input - output,
     };
+  }
+
+  private async getGrammarPercent(stage: Stage): Promise<number> {
+    try {
+      const config = await this.systemConfigService.getStudyPlannerConfig();
+      return config.grammarPercentByStage?.[stage] ?? this.getDefaultGrammarPercent(stage);
+    } catch {
+      return this.getDefaultGrammarPercent(stage);
+    }
+  }
+
+  private getDefaultGrammarPercent(stage: Stage): number {
+    switch (stage) {
+      case Stage.FOUNDATION: return 25;
+      case Stage.SKILL_BUILDING: return 18;
+      case Stage.INTEGRATION: return 13;
+      case Stage.EXAM_PREP: return 10;
+      default: return 15;
+    }
+  }
+
+  private getPriorityWeights(skillBands: Record<string, number[]>): Record<string, number> {
+    // Calculate average band for each skill
+    const skillAvgs: { skill: string; avg: number }[] = [];
+    for (const [skill, bands] of Object.entries(skillBands)) {
+      if (bands.length > 0) {
+        const avg = bands.reduce((a, b) => a + b, 0) / bands.length;
+        skillAvgs.push({ skill, avg });
+      }
+    }
+
+    // Sort by band (lowest first = highest priority)
+    skillAvgs.sort((a, b) => a.avg - b.avg);
+
+    // Assign weights based on count
+    const weights: Record<string, number> = {};
+    const count = skillAvgs.length;
+
+    if (count === 0) {
+      return { READING: 25, LISTENING: 25, WRITING: 25, SPEAKING: 25 };
+    }
+
+    if (count === 1) {
+      weights[skillAvgs[0].skill] = 100;
+    } else if (count === 2) {
+      weights[skillAvgs[0].skill] = 50;
+      weights[skillAvgs[1].skill] = 50;
+    } else if (count === 3) {
+      weights[skillAvgs[0].skill] = 40;
+      weights[skillAvgs[1].skill] = 30;
+      weights[skillAvgs[2].skill] = 30;
+    } else {
+      weights[skillAvgs[0].skill] = 40;
+      weights[skillAvgs[1].skill] = 30;
+      weights[skillAvgs[2].skill] = 20;
+      weights[skillAvgs[3].skill] = 10;
+    }
+
+    return weights;
+  }
+
+  private async getSkillBands(userId: string, historyMonths: number = 6): Promise<Record<string, number[]>> {
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - historyMonths);
+
+    const results = await this.db.userTestResult.findMany({
+      where: {
+        idUser: userId,
+        status: 'FINISHED',
+        finishedAt: { gte: cutoffDate }
+      },
+      include: { test: { select: { testType: true } } },
+    });
+
+    const skillMap: Record<string, number[]> = {
+      READING: [],
+      LISTENING: [],
+      WRITING: [],
+      SPEAKING: [],
+    };
+
+    for (const r of results) {
+      if (r.bandScore && r.bandScore > 0 && skillMap[r.test.testType]) {
+        skillMap[r.test.testType].push(r.bandScore);
+      }
+    }
+
+    return skillMap;
   }
 
   private validateTime(currentBand: number, targetBand: number, daysUntilExam: number, studyMinutesPerDay: number): TimeValidation {
@@ -784,17 +903,22 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
     return false;
   }
 
-  async getUserStudyPlan(idUser: string) {
+  async getUserStudyPlan(idUser: string, historyMonths: number = 6) {
     try {
       const user = await this.db.user.findUnique({ where: { idUser }, select: { targetBandScore: true, targetExamDate: true } });
       if (!user) {
         throw new NotFoundException(`User with ID ${idUser} not found`);
       }
 
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - historyMonths);
+
       const recentResults = await this.db.userTestResult.findMany({
-        where: { idUser, status: 'FINISHED' },
-        orderBy: { finishedAt: 'desc' },
-        take: 10,
+        where: {
+          idUser,
+          status: 'FINISHED',
+          finishedAt: { gte: cutoffDate }
+        },
         include: { test: { select: { testType: true } } },
       });
 
@@ -837,17 +961,23 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
           stageProgress: { currentStage: Stage.FOUNDATION, weeksInStage: 0, stageProgressPercent: 0, readinessScore: 0, nextMilestone: null },
           stageTheme: '',
           stageThemeDescription: '',
+          missingSkills: ['READING', 'LISTENING', 'WRITING', 'SPEAKING'],
+          missingSkillsWarning: 'Cần làm ít nhất 1 bài test để có lộ trình chuẩn.',
+          assessedSkills: [],
         };
       }
 
-      // Call calculatePlan - it will validate and throw if targetBand is null
-      return this.calculatePlan({
+      // Call calculatePlan - if targetBand is null, it will use currentBand as target
+      const plan = await this.calculatePlan({
         idUser,
         currentBand,
-        targetBand: user.targetBandScore,  // can be null, calculatePlan will throw BadRequestException
+        targetBand: user.targetBandScore,
         daysUntilExam,
         studyMinutesPerDay,
+        historyMonths,
       });
+
+      return plan;
     } catch (error) {
       console.error('getUserStudyPlan error:', error);
       throw error;
