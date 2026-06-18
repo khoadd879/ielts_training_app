@@ -6,10 +6,35 @@ import {
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { DatabaseService } from 'src/database/database.service';
+import {
+  assertPartQuestionCount,
+  assertTotalQuestionCount,
+  getSkillLimits,
+} from 'src/helpers/ielts-test-limits';
+import { TestType } from '@prisma/client';
 
 @Injectable()
 export class QuestionService {
   constructor(private readonly databaseService: DatabaseService) {}
+
+  /**
+   * Resolve the parent test's `testType` for a given part.
+   * Returns null if the part doesn't exist.
+   */
+  private async getTestTypeForPart(idPart: string): Promise<TestType | null> {
+    const part = await this.databaseService.part.findUnique({
+      where: { idPart },
+      select: { test: { select: { testType: true } } },
+    });
+    return part?.test?.testType ?? null;
+  }
+
+  /**
+   * Current question count for a part (across all groups).
+   */
+  private async getPartQuestionCount(idPart: string): Promise<number> {
+    return this.databaseService.question.count({ where: { idPart } });
+  }
 
   async createQuestion(dto: CreateQuestionDto) {
     const existingGroup = await this.databaseService.questionGroup.findUnique({
@@ -22,6 +47,13 @@ export class QuestionService {
       where: { idPart: dto.idPart },
     });
     if (!existingPart) throw new BadRequestException('Part not found');
+
+    // IELTS per-part question cap (Listening 5–10, Reading 5–14).
+    const testType = await this.getTestTypeForPart(dto.idPart);
+    if (testType) {
+      const currentCount = await this.getPartQuestionCount(dto.idPart);
+      assertPartQuestionCount(testType, currentCount, currentCount + 1);
+    }
 
     const data = await this.databaseService.question.create({
       data: {
@@ -155,12 +187,59 @@ export class QuestionService {
 
     const parts = await this.databaseService.part.findMany({
       where: { idPart: { in: partIds } },
-      select: { idPart: true },
+      select: { idPart: true, test: { select: { testType: true } } },
     });
     const foundPartIds = new Set(parts.map((p) => p.idPart));
     const missingPart = partIds.find((id) => !foundPartIds.has(id));
     if (missingPart) {
       throw new BadRequestException(`Part not found: ${missingPart}`);
+    }
+
+    // Map idPart -> testType (every part on a single test shares one testType,
+    // but be defensive in case the DB ever allows it to differ).
+    const partTypeMap = new Map<string, TestType>();
+    for (const p of parts) {
+      if (p.test?.testType) partTypeMap.set(p.idPart, p.test.testType);
+    }
+
+    // IELTS per-part + per-test question caps (Listening 5–10×4, Reading 5–14×3).
+    // Validate BEFORE writing so we fail fast and never leave the DB half-populated.
+    const partCurrentCounts = new Map<string, number>();
+    const perPartNewCounts = new Map<string, number>();
+    for (const q of questions) {
+      perPartNewCounts.set(q.idPart, (perPartNewCounts.get(q.idPart) ?? 0) + 1);
+    }
+    for (const [idPart, addCount] of perPartNewCounts.entries()) {
+      const testType = partTypeMap.get(idPart);
+      if (!testType) continue;
+      const current = await this.getPartQuestionCount(idPart);
+      partCurrentCounts.set(idPart, current);
+      assertPartQuestionCount(testType, current, current + addCount);
+    }
+
+    // Total-question cap (test-level): sum(currentPartCounts) + sum(perPartNewCounts)
+    // cannot exceed the per-skill total (40 for L/R; 0 for W/S = no cap).
+    if (partTypeMap.size > 0) {
+      const firstType = partTypeMap.values().next().value as TestType;
+      const lim = getSkillLimits(firstType);
+      if (lim.totalQuestions > 0) {
+        const allPartIds = Array.from(partTypeMap.keys());
+        // Question count for any part NOT in this batch:
+        const otherPartIds = allPartIds.filter(
+          (id) => !perPartNewCounts.has(id),
+        );
+        let otherTotal = 0;
+        if (otherPartIds.length > 0) {
+          otherTotal = await this.databaseService.question.count({
+            where: { idPart: { in: otherPartIds } },
+          });
+        }
+        const batchTotal = Array.from(perPartNewCounts.values()).reduce(
+          (a, b) => a + b,
+          0,
+        );
+        assertTotalQuestionCount(firstType, otherTotal + batchTotal);
+      }
     }
 
     // Check duplicate questionNumber within each group

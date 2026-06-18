@@ -5,6 +5,7 @@ import {
 import { CreatePartDto } from './dto/create-part.dto';
 import { UpdatePartDto } from './dto/update-part.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { assertTotalPartCount, getSkillLimits } from 'src/helpers/ielts-test-limits';
 
 @Injectable()
 export class PartService {
@@ -19,6 +20,14 @@ export class PartService {
     if (!existingTest) {
       throw new BadRequestException('Test not found');
     }
+
+    // IELTS skill cap: e.g. Listening max 4 sections, Reading max 3 passages.
+    // Reject the create if the test already holds the maximum number of parts
+    // for its skill.
+    const existingPartCount = await this.databaseService.part.count({
+      where: { idTest },
+    });
+    assertTotalPartCount(existingTest.testType, existingPartCount);
 
     // Auto-assign next order if not provided, to avoid Unique(idTest, order) clash.
     // Schema enforces @@unique([idTest, order]) so duplicate order in the same test fails.
