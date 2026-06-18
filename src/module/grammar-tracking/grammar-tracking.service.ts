@@ -24,47 +24,86 @@ export class GrammarTrackingService {
     submissionId: string,
     aiResponse: any,
   ) {
-    if (!aiResponse.grammarViolations || !Array.isArray(aiResponse.grammarViolations)) {
-      return;
+    // Handle grammar violations
+    if (aiResponse.grammarViolations && Array.isArray(aiResponse.grammarViolations)) {
+      const violations = aiResponse.grammarViolations;
+
+      for (const v of violations) {
+        const topicTitle = GRAMMAR_TOPIC_IDS[v.topicId];
+        if (!topicTitle) continue;
+
+        // Find grammar id by title
+        const grammar = await this.db.grammar.findFirst({
+          where: { title: { contains: topicTitle.split(' ')[0] } },
+        });
+
+        if (!grammar) continue;
+
+        // Create violation record
+        await this.db.userGrammarViolation.create({
+          data: {
+            idUser: userId,
+            source,
+            idGrammar: grammar.idGrammar,
+            submissionId,
+            userSentence: v.userSentence,
+            correctedSentence: v.correctedSentence,
+          },
+        });
+
+        // Update proficiency: increment violations, wrongCount, reset streak
+        await this.db.userGrammarProficiency.upsert({
+          where: { idUser_idGrammar: { idUser: userId, idGrammar: grammar.idGrammar } },
+          update: {
+            violations: { increment: 1 },
+            wrongCount: { increment: 1 },
+            consecutiveCorrect: 0,  // Reset streak on violation
+          },
+          create: {
+            idUser: userId,
+            idGrammar: grammar.idGrammar,
+            proficiency: 'unknown',
+            violations: 1,
+            wrongCount: 1,
+            consecutiveCorrect: 0,
+            totalAttempts: 1,
+          },
+        });
+      }
     }
 
-    const violations = aiResponse.grammarViolations;
+    // Handle correct grammar usages
+    if (aiResponse.correctGrammarUsages && Array.isArray(aiResponse.correctGrammarUsages)) {
+      const correctUsages = aiResponse.correctGrammarUsages;
 
-    for (const v of violations) {
-      const topicTitle = GRAMMAR_TOPIC_IDS[v.topicId];
-      if (!topicTitle) continue;
+      for (const c of correctUsages) {
+        const topicTitle = GRAMMAR_TOPIC_IDS[c.topicId];
+        if (!topicTitle) continue;
 
-      // Find grammar id by title
-      const grammar = await this.db.grammar.findFirst({
-        where: { title: { contains: topicTitle.split(' ')[0] } },
-      });
+        // Find grammar id by title
+        const grammar = await this.db.grammar.findFirst({
+          where: { title: { contains: topicTitle.split(' ')[0] } },
+        });
 
-      if (!grammar) continue;
+        if (!grammar) continue;
 
-      // Create violation record
-      await this.db.userGrammarViolation.create({
-        data: {
-          idUser: userId,
-          source,
-          idGrammar: grammar.idGrammar,
-          submissionId,
-          userSentence: v.userSentence,
-          correctedSentence: v.correctedSentence,
-        },
-      });
-
-      // Update proficiency wrong count
-      await this.db.userGrammarProficiency.upsert({
-        where: { idUser_idGrammar: { idUser: userId, idGrammar: grammar.idGrammar } },
-        update: { wrongCount: { increment: 1 } },
-        create: {
-          idUser: userId,
-          idGrammar: grammar.idGrammar,
-          proficiency: 'unknown',
-          wrongCount: 1,
-          totalAttempts: 1,
-        },
-      });
+        // Update proficiency: increment correctUsages and consecutiveCorrect (streak continues)
+        await this.db.userGrammarProficiency.upsert({
+          where: { idUser_idGrammar: { idUser: userId, idGrammar: grammar.idGrammar } },
+          update: {
+            correctUsages: { increment: 1 },
+            consecutiveCorrect: { increment: 1 },
+          },
+          create: {
+            idUser: userId,
+            idGrammar: grammar.idGrammar,
+            proficiency: 'unknown',
+            correctUsages: 1,
+            consecutiveCorrect: 1,
+            totalAttempts: 1,
+          },
+        });
+      }
     }
   }
 
