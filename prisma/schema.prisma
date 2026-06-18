@@ -476,18 +476,32 @@ model GrammarExercise {
 }
 
 model UserGrammarProficiency {
-  idUser      String
-  idGrammar   String
-  proficiency String   // "unknown" | "weak" | "medium" | "strong"
-  totalAttempts Int @default(0)
-  correctCount  Int @default(0)
-  wrongCount    Int @default(0)
-  updatedAt   DateTime @updatedAt
+  idUser             String
+  idGrammar          String
+  proficiency        String   // "unknown" | "weak" | "medium" | "strong"
+  totalAttempts      Int      @default(0)
+  correctCount       Int      @default(0)
+  wrongCount         Int      @default(0)
+  correctUsages      Int      @default(0)
+  consecutiveCorrect Int      @default(0)
+  violations         Int      @default(0)
+  updatedAt          DateTime @updatedAt
 
   grammar     Grammar  @relation(fields: [idGrammar], references: [idGrammar])
   user        User     @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
 
   @@id([idUser, idGrammar])
+}
+
+model UserGrammarExerciseSR {
+  id           String   @id @default(uuid())
+  idUser       String
+  idExercise   String
+  interval     Int      @default(1)
+  nextReviewAt DateTime
+  easeFactor   Float    @default(2.5)
+
+  @@unique([idUser, idExercise])
 }
 
 model UserGrammarViolation {

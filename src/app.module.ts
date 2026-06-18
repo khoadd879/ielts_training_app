@@ -9,6 +9,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { VocabularyModule } from './module/vocabulary/vocabulary.module';
+import { WeaknessModule } from './module/weakness/weakness.module';
 
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { TestModule } from './module/test/test.module';
@@ -51,7 +52,6 @@ import { QuestionTypePerformanceModule } from './module/question-type-performanc
 import { GrammarTrackingModule } from './module/grammar-tracking/grammar-tracking.module';
 import { PaymentModule } from './module/payment/payment.module';
 import { SubscriptionModule } from './module/subscription/subscription.module';
-import { WeaknessModule } from './module/weakness/weakness.module';
 import { NotificationsModule } from './module/notifications/notifications.module';
 
 import * as redisStore from 'cache-manager-redis-store';
@@ -70,6 +70,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     VocabularyModule,
+    WeaknessModule,
     CloudinaryModule,
     TestModule,
     PdfExamModule,
@@ -147,7 +148,6 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     PaymentModule,
     SubscriptionModule,
     NotificationsModule,
-    WeaknessModule,
   ],
   controllers: [AppController],
   providers: [

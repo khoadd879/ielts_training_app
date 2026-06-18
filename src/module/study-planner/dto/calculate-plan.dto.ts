@@ -20,18 +20,19 @@ export class CalculatePlanDto {
   @Max(9)
   targetBand?: number | null;
 
-  @ApiProperty({ description: 'Days until exam date', maximum: 365 })
+  @ApiPropertyOptional({ description: 'Days until exam date (null if user has not set exam date yet)', maximum: 365 })
+  @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(365)
-  daysUntilExam: number;
+  daysUntilExam?: number | null;
 
-  @ApiPropertyOptional({ description: 'Study minutes per day', default: 120 })
+  @ApiPropertyOptional({ description: 'Study minutes per day (null if user has not set preference yet)', minimum: 60, maximum: 240 })
   @IsOptional()
   @IsNumber()
   @Min(60)
   @Max(240)
-  studyMinutesPerDay?: number = 120;
+  studyMinutesPerDay?: number | null;
 
   @ApiPropertyOptional({ description: 'Study hours per day (alternative to minutes)', minimum: 1, maximum: 4 })
   @IsOptional()
@@ -39,6 +40,13 @@ export class CalculatePlanDto {
   @Min(1)
   @Max(4)
   studyHoursPerDay?: number;
+
+  @ApiPropertyOptional({ description: 'History months for band calculation (3, 6, or 12)', minimum: 1, maximum: 12, default: 6 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(12)
+  historyMonths?: number = 6;
 }
 
 export class GetPlanDto {
