@@ -179,12 +179,14 @@ export class VocabularyService {
       where: { idUser },
     });
 
-    // Get user's target band (default to 5.5 if not set)
-    const targetBand = user.targetBandScore || 5.5;
+    // Get user's target band (return null if not set — caller decides whether to recommend a tier)
+    const targetBand = user.targetBandScore ?? null;
 
-    // Determine tier based on band target
-    let recommendedTier: number;
-    if (targetBand < 5.5) {
+    // Determine tier based on band target. No target → null tier; FE prompts user to set target.
+    let recommendedTier: number | null;
+    if (targetBand === null) {
+      recommendedTier = null;
+    } else if (targetBand < 5.5) {
       recommendedTier = 1; // High frequency words (3k = 90% coverage)
     } else if (targetBand < 6.5) {
       recommendedTier = 2; // Academic Word List (570 words)
@@ -199,12 +201,16 @@ export class VocabularyService {
       _count: true,
     });
 
-    const masteredCount = masteredByTier.find(t => t.tier === recommendedTier)?._count || 0;
+    const masteredCount = recommendedTier !== null
+      ? masteredByTier.find(t => t.tier === recommendedTier)?._count || 0
+      : 0;
 
     // Get total in recommended tier
-    const totalInTier = await this.databaseService.vocabulary.count({
-      where: { idUser, tier: recommendedTier },
-    });
+    const totalInTier = recommendedTier !== null
+      ? await this.databaseService.vocabulary.count({
+          where: { idUser, tier: recommendedTier },
+        })
+      : 0;
 
     // Check if should progress to next tier (80% mastery)
     const masteryPercentage = totalInTier > 0 ? (masteredCount / totalInTier) * 100 : 0;
@@ -241,12 +247,12 @@ export class VocabularyService {
       throw new BadRequestException('User not found');
     }
 
-    // Determine tier based on user's target band
-    const targetBand = existingUser.targetBandScore || 5.5;
+    // Determine tier based on user's target band. No target → tier 1 (high-frequency, safe default for new learners).
+    const targetBand = existingUser.targetBandScore ?? null;
     let tier = 1;
-    if (targetBand >= 6.5) {
+    if (targetBand !== null && targetBand >= 6.5) {
       tier = 2; // AWL for academic users
-    } else if (targetBand >= 5.5) {
+    } else if (targetBand !== null && targetBand >= 5.5) {
       tier = 1; // High frequency words
     }
 
@@ -524,8 +530,9 @@ Yêu cầu:
       throw new BadRequestException('User not found');
     }
 
-    const targetBand = user.targetBandScore || 5.5;
-    const preferredTiers = targetBand >= 6.5 ? [2, 1] : [1, 2];
+    const targetBand = user.targetBandScore ?? null;
+    // No target → both tiers; target ≥ 6.5 prioritizes AWL (tier 2).
+    const preferredTiers = targetBand !== null && targetBand >= 6.5 ? [2, 1] : [1, 2];
 
     // Get random vocab from preferred tiers (NOT filtered by idUser - shared pool)
     let vocabList = await this.databaseService.vocabulary.findMany({

@@ -100,7 +100,7 @@ interface GrammarStats {
 }
 
 interface UserProficiency {
-  avgBand: number;
+  avgBand: number | null;
   stage: Stage;
   vocabStats: VocabStats;
   grammarStats: GrammarStats;
@@ -116,7 +116,7 @@ interface StageProgress {
   nextMilestone: {
     stage: Stage;
     requirements: string[];
-    currentValues: Record<string, number>;
+    currentValues: Record<string, number | null>;
   } | null;
 }
 
@@ -172,9 +172,9 @@ interface StudyPlan {
   adjustedTarget?: number;
   currentBand: number | null;  // null = needs placement test
   targetBand: number | null;   // null = needs to set target
-  daysUntilExam: number;
+  daysUntilExam: number | null;  // null = no exam date set
   maxPossibleGain: number;
-  dailyMinutes: number;
+  dailyMinutes: number | null;  // null = no preference set
   timeValidation?: TimeValidation;
   dailyTasks: DailyTask[];
   weeklyPlan: DayPlan[];
@@ -216,7 +216,7 @@ export class StudyPlannerService {
   async calculatePlan(dto: CalculatePlanDto): Promise<StudyPlan> {
     console.log('[StudyPlannerService] calculatePlan called with:', JSON.stringify(dto));
     try {
-    const { currentBand, targetBand, daysUntilExam, studyMinutesPerDay = 120 } = dto;
+    const { currentBand, targetBand, daysUntilExam, studyMinutesPerDay } = dto;
 
     // Validate required fields
     if (currentBand === null || currentBand === undefined) {
@@ -224,6 +224,12 @@ export class StudyPlannerService {
     }
     if (targetBand === null || targetBand === undefined) {
       throw new BadRequestException('Target band required. Please set your target band in settings.');
+    }
+    if (daysUntilExam === null || daysUntilExam === undefined) {
+      throw new BadRequestException('Target exam date required. Please set your exam date in settings.');
+    }
+    if (studyMinutesPerDay === null || studyMinutesPerDay === undefined) {
+      throw new BadRequestException('Daily study minutes required. Please set your preferred study time in settings.');
     }
 
     const bandGap = targetBand - currentBand;
@@ -404,7 +410,7 @@ export class StudyPlannerService {
   const prof = await this.calculateUserProficiency(userId);
 
   // Determine if user has actual history
-  const hasActualHistory = prof.avgBand !== 5.0 || prof.vocabStats.totalWords > 0 || prof.grammarStats.total > 0;
+  const hasActualHistory = prof.avgBand !== null || prof.vocabStats.totalWords > 0 || prof.grammarStats.total > 0;
 
   // Get weak skills (empty if no history)
   const weakSkills = hasActualHistory ? await this.getWeakSkills(userId, 2) : { input: [], output: [] };
@@ -471,9 +477,10 @@ export class StudyPlannerService {
   return tasks;
 }
 
-  private async createInputTask(skill: string, theme: string, minutes: number, avgBand: number): Promise<DailyTask> {
+  private async createInputTask(skill: string, theme: string, minutes: number, avgBand: number | null): Promise<DailyTask> {
   const skillLabel = skill === 'READING' ? 'đọc' : 'nghe';
-  const difficulty = avgBand < 5.5 ? 'easy' : avgBand < 6.5 ? 'medium' : 'hard';
+  // No test history → default to medium difficulty (safe middle ground, not a fake band).
+  const difficulty = avgBand === null || avgBand < 5.5 ? 'easy' : avgBand < 6.5 ? 'medium' : 'hard';
 
   return {
     id: `input-${skill.toLowerCase()}-${Date.now()}`,
@@ -490,9 +497,9 @@ export class StudyPlannerService {
   };
 }
 
-private async createOutputTask(skill: string, theme: string, minutes: number, avgBand: number): Promise<DailyTask> {
+private async createOutputTask(skill: string, theme: string, minutes: number, avgBand: number | null): Promise<DailyTask> {
   const skillLabel = skill === 'WRITING' ? 'viết' : 'nói';
-  const difficulty = avgBand < 5.5 ? 'easy' : avgBand < 6.5 ? 'medium' : 'hard';
+  const difficulty = avgBand === null || avgBand < 5.5 ? 'easy' : avgBand < 6.5 ? 'medium' : 'hard';
 
   return {
     id: `output-${skill.toLowerCase()}-${Date.now()}`,
@@ -745,8 +752,9 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
     }
 
     // Check all conditions
+    const avgBandSatisfies = prof.avgBand !== null && prof.avgBand >= transition.conditions.minAvgBand;
     const canTransition =
-      prof.avgBand >= transition.conditions.minAvgBand &&
+      avgBandSatisfies &&
       prof.vocabStats.mastered >= transition.conditions.minVocabMastered &&
       this.checkGrammarLevel(prof.grammarStats, transition.conditions.minGrammarProficiency) &&
       prof.completionRate >= transition.conditions.minCompletionRate &&
@@ -802,9 +810,11 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
         if (allBands.length > 0) currentBand = Math.round((allBands.reduce((a, b) => a + b, 0) / allBands.length) * 10) / 10;
       }
 
-      const daysUntilExam = user.targetExamDate ? Math.max(1, Math.ceil((user.targetExamDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 60;
+      const daysUntilExam = user.targetExamDate
+        ? Math.max(1, Math.ceil((user.targetExamDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+        : null;
       const preference = await this.db.userStudyPreference.findUnique({ where: { idUser } });
-      const studyMinutesPerDay = preference?.dailyMinutesAvailable || 120;
+      const studyMinutesPerDay = preference?.dailyMinutesAvailable ?? null;
 
       // Only require currentBand to exist. targetBand can be null (user hasn't set target yet).
       if (currentBand === null) {
@@ -822,7 +832,7 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
           motivationTips: [],
           metacognitivePrompts: [],
           recommendation: { status: 'warn', message: 'Vui lòng hoàn thành bài đánh giá trình độ để xác định band hiện tại.' },
-          userProficiency: { avgBand: 0, stage: Stage.FOUNDATION, vocabStats: { totalWords: 0, mastered: 0, learning: 0, new: 0 }, grammarStats: { total: 0, strong: 0, medium: 0, weak: 0, unknown: 0 }, completionRate: 0, readinessScore: 0 },
+          userProficiency: { avgBand: null, stage: Stage.FOUNDATION, vocabStats: { totalWords: 0, mastered: 0, learning: 0, new: 0 }, grammarStats: { total: 0, strong: 0, medium: 0, weak: 0, unknown: 0 }, completionRate: 0, readinessScore: 0 },
           currentStage: Stage.FOUNDATION,
           stageProgress: { currentStage: Stage.FOUNDATION, weeksInStage: 0, stageProgressPercent: 0, readinessScore: 0, nextMilestone: null },
           stageTheme: '',
@@ -853,7 +863,7 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
     return { success: true, dailyMinutesAvailable };
   }
 
-  private async calculateAvgBand(userId: string): Promise<{ band: number; hasHistory: boolean }> {
+  private async calculateAvgBand(userId: string): Promise<{ band: number | null; hasHistory: boolean }> {
     const results = await this.db.userTestResult.findMany({
       where: { idUser: userId, status: 'FINISHED' },
       orderBy: { finishedAt: 'desc' },
@@ -868,8 +878,10 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
 
     const allBands = Object.values(skillBands).flat();
     return {
-      band: allBands.length > 0 ? Math.round((allBands.reduce((a, b) => a + b, 0) / allBands.length) * 10) / 10 : 5.0,
-      hasHistory: allBands.length > 0
+      band: allBands.length > 0
+        ? Math.round((allBands.reduce((a, b) => a + b, 0) / allBands.length) * 10) / 10
+        : null,
+      hasHistory: allBands.length > 0,
     };
   }
 
@@ -946,18 +958,18 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
     let stage: Stage;
     if (!hasTestHistory) {
       stage = Stage.FOUNDATION;
-    } else if (avgBand < 5.0) {
+    } else if (avgBand !== null && avgBand < 5.0) {
       stage = Stage.FOUNDATION;
-    } else if (avgBand < 6.0) {
+    } else if (avgBand !== null && avgBand < 6.0) {
       stage = Stage.SKILL_BUILDING;
-    } else if (avgBand < 7.0) {
+    } else if (avgBand !== null && avgBand < 7.0) {
       stage = Stage.INTEGRATION;
     } else {
       stage = Stage.EXAM_PREP;
     }
 
     // Calculate readiness score (0-100)
-    const bandScore = Math.min(100, (avgBand / 9) * 100);
+    const bandScore = avgBand !== null ? Math.min(100, (avgBand / 9) * 100) : 0;
     const vocabScore = Math.min(100, (vocabStats.mastered / 300) * 100);
     const grammarScore = grammarStats.total > 0
       ? Math.min(100, ((grammarStats.medium + grammarStats.strong * 2) / (grammarStats.total * 2)) * 100)
@@ -983,7 +995,7 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
     if (!transition) return false;
 
     // Check band
-    if (prof.avgBand < transition.conditions.minAvgBand) return false;
+    if (prof.avgBand === null || prof.avgBand < transition.conditions.minAvgBand) return false;
 
     // Check vocab
     if (prof.vocabStats.mastered < transition.conditions.minVocabMastered) return false;
@@ -1025,7 +1037,7 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
     const currentStage = prof.stage;
 
     // Check if user has any actual test history
-    const hasTestHistory = prof.avgBand !== 5.0 || prof.vocabStats.totalWords > 0 || prof.grammarStats.total > 0;
+    const hasTestHistory = prof.avgBand !== null || prof.vocabStats.totalWords > 0 || prof.grammarStats.total > 0;
 
     let preference = await this.db.userStudyPreference.findUnique({
       where: { idUser: userId }
@@ -1066,7 +1078,7 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
       let metCount = 0;
       let totalReqs = 4; // band, vocab, grammar, completion
 
-      if (prof.avgBand >= reqs.minAvgBand) metCount++;
+      if (prof.avgBand !== null && prof.avgBand >= reqs.minAvgBand) metCount++;
       if (prof.vocabStats.mastered >= reqs.minVocabMastered) metCount++;
       // Grammar: strong = 2, medium = 1, weak/unknown = 0
       const grammarScore = prof.grammarStats.strong * 2 + prof.grammarStats.medium;
