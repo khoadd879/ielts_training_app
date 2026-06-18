@@ -106,4 +106,23 @@ export class SystemConfigController {
     );
     return { message: 'Moderation policy updated successfully' };
   }
+
+  // Study Planner Config endpoints
+  @Get('study-planner/config')
+  async getStudyPlannerConfig() {
+    const config = await this.systemConfigService.getStudyPlannerConfig();
+    return config;
+  }
+
+  @Put('study-planner/config')
+  @Roles(Role.ADMIN)
+  async setStudyPlannerConfig(@Body() body: any, @Req() req: any) {
+    await this.systemConfigService.setStudyPlannerConfig(
+      body,
+      this.getRequestUserId(req),
+      this.getRequestUserName(req),
+      this.getRequestUserRole(req),
+    );
+    return { message: 'Study planner config updated successfully' };
+  }
 }
