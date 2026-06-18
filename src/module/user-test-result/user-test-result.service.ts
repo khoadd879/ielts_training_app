@@ -113,6 +113,53 @@ export class UserTestResultService {
     };
   }
 
+  async getSkillStatus(idUser: string) {
+    const existingUser = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+
+    if (!existingUser) throw new BadRequestException('User not found');
+
+    const results = await this.databaseService.userTestResult.findMany({
+      where: { idUser, status: TestStatus.FINISHED, bandScore: { gt: 0 } },
+      select: {
+        bandScore: true,
+        finishedAt: true,
+        test: { select: { testType: true } },
+      },
+      orderBy: { finishedAt: 'desc' },
+    });
+
+    const skillMap: Record<string, { band: number | null; lastAssessed: string | null }> = {
+      READING: { band: null, lastAssessed: null },
+      LISTENING: { band: null, lastAssessed: null },
+      WRITING: { band: null, lastAssessed: null },
+      SPEAKING: { band: null, lastAssessed: null },
+    };
+
+    for (const r of results) {
+      const skill = r.test.testType;
+      if (skillMap[skill] && skillMap[skill].band === null) {
+        skillMap[skill] = {
+          band: r.bandScore,
+          lastAssessed: r.finishedAt?.toISOString() || null,
+        };
+      }
+    }
+
+    return {
+      message: 'Skill status retrieved successfully',
+      data: {
+        skills: skillMap,
+        assessedCount: Object.values(skillMap).filter(s => s.band !== null).length,
+        missingSkills: Object.entries(skillMap)
+          .filter(([_, s]) => s.band === null)
+          .map(([skill]) => skill),
+      },
+      status: 200,
+    };
+  }
+
   async findOne(idTestResult: string) {
     const data = await this.databaseService.userTestResult.findUnique({
       where: { idTestResult },
