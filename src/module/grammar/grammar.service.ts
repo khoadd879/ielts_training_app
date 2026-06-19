@@ -651,12 +651,14 @@ export class GrammarService {
         idUser_idGrammar: { idUser: data.idUser, idGrammar: data.idGrammar }
       },
       update: {
-        violations: { increment: 1 }
+        violations: { increment: 1 },
+        consecutiveCorrect: 0,
       },
       create: {
         idUser: data.idUser,
         idGrammar: data.idGrammar,
         violations: 1,
+        consecutiveCorrect: 0,
         proficiency: 'unknown'
       }
     });
