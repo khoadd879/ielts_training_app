@@ -17,6 +17,9 @@ import {
 } from '@nestjs/swagger';
 import { Public } from 'src/decorator/customize';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 import { SubscriptionService } from './subscription.service';
 import { CreateSubscriptionPackageDto } from './dto/create-subscription-package.dto';
 import { SubscribeDto } from './dto/subscribe.dto';
@@ -94,14 +97,16 @@ export class SubscriptionController {
   // ===== Admin Routes =====
 
   @Post('packages')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @ApiBearerAuth()
   async createPackage(@Body() dto: CreateSubscriptionPackageDto) {
     return this.subscriptionService.createPackage(dto);
   }
 
   @Post('admin/grant')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @ApiBearerAuth()
   async adminGrantSubscription(
     @Body() body: { idUser: string; idPackage: string; durationDays: number },
