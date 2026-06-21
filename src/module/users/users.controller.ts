@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
@@ -14,13 +15,19 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post('create-user')
+  @Roles(Role.ADMIN)
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -48,16 +55,19 @@ export class UsersController {
   }
 
   @Get('get-all')
+  @Roles(Role.ADMIN)
   findAll() {
     return this.usersService.findAll();
   }
 
   @Get('get-one/:idUser')
+  @Roles(Role.ADMIN)
   findOne(@Param('idUser') idUser: string) {
     return this.usersService.findOne(idUser);
   }
 
   @Patch('update-user/:idUser')
+  @Roles(Role.ADMIN)
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -85,6 +95,7 @@ export class UsersController {
   }
 
   @Delete('delete-user/:idUser')
+  @Roles(Role.ADMIN)
   remove(@Param('idUser') idUser: string) {
     return this.usersService.remove(idUser);
   }
