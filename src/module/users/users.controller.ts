@@ -61,7 +61,7 @@ export class UsersController {
   }
 
   @Get('get-one/:idUser')
-  @Roles(Role.ADMIN)
+  // Public: lấy profile user (giữ JwtAuthGuard ở class level, không yêu cầu role)
   findOne(@Param('idUser') idUser: string) {
     return this.usersService.findOne(idUser);
   }

@@ -139,13 +139,14 @@ export class UsersService {
   async findOne(id: string) {
     const user = await this.databaseService.user.findUnique({
       where: { idUser: id },
+      omit: {
+        password: true,
+      },
     });
     if (!user) {
       return { message: 'User not found', data: null, status: 404 };
     }
-    // Loại bỏ password
-    const { password, ...data } = user;
-    return { message: 'User retrieved successfully', data, status: 200 };
+    return { message: 'User retrieved successfully', data: user, status: 200 };
   }
 
   async findByEmail(email: string) {
