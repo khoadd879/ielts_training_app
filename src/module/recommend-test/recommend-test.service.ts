@@ -1,4 +1,6 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { DatabaseService } from 'src/database/database.service';
 import { Level, Test, TestType } from '@prisma/client';
 
@@ -13,7 +15,10 @@ const LevelWeight = {
 export class RecommendTestService {
   private readonly logger = new Logger(RecommendTestService.name);
 
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    @Inject(CACHE_MANAGER) private cache: Cache,
+  ) {}
 
   async getSimpleRecommendations(idUser: string, limit = 2): Promise<Test[]> {
     const existingUser = await this.databaseService.user.findUnique({
@@ -21,68 +26,76 @@ export class RecommendTestService {
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
-    // 1. Lấy lịch sử & Phân tích profile (Giữ nguyên)
-    const userHistory = await this.databaseService.userTestResult.findMany({
-      where: { idUser, status: 'FINISHED' },
-      select: {
-        bandScore: true,
-        test: { select: { testType: true, level: true, idTest: true } },
-      },
-    });
 
-    const completedTestIds = userHistory.map((h) => h.test.idTest);
-    const userProfile = this.analyzeUserProfile(userHistory);
+    const cacheKey = `recommend-test:${idUser}`;
+    let payload = await this.cache.get<{
+      availableTests: Array<{
+        idTest: string;
+        title: string;
+        testType: string;
+        level: string;
+        duration: number;
+      }>;
+      userProfile: ReturnType<typeof this.analyzeUserProfile>;
+    }>(cacheKey);
 
-    // 2. Lấy TOÀN BỘ bài test chưa làm
-    const availableTests = await this.databaseService.test.findMany({
-      where: {
-        idTest: { notIn: completedTestIds },
-      },
-    });
+    if (!payload) {
+      // 1. Lấy lịch sử & Phân tích profile
+      const userHistory = await this.databaseService.userTestResult.findMany({
+        where: { idUser, status: 'FINISHED' },
+        select: {
+          bandScore: true,
+          test: { select: { testType: true, level: true, idTest: true } },
+        },
+      });
 
+      const completedTestIds = userHistory.map((h) => h.test.idTest);
+      const userProfile = this.analyzeUserProfile(userHistory);
+
+      // 2. Lấy TOÀN BỘ bài test chưa làm
+      const availableTests = await this.databaseService.test.findMany({
+        where: {
+          idTest: { notIn: completedTestIds },
+        },
+        select: {
+          idTest: true,
+          title: true,
+          testType: true,
+          level: true,
+          duration: true,
+        },
+      });
+
+      payload = { availableTests, userProfile };
+      // Cache payload — invalidate khi user nộp bài (xem test-result service).
+      await this.cache.set(cacheKey, payload, 600);
+    }
+
+    const { availableTests, userProfile } = payload;
     if (availableTests.length === 0) return [];
 
-    // 3. Tính điểm (Scoring)
+    // 3. Tính điểm (Scoring) — random mỗi request để user thấy đề xuất thay đổi
     const scoredTests = availableTests.map((test) => {
       let score = 0;
 
-      // -- Logic tính điểm (Giữ nguyên hoặc tinh chỉnh nhẹ) --
       if (test.testType === userProfile.weakestSkill) score += 50;
 
       const diff =
-        LevelWeight[test.level] - LevelWeight[userProfile.currentLevel];
-      if (diff === 0)
-        score += 30; // Vừa sức
-      else if (diff === 1)
-        score += 15; // Thử thách 1 chút
-      else if (diff === -1)
-        score += 5; // Ôn tập
-      else score -= 20; // Quá khó hoặc quá dễ
+        LevelWeight[test.level as Level] - LevelWeight[userProfile.currentLevel];
+      if (diff === 0) score += 30;
+      else if (diff === 1) score += 15;
+      else if (diff === -1) score += 5;
+      else score -= 20;
 
-      // Tăng tính ngẫu nhiên tại đây (Random từ 0 -> 10 điểm thay vì 5)
-      // Để các bài xêm xêm nhau có cơ hội tráo đổi vị trí
       score += Math.random() * 10;
-
       return { test, score };
     });
 
-    // 4. Sắp xếp giảm dần theo điểm
     scoredTests.sort((a, b) => b.score - a.score);
 
-    // --- THAY ĐỔI QUAN TRỌNG Ở ĐÂY ---
-
-    // Quy tắc: Tạo Pool ứng viên.
-    // Nếu cần lấy 'limit' (ví dụ 2), ta sẽ xét trong Top 'poolSize' (ví dụ 6 hoặc 10)
-    // Công thức: Lấy gấp 3 lần số lượng cần thiết, hoặc tối thiểu 5 bài.
     const poolSize = Math.max(limit * 3, 5);
-
-    // Lấy ra nhóm "Top Tier" (Những bài điểm cao nhất)
     const topCandidates = scoredTests.slice(0, poolSize);
-
-    // Trộn ngẫu nhiên nhóm này (Shuffle)
     const shuffledCandidates = this.shuffleArray(topCandidates);
-
-    // Lấy ra số lượng cần thiết cuối cùng
     return shuffledCandidates.slice(0, limit).map((item) => item.test);
   }
 

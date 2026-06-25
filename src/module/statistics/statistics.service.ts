@@ -1,4 +1,6 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { differenceInDays, format } from 'date-fns';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateTargetExam } from './dto/create-target-exam.dto';
@@ -6,7 +8,10 @@ import { TestType } from '@prisma/client';
 
 @Injectable()
 export class StatisticsService {
-  constructor(private readonly prisma: DatabaseService) {}
+  constructor(
+    private readonly prisma: DatabaseService,
+    @Inject(CACHE_MANAGER) private cache: Cache,
+  ) {}
 
   async OverAllScore(idUser: string) {
     const existingUser = await this.prisma.user.findUnique({
@@ -219,6 +224,10 @@ export class StatisticsService {
   }
 
   async getSkillOverview(idUser: string) {
+    const cacheKey = `skill-overview:${idUser}`;
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
+
     const user = await this.prisma.user.findUnique({
       where: { idUser },
       select: { targetBandScore: true },
@@ -258,7 +267,7 @@ export class StatisticsService {
       skills[type].currentBand = roundToIeltsScore(avg);
     }
 
-    return {
+    const result = {
       message: 'Skill overview retrieved successfully',
       data: {
         reading: skills.READING,
@@ -268,5 +277,7 @@ export class StatisticsService {
       },
       status: 200,
     };
+    await this.cache.set(cacheKey, result, 300);
+    return result;
   }
 }
