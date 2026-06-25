@@ -502,18 +502,12 @@ ${content}
     const data = await this.databaseService.forumPost.findMany({
       where: {
         idForumThreads,
-        OR: [
-          {
-            moderationStatus: {
-              in: [
-                ForumModerationStatus.AUTO_APPROVED,
-                ForumModerationStatus.APPROVED,
-              ],
-            },
-          },
-          // Author always sees their own posts (incl. pending/rejected)
-          { idUser },
-        ],
+        moderationStatus: {
+          in: [
+            ForumModerationStatus.AUTO_APPROVED,
+            ForumModerationStatus.APPROVED,
+          ],
+        },
       },
       orderBy: { created_at: 'desc' },
       include: {
@@ -577,6 +571,84 @@ ${content}
     };
   }
 
+  async findPostsByUser(idUser: string, viewerId: string) {
+    await this.existingUser(idUser);
+
+    // Only the author themselves or a moderator can list all of a user's posts
+    // (including rejected/pending ones). Everyone else is denied.
+    if (idUser !== viewerId) {
+      const viewer = await this.existingUser(viewerId);
+      if (!this.isModeratorRole(viewer.role)) {
+        throw new ForbiddenException(
+          'You are not allowed to view this user posts',
+        );
+      }
+    }
+
+    const data = await this.databaseService.forumPost.findMany({
+      where: { idUser },
+      orderBy: { created_at: 'desc' },
+      include: {
+        user: {
+          select: {
+            idUser: true,
+            nameUser: true,
+            avatar: true,
+          },
+        },
+        forumComment: {
+          orderBy: {
+            created_at: 'asc',
+          },
+          include: {
+            user: {
+              select: {
+                idUser: true,
+                nameUser: true,
+                avatar: true,
+              },
+            },
+            _count: {
+              select: {
+                forumCommentLikes: true,
+              },
+            },
+            forumCommentLikes: {
+              where: {
+                idUser: viewerId,
+              },
+              select: {
+                idUser: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            forumPostLikes: true,
+            forumComment: true,
+          },
+        },
+        forumPostLikes: {
+          where: {
+            idUser: viewerId,
+          },
+          select: {
+            idUser: true,
+          },
+        },
+      },
+    });
+
+    const transformedPosts = data.map((post) => this.transformPost(post));
+
+    return {
+      message: 'User posts retrieved successfully',
+      data: transformedPosts,
+      status: 200,
+    };
+  }
+
   async findForumPost(idForumPost: string, idUser: string) {
     const viewer = await this.existingUser(idUser);
     const data = await this.getForumPostWithRelations(idForumPost, idUser);
@@ -603,15 +675,18 @@ ${content}
   ) {
     const { idForumThreads, idUser, content } = updateForumPostDto;
 
-    await this.existingUser(idUser);
+    const editor = await this.existingUser(idUser);
     const forumThread = await this.existingForumThreads(idForumThreads);
 
-    // Check ownership
+    // Check ownership / moderator
     const existingPost = await this.databaseService.forumPost.findUnique({
       where: { idForumPost },
     });
     if (!existingPost) throw new BadRequestException('Forum post not found');
-    if (existingPost.idUser !== idUser) {
+    if (
+      existingPost.idUser !== idUser &&
+      !this.isModeratorRole(editor.role)
+    ) {
       throw new ForbiddenException('You are not authorized to update this post');
     }
 
@@ -837,11 +912,15 @@ ${content}
   }
 
   async removeForumPost(idForumPost: string, idUser: string) {
+    const requester = await this.existingUser(idUser);
     const existing = await this.databaseService.forumPost.findUnique({
       where: { idForumPost },
     });
     if (!existing) throw new BadRequestException('Forum post not found');
-    if (existing.idUser !== idUser) {
+    if (
+      existing.idUser !== idUser &&
+      !this.isModeratorRole(requester.role)
+    ) {
       throw new ForbiddenException('You are not authorized to delete this post');
     }
 

@@ -6,9 +6,11 @@ import {
   Patch,
   Param,
   Delete,
+  Req,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { ForumPostService } from './forum-post.service';
 import { CreateForumPostDto } from './dto/create-forum-post.dto';
 import { UpdateForumPostDto } from './dto/update-forum-post.dto';
@@ -65,6 +67,15 @@ export class ForumPostController {
     @Param('idUser') idUser: string,
   ) {
     return this.forumPostService.findForumPost(idForumPost, idUser);
+  }
+
+  @Get('posts-by-user/:idUser')
+  findPostsByUser(
+    @Param('idUser') idUser: string,
+    @Req() req: Request,
+  ) {
+    const viewerId = (req.user as { userId?: string } | undefined)?.userId;
+    return this.forumPostService.findPostsByUser(idUser, viewerId ?? idUser);
   }
 
   @Get('moderation-queue/:idUser')
