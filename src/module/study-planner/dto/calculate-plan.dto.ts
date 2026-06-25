@@ -20,11 +20,11 @@ export class CalculatePlanDto {
   @Max(9)
   targetBand?: number | null;
 
-  @ApiPropertyOptional({ description: 'Days until exam date (null if user has not set exam date yet)', maximum: 365 })
+  @ApiPropertyOptional({ description: 'Days until exam date (null if user has not set exam date yet)', maximum: 730 })
   @IsOptional()
   @IsNumber()
   @Min(1)
-  @Max(365)
+  @Max(730)
   daysUntilExam?: number | null;
 
   @ApiPropertyOptional({ description: 'Study minutes per day (null if user has not set preference yet)', minimum: 60, maximum: 240 })
