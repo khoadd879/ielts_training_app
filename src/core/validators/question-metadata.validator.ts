@@ -16,6 +16,12 @@ const CoordinateSchema = z.object({
   y: z.number().min(0).max(100),
 });
 
+const DiagramLabelSchema = z.object({
+  pointLabel: z.string().min(1),
+  labelCoordinate: CoordinateSchema,
+  correctAnswers: z.array(z.string()).min(1),
+});
+
 const MultipleChoiceMetadataSchema = z.object({
   type: z.literal(QuestionType.MULTIPLE_CHOICE),
   options: z.array(OptionSchema).min(2),
@@ -108,12 +114,18 @@ const FlowChartCompletionMetadataSchema = z.object({
 
 const DiagramLabelingMetadataSchema = z.object({
   type: z.literal(QuestionType.DIAGRAM_LABELING),
-  imageUrl: z.string().url(),
-  labelCoordinate: CoordinateSchema,
-  pointLabel: z.string().min(1),
+  // imageUrl is REQUIRED — the question is meaningless without the visual.
+  // Empty string is rejected by `min(1)`. Use `z.string().url()` for strict
+  // URL validation, or `z.string().min(1)` to allow CDN paths/relative URLs.
+  imageUrl: z.string().min(1),
+  // Sub-kind (diagram/map/plan) carried from FE; optional on per-question
+  // metadata since the group already owns it.
+  kind: z.enum(['diagram', 'map', 'plan']).optional(),
+  // Multi-label: each entry is one fillable point on the image. At least
+  // one is required (a diagram with no labels is not a question).
+  labels: z.array(DiagramLabelSchema).min(1),
   hasWordBank: z.boolean(),
   wordBank: z.array(WordBankItemSchema).optional(),
-  correctAnswers: z.array(z.string()).min(1),
 });
 
 const ShortAnswerMetadataSchema = z.object({

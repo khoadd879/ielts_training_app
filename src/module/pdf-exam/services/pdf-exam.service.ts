@@ -1699,21 +1699,62 @@ Visit this URL and inspect the original PDF if you can access it. Use it to conf
         };
       case QuestionType.DIAGRAM_LABELING: {
         const imageUrl = this.pickNonEmptyString(raw.imageUrl);
-        const pointLabel = this.pickNonEmptyString(raw.pointLabel);
-        const labelCoordinate = this.sanitizeCoordinate(raw.labelCoordinate);
 
-        if (!imageUrl || !pointLabel || !labelCoordinate) {
+        if (!imageUrl) {
           return undefined;
         }
+
+        // Prefer multi-label `labels[]` from FE/crawler. Fall back to wrapping
+        // legacy single-point fields (`pointLabel` + `labelCoordinate` +
+        // `correctAnswers`) into a single-element labels array so old data
+        // doesn't break.
+        const rawLabels = Array.isArray(raw.labels) ? raw.labels : [];
+        let labels;
+        if (rawLabels.length > 0) {
+          labels = rawLabels
+            .map((l) => {
+              const pointLabel = this.pickNonEmptyString(l?.pointLabel);
+              const labelCoordinate = this.sanitizeCoordinate(
+                l?.labelCoordinate,
+              );
+              const correctAnswers = this.sanitizeStringArray(
+                l?.correctAnswers,
+              );
+              if (!pointLabel || !labelCoordinate || !correctAnswers.length) {
+                return undefined;
+              }
+              return { pointLabel, labelCoordinate, correctAnswers };
+            })
+            .filter(Boolean);
+        } else {
+          const pointLabel = this.pickNonEmptyString(raw.pointLabel);
+          const labelCoordinate = this.sanitizeCoordinate(
+            raw.labelCoordinate,
+          );
+          const correctAnswers = this.sanitizeStringArray(raw.correctAnswers);
+          if (!pointLabel || !labelCoordinate || !correctAnswers.length) {
+            return undefined;
+          }
+          labels = [{ pointLabel, labelCoordinate, correctAnswers }];
+        }
+
+        if (!labels.length) {
+          return undefined;
+        }
+
+        const rawKind = raw.kind;
+        const kind =
+          rawKind === 'diagram' || rawKind === 'map' || rawKind === 'plan'
+            ? rawKind
+            : undefined;
 
         return {
           type: QuestionType.DIAGRAM_LABELING,
           imageUrl,
-          labelCoordinate,
-          pointLabel,
+          ...(kind ? { kind } : {}),
+          labels,
           hasWordBank: this.inferHasWordBank(raw, groupInstructions),
           wordBank: this.sanitizeWordBankList(raw.wordBank),
-          correctAnswers: this.sanitizeStringArray(raw.correctAnswers),
         };
       }
       case QuestionType.SHORT_ANSWER:

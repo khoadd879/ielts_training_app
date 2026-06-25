@@ -988,11 +988,15 @@ export class StructureAnalyzerService {
         return {
           type: QuestionType.DIAGRAM_LABELING,
           imageUrl: '',
-          labelCoordinate: { x: 0, y: 0 },
-          pointLabel: String(questionNumber),
+          labels: [
+            {
+              pointLabel: String(questionNumber),
+              labelCoordinate: { x: 0, y: 0 },
+              correctAnswers: [],
+            },
+          ],
           hasWordBank: false,
           wordBank: [],
-          correctAnswers: [],
         };
       case QuestionType.SENTENCE_COMPLETION:
       default:

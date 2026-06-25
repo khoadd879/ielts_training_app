@@ -70,6 +70,12 @@ export const getSkillLimits = (skill: TestType): SkillLimit =>
  * Validate a candidate per-part question count.
  * `currentCount` = how many questions the part already has on the BE.
  * `candidate`    = the new total the caller is trying to commit.
+ *
+ * Note: the per-part minimum (lim.partMin) is intentionally NOT enforced here.
+ * The product allows parts with fewer questions (used for short-form / partial
+ * tests). Only the upper bound (lim.partMax) is enforced to prevent runaway
+ * question counts.
+ *
  * Throws BadRequestException with a human-readable message on violation.
  */
 export function assertPartQuestionCount(
@@ -79,11 +85,6 @@ export function assertPartQuestionCount(
 ): void {
   const lim = getSkillLimits(skill);
   if (lim.totalQuestions === 0) return; // writing/speaking not a question-count skill
-  if (!Number.isFinite(candidate) || candidate < lim.partMin) {
-    throw new BadRequestException(
-      `${lim.partWord} must have at least ${lim.partMin} questions.`,
-    );
-  }
   if (candidate > lim.partMax) {
     throw new BadRequestException(
       `${lim.partWord} cannot exceed ${lim.partMax} questions.`,

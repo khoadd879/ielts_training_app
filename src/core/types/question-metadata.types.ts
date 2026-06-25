@@ -66,6 +66,20 @@ export interface WordBankItem {
   text: string;
 }
 
+/**
+ * One fillable point on a diagram / map / plan image.
+ * A single question row in DIAGRAM_LABELING carries N labels (typically 5–8
+ * for IELTS Listening Part 2 maps/plans).
+ */
+export interface DiagramLabel {
+  /** Display label for the point (e.g. "1", "A", "i") */
+  pointLabel: string;
+  /** Coordinate of the label point on the image (percentage-based) */
+  labelCoordinate: Coordinate;
+  /** Acceptable correct answers for this single label point */
+  correctAnswers: string[];
+}
+
 // ============================================================================
 // Individual Metadata Interfaces — one per QuestionType
 // ============================================================================
@@ -241,20 +255,23 @@ export interface FlowChartCompletionMetadata {
 // ---------------------------------------------------------------------------
 // 13. DIAGRAM_LABELING (Map Labeling)
 // ---------------------------------------------------------------------------
+//
+// Multi-label: a single image can carry N fillable points (IELTS Listening
+// Part 2 maps/plans typically have 5–8). The `kind` field distinguishes
+// map vs plan vs diagram at the group level but is optional on per-question
+// metadata (group already owns it).
 export interface DiagramLabelingMetadata {
   type: QuestionType.DIAGRAM_LABELING;
   /** URL of the diagram/map image */
   imageUrl: string;
-  /** Coordinate of the label point on the image */
-  labelCoordinate: Coordinate;
-  /** Display label for the point (e.g. "1", "A") */
-  pointLabel: string;
+  /** Sub-kind of the visual: 'diagram' | 'map' | 'plan' (carried over from FE) */
+  kind?: 'diagram' | 'map' | 'plan';
+  /** All fillable label points on the image */
+  labels: DiagramLabel[];
   /** Whether answers come from a word bank */
   hasWordBank: boolean;
-  /** Optional word bank */
+  /** Optional word bank (if `hasWordBank` is true) */
   wordBank?: WordBankItem[];
-  /** Acceptable correct answers */
-  correctAnswers: string[];
 }
 
 // ---------------------------------------------------------------------------

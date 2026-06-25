@@ -161,14 +161,18 @@ describe('QuestionMetadataValidator', () => {
     });
 
     describe('DIAGRAM_LABELING', () => {
-      it('should validate correct DIAGRAM_LABELING metadata', () => {
+      it('should validate correct DIAGRAM_LABELING metadata (single label)', () => {
         const metadata = {
           type: QuestionType.DIAGRAM_LABELING,
           imageUrl: 'https://example.com/diagram.png',
-          labelCoordinate: { x: 50, y: 25 },
-          pointLabel: 'A',
+          labels: [
+            {
+              pointLabel: 'A',
+              labelCoordinate: { x: 50, y: 25 },
+              correctAnswers: ['River'],
+            },
+          ],
           hasWordBank: false,
-          correctAnswers: ['River'],
         };
 
         const result = QuestionMetadataValidator.validate(
@@ -178,17 +182,63 @@ describe('QuestionMetadataValidator', () => {
 
         expect(result.type).toBe(QuestionType.DIAGRAM_LABELING);
         expect(result.imageUrl).toBe('https://example.com/diagram.png');
-        expect(result.labelCoordinate).toEqual({ x: 50, y: 25 });
+        expect(result.labels).toHaveLength(1);
+        expect(result.labels[0].labelCoordinate).toEqual({ x: 50, y: 25 });
+        expect(result.labels[0].pointLabel).toBe('A');
       });
 
-      it('should throw error for invalid URL', () => {
+      it('should validate multi-label DIAGRAM_LABELING metadata', () => {
+        // IELTS Listening Part 2 maps/plans typically have 5-8 fillable
+        // points on a single image.
         const metadata = {
           type: QuestionType.DIAGRAM_LABELING,
-          imageUrl: 'not-a-url',
-          labelCoordinate: { x: 50, y: 25 },
-          pointLabel: 'A',
+          imageUrl: 'https://example.com/map.png',
+          labels: [
+            { pointLabel: '5', labelCoordinate: { x: 72, y: 18 }, correctAnswers: ['reception'] },
+            { pointLabel: '6', labelCoordinate: { x: 48, y: 50 }, correctAnswers: ['café', 'cafe'] },
+            { pointLabel: '7', labelCoordinate: { x: 12, y: 82 }, correctAnswers: ['library'] },
+            { pointLabel: '8', labelCoordinate: { x: 88, y: 60 }, correctAnswers: ['car park'] },
+          ],
           hasWordBank: false,
-          correctAnswers: ['River'],
+        };
+
+        const result = QuestionMetadataValidator.validate(
+          QuestionType.DIAGRAM_LABELING,
+          metadata,
+        );
+
+        expect(result.labels).toHaveLength(4);
+        expect(result.labels[1].correctAnswers).toEqual(['café', 'cafe']);
+      });
+
+      it('should throw error for empty imageUrl', () => {
+        const metadata = {
+          type: QuestionType.DIAGRAM_LABELING,
+          imageUrl: '',
+          labels: [
+            {
+              pointLabel: 'A',
+              labelCoordinate: { x: 50, y: 25 },
+              correctAnswers: ['River'],
+            },
+          ],
+          hasWordBank: false,
+        };
+
+        expect(() =>
+          QuestionMetadataValidator.validate(
+            QuestionType.DIAGRAM_LABELING,
+            metadata,
+          ),
+        ).toThrow(QuestionMetadataValidationError);
+      });
+
+      it('should throw error when labels array is empty', () => {
+        const metadata = {
+          type: QuestionType.DIAGRAM_LABELING,
+          imageUrl: 'https://example.com/diagram.png',
+          labels: [],
+          hasWordBank: false,
         };
 
         expect(() =>
@@ -203,10 +253,14 @@ describe('QuestionMetadataValidator', () => {
         const metadata = {
           type: QuestionType.DIAGRAM_LABELING,
           imageUrl: 'https://example.com/diagram.png',
-          labelCoordinate: { x: 150, y: 25 },
-          pointLabel: 'A',
+          labels: [
+            {
+              pointLabel: 'A',
+              labelCoordinate: { x: 150, y: 25 },
+              correctAnswers: ['River'],
+            },
+          ],
           hasWordBank: false,
-          correctAnswers: ['River'],
         };
 
         expect(() =>
