@@ -222,8 +222,34 @@ export class StudyPlannerService {
   async calculatePlan(dto: CalculatePlanDto): Promise<StudyPlan> {
     console.log('[StudyPlannerService] calculatePlan called with:', JSON.stringify(dto));
     try {
-    const { currentBand, targetBand: rawTargetBand, daysUntilExam, studyMinutesPerDay = 120 } = dto;
+    const { idUser, currentBand, targetBand: rawTargetBand, daysUntilExam, studyMinutesPerDay = 120 } = dto;
     let targetBand = rawTargetBand;
+
+    // Persist user preferences so subsequent /plan calls don't return empty.
+    // Compute targetExamDate from daysUntilExam (today + days). Save studyMinutesPerDay.
+    if (idUser) {
+      const updateData: { targetBandScore?: number; targetExamDate?: Date; } = {};
+      if (targetBand != null) updateData.targetBandScore = targetBand;
+      if (daysUntilExam != null) {
+        const exam = new Date();
+        exam.setDate(exam.getDate() + daysUntilExam);
+        exam.setHours(0, 0, 0, 0);
+        updateData.targetExamDate = exam;
+      }
+      if (Object.keys(updateData).length > 0) {
+        await this.db.user.update({ where: { idUser }, data: updateData }).catch(() => null);
+      }
+      if (studyMinutesPerDay != null) {
+        await this.db.userStudyPreference.upsert({
+          where: { idUser },
+          create: { idUser, dailyMinutesAvailable: studyMinutesPerDay },
+          update: { dailyMinutesAvailable: studyMinutesPerDay },
+        }).catch(() => null);
+      }
+      // Invalidate /plan cache so next fetch sees the saved preferences.
+      await this.cache.del(`study-plan:${idUser}:6`).catch(() => null);
+      await this.cache.del(`study-plan:${idUser}:3`).catch(() => null);
+    }
 
     // Validate required fields
     if (currentBand === null || currentBand === undefined) {
@@ -1026,6 +1052,47 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
           missingSkillsWarning: 'Cần làm ít nhất 1 bài test để có lộ trình chuẩn.',
           assessedSkills: [],
         };
+      }
+
+      // If user has not set target band or exam date yet, return empty plan
+      // so the FE shows the create-form. /calculate endpoint will only be hit
+      // when the user submits the form.
+      if (user.targetBandScore == null || daysUntilExam == null) {
+        const emptyPlan = {
+          isRealistic: false,
+          currentBand,
+          targetBand: user.targetBandScore,
+          daysUntilExam,
+          maxPossibleGain: 0,
+          dailyMinutes: studyMinutesPerDay,
+          dailyTasks: [],
+          weeklyPlan: [],
+          fourStrandBalance: { input: 0, output: 0, language: 0, fluency: 0 },
+          difficultyLevel: 'standard' as const,
+          motivationTips: [],
+          metacognitivePrompts: [],
+          recommendation: {
+            status: 'warn',
+            message: 'Vui lòng nhập target band và ngày thi dự kiến để tạo lộ trình.',
+          },
+          userProficiency: {
+            avgBand: currentBand,
+            stage: Stage.FOUNDATION,
+            vocabStats: { totalWords: 0, mastered: 0, learning: 0, new: 0 },
+            grammarStats: { total: 0, strong: 0, medium: 0, weak: 0, unknown: 0 },
+            completionRate: 0,
+            readinessScore: 0,
+          },
+          currentStage: Stage.FOUNDATION,
+          stageProgress: { currentStage: Stage.FOUNDATION, weeksInStage: 0, stageProgressPercent: 0, readinessScore: 0, nextMilestone: null },
+          stageTheme: '',
+          stageThemeDescription: '',
+          missingSkills: [],
+          missingSkillsWarning: '',
+          assessedSkills: [],
+        };
+        await this.cache.set(cacheKey, emptyPlan, 60);
+        return emptyPlan;
       }
 
       // Call calculatePlan - if targetBand is null, it will use currentBand as target
