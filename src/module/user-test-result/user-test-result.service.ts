@@ -1,9 +1,12 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { DatabaseService } from 'src/database/database.service';
 import { StreakService } from '../streak-service/streak-service.service';
 import {
@@ -38,9 +41,14 @@ export class UserTestResultService {
     private readonly streakService: StreakService,
     private readonly writingService: UserWritingSubmissionService,
     private readonly speakingService: UserSpeakingSubmissionService,
+    @Inject(CACHE_MANAGER) private cache: Cache,
   ) {}
 
   async findAllTestResultByIdUser(idUser: string) {
+    const cacheKey = `test-results:${idUser}`;
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
+
     const existingUser = await this.databaseService.user.findUnique({
       where: {
         idUser,
@@ -54,17 +62,33 @@ export class UserTestResultService {
       orderBy: {
         createdAt: 'desc',
       },
-      include: {
-        test: true,
-        userAnswers: true,
+      take: 10,
+      select: {
+        idTestResult: true,
+        idTest: true,
+        bandScore: true,
+        totalCorrect: true,
+        totalQuestions: true,
+        finishedAt: true,
+        createdAt: true,
+        test: {
+          select: {
+            idTest: true,
+            title: true,
+            testType: true,
+            level: true,
+          },
+        },
       },
     });
 
-    return {
+    const result = {
       message: 'Test result retrieved successfully',
       data,
       status: 200,
     };
+    await this.cache.set(cacheKey, result, 30);
+    return result;
   }
 
   /**
@@ -418,6 +442,9 @@ export class UserTestResultService {
     } catch (error) {
       this.logger.error(`Failed to update streak for user ${idUser}`, error);
     }
+
+    // 8. Mark daily study-planner task complete (best-effort)
+    await this.markDailyTaskComplete(idUser, testResult.test.testType);
 
     return {
       message: 'Test submitted and graded successfully!',
@@ -956,6 +983,9 @@ export class UserTestResultService {
       },
     });
 
+    // Mark daily study-planner task complete (best-effort)
+    await this.markDailyTaskComplete(idUser, TestType.WRITING);
+
     return {
       message: 'Writing test finished and graded successfully!',
       data: {
@@ -1105,6 +1135,9 @@ export class UserTestResultService {
       },
     });
 
+    // Mark daily study-planner task complete (best-effort)
+    await this.markDailyTaskComplete(idUser, TestType.SPEAKING);
+
     return {
       message: 'Speaking test finished and graded successfully!',
       data: {
@@ -1124,5 +1157,44 @@ export class UserTestResultService {
       },
       status: 200,
     };
+  }
+
+  /**
+   * Best-effort: mark today daily-planner task complete for the given test type.
+   * study-planner.service reads `UserDailyTaskCompletion` to compute `dailyTasks[i].completed`
+   * and `weeklyPlan[*].tasks[i].completed` — without this row, submitting a real test
+   * would still show "Làm ngay" badge in /study-planner and /homepage.
+   */
+  private async markDailyTaskComplete(idUser: string, testType: string): Promise<void> {
+    const idStudyPlan = 'current-plan';
+    const skillMap: Record<string, string> = {
+      [TestType.READING]: 'READING',
+      [TestType.LISTENING]: 'LISTENING',
+      [TestType.WRITING]: 'WRITING',
+      [TestType.SPEAKING]: 'SPEAKING',
+    };
+    const taskType = skillMap[testType];
+    if (!taskType) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    try {
+      await this.databaseService.userDailyTaskCompletion.upsert({
+        where: {
+          idUser_idStudyPlan_taskType_date: { idUser, idStudyPlan, taskType, date: today },
+        },
+        create: { idUser, idStudyPlan, taskType, date: today, completed: true, completedAt: new Date() },
+        update: { completed: true, completedAt: new Date() },
+      });
+      this.logger.log(`[markDailyTaskComplete] upserted ${taskType} for ${idUser} on ${today.toISOString().split('T')[0]}`);
+      // Invalidate study-planner weekly cache so next /study-planner/plan picks up the change.
+      // Match keys used by StudyPlannerService (line 900-904).
+      await this.cache.del(`weekly:${idUser}:0`);
+      await this.cache.del(`weekly:${idUser}:1`);
+      await this.cache.del(`study-plan:${idUser}:6`);
+      await this.cache.del(`study-plan:${idUser}:3`);
+      this.logger.log(`[markDailyTaskComplete] cache invalidated for ${idUser}`);
+    } catch (err) {
+      this.logger.warn(`Failed to mark daily task ${taskType} complete for ${idUser}`, err as any);
+    }
   }
 }
