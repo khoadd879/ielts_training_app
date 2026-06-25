@@ -7,11 +7,15 @@ import {
   Param,
   Delete,
   Query,
+  Req,
 } from '@nestjs/common';
 import { GrammarService } from './grammar.service';
 import { CreateGrammarDto } from './dto/create-grammar.dto';
 import { UpdateGrammarDto } from './dto/update-grammar.dto';
-import { SubmitGrammarPracticeDto } from './dto/practice-grammar.dto';
+import {
+  SubmitGrammarPracticeDto,
+  SubmitGrammarAnswerDto,
+} from './dto/practice-grammar.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from 'src/decorator/customize';
 
@@ -119,6 +123,22 @@ export class GrammarController {
   async submitPractice(@Body() body: SubmitGrammarPracticeDto) {
     const result = await this.grammarService.submitPractice(body.idUser, body.answers);
     return result;
+  }
+
+  @Post('practice/:idGrammar/answer')
+  async submitSingleAnswer(
+    @Param('idGrammar') idGrammar: string,
+    @Body() body: SubmitGrammarAnswerDto,
+    @Req() req: { user?: { userId?: string } },
+  ) {
+    const idUser = req.user?.userId;
+    if (!idUser) throw new Error('Unauthorized: userId missing from request');
+    const result = await this.grammarService.submitSingleAnswer(
+      idUser,
+      body.idExercise,
+      body.userAnswer,
+    );
+    return { data: result };
   }
 
   @Public()

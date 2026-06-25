@@ -10,3 +10,11 @@ export class SubmitGrammarPracticeDto {
     isCorrect: boolean;
   }[];
 }
+
+export class SubmitGrammarAnswerDto {
+  @IsString()
+  idExercise: string;
+
+  @IsString()
+  userAnswer: string;
+}

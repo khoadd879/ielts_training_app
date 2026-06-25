@@ -37,6 +37,14 @@ export class StudyPlannerController {
     }
   }
 
+  @Get('daily-completion')
+  async getDailyCompletion(
+    @Query('idUser') idUser: string,
+    @Query('date') date?: string,
+  ): Promise<any> {
+    return this.studyPlannerService.getDailyCompletion(idUser, date);
+  }
+
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Patch('preference')

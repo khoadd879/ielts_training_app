@@ -2,24 +2,37 @@ import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/com
 import { CreateForumThreadDto } from './dto/create-forum-thread.dto';
 import { UpdateForumThreadDto } from './dto/update-forum-thread.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class ForumThreadsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async existingUser(idUser: string) {
-    const existingUser = await this.databaseService.user.findUnique({
-      where: {
-        idUser,
-      },
-    });
+  private isModeratorRole(role?: Role) {
+    return role === Role.ADMIN || role === Role.GIAOVIEN;
+  }
 
-    if (!existingUser) throw new BadRequestException('User not found');
+  async findUser(idUser: string) {
+    const user = await this.databaseService.user.findUnique({
+      where: { idUser },
+    });
+    if (!user) throw new BadRequestException('User not found');
+    return user;
+  }
+
+  async assertCanManageThreads(idUser: string) {
+    const user = await this.findUser(idUser);
+    if (!this.isModeratorRole(user.role)) {
+      throw new ForbiddenException(
+        'Only admin or teacher can manage forum threads',
+      );
+    }
+    return user;
   }
 
   async createForumThread(createForumThreadDto: CreateForumThreadDto) {
     const { idUser, title, content } = createForumThreadDto;
-    await this.existingUser(idUser);
+    await this.assertCanManageThreads(idUser);
 
     const data = await this.databaseService.forumThreads.create({
       data: {
@@ -48,11 +61,24 @@ export class ForumThreadsService {
           },
         },
         _count: {
-          select: { forumPost: true },
+          select: {
+            forumPost: {
+              where: {
+                moderationStatus: {
+                  in: ['AUTO_APPROVED', 'APPROVED'],
+                },
+              },
+            },
+          },
         },
         forumPost: {
           orderBy: { created_at: 'desc' },
           take: 1,
+          where: {
+            moderationStatus: {
+              in: ['AUTO_APPROVED', 'APPROVED'],
+            },
+          },
           select: { created_at: true },
         },
       },
@@ -89,7 +115,17 @@ export class ForumThreadsService {
             avatar: true,
           },
         },
-        _count: { select: { forumPost: true } },
+        _count: {
+          select: {
+            forumPost: {
+              where: {
+                moderationStatus: {
+                  in: ['AUTO_APPROVED', 'APPROVED'],
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -119,7 +155,7 @@ export class ForumThreadsService {
     updateForumThreadDto: UpdateForumThreadDto,
   ) {
     const { idUser, title, content } = updateForumThreadDto;
-    await this.existingUser(idUser);
+    await this.assertCanManageThreads(idUser);
     const existingForumThread =
       await this.databaseService.forumThreads.findUnique({
         where: {
@@ -129,9 +165,6 @@ export class ForumThreadsService {
 
     if (!existingForumThread)
       throw new BadRequestException('Forum thread not found');
-    if (existingForumThread.idUser !== idUser) {
-      throw new ForbiddenException('You are not authorized to update this thread');
-    }
 
     const data = await this.databaseService.forumThreads.update({
       where: {
@@ -152,6 +185,7 @@ export class ForumThreadsService {
   }
 
   async removeForumThread(idForumThreads: string, idUser: string) {
+    await this.assertCanManageThreads(idUser);
     const existing = await this.databaseService.forumThreads.findUnique({
       where: {
         idForumThreads,
@@ -159,9 +193,6 @@ export class ForumThreadsService {
     });
 
     if (!existing) throw new BadRequestException('Forum thread not found');
-    if (existing.idUser !== idUser) {
-      throw new ForbiddenException('You are not authorized to delete this thread');
-    }
 
     await this.databaseService.forumThreads.delete({
       where: {

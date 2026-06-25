@@ -2,10 +2,13 @@ import {
   BadGatewayException,
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { CreateGrammarDto } from './dto/create-grammar.dto';
 import { UpdateGrammarDto } from './dto/update-grammar.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -13,7 +16,10 @@ import { Role } from '@prisma/client';
 
 @Injectable()
 export class GrammarService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    @Inject(CACHE_MANAGER) private cache: Cache,
+  ) {}
 
   private async existingUser(idUser: string) {
     const user = await this.databaseService.user.findUnique({
@@ -270,13 +276,15 @@ export class GrammarService {
     // 5. Weak areas = top 3 grammars with proficiency "weak" OR (low
       //    accuracy AND at least 1 attempt). We need their title + category
       //    info for the dashboard card.
+    // Note: `proficiency` is stored as the Vietnamese label returned by
+    // calculateProficiency (e.g. "cần cải thiện", "trung bình") — match those.
     const weakRows = await this.databaseService.userGrammarProficiency.findMany(
       {
         where: {
           idUser,
           OR: [
-            { proficiency: 'weak' },
-            { proficiency: 'medium' },
+            { proficiency: 'cần cải thiện' },
+            { proficiency: 'trung bình' },
           ],
         },
         take: 10,
@@ -326,7 +334,7 @@ export class GrammarService {
           attempts: acc?.total || 0,
         };
       })
-      .filter((w) => w.proficiency === 'weak' || w.accuracy < 70)
+      .filter((w) => w.proficiency === 'cần cải thiện' || w.accuracy < 70)
       .sort((a, b) => a.accuracy - b.accuracy)
       .slice(0, 3);
 
@@ -493,6 +501,10 @@ export class GrammarService {
   }
 
   async getDashboard(idUser: string) {
+    const cacheKey = `grammar-dashboard:${idUser}`;
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
+
     // Get all grammar topics
     const allTopics = await this.databaseService.grammar.findMany({
       select: {
@@ -552,7 +564,7 @@ export class GrammarService {
     const mastered = topicsWithProficiency.filter(t => t.proficiency === 'hoàn thành').length;
     const percentage = total > 0 ? Math.round((mastered / total) * 100) : 0;
 
-    return {
+    const result = {
       message: 'Dashboard retrieved successfully',
       data: {
         weakAreas,
@@ -565,6 +577,8 @@ export class GrammarService {
       },
       status: 200
     };
+    await this.cache.set(cacheKey, result, 120);
+    return result;
   }
 
   async getPracticeByTopic(idGrammar: string, count: number = 10) {
@@ -596,33 +610,249 @@ export class GrammarService {
   async getDueReviews(idUser: string, idGrammar: string) {
     const now = new Date();
 
-    // Get exercises due for review
+    // No FK relation between UserGrammarExerciseSR and GrammarExercise in the
+    // current schema, so we over-fetch by user and narrow to the topic in app
+    // code. For most users this is small; if it grows large, switch to a raw
+    // SQL join on idExercise.
     const srRecords = await this.databaseService.userGrammarExerciseSR.findMany({
       where: {
         idUser,
-        idExercise: {
-          startsWith: idGrammar
-        },
-        nextReviewAt: { lte: now }
-      }
+        nextReviewAt: { lte: now },
+      },
+      orderBy: { nextReviewAt: 'asc' },
     });
 
-    if (srRecords.length === 0) {
-      return { data: [] };
+    const exerciseIds = srRecords.map((r) => r.idExercise);
+    const exercises = exerciseIds.length
+      ? await this.databaseService.grammarExercise.findMany({
+          where: { id: { in: exerciseIds }, idGrammar },
+          select: { id: true, idGrammar: true, type: true, content: true },
+        })
+      : [];
+    const byId = new Map(exercises.map((e) => [e.id, e]));
+
+    return {
+      data: srRecords
+        .map((r) => byId.get(r.idExercise))
+        .filter((e): e is NonNullable<typeof e> => Boolean(e))
+        .map((e) => ({
+          id: e.id,
+          idGrammar: e.idGrammar,
+          type: e.type,
+          content: e.content,
+        })),
+    };
+  }
+
+  // SM-2 spaced-repetition helper. Mirrors vocabulary.service.sm2.
+  // quality < 3 resets to repetitions=0 and interval=1 (treated as "wrong").
+  private sm2(
+    quality: number,
+    repetitions: number,
+    easiness: number,
+    interval: number,
+  ): { repetitions: number; interval: number; easiness: number } {
+    if (quality < 3) return { repetitions: 0, interval: 1, easiness };
+    if (repetitions === 0) interval = 1;
+    else if (repetitions === 1) interval = 6;
+    else interval = Math.round(interval * easiness);
+    repetitions++;
+    easiness =
+      easiness + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    return {
+      repetitions,
+      interval: Math.max(1, interval),
+      easiness: Math.max(1.3, easiness),
+    };
+  }
+
+  // Pure grader — no DB calls. Compares `userAnswer` against the exercise's
+  // `content` shape. Returns isCorrect + correctAnswer + optional explanation.
+  // Handles all four GrammarExercise types defined in prisma/schema.prisma.
+  private gradeExercise(
+    exercise: { type: string; content: any },
+    userAnswer: string,
+  ): {
+    isCorrect: boolean;
+    correctAnswer: string;
+    explanation?: string;
+  } {
+    const c = (exercise.content ?? {}) as Record<string, any>;
+    // Lowercase, trim, collapse whitespace, and strip terminal sentence
+    // punctuation so users don't get marked wrong for missing a trailing
+    // "." / "!" / "?".
+    const norm = (s: any) =>
+      String(s ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/[.!?]+$/, '');
+    switch (exercise.type) {
+      case 'error_correction': {
+        const expected = norm(c.correct);
+        return {
+          isCorrect: expected.length > 0 && expected === norm(userAnswer),
+          correctAnswer: c.correct,
+          explanation: c.explanation,
+        };
+      }
+      case 'cloze': {
+        const expected = norm(c.answer);
+        return {
+          isCorrect: expected === norm(userAnswer),
+          correctAnswer: c.answer,
+          explanation: c.hint,
+        };
+      }
+      case 'transformation': {
+        const expected = norm(c.correct);
+        return {
+          isCorrect: expected === norm(userAnswer),
+          correctAnswer: c.correct,
+        };
+      }
+      case 'multiple_choice': {
+        const idx = Number(c.correct);
+        const correctText = Array.isArray(c.options)
+          ? c.options[idx]
+          : undefined;
+        return {
+          isCorrect: Number(userAnswer) === idx,
+          correctAnswer: correctText,
+        };
+      }
+      default:
+        return { isCorrect: false, correctAnswer: '' };
+    }
+  }
+
+  // Per-exercise submit: grade → append result → upsert topic proficiency →
+  // upsert SR with SM-2 → recompute proficiency. Returns verdict + SR state.
+  async submitSingleAnswer(
+    idUser: string,
+    idExercise: string,
+    userAnswer: string,
+  ) {
+    const exercise = await this.databaseService.grammarExercise.findUnique({
+      where: { id: idExercise },
+      include: { grammar: true },
+    });
+    if (!exercise) {
+      throw new NotFoundException('Grammar exercise not found');
     }
 
-    const exerciseIds = srRecords.map(r => r.idExercise);
-    const exercises = await this.databaseService.grammarExercise.findMany({
-      where: { id: { in: exerciseIds } }
+    // 1. Grade
+    const grade = this.gradeExercise(exercise, userAnswer);
+
+    // 2. Append to per-user history (append-only)
+    await this.databaseService.userGrammarExerciseResult.create({
+      data: {
+        idUser,
+        idExercise,
+        answer: userAnswer,
+        isCorrect: grade.isCorrect,
+      },
+    });
+
+    // 2b. Wrong answers also create a UserGrammarViolation so the Weakness
+    // page (which groups by violation count) reflects practice mistakes.
+    // Source = "PRACTICE" — schema is `String`, not an enum, so any value works.
+    if (!grade.isCorrect) {
+      await this.databaseService.userGrammarViolation.create({
+        data: {
+          idUser,
+          idGrammar: exercise.idGrammar,
+          source: 'PRACTICE',
+          submissionId: idExercise,
+          userSentence: userAnswer,
+          correctedSentence: grade.correctAnswer ?? '',
+        },
+      });
+    }
+
+    // 3. Upsert topic-level proficiency counters
+    await this.databaseService.userGrammarProficiency.upsert({
+      where: {
+        idUser_idGrammar: { idUser, idGrammar: exercise.idGrammar },
+      },
+      create: {
+        idUser,
+        idGrammar: exercise.idGrammar,
+        proficiency: 'unknown',
+        totalAttempts: 1,
+        correctCount: grade.isCorrect ? 1 : 0,
+        wrongCount: grade.isCorrect ? 0 : 1,
+        consecutiveCorrect: grade.isCorrect ? 1 : 0,
+        violations: grade.isCorrect ? 0 : 1,
+      },
+      update: {
+        totalAttempts: { increment: 1 },
+        correctCount: grade.isCorrect ? { increment: 1 } : undefined,
+        wrongCount: grade.isCorrect ? undefined : { increment: 1 },
+        violations: grade.isCorrect ? undefined : { increment: 1 },
+        consecutiveCorrect: grade.isCorrect ? { increment: 1 } : 0,
+      },
+    });
+
+    // 4. SM-2 update on per-exercise SR row (binary quality: correct=5, wrong=1).
+    // `repetitions` (consecutive-correct streak) is not in the schema, so we
+    // derive it from the most recent UserGrammarExerciseResult rows: count
+    // backwards from the newest until the first `isCorrect=false` (or up to 7).
+    // Note: the row we just inserted above is the "current" attempt, so we skip
+    // it when measuring the prior streak.
+    const recent = await this.databaseService.userGrammarExerciseResult.findMany({
+      where: { idUser, idExercise },
+      orderBy: { attemptedAt: 'desc' },
+      take: 8, // 1 current + up to 7 prior
+    });
+    let priorRepetitions = 0;
+    for (let i = 1; i < recent.length; i++) {
+      if (recent[i].isCorrect) priorRepetitions++;
+      else break;
+    }
+
+    const prev = await this.databaseService.userGrammarExerciseSR.findUnique({
+      where: { idUser_idExercise: { idUser, idExercise } },
+    });
+    const quality = grade.isCorrect ? 5 : 1;
+    const next = this.sm2(
+      quality,
+      grade.isCorrect ? priorRepetitions : 0,
+      prev?.easeFactor ?? 2.5,
+      prev?.interval ?? 1,
+    );
+    const nextReviewAt = new Date(
+      Date.now() + next.interval * 24 * 60 * 60 * 1000,
+    );
+    await this.databaseService.userGrammarExerciseSR.upsert({
+      where: { idUser_idExercise: { idUser, idExercise } },
+      create: {
+        idUser,
+        idExercise,
+        interval: next.interval,
+        easeFactor: next.easiness,
+        nextReviewAt,
+      },
+      update: {
+        interval: next.interval,
+        easeFactor: next.easiness,
+        nextReviewAt,
+      },
+    });
+
+    // 5. Recompute proficiency level from updated counters
+    await this.recalculateProficiency(idUser, exercise.idGrammar);
+    const prof = await this.databaseService.userGrammarProficiency.findUnique({
+      where: { idUser_idGrammar: { idUser, idGrammar: exercise.idGrammar } },
     });
 
     return {
-      data: exercises.map(ex => ({
-        id: ex.id,
-        idGrammar: ex.idGrammar,
-        type: ex.type,
-        content: ex.content
-      }))
+      isCorrect: grade.isCorrect,
+      correctAnswer: grade.correctAnswer,
+      explanation: grade.explanation,
+      nextReviewAt,
+      srInterval: next.interval,
+      proficiency: prof?.proficiency,
     };
   }
 
@@ -724,7 +954,7 @@ export class GrammarService {
   }
 
   async submitPractice(idUser: string, answers: any[]) {
-    // Update UserGrammarProficiency for each answer
+    // Update UserGrammarProficiency for each answer + recalculate proficiency level
     for (const answer of answers) {
       const exercise = await this.databaseService.grammarExercise.findUnique({
         where: { id: answer.exerciseId }
@@ -749,6 +979,8 @@ export class GrammarService {
             proficiency: 'unknown'
           }
         });
+        // Recalc proficiency level so /grammar/dashboard hiển thị weak areas đúng
+        await this.recalculateProficiency(idUser, exercise.idGrammar);
       }
     }
 
