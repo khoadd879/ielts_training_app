@@ -266,8 +266,21 @@ export class StudyPlannerService {
     console.log('[StudyPlannerService] Prof result:', JSON.stringify(prof));
     const theme = this.getWeeklyTheme(prof.stage, Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)));
     console.log('[StudyPlannerService] Theme:', JSON.stringify(theme));
-    const dailyTasks = await this.generateDailyTasks(dto.idUser, prof.stage, theme.theme, minutes);
-    console.log('[StudyPlannerService] Daily tasks count:', dailyTasks.length);
+    const today = new Date();
+    const todayDayIndex = (today.getDay() + 6) % 7; // 0=Mon, 6=Sun
+    const todayDateStr = today.toISOString().split('T')[0];
+    const todayCompletions = await this.db.userDailyTaskCompletion.findMany({
+      where: {
+        idUser: dto.idUser,
+        date: today,
+        completed: true
+      },
+      select: { taskType: true }
+    });
+    const todayCompletedTypes = new Set(todayCompletions.map(c => c.taskType.toUpperCase()));
+    const dailyTasks = (await this.generateDailyTasks(dto.idUser, prof.stage, theme.theme, minutes, todayDayIndex))
+      .map(t => ({ ...t, completed: todayCompletedTypes.has(t.type) }));
+    console.log('[StudyPlannerService] Daily tasks count:', dailyTasks.length, 'date:', todayDateStr);
 
     // Generate weekly plan
     const weeklyPlan = await this.generateWeeklyPlan(dto.idUser, minutes, prof.stage, 0);
@@ -523,7 +536,8 @@ export class StudyPlannerService {
   userId: string,
   stage: Stage,
   theme: string,
-  totalMinutes: number
+  totalMinutes: number,
+  dayIndex: number = 0
 ): Promise<DailyTask[]> {
   const tasks: DailyTask[] = [];
   const prof = await this.calculateUserProficiency(userId);
@@ -543,55 +557,91 @@ export class StudyPlannerService {
   const languageMinutes = Math.round(totalMinutes * strandConfig.language / 100);
   const fluencyMinutes = Math.round(totalMinutes * strandConfig.fluency / 100);
 
-  // For new users without history - add foundational tasks based on stage
+  // Pick skill per day from weakSkills (rotate through available skills)
+  const pickInput = weakSkills.input[dayIndex % Math.max(1, weakSkills.input.length)] ?? 'READING';
+  const pickOutput = weakSkills.output[dayIndex % Math.max(1, weakSkills.output.length)] ?? 'SPEAKING';
+  const pickInputAlt = weakSkills.input[(dayIndex + 1) % Math.max(1, weakSkills.input.length)] ?? 'LISTENING';
+  const pickOutputAlt = weakSkills.output[(dayIndex + 1) % Math.max(1, weakSkills.output.length)] ?? 'WRITING';
+
+  // Day-of-week rotation pattern (0=Mon ... 5=Sat, 6=Sun=rest)
+  // Mon=input, Tue=output, Wed=language(vocab+grammar), Thu=alt input, Fri=alt output, Sat=review
+  const dayPattern = dayIndex % 7;
+
+  // For new users without history - rotate foundational tasks by day
   if (!hasActualHistory) {
-    // Foundation stage: prioritize vocab and basic grammar
-    if (languageMinutes >= 10) {
-      tasks.push(this.createVocabTask(15));
-      tasks.push(await this.createBasicGrammarTask(10));
+    if (dayPattern === 0) {
+      // Monday: vocab + reading foundation
+      if (languageMinutes >= 10) tasks.push(this.createVocabTask(15));
+      if (inputMinutes >= 15) tasks.push(await this.createInputTask('READING', theme, 20, 5.0));
+    } else if (dayPattern === 1) {
+      // Tuesday: speaking + listening foundation
+      if (outputMinutes >= 10) tasks.push(await this.createOutputTask('SPEAKING', theme, 15, 5.0));
+      if (inputMinutes >= 10) tasks.push(await this.createInputTask('LISTENING', theme, 15, 5.0));
+    } else if (dayPattern === 2) {
+      // Wednesday: vocab + basic grammar
+      if (languageMinutes >= 10) {
+        tasks.push(this.createVocabTask(15));
+        tasks.push(await this.createBasicGrammarTask(10));
+      }
+    } else if (dayPattern === 3) {
+      // Thursday: writing + reading
+      if (outputMinutes >= 10) tasks.push(await this.createOutputTask('WRITING', theme, 15, 5.0));
+      if (inputMinutes >= 10) tasks.push(await this.createInputTask('READING', theme, 15, 5.0));
+    } else if (dayPattern === 4) {
+      // Friday: listening + speaking
+      if (inputMinutes >= 10) tasks.push(await this.createInputTask('LISTENING', theme, 15, 5.0));
+      if (outputMinutes >= 10) tasks.push(await this.createOutputTask('SPEAKING', theme, 15, 5.0));
+    } else if (dayPattern === 5) {
+      // Saturday: review — vocab + fluency
+      if (languageMinutes >= 10) tasks.push(this.createVocabTask(10));
+      if (fluencyMinutes >= 10) tasks.push(this.createFluencyTask(stage, 10));
     }
-    if (inputMinutes >= 15) {
-      tasks.push(await this.createInputTask('READING', theme, 20, 5.0));
-    }
-    if (outputMinutes >= 10) {
-      tasks.push(await this.createOutputTask('SPEAKING', theme, 15, 5.0));
-    }
-    if (fluencyMinutes >= 10) {
-      tasks.push(this.createFluencyTask(stage, 10));
-    }
+    // dayPattern === 6 (Sunday) = rest, returns []
     return tasks;
   }
 
-  // For users with history - use weak skills detection
-  // Input tasks (Reading + Listening)
-  if (inputMinutes > 0 && weakSkills.input.length > 0) {
-    const skill = weakSkills.input[0];
-    tasks.push(await this.createInputTask(skill, theme, Math.min(inputMinutes, 25), prof.avgBand));
-  }
-
-  // Output tasks (Writing + Speaking)
-  if (outputMinutes > 0 && weakSkills.output.length > 0) {
-    const skill = weakSkills.output[0];
-    tasks.push(await this.createOutputTask(skill, theme, Math.min(outputMinutes, 25), prof.avgBand));
-  }
-
-  // Language tasks (Vocab)
-  if (languageMinutes > 0 && prof.vocabStats.totalWords > 0) {
-    tasks.push(this.createVocabTask(Math.min(languageMinutes - 10, 15)));
-  }
-
-  // Language tasks (Grammar)
-  if (languageMinutes > 10) {
-    const grammarWeak = await this.getGrammarWeakAreas(userId, 1);
-    if (grammarWeak.length > 0) {
-      tasks.push(await this.createGrammarTask(grammarWeak[0], Math.min(10, 15)));
+  // For users with history - rotate by day
+  if (dayPattern === 0) {
+    // Monday: input skill (weakest)
+    if (inputMinutes > 0) {
+      tasks.push(await this.createInputTask(pickInput, theme, Math.min(inputMinutes, 25), prof.avgBand));
+    }
+  } else if (dayPattern === 1) {
+    // Tuesday: output skill (weakest)
+    if (outputMinutes > 0) {
+      tasks.push(await this.createOutputTask(pickOutput, theme, Math.min(outputMinutes, 25), prof.avgBand));
+    }
+  } else if (dayPattern === 2) {
+    // Wednesday: language (vocab + grammar)
+    if (languageMinutes > 0 && prof.vocabStats.totalWords > 0) {
+      tasks.push(this.createVocabTask(Math.min(languageMinutes - 5, 15)));
+    }
+    if (languageMinutes > 5) {
+      const grammarWeak = await this.getGrammarWeakAreas(userId, 1);
+      if (grammarWeak.length > 0) {
+        tasks.push(await this.createGrammarTask(grammarWeak[0], Math.min(10, 15)));
+      }
+    }
+  } else if (dayPattern === 3) {
+    // Thursday: alt input skill
+    if (inputMinutes > 0) {
+      tasks.push(await this.createInputTask(pickInputAlt, theme, Math.min(inputMinutes, 25), prof.avgBand));
+    }
+  } else if (dayPattern === 4) {
+    // Friday: alt output skill
+    if (outputMinutes > 0) {
+      tasks.push(await this.createOutputTask(pickOutputAlt, theme, Math.min(outputMinutes, 25), prof.avgBand));
+    }
+  } else if (dayPattern === 5) {
+    // Saturday: review — vocab + fluency
+    if (languageMinutes > 0 && prof.vocabStats.totalWords > 0) {
+      tasks.push(this.createVocabTask(10));
+    }
+    if (fluencyMinutes >= 10) {
+      tasks.push(this.createFluencyTask(stage, Math.min(fluencyMinutes, 15)));
     }
   }
-
-  // Fluency task
-  if (fluencyMinutes >= 10) {
-    tasks.push(this.createFluencyTask(stage, Math.min(fluencyMinutes, 15)));
-  }
+  // dayPattern === 6 (Sunday) = rest, returns []
 
   return tasks;
 }
@@ -774,39 +824,43 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
       idUser: userId,
       date: { gte: weekStart, lte: weekEnd },
       completed: true
-    }
+    },
+    select: { date: true, taskType: true }
   });
 
-  // Map completions by date
-  const completionMap = new Map<string, number>();
+  // Map completions: date string → Set of taskType user already completed
+  const completionMap = new Map<string, Set<string>>();
   for (const c of allCompletions) {
     const dateKey = c.date.toISOString().split('T')[0];
-    completionMap.set(dateKey, (completionMap.get(dateKey) || 0) + 1);
+    if (!completionMap.has(dateKey)) completionMap.set(dateKey, new Set());
+    completionMap.get(dateKey)!.add(c.taskType.toUpperCase());
   }
 
   const weekPlans: DayPlan[] = [];
   const theme = this.getWeeklyTheme(stage, weekOffset);
 
-  for (let i = 0; i < 7; i++) {
+  for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
     const date = new Date(startOfWeek);
-    date.setDate(startOfWeek.getDate() + i);
-    const isSunday = i === 0;
+    date.setDate(startOfWeek.getDate() + dayIndex);
+    const isSunday = dayIndex === 0;
     const dateStr = date.toISOString().split('T')[0];
+    const completedTypes = completionMap.get(dateStr) ?? new Set<string>();
 
     const tasks = isSunday
       ? []
-      : (await this.generateDailyTasks(userId, stage, theme.theme, dailyMinutes)).map((t, idx) => ({
+      : (await this.generateDailyTasks(userId, stage, theme.theme, dailyMinutes, dayIndex)).map((t, taskIndex) => ({
           ...t,
-          id: `${t.type.toLowerCase()}-${dateStr}-${idx}`
+          id: `${t.type.toLowerCase()}-${dateStr}-${taskIndex}`,
+          completed: completedTypes.has(t.type),
         }));
 
     const strandConfig = STAGE_CONFIGS[stage].fourStrandBalance;
     weekPlans.push({
       date: dateStr,
-      dayName: dayNames[i],
+      dayName: dayNames[dayIndex],
       tasks,
       isRestDay: isSunday,
-      completedCount: completionMap.get(dateStr) || 0,
+      completedCount: completedTypes.size,
       totalCount: tasks.length,
       strandBreakdown: {
         input: Math.round(dailyMinutes * strandConfig.input / 100),
@@ -845,6 +899,9 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
     // Invalidate weekly plan cache
     await this.cache.del(`weekly:${idUser}:0`);
     await this.cache.del(`weekly:${idUser}:1`);
+    // Invalidate study-plan cache (any historyMonths value)
+    await this.cache.del(`study-plan:${idUser}:6`);
+    await this.cache.del(`study-plan:${idUser}:3`);
 
     return { success: true, completed: dto.completed, completedAt };
   }
@@ -904,6 +961,10 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
   }
 
   async getUserStudyPlan(idUser: string, historyMonths: number = 6) {
+    const cacheKey = `study-plan:${idUser}:${historyMonths}`;
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) return cached;
+
     try {
       const user = await this.db.user.findUnique({ where: { idUser }, select: { targetBandScore: true, targetExamDate: true } });
       if (!user) {
@@ -977,11 +1038,37 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
         historyMonths,
       });
 
+      await this.cache.set(cacheKey, plan, 60);
       return plan;
     } catch (error) {
       console.error('getUserStudyPlan error:', error);
       throw error;
     }
+  }
+
+  /**
+   * Direct read of UserDailyTaskCompletion for a given day (default: today).
+   * Intentionally NOT cached — this is the source-of-truth that the UI renders
+   * task completion badges from. The main /plan endpoint has a 60s cache which
+   * caused the "stale completed=false after submitting a test" bug.
+   *
+   * Returns: { date, tasks: { READING: { completed, completedAt }, ... } }
+   */
+  async getDailyCompletion(idUser: string, dateStr?: string) {
+    const date = dateStr ? new Date(dateStr) : new Date();
+    date.setHours(0, 0, 0, 0);
+    const rows = await this.db.userDailyTaskCompletion.findMany({
+      where: { idUser, date, completed: true },
+      select: { taskType: true, completedAt: true },
+    });
+    const allTypes = ['READING', 'LISTENING', 'WRITING', 'SPEAKING', 'VOCABULARY', 'GRAMMAR'];
+    const tasks: Record<string, { completed: boolean; completedAt: Date | null }> = {};
+    for (const t of allTypes) tasks[t] = { completed: false, completedAt: null };
+    for (const r of rows) {
+      const key = r.taskType.toUpperCase();
+      if (tasks[key]) tasks[key] = { completed: true, completedAt: r.completedAt };
+    }
+    return { date: date.toISOString().split('T')[0], tasks };
   }
 
   async updateStudyPreference(idUser: string, dailyMinutesAvailable: number) {
