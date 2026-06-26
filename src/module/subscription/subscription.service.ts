@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
+import { UpdateSubscriptionPackageDto } from './dto/update-subscription-package.dto';
 
 @Injectable()
 export class SubscriptionService {
@@ -23,6 +24,38 @@ export class SubscriptionService {
 
   async createPackage(dto: any) {
     return this.db.subscriptionPackage.create({ data: dto });
+  }
+
+  async getAllPackagesAdmin() {
+    return this.db.subscriptionPackage.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+  }
+
+  async updatePackage(idPackage: string, dto: UpdateSubscriptionPackageDto) {
+    const existing = await this.db.subscriptionPackage.findUnique({
+      where: { idPackage },
+    });
+    if (!existing) {
+      throw new NotFoundException('Subscription package not found');
+    }
+    return this.db.subscriptionPackage.update({
+      where: { idPackage },
+      data: dto as any,
+    });
+  }
+
+  async setPackageActive(idPackage: string, isActive: boolean) {
+    const existing = await this.db.subscriptionPackage.findUnique({
+      where: { idPackage },
+    });
+    if (!existing) {
+      throw new NotFoundException('Subscription package not found');
+    }
+    return this.db.subscriptionPackage.update({
+      where: { idPackage },
+      data: { isActive },
+    });
   }
 
   // ===== Subscription Operations =====

@@ -3,7 +3,10 @@ import {
   Get,
   Post,
   Put,
+  Patch,
+  Delete,
   Body,
+  Param,
   UseGuards,
   Request,
   Inject,
@@ -22,6 +25,7 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { SubscriptionService } from './subscription.service';
 import { CreateSubscriptionPackageDto } from './dto/create-subscription-package.dto';
+import { UpdateSubscriptionPackageDto } from './dto/update-subscription-package.dto';
 import { SubscribeDto } from './dto/subscribe.dto';
 import { PaymentService } from '../payment/payment.service';
 import { CreatePaymentResponseDto } from '../payment/dto/create-payment-response.dto';
@@ -102,6 +106,52 @@ export class SubscriptionController {
   @ApiBearerAuth()
   async createPackage(@Body() dto: CreateSubscriptionPackageDto) {
     return this.subscriptionService.createPackage(dto);
+  }
+
+  // ===== Admin: List All Packages (incl. inactive) =====
+
+  @Get('admin/packages')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  async listAllPackages() {
+    return this.subscriptionService.getAllPackagesAdmin();
+  }
+
+  // ===== Admin: Update Package =====
+
+  @Put('admin/packages/:idPackage')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  async updatePackage(
+    @Param('idPackage') idPackage: string,
+    @Body() dto: UpdateSubscriptionPackageDto,
+  ) {
+    return this.subscriptionService.updatePackage(idPackage, dto);
+  }
+
+  // ===== Admin: Toggle Active =====
+
+  @Patch('admin/packages/:idPackage/active')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  async toggleActive(
+    @Param('idPackage') idPackage: string,
+    @Body('isActive') isActive: boolean,
+  ) {
+    return this.subscriptionService.setPackageActive(idPackage, !!isActive);
+  }
+
+  // ===== Admin: Soft Delete (set isActive=false) =====
+
+  @Delete('admin/packages/:idPackage')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  async deletePackage(@Param('idPackage') idPackage: string) {
+    return this.subscriptionService.setPackageActive(idPackage, false);
   }
 
   @Post('admin/grant')
