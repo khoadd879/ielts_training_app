@@ -2,7 +2,7 @@
 # CPU-based Docling REST API server for PDF extraction
 # Built from official docling-serve base image
 
-FROM quay.io/docling-project/docling-serve:cpu
+FROM quay.io/docling-project/docling-serve:v1.25.0
 
 # Set environment variables
 ENV DOCLING_SERVE_PORT=5001 \

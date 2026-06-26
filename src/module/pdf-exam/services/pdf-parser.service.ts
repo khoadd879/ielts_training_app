@@ -1,12 +1,29 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import * as pdfjsLib from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
+import { pathToFileURL } from 'url';
 
-// Use the worker shipped with pdfjs-dist - resolve from node_modules
-const pdfjsDistDir = path.dirname(require.resolve('pdfjs-dist'));
-const workerPath = path.join(pdfjsDistDir, 'pdf.worker.mjs');
-pdfjsLib.GlobalWorkerOptions.workerSrc = `file://${workerPath}`;
+// pdfjs-dist's main ESM build (`build/pdf.mjs`) tries to `await import(workerSrc)`
+// from a `file://` URL, which Node ESM loader rejects with "Unexpected end of input".
+// The legacy build (`legacy/build/pdf.mjs`) is the CJS-compatible build intended
+// for Node and uses a different worker loading path. It expects its worker at
+// `legacy/build/pdf.worker.mjs`; pdfjs-dist only ships the minified worker in the
+// main build, so we shim it once on module load.
+// pdfjs-dist's main ESM build (`build/pdf.mjs`) tries to `await import(workerSrc)`
+// from a `file://` URL, which Node ESM loader rejects with "Unexpected end of input".
+// The legacy build (`legacy/build/pdf.mjs`) is the CJS-compatible build intended
+// for Node. Resolve the package root explicitly (require.resolve returns the entry
+// file, not the package dir) and point the worker at the legacy build's worker.
+const pdfjsEntry = require.resolve('pdfjs-dist');
+const pdfjsPkgRoot = path.resolve(path.dirname(pdfjsEntry), '..');
+const legacyWorkerPath = path.join(pdfjsPkgRoot, 'legacy', 'build', 'pdf.worker.mjs');
+const mainWorkerPath = path.join(pdfjsPkgRoot, 'build', 'pdf.worker.min.mjs');
+if (!fs.existsSync(legacyWorkerPath) && fs.existsSync(mainWorkerPath)) {
+  fs.copyFileSync(mainWorkerPath, legacyWorkerPath);
+}
+pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(legacyWorkerPath).href;
 
 export interface ParsedPage {
   pageNumber: number;
@@ -71,6 +88,10 @@ export class PdfParserService {
       const loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(fileBuffer),
         useSystemFonts: true,
+        isEvalSupported: false,
+        useWorkerFetch: false,
+        disableFontFace: true,
+        verbosity: 0,
       });
 
       const pdfDocument = await loadingTask.promise;

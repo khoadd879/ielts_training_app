@@ -21,6 +21,7 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_CALL_BACK_URL: ${GOOGLE_CALL_BACK_URL}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       CLOUDINARY_NAME: ${CLOUDINARY_NAME}
@@ -161,6 +162,25 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
+
+  # Docling REST API server - converts image-based PDFs to text + markdown
+  # Used by pdf-exam service as the primary extractor (pdfjs-dist is fallback).
+  # Image quay.io/docling-project/docling-serve:cpu is ~3GB; allow extra startup time.
+  docling-serve:
+    build:
+      context: ./docling-serve
+      dockerfile: Dockerfile
+      network: host
+    image: docling-serve:latest
+    container_name: docling-serve
+    network_mode: host
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
 networks:
   ielts_network:

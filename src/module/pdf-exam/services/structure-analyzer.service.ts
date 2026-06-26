@@ -73,9 +73,9 @@ export class StructureAnalyzerService {
     ],
     YES_NO_NOT_GIVEN: [
       /YES\s*\/\s*NO\s*\/\s*NOT\s*GIVEN/i,
-      /views?|claims?|opinions?/i,
-      /Yes\s*or\s*No/i,
-      /Y\s*\/\s*N\s*\/\s*NG/i,
+      /\b(?:views?|claims?|opinions?)\b/i,
+      /\bYes\s+or\s+No\b/i,
+      /\bY\s*\/\s*N\s*\/\s*NG\b/i,
     ],
     MATCHING_HEADING: [
       /match(?:ing)?\s*(?:the )?heading/i,
@@ -85,10 +85,13 @@ export class StructureAnalyzerService {
     MATCHING_INFORMATION: [
       /match(?:ing)?\s*(?:the )?information/i,
       /which paragraph/i,
+      /which\s+section/i,
+      /contains?\s+the\s+following\s+information/i,
     ],
     MATCHING_FEATURES: [
       /match(?:ing)?\s*(?:the )?features/i,
       /match(?:ing)?\s*(?:the )?(?:people|categories|characteristics)/i,
+      /choose\s*(?:two|three|\d+)\s*(?:letters?|answers?)/i,
     ],
     MATCHING_SENTENCE_ENDINGS: [
       /match(?:ing)?\s*(?:the )?sentence ending/i,
@@ -103,7 +106,7 @@ export class StructureAnalyzerService {
       /complete(?:s|ing)?\s*(?:the )?sentence/i,
     ],
     SUMMARY_COMPLETION: [
-      /complete(?:s|ing)?\s*(?:the )?summary/i,
+      /complete(?:s|ing)?\s*(?:the\s*)?summary/i,
       /summary.*completion/i,
       /^summary$/im,
     ],
@@ -532,6 +535,15 @@ export class StructureAnalyzerService {
   private splitIntoQuestionChunks(lines: string[]): QuestionChunk[] {
     const chunks: QuestionChunk[] = [];
     let current: QuestionChunk | null = null;
+    // Question type locked in for the current chunk. Starts as `null` (no
+    // instruction seen yet). Once the first instruction line inside the chunk
+    // is classified, this sticks. A subsequent instruction line for a
+    // *different* type then signals a new chunk should start — this catches
+    // transitions like
+    //   ... Q25-26 TFNG instructions ...
+    //   "Choose TWO letters, A-E"   <- new MATCHING_FEATURES group
+    // Without this, the options A-E leak into the TFNG chunk.
+    let currentType: QuestionType | null = null;
 
     for (const line of lines) {
       if (this.isQuestionRangeHeader(line)) {
@@ -543,6 +555,10 @@ export class StructureAnalyzerService {
           lines: [],
           order: chunks.length + 1,
         };
+        // Don't lock the type from the header alone — `Questions 6-8` matches
+        // MULTIPLE_CHOICE by default but the actual group may be SUMMARY etc.
+        // Wait for the first instruction line to commit the type.
+        currentType = null;
         continue;
       }
 
@@ -552,6 +568,49 @@ export class StructureAnalyzerService {
           lines: [],
           order: chunks.length + 1,
         };
+        currentType = null;
+      }
+
+      const instructionDetected = this.isStrongInstructionLine(line);
+      if (instructionDetected) {
+        const lineType = this.detectQuestionType(line);
+        // Only split when we already have body content AND the new instruction
+        // is for a different question type. Two instructions in a row for the
+        // same group (e.g. "Complete the summary." followed by "Write NO MORE
+        // THAN TWO WORDS") must stay together so the SUMMARY_COMPLETION range
+        // header isn't orphaned.
+        const hasBody = current.lines.some(
+          (l) => l.trim() && !this.isStrongInstructionLine(l),
+        );
+        if (
+          currentType !== null &&
+          lineType !== currentType &&
+          hasBody &&
+          lineType !== QuestionType.MULTIPLE_CHOICE
+        ) {
+          chunks.push(current);
+          current = {
+            header: line,
+            lines: [],
+            order: chunks.length + 1,
+          };
+          currentType = lineType;
+          continue;
+        }
+        if (currentType === null) {
+          currentType = lineType;
+        }
+      }
+
+      // If this line introduces a new reading passage, close the current
+      // chunk so the next group's body is not appended here. The line
+      // itself is dropped — it belongs to the next passage.
+      if (this.isPassageIntroductionLine(line)) {
+        if (current) {
+          chunks.push(current);
+          current = null;
+        }
+        continue;
       }
 
       current.lines.push(line);
@@ -561,8 +620,52 @@ export class StructureAnalyzerService {
       chunks.push(current);
     }
 
-    return chunks.filter(
-      (chunk) => chunk.header.trim() || chunk.lines.some((line) => line.trim()),
+    const result = chunks.filter((chunk) => {
+      if (!chunk.header.trim() && !chunk.lines.some((line) => line.trim())) {
+        return false;
+      }
+      // Drop chunks that don't actually contain a question, option, or
+      // completion blank — these are usually passage-content chunks
+      // (e.g. "## Stadiums: past, present and future" + section A-G prose)
+      // that leaked past the range-header boundary. Without a numbered
+      // question line downstream, parsing them would invent MULTIPLE_CHOICE
+      // groups from the option letters.
+      const hasQuestionLine = chunk.lines.some((line) =>
+        this.looksLikeNumberedQuestionLine(line),
+      );
+      const hasOptionLine = chunk.lines.some((line) => this.isOptionLine(line));
+      const hasCompletionBlank = chunk.lines.some((line) =>
+        /_{2,}|\[\s*\d+\s*\]/.test(line),
+      );
+      // Inline markers (e.g. "watch 19 Meanwhile") indicate a SUMMARY
+      // completion group whose body is a single paragraph.
+      const hasInlineMarker = chunk.lines.some((line) =>
+        /(?<!\d)\d+(?:\.\s*,?|\s+,?)\s*[A-Z]/.test(line),
+      );
+      return (
+        hasQuestionLine || hasOptionLine || hasCompletionBlank || hasInlineMarker
+      );
+    });
+    return result;
+  }
+
+  /**
+   * Lines that are clearly the *start of a new question group's instruction*.
+   * Conservative: only matches lines that are short and look like an
+   * imperative directive ("Choose ...", "Do the following statements ...",
+   * "Match the headings ...", "Write NO MORE THAN ...").
+   */
+  private isStrongInstructionLine(line: string): boolean {
+    if (!line || line.length > 200) {
+      return false;
+    }
+    return (
+      /^(?:choose|select|complete|answer|label|match|write\s+no?\s*more|write\s+(?:one|two|three)|do\s+the\s+following|look\s+at)\b/i.test(
+        line,
+      ) ||
+      /^(?:TRUE|FALSE|YES|NO)\s*\/\s*(?:FALSE|NOT\s*GIVEN)\s*\/\s*NOT\s*GIVEN/i.test(
+        line,
+      )
     );
   }
 
@@ -808,16 +911,30 @@ export class StructureAnalyzerService {
     instructions: string,
     range: QuestionRange | null,
   ): ExtractedQuestionDto[] {
-    const { options: features, remainingLines } = this.extractOptionPool(
+    // Extract numbered stems first so the option pool can't accidentally
+    // consume markers like `23` or `24` (which would otherwise be lost when
+    // running option extraction before question extraction).
+    const { blocks, consumedIndices } = this.extractNumberedQuestionBlocksWithIndices(
       lines,
-      /^\(?([A-Z])\)?[\.\):\-]?\s+(.*)$/i,
+      range,
+    );
+
+    const remainingAfterStems = lines.filter(
+      (_line, index) => !consumedIndices.has(index),
+    );
+
+    const { options: features } = this.extractOptionPool(
+      remainingAfterStems,
+      /^[-*+]?\s*\(?([A-Z])\)?[\.\):\-]?\s+(.*)$/i,
       (label) => label.toUpperCase(),
     );
-    const blocks = this.extractNumberedQuestionBlocks(remainingLines, range);
 
     return blocks.map((block) => ({
       questionNumber: block.number,
-      content: block.text,
+      content: this.stripMatchingFeaturesPreamble(
+        block.text,
+        instructions,
+      ),
       questionType: QuestionType.MATCHING_FEATURES,
       metadata: {
         type: QuestionType.MATCHING_FEATURES,
@@ -828,6 +945,159 @@ export class StructureAnalyzerService {
     }));
   }
 
+  /**
+   * Like extractNumberedQuestionBlocks but also returns the set of input
+   * indices that were consumed by stem lines. This lets callers (e.g.
+   * MATCHING_FEATURES parser) drop only those exact lines from the option
+   * pool's input.
+   */
+  private extractNumberedQuestionBlocksWithIndices(
+    lines: string[],
+    range: QuestionRange | null,
+  ): { blocks: NumberedQuestionBlock[]; consumedIndices: Set<number> } {
+    const blocks: NumberedQuestionBlock[] = [];
+    const consumedIndices = new Set<number>();
+    let current: NumberedQuestionBlock | null = null;
+
+    for (let index = 0; index < lines.length; index++) {
+      const line = lines[index];
+      if (this.isCrossTestBoundaryLine(line)) {
+        if (current) {
+          blocks.push(this.finalizeQuestionBlock(current));
+        }
+        break;
+      }
+
+      const cleanedLine = this.cleanQuestionLine(line);
+      if (!cleanedLine) {
+        continue;
+      }
+
+      if (this.isCrossTestBoundaryLine(cleanedLine)) {
+        if (current) {
+          blocks.push(this.finalizeQuestionBlock(current));
+        }
+        break;
+      }
+
+      const match = cleanedLine.match(/^[-*+]?\s*(\d+)\s*[\.\)]?\s*(.+)$/);
+      if (match) {
+        if (this.isCrossTestBoundaryLine(match[2])) {
+          if (current) {
+            blocks.push(this.finalizeQuestionBlock(current));
+          }
+          break;
+        }
+
+        const number = parseInt(match[1], 10);
+        if (range && (number < range.start || number > range.end)) {
+          if (current) {
+            current.lines.push(match[2].trim());
+            current.text = current.lines.join('\n').trim();
+          }
+          continue;
+        }
+
+        if (current) {
+          blocks.push(this.finalizeQuestionBlock(current));
+        }
+
+        consumedIndices.add(index);
+        current = {
+          number,
+          lines: [match[2].trim()],
+          text: match[2].trim(),
+        };
+        continue;
+      }
+
+      if (!current) {
+        continue;
+      }
+
+      if (
+        this.isQuestionRangeHeader(cleanedLine) ||
+        this.isMarkdownPassageLine(cleanedLine) ||
+        this.isSectionBoundaryLine(cleanedLine) ||
+        this.isOptionLine(cleanedLine)
+      ) {
+        // Finalize the current stem and stop; the option pool will pick up
+        // this line and any subsequent option lines. We don't break here so
+        // the loop continues looking for more stem markers in case options
+        // and stems are interleaved, but we don't mark this index as
+        // consumed (the option pool is allowed to see it).
+        blocks.push(this.finalizeQuestionBlock(current));
+        current = null;
+        continue;
+      }
+
+      // Body continuation: also mark these input indices as consumed
+      // (they belong to the current stem's text).
+      consumedIndices.add(index);
+      current.lines.push(cleanedLine);
+    }
+
+    if (current) {
+      blocks.push(this.finalizeQuestionBlock(current));
+    }
+
+    if (blocks.length === 0 && range) {
+      // Fallback: when the strict line-based detector returns nothing, also
+      // forward to the regular helper and report no consumed indices — the
+      // option pool sees the full line set in that case.
+      return {
+        blocks: this.extractNumberedQuestionBlocks(lines, range),
+        consumedIndices: new Set<number>(),
+      };
+    }
+
+    return { blocks, consumedIndices };
+  }
+
+  /**
+   * Docling OCR frequently concatenates the MATCHING_FEATURES preamble
+   * ("When comparing ... which two negative features ...") with the actual
+   * stem ("which negative feature ..."). The preamble was already extracted
+   * into `instructions`, so drop it from the per-question content to avoid
+   * double-storing it.
+   */
+  private stripMatchingFeaturesPreamble(
+    text: string,
+    instructions: string,
+  ): string {
+    if (!text) {
+      return text;
+    }
+
+    // Drop a leading question-style preamble sentence ending in `?` that
+    // also appears in the instructions. Conservative: only strip when the
+    // preamble is at least 60 chars and the remaining body is still a
+    // meaningful sentence.
+    const match = text.match(
+      /^([\s\S]{60,}?\?)\s*(.*)$/,
+    );
+    if (!match) {
+      return text;
+    }
+    const preamble = match[1].trim();
+    const body = match[2].trim();
+    if (body.length < 20) {
+      return text;
+    }
+    // Only drop if the preamble content overlaps with the instructions.
+    const instructionsNorm = instructions
+      .toLowerCase()
+      .replace(/\s+/g, '');
+    const preambleNorm = preamble.toLowerCase().replace(/\s+/g, '');
+    if (
+      preambleNorm.length >= 40 &&
+      instructionsNorm.includes(preambleNorm.slice(0, 60))
+    ) {
+      return body;
+    }
+    return text;
+  }
+
   private parseMatchingSentenceEndingQuestions(
     lines: string[],
     instructions: string,
@@ -835,7 +1105,7 @@ export class StructureAnalyzerService {
   ): ExtractedQuestionDto[] {
     const { options: endings, remainingLines } = this.extractOptionPool(
       lines,
-      /^\(?([A-Z])\)?[\.\):\-]?\s+(.*)$/i,
+      /^[-*+]?\s*\(?([A-Z])\)?[\.\):\-]?\s+(.*)$/i,
       (label) => label.toUpperCase(),
     );
     const blocks = this.extractNumberedQuestionBlocks(remainingLines, range);
@@ -905,9 +1175,40 @@ export class StructureAnalyzerService {
       return [];
     }
 
-    const normalized = this.normalizeCompletionText(content, range);
     const maxWords = this.extractMaxWords(instructions);
 
+    // Docling OCR often inlines the question number into the passage prose
+    // (`...convertedfirstintoa18. ,then into...`). Try to split the body on
+    // these inline markers first; if we get one snippet per expected range
+    // number, emit one question per snippet. Otherwise fall through to the
+    // single-block `[N]` placeholder strategy.
+    const inlineQuestions = this.splitSummaryByInlineMarkers(
+      content,
+      range,
+      lines,
+    );
+    if (inlineQuestions.length > 0) {
+      return inlineQuestions.map(({ number, snippet }) => {
+        const cleanedSnippet = this.stripWordBankTail(snippet, range);
+        const normalizedSnippet = this.normalizeCompletionText(cleanedSnippet, {
+          start: number,
+          end: number,
+        });
+        return {
+          questionNumber: number,
+          content: normalizedSnippet.text,
+          questionType,
+          metadata: this.buildSharedCompletionMetadata(
+            questionType,
+            normalizedSnippet.text,
+            number,
+            maxWords,
+          ),
+        };
+      });
+    }
+    const cleanedContent = this.stripWordBankTail(content, range);
+    const normalized = this.normalizeCompletionText(cleanedContent, range);
     return normalized.numbers.map((questionNumber) => ({
       questionNumber,
       content: normalized.text,
@@ -919,6 +1220,118 @@ export class StructureAnalyzerService {
         maxWords,
       ),
     }));
+  }
+
+  /**
+   * Recover per-question snippets when Docling has merged them into a single
+   * prose paragraph with inline question markers (`a18. ,`, `watch 19`,
+   * `the21`, etc.). Returns an empty array when no usable markers are found
+   * so the caller falls back to the original single-block path.
+   */
+  private splitSummaryByInlineMarkers(
+    content: string,
+    range: QuestionRange | null,
+    lines: string[],
+  ): { number: number; snippet: string }[] {
+    const minNumber = range?.start ?? 0;
+    const expected = range ? range.end - range.start + 1 : 0;
+    if (expected <= 0) {
+      return [];
+    }
+
+    // Look for markers like `18.` / `19.` that appear inline in the joined
+    // text. The `.` after the digit is often missing in Docling OCR output
+    // (e.g. `watch 19 Meanwhile`) — accept either form. Use a lookbehind for
+    // non-digit instead of `\b` because `intoa18` has no word boundary
+    // between the letter `a` and digit `1`.
+    const markerRegex = /(?<!\d)(\d+)(?:\.\s*,?|\s+,?)\s*/g;
+    const matches: { number: number; index: number; length: number }[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = markerRegex.exec(content)) !== null) {
+      const number = parseInt(m[1], 10);
+      if (number >= minNumber && number < minNumber + expected) {
+        matches.push({ number, index: m.index, length: m[0].length });
+      }
+    }
+
+    if (matches.length !== expected) {
+      return [];
+    }
+
+    // Cut the content into per-question snippets at each marker.
+    return matches.map((match, i) => {
+      const start = match.index + match.length;
+      const end = i + 1 < matches.length ? matches[i + 1].index : content.length;
+      const snippet = content.slice(start, end).trim();
+      return { number: match.number, snippet };
+    });
+  }
+
+  /**
+   * SUMMARY_COMPLETION groups with a word bank (e.g. "Complete the summary
+   * using the list of phrases, A-J, below") often have the option list
+   * concatenated into the last snippet by the parser. Drop trailing
+   * word-bank lines so the question content stays a clean passage sentence.
+   *
+   * A line is treated as a word-bank tail when it starts with `- [A-J] ` /
+   * `[A-J] ` / `* [A-J] ` / `+ [A-J] ` / `A. ` (with optional period/colon).
+   * The strip is greedy from the first such line forward and stops at the
+   * first non-matching line.
+   */
+  private stripWordBankTail(text: string, range: QuestionRange | null): string {
+    if (!text) {
+      return text;
+    }
+
+    const allowedLabels = this.resolveWordBankLabels(range);
+    if (allowedLabels.length === 0) {
+      return text;
+    }
+
+    const wordBankLineRegex = new RegExp(
+      `^[\\s>*+\\-]*[(\\[\\s]?(?:${allowedLabels.join(
+        '|',
+      )})[\\s).:\\-]+\\s*\\S`,
+      'i',
+    );
+
+    const lines = text.split('\n');
+    let cutIndex = -1;
+    for (let index = 0; index < lines.length; index++) {
+      const line = lines[index].trim();
+      if (!line) {
+        continue;
+      }
+      if (wordBankLineRegex.test(line)) {
+        cutIndex = index;
+        break;
+      }
+    }
+    if (cutIndex === -1) {
+      return text;
+    }
+    return lines.slice(0, cutIndex).join('\n').trim();
+  }
+
+  /**
+   * Decide which letter labels are eligible to start a word-bank line. Defaults
+   * to A-H for SHORT_ANSWER-style questions; A-J for SUMMARY/NOTE/TABLE groups
+   * with typical 10-option banks.
+   */
+  private resolveWordBankLabels(range: QuestionRange | null): string[] {
+    void range;
+    return [
+      'A',
+      'B',
+      'C',
+      'D',
+      'E',
+      'F',
+      'G',
+      'H',
+      'I',
+      'J',
+    ];
   }
 
   private parseShortAnswerQuestions(
@@ -1059,24 +1472,69 @@ export class StructureAnalyzerService {
     const instructions: string[] = [];
     const bodyLines = this.sanitizeQuestionChunkLines(lines);
 
+    // Docling emits group headers like `## Questions14-17`. Strip both the
+    // markdown heading prefix and the `Questions N-M` label so that only the
+    // actual instruction prose ends up in `instructions`.
     const headerInstruction = header
-      .replace(/^Questions?\s*\d+(?:\s*(?:-|–|to)\s*\d+)?[:.)]?\s*/i, '')
+      .replace(/^#{1,6}\s*/, '')
+      .replace(/^Questions?\s*\d+(?:\s*(?:-|–|to|and)\s*\d+)?[:.)]?\s*/i, '')
       .trim();
     if (headerInstruction) {
       instructions.push(headerInstruction);
     }
 
+    // Scan the first chunk of body lines for the group's instruction
+    // block. The original implementation only consumed a leading run of
+    // instruction lines, but Docling interleaves the instruction with
+    // passage-style preamble ("ReadingPassage2hassevensections,A-G." sits
+    // between the heading and "Which section contains..."). We collect any
+    // instruction-shaped line from the first MAX_INSTRUCTION_LINES body
+    // lines, stopping as soon as we see a numbered question marker or
+    // option letter (i.e. the question content has started).
+    //
+    // Non-instruction lines are dropped as preamble *only* until we have
+    // seen the first real instruction. Once an instruction has been
+    // collected, we stop scanning to avoid eating body content
+    // (e.g. "The museum was designed by ____" follows the instruction
+    // block in SUMMARY_COMPLETION and must be kept).
+    const MAX_INSTRUCTION_LINES = 8;
+    let scanned = 0;
+    let foundInstruction = false;
     while (
       bodyLines.length > 0 &&
-      this.isInstructionLine(bodyLines[0], questionType)
+      scanned < MAX_INSTRUCTION_LINES &&
+      !this.looksLikeNumberedQuestionLine(bodyLines[0]) &&
+      !this.isOptionLine(bodyLines[0])
     ) {
-      instructions.push(bodyLines.shift()!);
+      const head = bodyLines[0];
+      if (this.isInstructionLine(head, questionType)) {
+        instructions.push(bodyLines.shift()!);
+        scanned++;
+        foundInstruction = true;
+        continue;
+      }
+      if (foundInstruction) {
+        // Non-instruction line that follows an instruction is body content
+        // (e.g. the summary paragraph). Stop scanning.
+        break;
+      }
+      // No instruction yet — drop this line as preamble and keep scanning.
+      bodyLines.shift();
+      scanned++;
     }
 
     return {
       instructions: instructions.join('\n').trim(),
       bodyLines,
     };
+  }
+
+  /**
+   * Single-letter / `- A` style option markers. Used by the instruction
+   * extractor to stop scanning once option lines start to appear.
+   */
+  private isOptionLine(line: string): boolean {
+    return /^[-*+]?\s*\(?[A-J]\)?[\.\):\-]?\s+\S/.test(line);
   }
 
   private isInstructionLine(line: string, questionType: QuestionType): boolean {
@@ -1159,7 +1617,12 @@ export class StructureAnalyzerService {
   }
 
   private extractQuestionRange(header: string): QuestionRange | null {
-    const match = header.match(/Questions?\s*(\d+)(?:\s*(?:-|–|to)\s*(\d+))?/i);
+    // Docling OCR sometimes drops whitespace between a number and the range
+    // marker ("Questions 25and26" or "Questions1-6"). Accept a wider set of
+    // separators: dash, en-dash, "to", "and", and direct adjacency.
+    const match = header.match(
+      /Questions?\s*(\d+)(?:\s*(?:[-–]|to|and)\s*|\s*)(\d+)?/i,
+    );
     if (!match) {
       return null;
     }
@@ -1170,8 +1633,13 @@ export class StructureAnalyzerService {
   }
 
   private buildGroupTitle(header: string, questionType: QuestionType): string {
-    if (header !== 'Questions') {
-      return header;
+    // Docling often emits group headers with a markdown heading prefix
+    // (`## Questions14-17`). Strip it before persisting so the editor and
+    // student preview don't render a literal `##` token.
+    const cleanedHeader = header.replace(/^#{1,6}\s*/, '').trim();
+
+    if (cleanedHeader !== 'Questions') {
+      return cleanedHeader;
     }
 
     return questionType.replace(/_/g, ' ');
@@ -1248,7 +1716,7 @@ export class StructureAnalyzerService {
         break;
       }
 
-      const match = cleanedLine.match(/^(\d+)(?:[\.\)]|\s)\s*(.+)$/);
+      const match = cleanedLine.match(/^[-*+]?\s*(\d+)\s*[\.\)]?\s*(.+)$/);
       if (match) {
         if (this.isCrossTestBoundaryLine(match[2])) {
           if (current) {
@@ -1257,12 +1725,26 @@ export class StructureAnalyzerService {
           break;
         }
 
+        // Drop numbered markers that fall outside the group's declared range.
+        // Docling sometimes leaks digits from neighbouring groups (e.g. `8. `
+        // before Q32-35 leakage) or from notes tables (e.g. `2. ` inside a
+        // Q1-6 notes table). These would otherwise be promoted to ghost
+        // questions (`questionNumber: 8`, `questionNumber: 2`).
+        const number = parseInt(match[1], 10);
+        if (range && (number < range.start || number > range.end)) {
+          if (current) {
+            current.lines.push(match[2].trim());
+            current.text = current.lines.join('\n').trim();
+          }
+          continue;
+        }
+
         if (current) {
           blocks.push(this.finalizeQuestionBlock(current));
         }
 
         current = {
-          number: parseInt(match[1], 10),
+          number,
           lines: [match[2].trim()],
           text: match[2].trim(),
         };
@@ -1275,6 +1757,7 @@ export class StructureAnalyzerService {
 
       if (
         this.isQuestionRangeHeader(cleanedLine) ||
+        this.isMarkdownPassageLine(cleanedLine) ||
         this.isSectionBoundaryLine(cleanedLine)
       ) {
         blocks.push(this.finalizeQuestionBlock(current));
@@ -1290,10 +1773,26 @@ export class StructureAnalyzerService {
     }
 
     if (blocks.length === 0 && range) {
-      const paragraphLines = lines.filter((line) => line.trim());
-      const numbers = this.resolveSequenceNumbers(range, paragraphLines.length);
+      // Fallback path: numbered markers (`1.`, `2.`) failed to match.
+      // Common cause: Docling OCR output is markdown where lines start with
+      // `-`, `##`, `>` (passage text / headings) instead of digits. We try
+      // to recover by:
+      //   1. dropping markdown-only artifacts (headings, blockquotes, list
+      //      bullets that aren't real question markers),
+      //   2. splitting on `1.` / `2.` style markers if present,
+      //   3. otherwise, capping to the range size so we don't invent
+      //      questions for every passage sentence.
+      const cleaned = lines
+        .map((line) => this.cleanQuestionLine(line))
+        .filter((line): line is string => Boolean(line))
+        .filter((line) => !this.isMarkdownPassageLine(line));
 
-      return paragraphLines
+      const expectedCount = range.end - range.start + 1;
+      const numbered = this.trySplitByNumberedMarkers(cleaned, range);
+      const truncated = numbered.slice(0, expectedCount);
+      const numbers = this.resolveSequenceNumbers(range, truncated.length);
+
+      return truncated
         .map((line, index) => ({
           number: numbers[index] ?? 0,
           lines: [line],
@@ -1303,6 +1802,59 @@ export class StructureAnalyzerService {
     }
 
     return blocks;
+  }
+
+  /**
+   * Lines that originate from Docling markdown but are part of the passage
+   * (heading / sub-heading / blockquote). These must never be promoted to a
+   * question content.
+   *
+   * Note: this used to also match `- A text` style lines (single-letter
+   * list bullets), but that conflicts with MULTIPLE_CHOICE / MATCHING_FEATURES
+   * options where `- A` is the option marker. We keep the heuristic narrow
+   * here and let the option extractor strip option lines from accumulated
+   * body content.
+   */
+  private isMarkdownPassageLine(line: string): boolean {
+    return (
+      /^#{1,6}\s/.test(line) ||
+      /^>\s/.test(line) ||
+      this.isLikelyPreambleLine(line)
+    );
+  }
+
+  /**
+   * Try to recover a numbered question list when the line-based detector
+   * failed. Supports `1. text`, `2) text`, and `Question 1 text` markers
+   * that may have been merged onto the same line by the OCR.
+   *
+   * When `range` is provided, numbered markers that fall outside
+   * `[range.start, range.end]` are silently dropped so ghost questions
+   * don't leak into the fallback path.
+   */
+  private trySplitByNumberedMarkers(
+    lines: string[],
+    range: QuestionRange | null = null,
+  ): string[] {
+    const joined = lines.join('\n');
+    // Accept markdown list markers (`- N text`, `* N text`, `+ N text`)
+    // and the bare `N text` form (no `.` or `)`) in addition to the
+    // classic `1. text` / `1) text` forms Docling sometimes collapses.
+    const numberedRegex =
+      /(?:^|\n)\s*[-*+]?\s*(?:Question\s+)?(\d+)\s*[.)]?\s+([^\n]+)/gi;
+    const matches: string[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = numberedRegex.exec(joined)) !== null) {
+      const number = parseInt(m[1], 10);
+      if (range && (number < range.start || number > range.end)) {
+        continue;
+      }
+      const text = (m[2] || '').trim();
+      if (text) {
+        matches.push(text);
+      }
+    }
+    return matches.length > 0 ? matches : lines;
   }
 
   private finalizeQuestionBlock(
@@ -1329,7 +1881,7 @@ export class StructureAnalyzerService {
         break;
       }
 
-      const match = cleanedLine.match(/^\(?([A-H])\)?[\.\):\-]?\s+(.*)$/i);
+      const match = cleanedLine.match(/^[-*+]?\s*\(?([A-H])\)?[\.\):\-]?\s+(.*)$/i);
       if (match) {
         if (currentOption) {
           options.push({
@@ -1375,7 +1927,7 @@ export class StructureAnalyzerService {
         break;
       }
 
-      const match = cleanedLine.match(/^\(?([A-H])\)?[\.\):\-]?\s+(.*)$/i);
+      const match = cleanedLine.match(/^[-*+]?\s*\(?([A-H])\)?[\.\):\-]?\s+(.*)$/i);
       if (!match) {
         continue;
       }
@@ -1467,7 +2019,7 @@ export class StructureAnalyzerService {
 
   private extractParagraphLabels(text: string): string[] {
     const rangeMatch = text.match(
-      /paragraphs?\s+([A-Z])\s*(?:-|–|to)\s*([A-Z])/i,
+      /(?:paragraphs?|sections?)\s*,?\s*([A-Z])\s*(?:-|–|to|and)\s*([A-Z])/i,
     );
     if (rangeMatch) {
       return this.buildLetterRange(rangeMatch[1], rangeMatch[2]);
@@ -1556,23 +2108,60 @@ export class StructureAnalyzerService {
     return `${this.capitalizeWord(match[2])} ${match[3].toUpperCase()}`;
   }
 
-  private isQuestionRangeHeader(line: string): boolean {
-    return /^Questions?\s*\d+/i.test(line);
+private isQuestionRangeHeader(line: string): boolean {
+    // Allow markdown heading prefixes (`#`, `##`, `###`) that Docling emits
+    // for `## Questions 14-17` style headers, while keeping the unprefixed
+    // form (`Questions 1-2`) recognized for plain-text inputs.
+    return /^(?:#{1,6}\s*)?Questions?\s*\d+/i.test(line);
+  }
+
+  /**
+   * True when a line introduces a new reading passage — used by the chunker
+   * to close the current question group before the next passage begins.
+   * Examples (Docling OCR):
+   *   "## READINGPASSAGE2"
+   *   "Youshouldspendabout20minutesonQuestions14-26,whicharebasedonReading Passage2below."
+   */
+  private isPassageIntroductionLine(line: string): boolean {
+    return (
+      /^#{1,6}\s*reading\s*passage\s*\d+/i.test(line) ||
+      /youshouldspendabout\d+minutesonquestions/i.test(line) ||
+      /^#{1,6}\s*questions\s+\d+-\d+/i.test(line)
+    );
   }
 
   private isNumberedQuestionLine(line: string): boolean {
     return /^\d+(?:[\.\)]|\s)\s*\S/.test(line);
   }
 
+  /**
+   * Like isNumberedQuestionLine but also accepts the markdown list form
+   * (`- 14 amention...`) Docling emits. Used by the instruction extractor
+   * to stop scanning once a question stem is reached.
+   */
+  private looksLikeNumberedQuestionLine(line: string): boolean {
+    return /^[-*+]?\s*\d+(?:[\.\)]|\s)\s*\S/.test(line);
+  }
+
   private isLikelyPreambleLine(line: string): boolean {
+    // Preamble-style lines are short standalone directives that precede a
+    // passage (e.g. "Read the passage below.", "You will hear a recording
+    // about..."). They must NOT match lines that combine such a verb with
+    // an actual instruction ("Answer the questions. Choose NO MORE THAN TWO
+    // WORDS...") — that whole sentence is the group's instruction and should
+    // be kept so SHORT_ANSWER detection still works.
     return (
-      /^(?:read the passage|you will hear|listen and answer|answer the questions)/i.test(
+      /^(?:read the passage|you will hear|listen and answer|answer the questions)[.\s]*$/i.test(
         line,
       ) ||
       /^(?:IELTS\s+(?:READING|LISTENING|WRITING|SPEAKING)|Page\s+\d+)\b/i.test(
         line,
       ) ||
-      /^https?:\/\//i.test(line)
+      /^https?:\/\//i.test(line) ||
+      // Passages introduced by "You should spend about 20 minutes on
+      // Questions N-M, which are based on Reading Passage X." — this is
+      // always the next group's preamble, not part of the current chunk.
+      /youshouldspendabout\d+minutesonquestions/i.test(line)
     );
   }
 
@@ -1652,6 +2241,21 @@ export class StructureAnalyzerService {
         continue;
       }
 
+      // Drop range headers (`## Questions14-17`) and passage-style lines
+      // (`- A Stadiumsareamong...`, `## READINGPASSAGE2`, blockquotes). These
+      // come from the next group's body bleeding into the current chunk and
+      // would otherwise pollute statements / instructions. Note: the chunker
+      // already stops at passage introductions, so SQC mainly catches stragglers
+      // (e.g. a single `- A` option line from a previous group that survived
+      // the chunk split).
+      if (
+        this.isQuestionRangeHeader(cleanedLine) ||
+        this.isMarkdownPassageLine(cleanedLine) ||
+        this.isPassageIntroductionLine(cleanedLine)
+      ) {
+        continue;
+      }
+
       sanitized.push(cleanedLine);
     }
 
@@ -1681,6 +2285,8 @@ export class StructureAnalyzerService {
       .replace(/https?:\/\/\S+\s*Page\s*\d+/gi, '')
       .replace(/https?:\/\/\S+/gi, '')
       .replace(/\bPage\s+\d+\b/gi, '')
+      // Docling checkbox artifact: `- [ ] A option` → strip the `[ ]`.
+      .replace(/\[\s*\]/g, '')
       .trim();
 
     return cleaned;
@@ -1725,7 +2331,7 @@ export class StructureAnalyzerService {
       return true;
     }
 
-    return !lines.some((line) => /^\(?[A-H]\)?[\.\):\-]?\s+\S/i.test(line));
+    return !lines.some((line) => /^[-*+]?\s*\(?[A-H]\)?[\.\):\-]?\s+\S/i.test(line));
   }
 
   private applyReadingListeningQualityGate(

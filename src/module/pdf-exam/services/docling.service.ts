@@ -69,6 +69,12 @@ export class DoclingService {
     confidence: number;
     warnings: string[];
   }> {
+    // Re-probe availability on each call. The constructor probe runs once at
+    // boot; if Docling comes up later (or restarts), the cached `isAvailable`
+    // flag would otherwise stick at `false` and force the pdfjs-dist fallback.
+    if (!this.isAvailable) {
+      await this.checkAvailability();
+    }
     if (!this.isAvailable) {
       throw new ServiceUnavailableException(
         'Docling service is not available. Please try again later.',
@@ -79,7 +85,9 @@ export class DoclingService {
       const formData = new FormData();
       const uint8Array = new Uint8Array(fileBuffer);
       const blob = new Blob([uint8Array], { type: 'application/pdf' });
-      formData.append('file', blob, filename);
+      // docling-serve >= v1.x expects the field name `files` (plural, array)
+      // instead of the legacy `file` (single). Sending `file` returns 422.
+      formData.append('files', blob, filename);
 
       const response = await this.doclingClient.post<DoclingConversionResponse>(
         '/v1/convert/file',
@@ -92,27 +100,39 @@ export class DoclingService {
             from_formats: ['pdf'],
             to_formats: ['json', 'markdown'],
             do_ocr: true,
-            ocr_engine: 'tesseract',
+            ocr_preset: 'auto',
+            ocr_lang: ['en'],
             table_mode: 'accurate',
           },
         },
       );
 
       const { document } = response.data;
+      // docling-serve v1.x only populates `text_content` when the legacy text
+      // export option is requested. The default response carries only
+      // `md_content` + `json_content`, so fall back to markdown when text is
+      // empty — markdown still preserves headings, lists, and paragraphs that
+      // the downstream structure-analyzer relies on.
       const text = document.text_content || '';
       const markdown = document.md_content || '';
+      const effectiveText = text.length > 0 ? text : markdown;
 
       // Calculate confidence based on text extraction success
-      const textDensity = text.length;
+      const textDensity = effectiveText.length;
       const confidence = Math.min(0.98, Math.max(0.6, textDensity / 1000));
 
       const warnings: string[] = [];
-      if (textDensity < 200) {
+      if (effectiveText.length < 200) {
         warnings.push('Low text extraction - PDF may be image-based');
+      }
+      if (text.length === 0 && markdown.length > 0) {
+        warnings.push(
+          'Docling returned no text_content; using markdown as fallback source',
+        );
       }
 
       return {
-        text,
+        text: effectiveText,
         markdown,
         confidence,
         warnings,
@@ -144,6 +164,9 @@ export class DoclingService {
     warnings: string[];
   }> {
     if (!this.isAvailable) {
+      await this.checkAvailability();
+    }
+    if (!this.isAvailable) {
       throw new ServiceUnavailableException(
         'Docling service is not available. Please try again later.',
       );
@@ -160,7 +183,8 @@ export class DoclingService {
             from_formats: ['pdf'],
             to_formats: ['json', 'markdown'],
             do_ocr: true,
-            ocr_engine: 'tesseract',
+            ocr_preset: 'auto',
+            ocr_lang: ['en'],
             table_mode: 'accurate',
           },
         },
@@ -169,17 +193,23 @@ export class DoclingService {
       const { document } = response.data;
       const text = document.text_content || '';
       const markdown = document.md_content || '';
+      const effectiveText = text.length > 0 ? text : markdown;
 
-      const textDensity = text.length;
+      const textDensity = effectiveText.length;
       const confidence = Math.min(0.98, Math.max(0.6, textDensity / 1000));
 
       const warnings: string[] = [];
-      if (textDensity < 200) {
+      if (effectiveText.length < 200) {
         warnings.push('Low text extraction - PDF may be image-based');
+      }
+      if (text.length === 0 && markdown.length > 0) {
+        warnings.push(
+          'Docling returned no text_content; using markdown as fallback source',
+        );
       }
 
       return {
-        text,
+        text: effectiveText,
         markdown,
         confidence,
         warnings,

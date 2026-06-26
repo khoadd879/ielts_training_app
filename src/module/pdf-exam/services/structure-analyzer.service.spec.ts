@@ -274,4 +274,306 @@ C To support projects
       ),
     ).toBe(true);
   });
+
+  it('extracts MATCHING_INFORMATION from Docling markdown', async () => {
+    const result = await service.analyze(
+      {
+        title: 'IELTS Reading Practice',
+        level: 'Mid',
+        rawText: `
+Part 2
+## Questions14-17
+ReadingPassage2hassevensections,A-G.
+Which sectioncontainsthefollowinginformation?
+Writethecorrectletter,A-G,inboxes14-17onyouranswersheet.
+NB Youmayuseanylettermorethanonce.
+- 14 amentionofnegativeattitudestowardsstadiumbuildingprojects
+- 15 figuresdemonstratingtheenvironmentalbenefitsofacertainstadium
+- 16 examplesofthewiderangeoffacilitiesavailableatsomenewstadiums
+- 17 referencetothedisadvantagesofthestadiumsbuiltduringacertainera
+        `,
+        pages: [],
+        blocks: [],
+      },
+      TestType.READING,
+    );
+
+    const group = result.data.parts?.[0].questionGroups[0];
+    expect(group?.questionType).toBe(QuestionType.MATCHING_INFORMATION);
+    expect(group?.questions).toHaveLength(4);
+    expect(group?.questions[0].questionNumber).toBe(14);
+    expect((group?.questions[0].metadata as any).paragraphLabels).toEqual([
+      'A',
+      'B',
+      'C',
+      'D',
+      'E',
+      'F',
+      'G',
+    ]);
+  });
+
+  it('extracts SUMMARY_COMPLETION with inline markers', async () => {
+    const result = await service.analyze(
+      {
+        title: 'IELTS Reading Practice',
+        level: 'Mid',
+        rawText: `
+Part 2
+## Questions18-22
+Completethesummarybelow.
+ChooseONEWORDONLYfromthepassageforeachanswer.
+Writeyour answersinboxes18-22onyouranswersheet.
+## Romanamphitheatres
+TheRomanstadiumsof Europe haveprovedveryversatile.The amphitheatre of Arles,forexample,wasconvertedfirstintoa18. ,then into aresidentialareaandfinallyintoanarenawherespectatorscouldwatch 19 Meanwhile,thearenainVerona,oneoftheoldest Romanamphitheatres,isfamoustodayasavenuewhere20 is performed. The site of Lucca's amphitheatre has also been used for many purposesoverthecenturies,includingthestorageof21 It isnowamarketsquarewith22. andhomesincorporated into theremainsoftheRomanamphitheatre.
+        `,
+        pages: [],
+        blocks: [],
+      },
+      TestType.READING,
+    );
+
+    const group = result.data.parts?.[0].questionGroups[0];
+    expect(group?.questionType).toBe(QuestionType.SUMMARY_COMPLETION);
+    expect(group?.questions).toHaveLength(5);
+    expect(group?.questions.map((q) => q.questionNumber)).toEqual([
+      18, 19, 20, 21, 22,
+    ]);
+  });
+
+  it('extracts MULTIPLE_CHOICE from markdown list stems + options', async () => {
+    const result = await service.analyze(
+      {
+        title: 'IELTS Reading Practice',
+        level: 'Mid',
+        rawText: `
+Part 3
+## Questions36-40
+Choosethecorrectletter,A,B,orD
+Writethecorrectletterinboxes36-40onyouranswersheet.
+- 36What is the reviewer's main purpose in the first paragraph?
+- A to describewhat happened duringtheBattleof Worcester
+- B to giveanaccountofthecircumstancesleadingtoCharlesIl'sescape
+- C to providedetailsoftheParliamentarians'politicalviews
+- D to compareCharlesIl'sbeliefswiththoseofhisfather
+- 37 Why does thereviewer includeexamplesof thefugitives'behaviourin the third paragraph?
+- A toexplainhowcloseCharlesllcametolosinghislife
+- B
+- C toillustratehowtheeventsofthesixweeksarebroughttolife
+- D toarguethatcertain aspectsarenotaswellknownastheyshouldbe
+        `,
+        pages: [],
+        blocks: [],
+      },
+      TestType.READING,
+    );
+
+    const group = result.data.parts?.[0].questionGroups[0];
+    expect(group?.questionType).toBe(QuestionType.MULTIPLE_CHOICE);
+    expect(group?.questions).toHaveLength(2);
+    expect(group?.questions[0].questionNumber).toBe(36);
+    const options = (group?.questions[0].metadata as any).options;
+    expect(options).toHaveLength(4);
+    expect(options.map((o: { label: string }) => o.label)).toEqual([
+      'A',
+      'B',
+      'C',
+      'D',
+    ]);
+  });
+
+  it('extracts MATCHING_FEATURES with markdown options A-E', async () => {
+    const result = await service.analyze(
+      {
+        title: 'IELTS Reading Practice',
+        level: 'Mid',
+        rawText: `
+Part 2
+Questions23and24
+ChooseTwoletters,A-E.
+Writethecorrectlettersinboxes23and24onyouranswersheet.
+Whencomparingtwentieth-centurystadiumstoancientamphitheatresinSectionD, whichTwonegativefeaturesdoesthewritermention?
+- 23 which negative feature of twentieth-century stadiums?
+- 24 another negative feature
+- A Theyarelessimaginativelydesigned.
+- B They are less spacious.
+- C Theyareinlessconvenientlocations.
+- D They arelessversatile.
+- E Theyaremadeoflessdurablematerials.
+        `,
+        pages: [],
+        blocks: [],
+      },
+      TestType.READING,
+    );
+
+    const group = result.data.parts?.[0].questionGroups[0];
+    expect(group?.questionType).toBe(QuestionType.MATCHING_FEATURES);
+    expect(group?.questions).toHaveLength(2);
+    const features = (group?.questions[0].metadata as any).features;
+    expect(features.map((f: { label: string }) => f.label)).toEqual([
+      'A',
+      'B',
+      'C',
+      'D',
+      'E',
+    ]);
+  });
+
+  it('strips markdown heading prefix from group title and instructions', async () => {
+    const result = await service.analyze(
+      {
+        title: 'IELTS Reading Practice',
+        level: 'Mid',
+        rawText: `
+## Questions14-17
+ReadingPassage2hassevensections,A-G.
+Which sectioncontainsthefollowinginformation?
+- 14 amentionofnegativeattitudestowardsstadiumbuildingprojects
+- 15 figuresdemonstratingtheenvironmentalbenefitsofacertainstadium
+- 16 examplesofthewiderangeoffacilitiesavailableatsomenewstadiums
+- 17 referencetothedisadvantagesofthestadiumsbuiltduringacertainera
+        `,
+        pages: [],
+        blocks: [],
+      },
+      TestType.READING,
+    );
+
+    const group = result.data.parts?.[0].questionGroups[0];
+    expect(group?.title).toBe('Questions14-17');
+    expect(group?.instructions ?? '').not.toMatch(/^##/);
+    expect(group?.instructions ?? '').toContain(
+      'Which sectioncontainsthefollowinginformation',
+    );
+  });
+
+  it('drops ghost numbered markers outside the declared range', async () => {
+    const result = await service.analyze(
+      {
+        title: 'IELTS Reading Practice',
+        level: 'Mid',
+        rawText: `
+Questions1-6
+- 1 Building therailwaywouldmakeitpossibletomovepeople tobetterhousing
+- 2 anotherstem
+8 strayloadoutnoise
+- 3 thirdstem
+        `,
+        pages: [],
+        blocks: [],
+      },
+      TestType.READING,
+    );
+
+    const group = result.data.parts?.[0].questionGroups[0];
+    // Only 1, 2, 3 survive — the stray `8 strayloadoutnoise` is treated as
+    // body of the current block, not a new question.
+    expect(group?.questions.map((q) => q.questionNumber)).toEqual([1, 2, 3]);
+    expect(
+      group?.questions.some((q) => q.questionNumber === 8),
+    ).toBe(false);
+  });
+
+  it('truncates the last block before the next group\'s passage bleed', async () => {
+    const result = await service.analyze(
+      {
+        title: 'IELTS Reading Practice',
+        level: 'Mid',
+        rawText: `
+Questions7-13
+Do the following statements agree with the information given in Reading Passage 1?
+- 7 OthercountrieshadbuiltundergroundrailwaysbeforetheMetropolitanline opened.
+## READINGPASSAGE2
+Youshouldspendabout20minutesonQuestions14-26,whicharebasedonReading Passage2below.
+## Stadiums: past, present and future
+- A Stadiumsareamongtheoldestformsofurbanarchitecture...
+        `,
+        pages: [],
+        blocks: [],
+      },
+      TestType.READING,
+    );
+
+    const group = result.data.parts?.[0].questionGroups[0];
+    expect(group?.questionType).toBe(QuestionType.TRUE_FALSE_NOT_GIVEN);
+    expect(group?.questions).toHaveLength(1);
+    const content = group?.questions[0].content ?? '';
+    expect(content).not.toContain('## READINGPASSAGE');
+    expect(content).not.toContain('Youshouldspendabout20minutesonQuestions14-26');
+  });
+
+  it('recovers MATCHING_FEATURES options A-E when stems are numbered', async () => {
+    const result = await service.analyze(
+      {
+        title: 'IELTS Reading Practice',
+        level: 'Mid',
+        rawText: `
+Questions23and24
+ChooseTwoletters,A-E.
+Writethecorrectlettersinboxes23and24onyouranswersheet.
+- 23 which negative feature of twentieth-century stadiums?
+- 24 another negative feature
+- A Theyarelessimaginativelydesigned.
+- B They are less spacious.
+- C Theyareinlessconvenientlocations.
+- D They arelessversatile.
+- E Theyaremadeoflessdurablematerials.
+        `,
+        pages: [],
+        blocks: [],
+      },
+      TestType.READING,
+    );
+
+    const group = result.data.parts?.[0].questionGroups[0];
+    expect(group?.questionType).toBe(QuestionType.MATCHING_FEATURES);
+    expect(group?.questions).toHaveLength(2);
+    const features = (group?.questions[0].metadata as any).features;
+    expect(features.map((f: { label: string }) => f.label)).toEqual([
+      'A',
+      'B',
+      'C',
+      'D',
+      'E',
+    ]);
+  });
+
+  it('strips word bank A-J from SUMMARY_COMPLETION last snippet', async () => {
+    const result = await service.analyze(
+      {
+        title: 'IELTS Reading Practice',
+        level: 'Mid',
+        rawText: `
+Questions27-31
+Completethesummaryusingthelistofphrases,A-J,below.
+Writethecorrectletter,A-J,inboxes27-31onyouranswersheet.
+..withtheScots,andinordertobecomeKingof Scots,he abandoned animportant27 thatwasheldbyhisfather andhadcontributed tohisfather'sdeath.Theopposingsidesthenmetoutside Worcesterin1651.Thebattleledtoa28 fortheParliamentarians andCharleshadtofleeforhislife.A29 wasofferedforCharles's capture,butaftersixweeksspentinhiding,heeventuallymanagedtoreachthe30 ofcontinental Europe.31
+- A militaryinnovation
+- B largereward
+- C widespreadconspiracy
+- D relative safety
+- E new government
+F
+decisivevictory
+- G politicaldebate
+- H strategicalliance
+popular solution
+- J religiousconviction
+        `,
+        pages: [],
+        blocks: [],
+      },
+      TestType.READING,
+    );
+
+    const group = result.data.parts?.[0].questionGroups[0];
+    expect(group?.questionType).toBe(QuestionType.SUMMARY_COMPLETION);
+    expect(group?.questions).toHaveLength(5);
+    const lastQuestion = group?.questions[4];
+    expect(lastQuestion?.questionNumber).toBe(31);
+    const lastContent = lastQuestion?.content ?? '';
+    expect(lastContent).not.toContain('militaryinnovation');
+    expect(lastContent).not.toContain('largereward');
+  });
 });
