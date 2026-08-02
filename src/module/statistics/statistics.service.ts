@@ -162,7 +162,7 @@ export class StatisticsService {
   }
 
   async getSkillOverview(idUser: string) {
-    const cacheKey = `skill-overview:${idUser}`;
+    const cacheKey = `statistics:overview:${idUser}`;
     const cached = await this.cache.get<any>(cacheKey);
     if (cached) return cached;
 
@@ -170,20 +170,22 @@ export class StatisticsService {
       where: { idUser },
       select: { targetBandScore: true },
     });
-    if (!user) throw new BadRequestException('User not found');
+    const targetBand = user?.targetBandScore ?? null;
 
-    const finishedResults = await this.prisma.userTestResult.findMany({
-      where: { idUser, status: 'FINISHED' },
-      select: {
-        bandScore: true,
-        test: { select: { testType: true } },
-      },
-    });
+    const rows = await this.prisma.$queryRaw<
+      Array<{ testType: string; avg: number | null }>
+    >`
+    SELECT t."testType" AS "testType", AVG(r."bandScore")::float AS "avg"
+      FROM "UserTestResult" r
+      JOIN "Test" t ON t."idTest" = r."idTest"
+     WHERE r."idUser" = ${idUser}::uuid
+       AND r."status" = 'FINISHED'::"TestStatus"
+       AND r."bandScore" > 0
+     GROUP BY t."testType"
+  `;
 
     const roundToIeltsScore = (score: number): number =>
       Math.round(score * 2) / 2;
-
-    const targetBand = user.targetBandScore ?? null;
 
     const skills: Record<
       string,
@@ -195,27 +197,13 @@ export class StatisticsService {
       SPEAKING: { currentBand: null, targetBand },
     };
 
-    for (const type of Object.keys(skills)) {
-      const list = finishedResults.filter(
-        (r) => r.test.testType === type,
-      );
-      if (list.length === 0) continue;
-      const avg =
-        list.reduce((a, b) => a + b.bandScore, 0) / list.length;
-      skills[type].currentBand = roundToIeltsScore(avg);
+    for (const row of rows) {
+      if (row.testType in skills) {
+        skills[row.testType].currentBand = row.avg ? roundToIeltsScore(row.avg) : null;
+      }
     }
 
-    const result = {
-      message: 'Skill overview retrieved successfully',
-      data: {
-        reading: skills.READING,
-        listening: skills.LISTENING,
-        writing: skills.WRITING,
-        speaking: skills.SPEAKING,
-      },
-      status: 200,
-    };
-    await this.cache.set(cacheKey, result, 300);
-    return result;
+    await this.cache.set(cacheKey, skills, 300);
+    return skills;
   }
 }

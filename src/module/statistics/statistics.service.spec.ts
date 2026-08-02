@@ -111,3 +111,48 @@ describe('StatisticsService.statistic', () => {
   });
 });
 
+describe('StatisticsService.getSkillOverview', () => {
+  let service: StatisticsService;
+
+  const mockCache = {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockDb = {
+    $queryRaw: jest.fn(),
+    user: { findUnique: jest.fn() },
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    mockCache.get.mockResolvedValue(null);
+    mockCache.set.mockResolvedValue(undefined);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        StatisticsService,
+        { provide: DatabaseService, useValue: mockDb },
+        { provide: CACHE_MANAGER, useValue: mockCache },
+      ],
+    }).compile();
+    service = module.get(StatisticsService);
+  });
+
+  it('trả về 4 skill với currentBand từ avg', async () => {
+    mockDb.user.findUnique.mockResolvedValueOnce({ targetBandScore: 7.5 });
+    mockDb.$queryRaw.mockResolvedValueOnce([
+      { testType: 'READING', avg: 6.5 },
+      { testType: 'LISTENING', avg: 7.75 },
+    ]);
+
+    const result = await service.getSkillOverview('user-1');
+
+    expect(result.READING.currentBand).toBe(6.5);
+    expect(result.READING.targetBand).toBe(7.5);
+    expect(result.LISTENING.currentBand).toBe(8.0);
+    expect(result.LISTENING.targetBand).toBe(7.5);
+    expect(result.WRITING.currentBand).toBe(null);
+  });
+});
+
+
