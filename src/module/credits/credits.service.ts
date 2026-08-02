@@ -161,24 +161,27 @@ export class CreditsService {
     const { idUser, type, submissionId, creditsCost } = params;
 
     return this.db.$transaction(async (tx) => {
-      let balance = await tx.creditBalance.findUnique({ where: { idUser } });
-
-      if (!balance) {
+      // Atomic claim: increment usedCredits only if row exists
+      const { count } = await tx.creditBalance.updateMany({
+        where: { idUser },
+        data: { usedCredits: { increment: creditsCost } },
+      });
+      if (count === 0) {
         throw new BadRequestException('No credit balance found. Please purchase credits first.');
       }
 
-      const available = balance.totalCredits - balance.usedCredits;
-      if (available < creditsCost) {
+      // Verify we didn't go negative under concurrent deduction
+      const updated = await tx.creditBalance.findUnique({ where: { idUser } });
+      if (!updated || updated.totalCredits - updated.usedCredits < 0) {
+        // Rollback the increment we just applied
+        await tx.creditBalance.update({
+          where: { idUser },
+          data: { usedCredits: { decrement: creditsCost } },
+        });
         throw new BadRequestException(
-          `Insufficient credits. Need ${creditsCost}, have ${available}`,
+          `Insufficient credits. Need ${creditsCost}`,
         );
       }
-
-      // Reserve credits (increase usedCredits)
-      balance = await tx.creditBalance.update({
-        where: { idUser },
-        data: { usedCredits: balance.usedCredits + creditsCost },
-      });
 
       // Create transaction
       const transaction = await tx.creditTransaction.create({
@@ -195,7 +198,7 @@ export class CreditsService {
 
       return {
         success: true,
-        balance: balance.totalCredits - balance.usedCredits,
+        balance: updated.totalCredits - updated.usedCredits,
         transactionId: transaction.idTransaction,
       };
     });
