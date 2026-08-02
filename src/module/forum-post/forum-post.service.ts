@@ -11,7 +11,8 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { ConfigService } from '@nestjs/config';
 import { SystemConfigService } from 'src/module/system-config/system-config.service';
 import { GoogleGenAI } from '@google/genai';
-import { ForumModerationStatus, Role } from '@prisma/client';
+import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
+import { ForumModerationStatus, Prisma, Role } from '@prisma/client';
 import { ReviewForumPostDto } from './dto/review-forum-post.dto';
 
 type ForumModerationMeta = {
@@ -39,6 +40,7 @@ export class ForumPostService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly configService: ConfigService,
     private readonly systemConfigService: SystemConfigService,
+    private readonly rabbitMQService: RabbitMQService,
   ) {}
 
   async existingUser(idUser: string) {
@@ -464,22 +466,21 @@ ${content}
         idUser,
         content,
         file: fileUrl,
+        moderationStatus: ForumModerationStatus.PENDING,
+        moderationScore: null,
+        moderationMeta: Prisma.JsonNull,
       },
     });
 
-    const moderation = await this.scorePostWithGemini(
+    // Enqueue moderation (non-blocking). Worker will call scorePostWithGemini
+    // and update the row when the AI result lands.
+    await this.rabbitMQService.publishModerationForum({
+      postId: createdPost.idForumPost,
+      userId: idUser,
       content,
-      forumThread.title,
-      Boolean(fileUrl),
-    );
-
-    await this.databaseService.forumPost.update({
-      where: { idForumPost: createdPost.idForumPost },
-      data: {
-        moderationStatus: moderation.status,
-        moderationScore: moderation.score,
-        moderationMeta: moderation.meta,
-      },
+      threadTitle: forumThread.title,
+      hasAttachment: Boolean(fileUrl),
+      enqueuedAt: new Date().toISOString(),
     });
 
     const data = await this.getForumPostWithRelations(
@@ -489,9 +490,10 @@ ${content}
     if (!data) throw new BadRequestException('Forum post not found');
 
     return {
-      message: 'Forum Post created successfully',
+      message: 'Forum Post created, moderation pending',
       data: this.transformPost(data),
-      status: 200,
+      moderationStatus: 'pending',
+      status: 202,
     };
   }
 

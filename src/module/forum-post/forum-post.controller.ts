@@ -9,6 +9,7 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  HttpCode,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { ForumPostService } from './forum-post.service';
@@ -24,6 +25,7 @@ export class ForumPostController {
   constructor(private readonly forumPostService: ForumPostService) {}
 
   @Post('create-forum-post')
+  @HttpCode(202)
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: (req, file, callback) => {
