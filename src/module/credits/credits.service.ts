@@ -74,19 +74,15 @@ export class CreditsService {
       throw new NotFoundException('Credit package vanished');
     }
 
-    let balance = await tx.creditBalance.findUnique({
+    const { count } = await tx.creditBalance.updateMany({
       where: { idUser: payment.idUser },
+      data: { totalCredits: { increment: pkg.creditAmount } },
     });
-    if (!balance) {
-      balance = await tx.creditBalance.create({
-        data: { idUser: payment.idUser, totalCredits: 0, usedCredits: 0 },
+    if (count === 0) {
+      await tx.creditBalance.create({
+        data: { idUser: payment.idUser, totalCredits: pkg.creditAmount, usedCredits: 0 },
       });
     }
-
-    await tx.creditBalance.update({
-      where: { idUser: payment.idUser },
-      data: { totalCredits: balance.totalCredits + pkg.creditAmount },
-    });
 
     const creditTx = await tx.creditTransaction.create({
       data: {
