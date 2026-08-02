@@ -171,34 +171,46 @@ export class SubscriptionService {
 
   async useQuota(idUser: string, credits: number = 1): Promise<{ success: boolean; remaining: number }> {
     return this.db.$transaction(async (tx) => {
+      // Atomic claim: increment only if an active, non-expired subscription exists
+      const { count } = await tx.userSubscription.updateMany({
+        where: {
+          idUser,
+          status: 'ACTIVE',
+          expiresAt: { gt: new Date() },
+        },
+        data: { creditsUsedThisPeriod: { increment: credits } },
+      });
+      if (count === 0) {
+        throw new BadRequestException('No active subscription or expired');
+      }
+
+      // Verify we didn't over-quota under concurrent deduction
       const sub = await tx.userSubscription.findFirst({
         where: { idUser, status: 'ACTIVE' },
-        include: { package: true },
       });
-
       if (!sub) {
         throw new BadRequestException('No active subscription found');
       }
 
-      if (new Date() > sub.expiresAt) {
-        throw new BadRequestException('Subscription expired');
-      }
-
-      if (sub.creditsQuotaThisPeriod > 0) {
-        const remaining = sub.creditsQuotaThisPeriod - sub.creditsUsedThisPeriod;
-        if (remaining < credits) {
-          throw new BadRequestException(`Insufficient quota. Need ${credits}, have ${remaining}`);
-        }
-
+      if (
+        sub.creditsQuotaThisPeriod > 0 &&
+        sub.creditsUsedThisPeriod > sub.creditsQuotaThisPeriod
+      ) {
+        // Rollback
         await tx.userSubscription.update({
           where: { idSubscription: sub.idSubscription },
-          data: { creditsUsedThisPeriod: sub.creditsUsedThisPeriod + credits },
+          data: { creditsUsedThisPeriod: { decrement: credits } },
         });
-
-        return { success: true, remaining: remaining - credits };
+        throw new BadRequestException(`Insufficient quota. Need ${credits}`);
       }
 
-      return { success: true, remaining: -1 }; // Unlimited
+      return {
+        success: true,
+        remaining:
+          sub.creditsQuotaThisPeriod > 0
+            ? sub.creditsQuotaThisPeriod - sub.creditsUsedThisPeriod
+            : -1,
+      };
     });
   }
 
