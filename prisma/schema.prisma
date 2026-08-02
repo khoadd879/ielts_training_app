@@ -762,6 +762,7 @@ model PaymentTransaction {
   errorMessage String?
   createdAt    DateTime  @default(now())
   paidAt       DateTime?
+  processedAt  DateTime? // set when IPN claims the transaction for processing
   updatedAt    DateTime  @updatedAt
 
   // Relations
@@ -778,6 +779,7 @@ model PaymentTransaction {
 
 enum PaymentStatus {
   PENDING // URL generated, waiting for callback
+  PROCESSING // IPN claimed the row, provisioning in flight
   SUCCESS // IPN verified, provisioning done
   FAILED // VNPay returned non-"00" or signature invalid
   EXPIRED // 15-min window passed without callback
