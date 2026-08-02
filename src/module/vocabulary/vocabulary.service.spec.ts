@@ -61,4 +61,9 @@ describe('VocabularyService.suggestPost', () => {
     expect(result.jobId).toBe('existing-job-id');
     expect(mockRabbit.publishVocabSuggest).not.toHaveBeenCalled();
   });
+
+  it('GET suggest legacy: cache miss → 410 Gone', async () => {
+    mockCache.get.mockResolvedValueOnce(null);
+    await expect(service.suggest('freshword')).rejects.toThrow();
+  });
 });

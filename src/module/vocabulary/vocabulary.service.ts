@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   Logger,
@@ -13,8 +15,7 @@ import { CompleteDailyVocabDto, VocabAnswerDto, GetDailyVocabDto } from './dto/v
 import { GetDailySessionDto } from './dto/get-daily-session.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
-import axios, { AxiosError } from 'axios';
-import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from '@nestjs/cache-manager';
 import { endOfDay, startOfDay } from 'date-fns';
@@ -440,100 +441,11 @@ export class VocabularyService {
       };
     }
 
-    let phonetic: string | null = null;
-    let example: string | null = null;
-    let meaning: string | null = null;
-    let loaiTuVung: string | null = null;
-    let level: string | null = null;
-
-    // Call dictionaryapi.dev first (phonetic + example)
-    try {
-      const dictRes = await axios.get(
-        `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(lowerWord)}`,
-      );
-      const entry = dictRes.data[0];
-
-      phonetic = entry.phonetic || entry.phonetics?.[0]?.text || null;
-      example = entry.meanings?.[0]?.definitions?.[0]?.example || null;
-      loaiTuVung = entry.meanings?.[0]?.partOfSpeech?.toUpperCase() ?? null;
-    } catch (dictErr) {
-      const axiosError = dictErr as AxiosError;
-      this.logger.warn(
-        `DictionaryAPI no data for "${lowerWord}": ${axiosError.message}`,
-      );
-    }
-
-    // Call Gemini for Vietnamese meaning and additional data
-    if (this.ai) {
-      try {
-        const prompt = `
-Bạn là một hệ thống từ điển Anh - Việt chuyên nghiệp. Không dịch ngược Việt - Anh và không trả về gì khi mà từ không hợp lệ hoặc là không đúng và cả những từ chửi thề nữa.
-Hãy trả về kết quả phân tích từ "${lowerWord}" theo đúng định dạng JSON sau (không có markdown, không có giải thích):
-
-{
-  "word": "",
-  "phonetic": null,
-  "meaning": "",
-  "example": "",
-  "loaiTuVung": "NOUN | VERB | ADJECTIVE | ADVERB | PHRASE | IDIOM | PREPOSITION | CONJUNCTION | INTERJECTION",
-  "level": "Low | Mid | High"
-}
-
-Yêu cầu:
-- "meaning": giải thích nghĩa tiếng Việt ngắn gọn, dễ hiểu.
-- "example": 1 câu ví dụ đơn giản minh họa.
-- "phonetic": phiên âm theo chuẩn IPA nếu có.
-- "loaiTuVung": xác định loại từ tiếng Anh.
-- "level": đánh giá độ khó của từ (Low: cơ bản, Mid: trung bình, High: nâng cao).
-`;
-
-        const response: GenerateContentResponse = await this.ai.models.generateContent(
-          {
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-          },
-        );
-
-        const rawText = response.text?.trim() ?? '';
-        const cleanedText = rawText
-          .replace(/```json/i, '')
-          .replace(/```/g, '')
-          .trim();
-
-        try {
-          const parsed = JSON.parse(cleanedText);
-
-          phonetic = phonetic ?? parsed.phonetic ?? null;
-          example = example ?? parsed.example ?? null;
-          meaning = parsed.meaning ?? null;
-          loaiTuVung = parsed.loaiTuVung?.toUpperCase() ?? loaiTuVung;
-          level = parsed.level ?? null;
-        } catch (parseErr) {
-          this.logger.warn(`Gemini returned invalid JSON: ${parseErr}`);
-        }
-      } catch (err) {
-        this.logger.error(`Gemini API error: ${err}`);
-      }
-    }
-
-    const result: VocabCacheEntry = {
-      word: lowerWord,
-      phonetic,
-      meaning,
-      example,
-      loaiTuVung,
-      level,
-    };
-
-    // Store in cache with TTL
-    await this.cache.set(cacheKey, result, VOCAB_CACHE_TTL);
-
-    return {
-      word: result.word,
-      phonetic: result.phonetic,
-      meaning: result.meaning,
-      example: result.example,
-    };
+    // Sync fallback removed. Clients should use POST /vocabulary/suggest for fresh lookups.
+    throw new HttpException(
+      { message: 'Use POST /vocabulary/suggest for fresh lookups', status: 410 },
+      HttpStatus.GONE,
+    );
   }
 
   /**
