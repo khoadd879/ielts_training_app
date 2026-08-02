@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   Req,
   UseGuards,
   UseInterceptors,
@@ -30,6 +31,10 @@ import { Public } from 'src/decorator/customize';
 import { FinishTestWritingDto } from './dto/finish-test-writing.dto';
 import { FinishTestSpeakingDto } from './dto/finish-test-speaking.dto';
 import { SubmitTestDto } from './dto/submit-test.dto';
+import { PaginationDto } from '../../common/dto/pagination.dto';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 
 @ApiBearerAuth()
 @Controller('user-test-result')
@@ -108,13 +113,15 @@ export class UserTestResultController {
   }
 
   @Get('get-all-test-results')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @ApiOperation({
-    summary: 'Lấy tất cả kết quả bài test',
-    description: 'Lấy danh sách tất cả kết quả bài test trong hệ thống',
+    summary: 'Lấy tất cả kết quả bài test (admin, có phân trang)',
+    description: 'Lấy danh sách kết quả bài test trong hệ thống có phân trang qua query ?page=&limit=',
   })
   @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
-  findAllTestResults() {
-    return this.userTestResultService.findAllTestResults();
+  findAllTestResults(@Query() pagination: PaginationDto) {
+    return this.userTestResultService.findAllTestResults(pagination);
   }
 
   @Get('get-test-result-and-answers/:idTestResult')

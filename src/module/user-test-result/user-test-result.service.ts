@@ -694,23 +694,35 @@ export class UserTestResultService {
     }
   }
 
-  async findAllTestResults() {
-    const data = await this.databaseService.userTestResult.findMany({
-      include: {
-        user: {
-          select: {
-            idUser: true,
-            nameUser: true,
-            avatar: true,
-          },
+  async findAllTestResults(pagination: { page: number; limit: number; skip: number }) {
+    const { page, limit, skip } = pagination;
+    const [data, total] = await this.databaseService.$transaction([
+      this.databaseService.userTestResult.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          idTestResult: true,
+          idUser: true,
+          idTest: true,
+          bandScore: true,
+          score: true,
+          status: true,
+          startedAt: true,
+          finishedAt: true,
+          createdAt: true,
+          user: { select: { idUser: true, nameUser: true, avatar: true } },
+          test: { select: { idTest: true, title: true, testType: true } },
         },
-        test: true,
-      },
-    });
+      }),
+      this.databaseService.userTestResult.count(),
+    ]);
+
     return {
       message: 'Test results retrieved successfully',
       data,
       status: 200,
+      meta: { page, limit, total },
     };
   }
 
