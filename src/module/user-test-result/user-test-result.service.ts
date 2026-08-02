@@ -1203,6 +1203,11 @@ export class UserTestResultService {
       await this.cache.del(`weekly:${idUser}:1`);
       await this.cache.del(`study-plan:${idUser}:6`);
       await this.cache.del(`study-plan:${idUser}:3`);
+      await this.cache.del(`statistics:overall:${idUser}`);
+      await this.cache.del(`statistics:daily:${idUser}`);
+      await this.cache.del(`statistics:overview:${idUser}`);
+      await this.cache.del(`best-band:${idUser}`);
+      await this.cache.del(`skill-status:${idUser}`);
       this.logger.log(`[markDailyTaskComplete] cache invalidated for ${idUser}`);
     } catch (err) {
       this.logger.warn(`Failed to mark daily task ${taskType} complete for ${idUser}`, err as any);
