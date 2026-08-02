@@ -1,7 +1,13 @@
 import axios from 'axios';
 import { ai } from '../gemini.client';
 import { redis, ensureRedis } from '../redis.client';
-import { VocabSuggestMessage } from '../../../shared/src/types/messages';
+
+interface VocabSuggestMessage {
+  jobId: string;
+  word: string;
+  requestedByUserId: string;
+  enqueuedAt: string;
+}
 
 export async function handleVocabSuggest(payload: VocabSuggestMessage): Promise<void> {
   await ensureRedis();

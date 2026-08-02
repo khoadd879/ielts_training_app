@@ -1,7 +1,15 @@
 import { ai } from '../gemini.client';
 import { prisma } from '../db.client';
-import { ModerationForumMessage } from '../../../shared/src/types/messages';
 import { buildGeminiPrompt, cleanGeminiResponse, clamp } from '../forum.util';
+
+interface ModerationForumMessage {
+  postId: string;
+  userId: string;
+  content: string;
+  threadTitle: string;
+  hasAttachment: boolean;
+  enqueuedAt: string;
+}
 
 export async function handleModerationForum(payload: ModerationForumMessage): Promise<void> {
   const prompt = buildGeminiPrompt(payload.content, payload.threadTitle, payload.hasAttachment);
@@ -18,7 +26,7 @@ export async function handleModerationForum(payload: ModerationForumMessage): Pr
   }
 
   const score = clamp(Math.round(parsed.score ?? 50), 0, 100);
-  const status = score >= 70 ? 'APPROVED' : score >= 40 ? 'FLAGGED' : 'REJECTED';
+  const status = score >= 70 ? 'APPROVED' : score >= 40 ? 'NEEDS_REVIEW' : 'REJECTED';
 
   await prisma.forumPost.update({
     where: { idForumPost: payload.postId },

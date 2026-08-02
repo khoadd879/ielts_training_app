@@ -1,6 +1,23 @@
 import 'dotenv/config';
+import 'dotenv/config';
 import { connect } from 'amqplib';
-import { EXCHANGES, QUEUES, ROUTING_KEYS } from '../../shared/src/config/rabbitmq';
+
+const EXCHANGES = {
+  MODERATION: 'moderation.exchange',
+  VOCAB: 'vocab.exchange',
+} as const;
+
+const QUEUES = {
+  MODERATION_FORUM: 'moderation.forum',
+  VOCAB_SUGGEST: 'vocab.suggest',
+} as const;
+
+const ROUTING_KEYS = {
+  MODERATION_FORUM: 'moderation.forum',
+  VOCAB_SUGGEST: 'vocab.suggest',
+  FAILED: 'failed',
+} as const;
+
 import { handleModerationForum } from './handlers/forum.handler';
 import { handleVocabSuggest } from './handlers/vocab.handler';
 import { ensureRedis } from './redis.client';
