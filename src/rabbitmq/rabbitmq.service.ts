@@ -2,6 +2,10 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
 import { EXCHANGES, QUEUES, ROUTING_KEYS } from './rabbitmq.constants';
+import type {
+  ModerationForumMessage,
+  VocabSuggestMessage,
+} from './types';
 
 interface ChatbotReplyMessage {
   sessionId: string;
@@ -87,6 +91,20 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
 
   async publishChatbotEmbed(message: object): Promise<boolean> {
     return this.publish(EXCHANGES.CHATBOT, ROUTING_KEYS.EMBED, message);
+  }
+
+  async publishModerationForum(
+    payload: ModerationForumMessage,
+  ): Promise<boolean> {
+    return this.publish(
+      EXCHANGES.MODERATION,
+      ROUTING_KEYS.MODERATION_FORUM,
+      payload,
+    );
+  }
+
+  async publishVocabSuggest(payload: VocabSuggestMessage): Promise<boolean> {
+    return this.publish(EXCHANGES.VOCAB, ROUTING_KEYS.VOCAB_SUGGEST, payload);
   }
 
   private async setupExchanges(): Promise<void> {
