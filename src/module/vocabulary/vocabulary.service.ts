@@ -284,8 +284,26 @@ export class VocabularyService {
     };
   }
 
-  async findAllByIdUser(idUser: string) {
-    return this.databaseService.vocabulary.findMany({ where: { idUser } });
+  async findAllByIdUser(
+    idUser: string,
+    pagination: { page: number; limit: number; skip: number },
+  ) {
+    const { page, limit, skip } = pagination;
+    const [data, total] = await this.databaseService.$transaction([
+      this.databaseService.vocabulary.findMany({
+        where: { idUser },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.databaseService.vocabulary.count({ where: { idUser } }),
+    ]);
+    return {
+      message: 'Vocabulary retrieved',
+      data,
+      status: 200,
+      meta: { page, limit, total },
+    };
   }
 
   async update(idVocab: string, updateVocabularyDto: UpdateVocabularyDto) {

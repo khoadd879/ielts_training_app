@@ -18,6 +18,7 @@ import { AddVocabularyToTopicDto } from './dto/add-vocabulary-to-topic.dto';
 import { SubmitReviewDto, GetDueReviewDto, GetTierRecommendationDto } from './dto/review.dto';
 import { GetDailyVocabDto, CompleteDailyVocabDto } from './dto/vocab-daily.dto';
 import { GetDailySessionDto } from './dto/get-daily-session.dto';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
 @ApiBearerAuth()
 @Controller('vocabulary')
@@ -30,8 +31,8 @@ export class VocabularyController {
   }
 
   @Get('get-all-vocabulary-by-id-user/:idUser')
-  findAll(@Param('idUser') idUser: string) {
-    return this.vocabularyService.findAllByIdUser(idUser);
+  findAll(@Param('idUser') idUser: string, @Query() pagination: PaginationDto) {
+    return this.vocabularyService.findAllByIdUser(idUser, pagination);
   }
 
   // @Get('get-by-name/:idUser')
