@@ -1,9 +1,12 @@
 import {
   HttpException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Role, TeacherReviewStatus, TestStatus, TestType } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 
@@ -18,7 +21,10 @@ interface SkillAccumulator {
 export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
 
-  constructor(private readonly prisma: DatabaseService) {}
+  constructor(
+    private readonly prisma: DatabaseService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   private async resolveDashboardRoles(): Promise<Role[]> {
     const totalStudents = await this.prisma.user.count({
@@ -242,26 +248,25 @@ export class DashboardService {
   async getSkillPerformance() {
     try {
       const roles = await this.resolveDashboardRoles();
-      const finishedResults = await this.prisma.userTestResult.findMany({
-        where: {
-          status: TestStatus.FINISHED,
-          user: {
-            is: {
-              role: {
-                in: roles,
-              },
-            },
-          },
-        },
-        select: {
-          bandScore: true,
-          test: {
-            select: {
-              testType: true,
-            },
-          },
-        },
-      });
+      const cacheKey = `dashboard:skill-performance:all`;
+      const cached = await this.cacheManager.get<Record<SkillType, SkillAccumulator>>(cacheKey);
+      if (cached) return cached;
+
+      const rows = await this.prisma.$queryRaw<
+        Array<{ testType: string; avg: number | null; count: bigint }>
+      >`
+      SELECT t."testType" AS "testType",
+             AVG(r."bandScore")::float AS "avg",
+             COUNT(r."idTestResult") AS "count"
+        FROM "UserTestResult" r
+        JOIN "Test" t ON t."idTest" = r."idTest"
+       WHERE r."status" = 'FINISHED'::"TestStatus"
+         AND r."bandScore" > 0
+         AND r."idUser" IN (
+           SELECT "idUser" FROM "User" WHERE "role" = ANY(${roles}::"Role"[])
+         )
+       GROUP BY t."testType"
+    `;
 
       const skillAccumulator: Record<SkillType, SkillAccumulator> = {
         LISTENING: { total: 0, count: 0 },
@@ -270,20 +275,19 @@ export class DashboardService {
         SPEAKING: { total: 0, count: 0 },
       };
 
-      finishedResults.forEach((result) => {
-        const type = result.test.testType as SkillType;
-        skillAccumulator[type].total += result.bandScore;
-        skillAccumulator[type].count += 1;
-      });
+      for (const row of rows) {
+        const type = row.testType as SkillType;
+        if (skillAccumulator[type]) {
+          skillAccumulator[type].total = row.avg ?? 0;
+          skillAccumulator[type].count = Number(row.count);
+        }
+      }
 
-      return {
-        LISTENING: this.calculateSkillAverage(skillAccumulator.LISTENING),
-        READING: this.calculateSkillAverage(skillAccumulator.READING),
-        WRITING: this.calculateSkillAverage(skillAccumulator.WRITING),
-        SPEAKING: this.calculateSkillAverage(skillAccumulator.SPEAKING),
-      } as Record<TestType, number>;
+      await this.cacheManager.set(cacheKey, skillAccumulator, 60);
+      return skillAccumulator;
     } catch (error) {
-      this.handleError(error, 'load skill performance');
+      this.logger.error('getSkillPerformance failed:', error);
+      throw error;
     }
   }
 
