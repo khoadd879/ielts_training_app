@@ -103,33 +103,33 @@ export class UserTestResultService {
     });
     if (!existingUser) throw new BadRequestException('User not found');
 
-    const rows = await this.databaseService.userTestResult.findMany({
-      where: { idUser, status: TestStatus.FINISHED },
-      select: {
-        idTest: true,
-        bandScore: true,
-        finishedAt: true,
-      },
-    });
-
-    const stats: Record<
-      string,
-      { maxBand: number; lastFinishedAt: Date | null }
-    > = {};
-    for (const r of rows) {
-      const cur = stats[r.idTest];
-      const finishedAt = r.finishedAt;
-      if (!cur || r.bandScore > cur.maxBand) {
-        stats[r.idTest] = { maxBand: r.bandScore, lastFinishedAt: finishedAt };
-      } else if (
-        cur.lastFinishedAt &&
-        finishedAt &&
-        finishedAt > cur.lastFinishedAt
-      ) {
-        cur.lastFinishedAt = finishedAt;
-      }
+    const cacheKey = `best-band:${idUser}`;
+    const cached = await this.cache.get<Record<string, { maxBand: number; lastFinishedAt: Date | null }>>(cacheKey);
+    if (cached) {
+      return { message: 'Best band stats retrieved successfully', data: cached, status: 200 };
     }
 
+    const rows = await this.databaseService.$queryRaw<
+      Array<{ idTest: string; maxBand: number; lastFinishedAt: Date | null }>
+    >`
+      SELECT "idTest",
+             MAX("bandScore")::float AS "maxBand",
+             MAX("finishedAt") AS "lastFinishedAt"
+        FROM "UserTestResult"
+       WHERE "idUser" = ${idUser}::uuid
+         AND "status" = 'FINISHED'::"TestStatus"
+       GROUP BY "idTest"
+    `;
+
+    const stats: Record<string, { maxBand: number; lastFinishedAt: Date | null }> = {};
+    for (const row of rows) {
+      stats[row.idTest] = {
+        maxBand: row.maxBand,
+        lastFinishedAt: row.lastFinishedAt,
+      };
+    }
+
+    await this.cache.set(cacheKey, stats, 60);
     return {
       message: 'Best band stats retrieved successfully',
       data: stats,
