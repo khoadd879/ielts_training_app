@@ -125,7 +125,11 @@ export class TestService {
     };
   }
 
-  async findAllTestCreatedByIdUser(idUser: string) {
+  async findAllTestCreatedByIdUser(
+    idUser: string,
+    pagination: { page: number; limit: number; skip: number },
+  ) {
+    const { page, limit, skip } = pagination;
     const existingUser = await this.databaseService.user.findUnique({
       where: {
         idUser,
@@ -134,42 +138,42 @@ export class TestService {
     if (!existingUser) {
       throw new BadRequestException('User not found');
     }
-    const cacheKey = `tests_user_${idUser}`;
-    const cached = await this.cache.get(cacheKey);
-    if (cached) {
-      return {
-        message: 'Tests retrieved successfully (from cache)',
-        data: cached,
-        status: 200,
-      };
-    }
 
-    const data = await this.databaseService.test.findMany({
-      where: { idUser },
-    });
-    await this.cache.set(cacheKey, data, 3600); // cache 1 giờ - optimized for static content
+    const [data, total] = await this.databaseService.$transaction([
+      this.databaseService.test.findMany({
+        where: { idUser },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          idTest: true,
+          title: true,
+          testType: true,
+          level: true,
+          duration: true,
+          createdAt: true,
+        },
+      }),
+      this.databaseService.test.count({ where: { idUser } }),
+    ]);
     return {
-      message: 'Tests retrieved successfully',
+      message: 'Tests retrieved',
       data,
       status: 200,
+      meta: { page, limit, total },
     };
   }
 
-  async findAll() {
-    const cacheKey = 'tests_all';
-    const cached = await this.cache.get(cacheKey);
-    if (cached) {
-      return {
-        message: 'Tests retrieved successfully',
-        data: cached,
-        status: 200,
-      };
-    }
+  async findAll(pagination: { page: number; limit: number; skip: number }) {
+    const { page, limit, skip } = pagination;
 
     // Fetch tests with their attempt count and average band score.
     // This avoids touching the DB schema — we compute aggregates on read.
-    const [tests, bandAgg] = await Promise.all([
+    const [tests, bandAgg, total] = await Promise.all([
       this.databaseService.test.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
         include: {
           _count: {
             select: { userTestResults: true },
@@ -181,6 +185,7 @@ export class TestService {
         where: { status: 'FINISHED' },
         _avg: { bandScore: true },
       }),
+      this.databaseService.test.count(),
     ]);
 
     const avgByTest = new Map(
@@ -193,11 +198,11 @@ export class TestService {
       avgBand: avgByTest.get(t.idTest) ?? null,
     }));
 
-    await this.cache.set(cacheKey, data, 3600); // cache 1 giờ
     return {
-      message: 'Tests retrieved successfully',
+      message: 'All tests retrieved',
       data,
       status: 200,
+      meta: { page, limit, total },
     };
   }
 
@@ -311,16 +316,11 @@ export class TestService {
     return { message: 'Test deleted successfully', status: 200 };
   }
 
-  async getPartInTest(idTest: string) {
-    const cacheKey = `test_${idTest}_parts`;
-    const cached = await this.cache.get(cacheKey);
-    if (cached) {
-      return {
-        message: 'Part retrieved successfully (from cache)',
-        data: cached,
-        status: 200,
-      };
-    }
+  async getPartInTest(
+    idTest: string,
+    pagination: { page: number; limit: number; skip: number },
+  ) {
+    const { page, limit, skip } = pagination;
 
     const existingTest = await this.databaseService.test.findUnique({
       where: { idTest },
@@ -329,16 +329,21 @@ export class TestService {
       throw new BadRequestException('Test not found');
     }
 
-    const data = await this.databaseService.test.findMany({
-      where: { idTest },
-      include: { parts: true },
-    });
+    const [parts, total] = await this.databaseService.$transaction([
+      this.databaseService.part.findMany({
+        where: { idTest },
+        skip,
+        take: limit,
+        orderBy: { order: 'asc' },
+      }),
+      this.databaseService.part.count({ where: { idTest } }),
+    ]);
 
-    await this.cache.set(cacheKey, data, 1800); // cache 30 phút - optimized
     return {
-      message: 'Part retrieved successfully',
-      data,
+      message: 'Parts retrieved',
+      data: parts,
       status: 200,
+      meta: { page, limit, total },
     };
   }
 
