@@ -113,19 +113,19 @@ export class CreditsService {
 
     // Use transaction to ensure atomicity
     return this.db.$transaction(async (tx) => {
-      // Create or update balance
-      let balance = await tx.creditBalance.findUnique({ where: { idUser } });
-      if (!balance) {
-        balance = await tx.creditBalance.create({
-          data: { idUser, totalCredits: 0, usedCredits: 0 },
-        });
-      }
-
-      // Update balance
-      balance = await tx.creditBalance.update({
+      // Atomic increment; create row if missing
+      const { count } = await tx.creditBalance.updateMany({
         where: { idUser },
-        data: { totalCredits: balance.totalCredits + pkg.creditAmount },
+        data: { totalCredits: { increment: pkg.creditAmount } },
       });
+      let balance;
+      if (count === 0) {
+        balance = await tx.creditBalance.create({
+          data: { idUser, totalCredits: pkg.creditAmount, usedCredits: 0 },
+        });
+      } else {
+        balance = await tx.creditBalance.findUnique({ where: { idUser } });
+      }
 
       // Create transaction record
       const transaction = await tx.creditTransaction.create({
@@ -142,9 +142,9 @@ export class CreditsService {
       return {
         transactionId: transaction.idTransaction,
         balance: {
-          totalCredits: balance.totalCredits,
-          usedCredits: balance.usedCredits,
-          availableCredits: balance.totalCredits - balance.usedCredits,
+          totalCredits: balance!.totalCredits,
+          usedCredits: balance!.usedCredits,
+          availableCredits: balance!.totalCredits - balance!.usedCredits,
         },
       };
     });
@@ -229,17 +229,12 @@ export class CreditsService {
     }
 
     return this.db.$transaction(async (tx) => {
-      let balance = await tx.creditBalance.findUnique({ where: { idUser } });
-
-      if (!balance) {
-        throw new NotFoundException('Credit balance not found');
-      }
-
-      // Restore credits
-      balance = await tx.creditBalance.update({
-        where: { idUser },
-        data: { usedCredits: Math.max(0, balance.usedCredits - originalTx.creditsAmount) },
+      // Idempotent restore: only decrement if enough used credits remain
+      const { count } = await tx.creditBalance.updateMany({
+        where: { idUser, usedCredits: { gte: originalTx.creditsAmount } },
+        data: { usedCredits: { decrement: originalTx.creditsAmount } },
       });
+      // count === 0 is OK — refund is idempotent; already refunded or balance missing
 
       // Mark original transaction as refunded and create refund record
       await tx.creditTransaction.update({
@@ -259,9 +254,10 @@ export class CreditsService {
         },
       });
 
+      const balance = await tx.creditBalance.findUnique({ where: { idUser } });
       return {
         success: true,
-        balance: balance.totalCredits - balance.usedCredits,
+        balance: balance ? balance.totalCredits - balance.usedCredits : 0,
       };
     });
   }
@@ -270,20 +266,25 @@ export class CreditsService {
 
   async adminAdjustBalance(idUser: string, amount: number, reason: string) {
     return this.db.$transaction(async (tx) => {
-      let balance = await tx.creditBalance.findUnique({ where: { idUser } });
-
-      if (!balance) {
-        balance = await tx.creditBalance.create({
-          data: { idUser, totalCredits: 0, usedCredits: 0 },
+      // Atomic increment; create row if missing
+      const { count } = await tx.creditBalance.updateMany({
+        where: { idUser },
+        data: { totalCredits: { increment: amount } },
+      });
+      if (count === 0) {
+        await tx.creditBalance.create({
+          data: { idUser, totalCredits: Math.max(0, amount), usedCredits: 0 },
         });
       }
 
-      const newTotal = Math.max(0, balance.totalCredits + amount);
-
-      balance = await tx.creditBalance.update({
-        where: { idUser },
-        data: { totalCredits: newTotal },
-      });
+      // Clamp to non-negative
+      const updated = await tx.creditBalance.findUnique({ where: { idUser } });
+      if (updated && updated.totalCredits < 0) {
+        await tx.creditBalance.update({
+          where: { idUser },
+          data: { totalCredits: 0 },
+        });
+      }
 
       await tx.creditTransaction.create({
         data: {
@@ -295,10 +296,13 @@ export class CreditsService {
         },
       });
 
+      const finalBalance = await tx.creditBalance.findUnique({ where: { idUser } });
       return {
         idUser,
-        totalCredits: balance.totalCredits,
-        availableCredits: balance.totalCredits - balance.usedCredits,
+        totalCredits: finalBalance?.totalCredits ?? 0,
+        availableCredits: finalBalance
+          ? finalBalance.totalCredits - finalBalance.usedCredits
+          : 0,
       };
     });
   }
