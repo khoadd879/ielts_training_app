@@ -253,6 +253,16 @@ export class PaymentService {
       return { RspCode: '02', Message: 'Order already confirmed' };
     }
 
+    // Atomic claim: only one IPN can transition PENDING → PROCESSING.
+    // If count === 0, another IPN already claimed or finished.
+    const { count: claimCount } = await this.db.paymentTransaction.updateMany({
+      where: { idTransaction: payment.idTransaction, status: 'PENDING' },
+      data: { status: 'PROCESSING', processedAt: new Date() },
+    });
+    if (claimCount === 0) {
+      return { RspCode: '02', Message: 'Order already confirmed or processing' };
+    }
+
     // Failure path: persist + return 00 to stop VNPay retry
     if (responseCode !== '00' || transactionStatus !== '00') {
       await this.db.paymentTransaction.update({
