@@ -102,6 +102,7 @@ export class ForumPostController {
   }
 
   @Patch('update-forum-post/:idForumPost')
+  @HttpCode(202)
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: (req, file, callback) => {

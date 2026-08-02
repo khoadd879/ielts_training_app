@@ -699,12 +699,9 @@ ${content}
       fileUrl = uploadResult.secure_url;
     }
 
-    const moderation = await this.scorePostWithGemini(
-      content,
-      forumThread.title,
-      Boolean(fileUrl),
-    );
-
+    // Re-moderate: clear any prior AI/moderator decision and enqueue the
+    // new content for async scoring. Worker will call scorePostWithGemini
+    // and update the row when the AI result lands.
     await this.databaseService.forumPost.update({
       where: { idForumPost },
       data: {
@@ -712,21 +709,31 @@ ${content}
         idUser,
         content,
         file: fileUrl,
-        moderationStatus: moderation.status,
-        moderationScore: moderation.score,
-        moderationMeta: moderation.meta,
+        moderationStatus: ForumModerationStatus.PENDING,
+        moderationScore: null,
+        moderationMeta: Prisma.JsonNull,
         reviewedBy: null,
         reviewedAt: null,
       },
+    });
+
+    await this.rabbitMQService.publishModerationForum({
+      postId: idForumPost,
+      userId: idUser,
+      content,
+      threadTitle: forumThread.title,
+      hasAttachment: Boolean(fileUrl),
+      enqueuedAt: new Date().toISOString(),
     });
 
     const data = await this.getForumPostWithRelations(idForumPost, idUser);
     if (!data) throw new BadRequestException('Forum post not found');
 
     return {
-      message: 'Forum Post updated successfully',
+      message: 'Forum Post updated, moderation pending',
       data: this.transformPost(data),
-      status: 200,
+      moderationStatus: 'pending',
+      status: 202,
     };
   }
 
