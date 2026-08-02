@@ -1208,6 +1208,9 @@ export class UserTestResultService {
       await this.cache.del(`statistics:overview:${idUser}`);
       await this.cache.del(`best-band:${idUser}`);
       await this.cache.del(`skill-status:${idUser}`);
+      // Invalidate study-planner weak-skills cache
+      await this.cache.del(`weak-skills:${idUser}:2`);
+      await this.cache.del(`weak-skills:${idUser}:3`);
       this.logger.log(`[markDailyTaskComplete] cache invalidated for ${idUser}`);
     } catch (err) {
       this.logger.warn(`Failed to mark daily task ${taskType} complete for ${idUser}`, err as any);

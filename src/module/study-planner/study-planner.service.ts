@@ -930,6 +930,9 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
     // Invalidate study-plan cache (any historyMonths value)
     await this.cache.del(`study-plan:${idUser}:6`);
     await this.cache.del(`study-plan:${idUser}:3`);
+    // Invalidate weak-skills cache
+    await this.cache.del(`weak-skills:${idUser}:2`);
+    await this.cache.del(`weak-skills:${idUser}:3`);
 
     return { success: true, completed: dto.completed, completedAt };
   }
