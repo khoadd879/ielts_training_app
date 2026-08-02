@@ -16,17 +16,11 @@ export class CreditsService {
   // ===== Balance Operations =====
 
   async getBalance(idUser: string) {
-    let balance = await this.db.creditBalance.findUnique({
+    const balance = await this.db.creditBalance.upsert({
       where: { idUser },
+      update: {},
+      create: { idUser, totalCredits: 0, usedCredits: 0 },
     });
-
-    if (!balance) {
-      // Auto-create balance with 0 credits
-      balance = await this.db.creditBalance.create({
-        data: { idUser, totalCredits: 0, usedCredits: 0 },
-      });
-    }
-
     return {
       idUser: balance.idUser,
       totalCredits: balance.totalCredits,
