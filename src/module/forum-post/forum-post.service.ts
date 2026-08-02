@@ -235,7 +235,11 @@ ${content}
     };
   }
 
-  private resolveDecisionByScore(score: number, autoApproveThreshold: number, autoRejectThreshold: number) {
+  private resolveDecisionByScore(
+    score: number,
+    autoApproveThreshold: number,
+    autoRejectThreshold: number,
+  ) {
     if (score >= autoApproveThreshold) {
       return ForumModerationStatus.AUTO_APPROVED;
     }
@@ -307,7 +311,11 @@ ${content}
       const rawScore =
         typeof parsed.score === 'number' ? Math.round(parsed.score) : 50;
       const score = this.clamp(rawScore, 0, 100);
-      const status = this.resolveDecisionByScore(score, autoApproveThreshold, autoRejectThreshold);
+      const status = this.resolveDecisionByScore(
+        score,
+        autoApproveThreshold,
+        autoRejectThreshold,
+      );
 
       return {
         status,
@@ -685,11 +693,10 @@ ${content}
       where: { idForumPost },
     });
     if (!existingPost) throw new BadRequestException('Forum post not found');
-    if (
-      existingPost.idUser !== idUser &&
-      !this.isModeratorRole(editor.role)
-    ) {
-      throw new ForbiddenException('You are not authorized to update this post');
+    if (existingPost.idUser !== idUser && !this.isModeratorRole(editor.role)) {
+      throw new ForbiddenException(
+        'You are not authorized to update this post',
+      );
     }
 
     let fileUrl = updateForumPostDto.file;
@@ -926,11 +933,10 @@ ${content}
       where: { idForumPost },
     });
     if (!existing) throw new BadRequestException('Forum post not found');
-    if (
-      existing.idUser !== idUser &&
-      !this.isModeratorRole(requester.role)
-    ) {
-      throw new ForbiddenException('You are not authorized to delete this post');
+    if (existing.idUser !== idUser && !this.isModeratorRole(requester.role)) {
+      throw new ForbiddenException(
+        'You are not authorized to delete this post',
+      );
     }
 
     await this.databaseService.forumPost.delete({
@@ -946,7 +952,11 @@ ${content}
   // Moderator-only delete: use to remove AI-approved posts that turned out to
   // be wrong (spam, abusive, off-topic). Records the action in moderationMeta
   // so there is an audit trail in the post record before deletion.
-  async moderatorRemoveForumPost(idForumPost: string, idUser: string, note?: string) {
+  async moderatorRemoveForumPost(
+    idForumPost: string,
+    idUser: string,
+    note?: string,
+  ) {
     const reviewer = await this.existingUser(idUser);
     if (!this.isModeratorRole(reviewer.role)) {
       throw new ForbiddenException('You are not allowed to delete forum posts');

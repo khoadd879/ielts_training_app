@@ -10,7 +10,11 @@ export class SubmitReviewDto {
   @IsString()
   idUser: string;
 
-  @ApiProperty({ description: 'Quality of recall: 0-5 (0=wrong, 5=perfect)', minimum: 0, maximum: 5 })
+  @ApiProperty({
+    description: 'Quality of recall: 0-5 (0=wrong, 5=perfect)',
+    minimum: 0,
+    maximum: 5,
+  })
   @IsInt()
   @Min(0)
   @Max(5)

@@ -24,15 +24,21 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 export class SystemConfigController {
   constructor(private readonly systemConfigService: SystemConfigService) {}
 
-  private getRequestUserId(req: { user?: { userId?: string; nameUser?: string; role?: Role } }): string {
+  private getRequestUserId(req: {
+    user?: { userId?: string; nameUser?: string; role?: Role };
+  }): string {
     return req?.user?.userId || 'SYSTEM';
   }
 
-  private getRequestUserName(req: { user?: { userId?: string; nameUser?: string; role?: Role } }): string {
+  private getRequestUserName(req: {
+    user?: { userId?: string; nameUser?: string; role?: Role };
+  }): string {
     return req?.user?.nameUser || 'System';
   }
 
-  private getRequestUserRole(req: { user?: { userId?: string; nameUser?: string; role?: Role } }): Role {
+  private getRequestUserRole(req: {
+    user?: { userId?: string; nameUser?: string; role?: Role };
+  }): Role {
     return req?.user?.role || Role.ADMIN;
   }
 
@@ -85,7 +91,7 @@ export class SystemConfigController {
       );
     }
 
-    await this.systemConfigService.setAssignMode(body.mode as AssignMode);
+    await this.systemConfigService.setAssignMode(body.mode);
     return { message: 'Assign mode updated successfully', mode: body.mode };
   }
 
@@ -97,7 +103,10 @@ export class SystemConfigController {
 
   @Put('moderation/policy')
   @Roles(Role.ADMIN)
-  async setModerationPolicy(@Body() body: ModerationPolicyDto, @Req() req: any) {
+  async setModerationPolicy(
+    @Body() body: ModerationPolicyDto,
+    @Req() req: any,
+  ) {
     await this.systemConfigService.setModerationPolicy(
       body,
       this.getRequestUserId(req),

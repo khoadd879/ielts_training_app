@@ -4,11 +4,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import {
-  Role,
-  TeacherReviewStatus,
-  TestStatus,
-} from '@prisma/client';
+import { Role, TeacherReviewStatus, TestStatus } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 
 export type NotificationType =

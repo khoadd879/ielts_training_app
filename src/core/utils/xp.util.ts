@@ -5,8 +5,8 @@
 import { Level } from '@prisma/client';
 
 export const XP_PER_LEVEL = [
-  0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500, 6600, 7800,
-  9100, 10500, 12000, 13600, 15300, 17100, 19000,
+  0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500, 6600, 7800, 9100,
+  10500, 12000, 13600, 15300, 17100, 19000,
 ];
 
 export interface XpUpdateResult {
@@ -53,7 +53,8 @@ export function calculateLevelFromXp(xp: number): number {
  */
 export function xpToReachLevel(level: number): number {
   if (level <= 0) return 0;
-  if (level >= XP_PER_LEVEL.length) return XP_PER_LEVEL[XP_PER_LEVEL.length - 1];
+  if (level >= XP_PER_LEVEL.length)
+    return XP_PER_LEVEL[XP_PER_LEVEL.length - 1];
   return XP_PER_LEVEL[level - 1];
 }
 

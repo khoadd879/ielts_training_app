@@ -42,7 +42,16 @@ export class AuditLogService {
     page?: number;
     limit?: number;
   }) {
-    const { actorId, action, targetType, targetId, fromDate, toDate, page = 1, limit = 20 } = params;
+    const {
+      actorId,
+      action,
+      targetType,
+      targetId,
+      fromDate,
+      toDate,
+      page = 1,
+      limit = 20,
+    } = params;
     const skip = (page - 1) * limit;
 
     const where: any = {};

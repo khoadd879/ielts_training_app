@@ -1,11 +1,11 @@
-import {
-  BadRequestException,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreatePartDto } from './dto/create-part.dto';
 import { UpdatePartDto } from './dto/update-part.dto';
 import { DatabaseService } from 'src/database/database.service';
-import { assertTotalPartCount, getSkillLimits } from 'src/helpers/ielts-test-limits';
+import {
+  assertTotalPartCount,
+  getSkillLimits,
+} from 'src/helpers/ielts-test-limits';
 
 @Injectable()
 export class PartService {

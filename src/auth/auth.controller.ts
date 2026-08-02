@@ -55,6 +55,7 @@ export class AuthController {
   @Post('resend-otp')
   @ApiBody({ type: ResendOtpDTO })
   @Public()
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   async resendOtp(@Body() body: { email: string; type: 'OTP' | 'RESET_LINK' }) {
     return this.authService.resendOtp(body.email, body.type);
   }
@@ -70,6 +71,7 @@ export class AuthController {
   @Post('checkotp-reset-password')
   @ApiBody({ type: VerifyOtpDto })
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async check_otp(
     @Body()
     body: {
@@ -125,11 +127,10 @@ export class AuthController {
 
     const token = data.data.access_token;
     const user = encodeURIComponent(JSON.stringify(data.data.user));
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
 
-    return res.redirect(
-      `${frontendUrl}/login?token=${token}&user=${user}`,
-    );
+    return res.redirect(`${frontendUrl}/login?token=${token}&user=${user}`);
   }
 
   @Post('reset-token')

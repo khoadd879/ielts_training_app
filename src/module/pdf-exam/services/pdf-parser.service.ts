@@ -18,7 +18,12 @@ import { pathToFileURL } from 'url';
 // file, not the package dir) and point the worker at the legacy build's worker.
 const pdfjsEntry = require.resolve('pdfjs-dist');
 const pdfjsPkgRoot = path.resolve(path.dirname(pdfjsEntry), '..');
-const legacyWorkerPath = path.join(pdfjsPkgRoot, 'legacy', 'build', 'pdf.worker.mjs');
+const legacyWorkerPath = path.join(
+  pdfjsPkgRoot,
+  'legacy',
+  'build',
+  'pdf.worker.mjs',
+);
 const mainWorkerPath = path.join(pdfjsPkgRoot, 'build', 'pdf.worker.min.mjs');
 if (!fs.existsSync(legacyWorkerPath) && fs.existsSync(mainWorkerPath)) {
   fs.copyFileSync(mainWorkerPath, legacyWorkerPath);

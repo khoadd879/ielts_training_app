@@ -7,7 +7,13 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { SystemConfigService } from '../system-config/system-config.service';
-import { Role, TestType, TeacherReviewStatus, ReviewType, AssignMode } from '@prisma/client';
+import {
+  Role,
+  TestType,
+  TeacherReviewStatus,
+  ReviewType,
+  AssignMode,
+} from '@prisma/client';
 import { SubmitScoreDto } from './dto/submit-score.dto';
 
 @Injectable()
@@ -144,10 +150,13 @@ export class TeacherReviewService {
   /**
    * Get all pending tickets (for teacher queue)
    */
-  async getPendingTickets(filters?: {
-    type?: ReviewType;
-    status?: TeacherReviewStatus;
-  }, requesterId?: string) {
+  async getPendingTickets(
+    filters?: {
+      type?: ReviewType;
+      status?: TeacherReviewStatus;
+    },
+    requesterId?: string,
+  ) {
     if (requesterId) {
       await this.assertTeacherOrAdmin(requesterId);
     }
@@ -291,8 +300,8 @@ export class TeacherReviewService {
     await this.assertTeacherOrAdmin(idTeacher);
 
     // Atomic claim to avoid double-claim race conditions.
-    const claimResult = await this.databaseService.teacherReviewTicket.updateMany(
-      {
+    const claimResult =
+      await this.databaseService.teacherReviewTicket.updateMany({
         where: {
           idTicket,
           status: TeacherReviewStatus.PENDING,
@@ -303,8 +312,7 @@ export class TeacherReviewService {
           status: TeacherReviewStatus.CLAIMED,
           claimedAt: new Date(),
         },
-      },
-    );
+      });
 
     if (claimResult.count === 0) {
       const existingTicket =
@@ -320,11 +328,10 @@ export class TeacherReviewService {
       throw new BadRequestException('This ticket is no longer available');
     }
 
-    const updatedTicket = await this.databaseService.teacherReviewTicket.findUnique(
-      {
+    const updatedTicket =
+      await this.databaseService.teacherReviewTicket.findUnique({
         where: { idTicket },
-      },
-    );
+      });
 
     return {
       message: 'Ticket claimed successfully',
@@ -402,13 +409,16 @@ export class TeacherReviewService {
       ticket.status !== TeacherReviewStatus.CLAIMED &&
       ticket.status !== TeacherReviewStatus.IN_PROGRESS
     ) {
-      throw new BadRequestException('Ticket must be claimed before submitting score');
+      throw new BadRequestException(
+        'Ticket must be claimed before submitting score',
+      );
     }
 
     // Get commission from SystemConfig
     const commissionConfig = await this.systemConfigService.getCommission();
     const commission =
-      commissionConfig[ticket.type.toLowerCase() as 'writing' | 'speaking'] || 0;
+      commissionConfig[ticket.type.toLowerCase() as 'writing' | 'speaking'] ||
+      0;
 
     // Update ticket with teacher score and commission
     const updatedTicket = await this.databaseService.teacherReviewTicket.update(
@@ -802,10 +812,11 @@ export class TeacherReviewService {
         }),
       ]);
 
-    const totalCommission = await this.databaseService.teacherReviewTicket.aggregate({
-      where: { status: TeacherReviewStatus.COMPLETED },
-      _sum: { commissionAmount: true },
-    });
+    const totalCommission =
+      await this.databaseService.teacherReviewTicket.aggregate({
+        where: { status: TeacherReviewStatus.COMPLETED },
+        _sum: { commissionAmount: true },
+      });
 
     return {
       pending,
@@ -820,7 +831,11 @@ export class TeacherReviewService {
   /**
    * Cancel a ticket (student or admin)
    */
-  async cancelTicket(idTicket: string, requesterId: string, requesterRole: Role) {
+  async cancelTicket(
+    idTicket: string,
+    requesterId: string,
+    requesterRole: Role,
+  ) {
     const ticket = await this.databaseService.teacherReviewTicket.findUnique({
       where: { idTicket },
     });
@@ -839,10 +854,12 @@ export class TeacherReviewService {
       throw new ForbiddenException('You can only cancel your own tickets');
     }
 
-    const updatedTicket = await this.databaseService.teacherReviewTicket.update({
-      where: { idTicket },
-      data: { status: TeacherReviewStatus.CANCELLED },
-    });
+    const updatedTicket = await this.databaseService.teacherReviewTicket.update(
+      {
+        where: { idTicket },
+        data: { status: TeacherReviewStatus.CANCELLED },
+      },
+    );
 
     return {
       message: 'Ticket cancelled successfully',

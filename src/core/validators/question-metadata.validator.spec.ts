@@ -194,10 +194,26 @@ describe('QuestionMetadataValidator', () => {
           type: QuestionType.DIAGRAM_LABELING,
           imageUrl: 'https://example.com/map.png',
           labels: [
-            { pointLabel: '5', labelCoordinate: { x: 72, y: 18 }, correctAnswers: ['reception'] },
-            { pointLabel: '6', labelCoordinate: { x: 48, y: 50 }, correctAnswers: ['café', 'cafe'] },
-            { pointLabel: '7', labelCoordinate: { x: 12, y: 82 }, correctAnswers: ['library'] },
-            { pointLabel: '8', labelCoordinate: { x: 88, y: 60 }, correctAnswers: ['car park'] },
+            {
+              pointLabel: '5',
+              labelCoordinate: { x: 72, y: 18 },
+              correctAnswers: ['reception'],
+            },
+            {
+              pointLabel: '6',
+              labelCoordinate: { x: 48, y: 50 },
+              correctAnswers: ['café', 'cafe'],
+            },
+            {
+              pointLabel: '7',
+              labelCoordinate: { x: 12, y: 82 },
+              correctAnswers: ['library'],
+            },
+            {
+              pointLabel: '8',
+              labelCoordinate: { x: 88, y: 60 },
+              correctAnswers: ['car park'],
+            },
           ],
           hasWordBank: false,
         };

@@ -291,7 +291,10 @@ export class UsersService {
         isActive: false,
       },
     });
-    const otp = await this.verificationService.generateOtp(user.idUser, OTPType.OTP);
+    const otp = await this.verificationService.generateOtp(
+      user.idUser,
+      OTPType.OTP,
+    );
 
     this.mailerService.sendMail({
       to: `${user.email}`,

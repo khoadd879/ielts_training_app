@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
 import { EXCHANGES, QUEUES, ROUTING_KEYS } from './rabbitmq.constants';
@@ -131,7 +136,9 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     }
 
     if (this.chatbotReplyHandlers.size === 0) {
-      this.logger.debug('No chatbot reply handlers yet, skipping consumer setup');
+      this.logger.debug(
+        'No chatbot reply handlers yet, skipping consumer setup',
+      );
       return;
     }
 
@@ -154,7 +161,9 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
             msg.content.toString(),
           ) as ChatbotReplyMessage;
 
-          this.logger.debug(`Received chatbot reply for session: ${payload.sessionId}`);
+          this.logger.debug(
+            `Received chatbot reply for session: ${payload.sessionId}`,
+          );
 
           for (const handler of this.chatbotReplyHandlers) {
             await handler(payload);

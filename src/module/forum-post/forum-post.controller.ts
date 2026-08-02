@@ -72,10 +72,7 @@ export class ForumPostController {
   }
 
   @Get('posts-by-user/:idUser')
-  findPostsByUser(
-    @Param('idUser') idUser: string,
-    @Req() req: Request,
-  ) {
+  findPostsByUser(@Param('idUser') idUser: string, @Req() req: Request) {
     const viewerId = (req.user as { userId?: string } | undefined)?.userId;
     return this.forumPostService.findPostsByUser(idUser, viewerId ?? idUser);
   }

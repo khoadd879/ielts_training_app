@@ -1,14 +1,5 @@
-import {
-  Controller,
-  Get,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 import { NotificationsService } from './notifications.service';
 
@@ -17,9 +8,7 @@ import { NotificationsService } from './notifications.service';
 @UseGuards(JwtAuthGuard)
 @Controller('notifications')
 export class NotificationsController {
-  constructor(
-    private readonly notificationsService: NotificationsService,
-  ) {}
+  constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
   @ApiOperation({
@@ -27,9 +16,7 @@ export class NotificationsController {
     description:
       'Trả về unread count + danh sách items dựa trên role (student/teacher/admin). Không lưu DB — aggregate on-read.',
   })
-  getNotifications(
-    @Req() req: { user?: { userId?: string; role?: any } },
-  ) {
+  getNotifications(@Req() req: { user?: { userId?: string; role?: any } }) {
     const userId = req?.user?.userId;
     const role = req?.user?.role;
     if (!userId || !role) {

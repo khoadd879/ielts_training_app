@@ -25,22 +25,22 @@ function makeDb() {
   };
 }
 
-async function buildService(overrides: {
-  db?: any;
-  credits?: any;
-  subscription?: any;
-} = {}) {
+async function buildService(
+  overrides: {
+    db?: any;
+    credits?: any;
+    subscription?: any;
+  } = {},
+) {
   const db = overrides.db ?? makeDb();
-  const credits =
-    overrides.credits ?? {
-      creditFromPayment: jest.fn().mockResolvedValue({ idTransaction: 'ct-1' }),
-    };
-  const subscription =
-    overrides.subscription ?? {
-      activateFromPayment: jest
-        .fn()
-        .mockResolvedValue({ idSubscription: 'sub-1' }),
-    };
+  const credits = overrides.credits ?? {
+    creditFromPayment: jest.fn().mockResolvedValue({ idTransaction: 'ct-1' }),
+  };
+  const subscription = overrides.subscription ?? {
+    activateFromPayment: jest
+      .fn()
+      .mockResolvedValue({ idSubscription: 'sub-1' }),
+  };
 
   const moduleRef = await Test.createTestingModule({
     providers: [

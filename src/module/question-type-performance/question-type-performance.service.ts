@@ -2,60 +2,60 @@ import { Injectable } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 
 const STRATEGY_TIPS: Record<string, string[]> = {
-  'TRUE_FALSE_NOT_GIVEN': [
+  TRUE_FALSE_NOT_GIVEN: [
     'FALSE = chắc chắn sai, phủ định rõ ràng trong text',
     'NOT GIVEN = không đủ info để kết luận hoặc có mâu thuẫn',
   ],
-  'YES_NO_NOT_GIVEN': [
+  YES_NO_NOT_GIVEN: [
     'YES = đồng ý với claim trong text',
     'NO = không đồng ý với claim trong text',
     'NOT GIVEN = không đủ info để kết luận',
   ],
-  'MATCHING_HEADING': [
+  MATCHING_HEADING: [
     'Đọc topic sentence của mỗi đoạn để tìm heading phù hợp',
     'Chú ý keywords và synonyms trong heading và đoạn',
   ],
-  'MATCHING_INFORMATION': [
+  MATCHING_INFORMATION: [
     'Tìm specific information (names, dates, numbers, facts)',
     'Quét toàn bộ passage để locate thông tin',
   ],
-  'MATCHING_FEATURES': [
+  MATCHING_FEATURES: [
     'Match features với categories dựa trên characteristics',
     'Chú ý distinguishing features để phân biệt',
   ],
-  'MATCHING_SENTENCE_ENDINGS': [
+  MATCHING_SENTENCE_ENDINGS: [
     'Đọc sentence beginnings và chọn endings phù hợp về ngữ pháp và nghĩa',
     'Đảm bảo logical flow của câu',
   ],
-  'SENTENCE_COMPLETION': [
+  SENTENCE_COMPLETION: [
     'Đếm số từ cần điền theo instructions',
     'Copy từ text, chú ý spelling và grammar',
   ],
-  'SUMMARY_COMPLETION': [
+  SUMMARY_COMPLETION: [
     'Xác định xem summary dựa trên full passage hay một phần',
     'Điền từ hoặc cụm từ từ text',
   ],
-  'NOTE_COMPLETION': [
+  NOTE_COMPLETION: [
     'Đọc instructions để biết số từ cần điền',
     'Tìm thông tin liên quan trong passage',
   ],
-  'TABLE_COMPLETION': [
+  TABLE_COMPLETION: [
     'Xác định categories và rows trong bảng',
     'Scan passage để tìm relevant information',
   ],
-  'FLOW_CHART_COMPLETION': [
+  FLOW_CHART_COMPLETION: [
     'Theo dõi sequence của processes/steps',
     'Điền từ text vào đúng vị trí',
   ],
-  'DIAGRAM_LABELING': [
+  DIAGRAM_LABELING: [
     'Identify parts của diagram từ passage',
     'Chú ý spatial relationships và descriptions',
   ],
-  'SHORT_ANSWER': [
+  SHORT_ANSWER: [
     'Đếm số từ theo instructions (usually 1-3 words)',
     'Trả lời trực tiếp từ text, không diễn giải',
   ],
-  'MULTIPLE_CHOICE': [
+  MULTIPLE_CHOICE: [
     'Eliminate clearly wrong answers trước',
     'Chọn best answer dựa trên text',
   ],
@@ -105,7 +105,8 @@ export class QuestionTypePerformanceService {
             questionType,
             totalAttempts: stats.total,
             correctCount: stats.correct,
-            errorRate: stats.total > 0 ? (stats.total - stats.correct) / stats.total : 0,
+            errorRate:
+              stats.total > 0 ? (stats.total - stats.correct) / stats.total : 0,
             lastAttemptAt: new Date(),
           },
         }),
@@ -122,9 +123,10 @@ export class QuestionTypePerformanceService {
         this.db.questionTypePerformance.update({
           where: { id: p.id },
           data: {
-            errorRate: p.totalAttempts > 0
-              ? (p.totalAttempts - p.correctCount) / p.totalAttempts
-              : 0,
+            errorRate:
+              p.totalAttempts > 0
+                ? (p.totalAttempts - p.correctCount) / p.totalAttempts
+                : 0,
           },
         }),
       ),

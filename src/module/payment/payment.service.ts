@@ -35,8 +35,7 @@ export class PaymentService {
     this.vnpHashSecret = this.configService.get('VNPAY_HASH_SECRET') ?? '';
     this.vnpReturnUrl = this.configService.get('VNPAY_RETURN_URL') ?? '';
     this.vnpIpnUrl = this.configService.get('VNPAY_IPN_URL') ?? '';
-    this.isSandbox =
-      this.configService.get('VNPAY_SANDBOX', 'true') === 'true';
+    this.isSandbox = this.configService.get('VNPAY_SANDBOX', 'true') === 'true';
 
     if (!this.vnpTmnCode || !this.vnpHashSecret || !this.vnpReturnUrl) {
       this.logger.error(
@@ -163,9 +162,7 @@ export class PaymentService {
    * VNPay's IPN URL hasn't been registered for the merchant yet — handler is
    * idempotent against IPN, so no double-credit if both fire.
    */
-  async handleVnpayReturn(
-    query: Record<string, string>,
-  ): Promise<{
+  async handleVnpayReturn(query: Record<string, string>): Promise<{
     success: boolean;
     message: string;
     vnpTxnRef?: string;

@@ -2,16 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 
 const GRAMMAR_TOPIC_IDS: Record<string, string> = {
-  'subject_verb': 'Subject-Verb Agreement',
-  'verb_tenses': 'Verb Tenses',
-  'articles': 'Articles (a/an/the)',
-  'prepositions': 'Prepositions',
-  'conditionals': 'Conditionals',
-  'passive_voice': 'Passive Voice',
-  'relative_clauses': 'Relative Clauses',
-  'sentence_structure': 'Sentence Structure',
-  'word_forms': 'Word Forms',
-  'connectors': 'Connectors/Coherence',
+  subject_verb: 'Subject-Verb Agreement',
+  verb_tenses: 'Verb Tenses',
+  articles: 'Articles (a/an/the)',
+  prepositions: 'Prepositions',
+  conditionals: 'Conditionals',
+  passive_voice: 'Passive Voice',
+  relative_clauses: 'Relative Clauses',
+  sentence_structure: 'Sentence Structure',
+  word_forms: 'Word Forms',
+  connectors: 'Connectors/Coherence',
 };
 
 @Injectable()
@@ -25,7 +25,10 @@ export class GrammarTrackingService {
     aiResponse: any,
   ) {
     // Handle grammar violations
-    if (aiResponse.grammarViolations && Array.isArray(aiResponse.grammarViolations)) {
+    if (
+      aiResponse.grammarViolations &&
+      Array.isArray(aiResponse.grammarViolations)
+    ) {
       const violations = aiResponse.grammarViolations;
 
       for (const v of violations) {
@@ -53,11 +56,13 @@ export class GrammarTrackingService {
 
         // Update proficiency: increment violations, wrongCount, reset streak
         await this.db.userGrammarProficiency.upsert({
-          where: { idUser_idGrammar: { idUser: userId, idGrammar: grammar.idGrammar } },
+          where: {
+            idUser_idGrammar: { idUser: userId, idGrammar: grammar.idGrammar },
+          },
           update: {
             violations: { increment: 1 },
             wrongCount: { increment: 1 },
-            consecutiveCorrect: 0,  // Reset streak on violation
+            consecutiveCorrect: 0, // Reset streak on violation
           },
           create: {
             idUser: userId,
@@ -73,7 +78,10 @@ export class GrammarTrackingService {
     }
 
     // Handle correct grammar usages
-    if (aiResponse.correctGrammarUsages && Array.isArray(aiResponse.correctGrammarUsages)) {
+    if (
+      aiResponse.correctGrammarUsages &&
+      Array.isArray(aiResponse.correctGrammarUsages)
+    ) {
       const correctUsages = aiResponse.correctGrammarUsages;
 
       for (const c of correctUsages) {
@@ -89,7 +97,9 @@ export class GrammarTrackingService {
 
         // Update proficiency: increment correctUsages and consecutiveCorrect (streak continues)
         await this.db.userGrammarProficiency.upsert({
-          where: { idUser_idGrammar: { idUser: userId, idGrammar: grammar.idGrammar } },
+          where: {
+            idUser_idGrammar: { idUser: userId, idGrammar: grammar.idGrammar },
+          },
           update: {
             correctUsages: { increment: 1 },
             consecutiveCorrect: { increment: 1 },

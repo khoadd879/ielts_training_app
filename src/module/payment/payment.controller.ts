@@ -52,8 +52,11 @@ export class PaymentController {
       ?.trim();
     const rawIp = forwarded || req.ip || '127.0.0.1';
     // VNPay sandbox dislikes IPv6 / IPv4-mapped IPv6 — collapse to IPv4.
-    const ipAddress =
-      rawIp.startsWith('::ffff:') ? rawIp.slice(7) : rawIp.includes(':') ? '127.0.0.1' : rawIp;
+    const ipAddress = rawIp.startsWith('::ffff:')
+      ? rawIp.slice(7)
+      : rawIp.includes(':')
+        ? '127.0.0.1'
+        : rawIp;
 
     return this.paymentService.createPaymentUrl({
       idUser: userId,

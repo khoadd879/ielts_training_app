@@ -470,12 +470,10 @@ Questions1-6
     // Only 1, 2, 3 survive — the stray `8 strayloadoutnoise` is treated as
     // body of the current block, not a new question.
     expect(group?.questions.map((q) => q.questionNumber)).toEqual([1, 2, 3]);
-    expect(
-      group?.questions.some((q) => q.questionNumber === 8),
-    ).toBe(false);
+    expect(group?.questions.some((q) => q.questionNumber === 8)).toBe(false);
   });
 
-  it('truncates the last block before the next group\'s passage bleed', async () => {
+  it("truncates the last block before the next group's passage bleed", async () => {
     const result = await service.analyze(
       {
         title: 'IELTS Reading Practice',
@@ -500,7 +498,9 @@ Youshouldspendabout20minutesonQuestions14-26,whicharebasedonReading Passage2belo
     expect(group?.questions).toHaveLength(1);
     const content = group?.questions[0].content ?? '';
     expect(content).not.toContain('## READINGPASSAGE');
-    expect(content).not.toContain('Youshouldspendabout20minutesonQuestions14-26');
+    expect(content).not.toContain(
+      'Youshouldspendabout20minutesonQuestions14-26',
+    );
   });
 
   it('recovers MATCHING_FEATURES options A-E when stems are numbered', async () => {

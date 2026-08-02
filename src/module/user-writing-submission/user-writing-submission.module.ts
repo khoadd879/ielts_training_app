@@ -7,12 +7,7 @@ import { CreditsModule } from 'src/module/credits/credits.module';
 import { SubscriptionModule } from 'src/module/subscription/subscription.module';
 
 @Module({
-  imports: [
-    DatabaseModule,
-    RabbitMQModule,
-    CreditsModule,
-    SubscriptionModule,
-  ],
+  imports: [DatabaseModule, RabbitMQModule, CreditsModule, SubscriptionModule],
   controllers: [UserWritingSubmissionController],
   providers: [UserWritingSubmissionService],
   exports: [UserWritingSubmissionService],

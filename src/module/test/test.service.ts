@@ -96,21 +96,23 @@ export class TestService {
     }
 
     // Tạo test trong DB
-    const data = await this.databaseService.$transactionWithRetry(async (tx) => {
-      return tx.test.create({
-        data: {
-          idUser,
-          testType,
-          title,
-          description,
-          level,
-          duration: Number(duration),
-          numberQuestion: Number(numberQuestion),
-          img: imageUrl,
-          audioUrl: audio,
-        },
-      });
-    });
+    const data = await this.databaseService.$transactionWithRetry(
+      async (tx) => {
+        return tx.test.create({
+          data: {
+            idUser,
+            testType,
+            title,
+            description,
+            level,
+            duration: Number(duration),
+            numberQuestion: Number(numberQuestion),
+            img: imageUrl,
+            audioUrl: audio,
+          },
+        });
+      },
+    );
 
     await Promise.all([
       this.cache.del(`tests_user_${idUser}`),

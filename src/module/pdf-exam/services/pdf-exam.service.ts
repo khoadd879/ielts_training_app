@@ -22,7 +22,11 @@ import {
   VerificationChangeDto,
 } from '../dto/extraction-result.dto';
 import { PdfParserService } from './pdf-parser.service';
-import { ExtractedExamData, TextBlock, ParsedDocumentProfile } from './pdf-parser.service';
+import {
+  ExtractedExamData,
+  TextBlock,
+  ParsedDocumentProfile,
+} from './pdf-parser.service';
 import { StructureAnalyzerService } from './structure-analyzer.service';
 import { DoclingService } from './docling.service';
 
@@ -170,7 +174,9 @@ export class PdfExamService {
             dto.testType,
           );
         } else {
-          this.logger.log(`[${correlationId}] Docling unavailable, using pdfjs-dist`);
+          this.logger.log(
+            `[${correlationId}] Docling unavailable, using pdfjs-dist`,
+          );
           parsedData = await this.pdfParserService.parsePdf(
             file.buffer,
             dto.testType,
@@ -474,7 +480,14 @@ export class PdfExamService {
             }
           }
 
-          return { test, partsCreated, questionsCreated, writingTasksCreated, speakingTasksCreated, speakingQuestionsCreated };
+          return {
+            test,
+            partsCreated,
+            questionsCreated,
+            writingTasksCreated,
+            speakingTasksCreated,
+            speakingQuestionsCreated,
+          };
         },
         {
           timeout: 30000, // 30 second timeout
@@ -486,7 +499,9 @@ export class PdfExamService {
       session.updatedAt = new Date();
       this.sessions.set(idSession, session);
 
-      this.logger.log(`[${correlationId}] Save complete, test: ${result.test.idTest}`);
+      this.logger.log(
+        `[${correlationId}] Save complete, test: ${result.test.idTest}`,
+      );
 
       return {
         idTest: result.test.idTest,
@@ -708,7 +723,10 @@ export class PdfExamService {
         try {
           parsedContent = this.extractJsonObject(content);
         } catch (error) {
-          this.logger.error('Failed to parse Groq verification response', error);
+          this.logger.error(
+            'Failed to parse Groq verification response',
+            error,
+          );
           throw new ServiceUnavailableException(
             'Groq verification returned invalid JSON',
           );
@@ -1086,7 +1104,10 @@ Visit this URL and inspect the original PDF if you can access it. Use it to conf
         }
 
         if (braceCount === 0 && end > start) {
-          return JSON.parse(cleaned.slice(start, end)) as Record<string, unknown>;
+          return JSON.parse(cleaned.slice(start, end)) as Record<
+            string,
+            unknown
+          >;
         }
         return null;
       },
@@ -1099,7 +1120,9 @@ Visit this URL and inspect the original PDF if you can access it. Use it to conf
           // Try to parse what's around verifiedData
           const start = content.indexOf('"verifiedData"');
           const afterVerified = content.slice(start);
-          const braceMatch = afterVerified.match(/^\"verifiedData\"\s*:\s*(\{)/);
+          const braceMatch = afterVerified.match(
+            /^\"verifiedData\"\s*:\s*(\{)/,
+          );
           if (braceMatch) {
             const idx = start + afterVerified.indexOf('{');
             let braceCount = 0;
@@ -1108,9 +1131,10 @@ Visit this URL and inspect the original PDF if you can access it. Use it to conf
               else if (afterVerified[i] === '}') {
                 braceCount--;
                 if (braceCount === 0) {
-                  return JSON.parse(
-                    content.slice(idx, idx + i + 1),
-                  ) as Record<string, unknown>;
+                  return JSON.parse(content.slice(idx, idx + i + 1)) as Record<
+                    string,
+                    unknown
+                  >;
                 }
               }
             }
@@ -1728,9 +1752,7 @@ Visit this URL and inspect the original PDF if you can access it. Use it to conf
             .filter(Boolean);
         } else {
           const pointLabel = this.pickNonEmptyString(raw.pointLabel);
-          const labelCoordinate = this.sanitizeCoordinate(
-            raw.labelCoordinate,
-          );
+          const labelCoordinate = this.sanitizeCoordinate(raw.labelCoordinate);
           const correctAnswers = this.sanitizeStringArray(raw.correctAnswers);
           if (!pointLabel || !labelCoordinate || !correctAnswers.length) {
             return undefined;
@@ -2636,7 +2658,12 @@ Visit this URL and inspect the original PDF if you can access it. Use it to conf
   }
 
   private convertDoclingToParsedData(
-    doclingResult: { text: string; markdown: string; confidence: number; warnings: string[] },
+    doclingResult: {
+      text: string;
+      markdown: string;
+      confidence: number;
+      warnings: string[];
+    },
     testType: string,
   ): ExtractedExamData {
     // Convert Docling's text output to the format expected by structure-analyzer
@@ -2655,8 +2682,11 @@ Visit this URL and inspect the original PDF if you can access it. Use it to conf
       blocks: [],
       profile: {
         pageCount: pages.length,
-        averageCharsPerPage: doclingResult.text.length / Math.max(pages.length, 1),
-        likelyImageBased: doclingResult.warnings.some((w) => w.includes('image')),
+        averageCharsPerPage:
+          doclingResult.text.length / Math.max(pages.length, 1),
+        likelyImageBased: doclingResult.warnings.some((w) =>
+          w.includes('image'),
+        ),
         likelyMultiColumn: false,
         repeatedArtifacts: [],
       },

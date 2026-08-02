@@ -114,7 +114,8 @@ export class UserWritingSubmissionService {
       submittedAt: sub.submittedAt,
       aiGradingStatus: sub.aiGradingStatus,
       bandScore: sub.testResult?.bandScore ?? 0,
-      generalFeedback: (sub.aiDetailedFeedback as { generalFeedback?: string })?.generalFeedback,
+      generalFeedback: (sub.aiDetailedFeedback as { generalFeedback?: string })
+        ?.generalFeedback,
     }));
 
     return {
