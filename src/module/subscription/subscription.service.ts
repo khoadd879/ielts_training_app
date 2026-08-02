@@ -217,19 +217,15 @@ export class SubscriptionService {
   // ===== Refund Quota (for grading failure) =====
 
   async refundQuota(idUser: string, credits: number = 1): Promise<{ success: boolean }> {
-    const sub = await this.db.userSubscription.findFirst({
-      where: { idUser, status: 'ACTIVE' },
+    // Idempotent decrement: only restore if enough used credits remain
+    await this.db.userSubscription.updateMany({
+      where: {
+        idUser,
+        status: 'ACTIVE',
+        creditsUsedThisPeriod: { gte: credits },
+      },
+      data: { creditsUsedThisPeriod: { decrement: credits } },
     });
-
-    if (sub && sub.creditsUsedThisPeriod > 0) {
-      await this.db.userSubscription.update({
-        where: { idSubscription: sub.idSubscription },
-        data: {
-          creditsUsedThisPeriod: Math.max(0, sub.creditsUsedThisPeriod - credits),
-        },
-      });
-    }
-
     return { success: true };
   }
 
@@ -252,7 +248,6 @@ export class SubscriptionService {
       throw new NotFoundException('Active subscription not found');
     }
 
-    const now = new Date();
     const nextExpires = new Date(sub.expiresAt);
     const nextBilling = new Date(sub.expiresAt);
 
@@ -264,14 +259,19 @@ export class SubscriptionService {
       nextBilling.setFullYear(nextBilling.getFullYear() + 1);
     }
 
-    return this.db.userSubscription.update({
-      where: { idSubscription },
+    // Atomic claim: only renew if still ACTIVE (race-safe vs cancel)
+    const { count } = await this.db.userSubscription.updateMany({
+      where: { idSubscription, status: 'ACTIVE' },
       data: {
         expiresAt: nextExpires,
         nextBillingAt: sub.autoRenew ? nextBilling : null,
-        creditsUsedThisPeriod: 0, // Reset quota
+        creditsUsedThisPeriod: 0,
       },
     });
+    if (count === 0) {
+      throw new NotFoundException('Subscription no longer active (race)');
+    }
+    return this.db.userSubscription.findUnique({ where: { idSubscription } });
   }
 
   // ===== Admin Operations =====
