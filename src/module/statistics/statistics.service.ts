@@ -14,58 +14,47 @@ export class StatisticsService {
   ) {}
 
   async OverAllScore(idUser: string) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { idUser },
-    });
+    const cacheKey = `statistics:overall:${idUser}`;
+    const cached = await this.cache.get<{
+      READING: number; LISTENING: number; WRITING: number; SPEAKING: number; total: number;
+    }>(cacheKey);
+    if (cached) return cached;
 
-    if (!existingUser) throw new BadRequestException('User not found');
+    const rows = await this.prisma.$queryRaw<
+      Array<{ testType: string; avg: number | null }>
+    >`
+    SELECT t."testType" AS "testType", AVG(r."bandScore")::float AS "avg"
+      FROM "UserTestResult" r
+      JOIN "Test" t ON t."idTest" = r."idTest"
+     WHERE r."idUser" = ${idUser}::uuid
+       AND r."status" = 'FINISHED'::"TestStatus"
+       AND r."bandScore" > 0
+     GROUP BY t."testType"
+  `;
 
-    const testResult = await this.prisma.userTestResult.findMany({
-      where: { idUser, status: 'FINISHED' },
-      select: {
-        bandScore: true,
-        test: {
-          select: {
-            testType: true,
-          },
-        },
-      },
-    });
+    const roundToIeltsScore = (score: number): number =>
+      Math.round(score * 2) / 2;
 
-    const roundToIeltsScore = (score: number): number => {
-      return Math.round(score * 2) / 2;
+    const result = {
+      READING: 0,
+      LISTENING: 0,
+      WRITING: 0,
+      SPEAKING: 0,
+      total: 0,
     };
 
-    const groupTest = {
-      READING: testResult.filter((t) => t.test.testType === 'READING'),
-      LISTENING: testResult.filter((t) => t.test.testType === 'LISTENING'),
-      WRITING: testResult.filter((t) => t.test.testType === 'WRITING'),
-      SPEAKING: testResult.filter((t) => t.test.testType === 'SPEAKING'),
-    };
+    for (const row of rows) {
+      const score = row.avg ? roundToIeltsScore(row.avg) : 0;
+      if (row.testType in result) {
+        result[row.testType as keyof typeof result] = score;
+      }
+    }
 
-    const averages = Object.entries(groupTest).map(([type, tests]) => {
-      const scores = tests.map((t) => t.bandScore);
+    result.total =
+      roundToIeltsScore(result.READING + result.LISTENING + result.WRITING + result.SPEAKING);
 
-      const rawAvg = scores.length
-        ? scores.reduce((a, b) => a + b, 0) / scores.length
-        : 0;
-
-      return {
-        type,
-        avg: roundToIeltsScore(rawAvg),
-      };
-    });
-
-    const totalScore = averages.reduce((sum, item) => sum + item.avg, 0);
-
-    const rawOverall = averages.length > 0 ? totalScore / averages.length : 0;
-
-    return {
-      message: 'Overall score is retrieved successfully',
-      overall: roundToIeltsScore(rawOverall),
-      details: averages,
-      status: 200,
-    };
+    await this.cache.set(cacheKey, result, 60);
+    return result;
   }
 
   async statistic(idUser: string) {
