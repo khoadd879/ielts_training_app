@@ -138,21 +138,26 @@ export class UserTestResultService {
   }
 
   async getSkillStatus(idUser: string) {
-    const existingUser = await this.databaseService.user.findUnique({
-      where: { idUser },
-    });
+    const cacheKey = `skill-status:${idUser}`;
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) {
+      return { message: 'Skill status retrieved', data: cached, status: 200 };
+    }
 
-    if (!existingUser) throw new BadRequestException('User not found');
-
-    const results = await this.databaseService.userTestResult.findMany({
-      where: { idUser, status: TestStatus.FINISHED, bandScore: { gt: 0 } },
-      select: {
-        bandScore: true,
-        finishedAt: true,
-        test: { select: { testType: true } },
-      },
-      orderBy: { finishedAt: 'desc' },
-    });
+    const rows = await this.databaseService.$queryRaw<
+      Array<{ testType: string; bandScore: number; finishedAt: Date | null }>
+    >`
+      SELECT DISTINCT ON (t."testType")
+             t."testType" AS "testType",
+             r."bandScore" AS "bandScore",
+             r."finishedAt" AS "finishedAt"
+        FROM "UserTestResult" r
+        JOIN "Test" t ON t."idTest" = r."idTest"
+       WHERE r."idUser" = ${idUser}::uuid
+         AND r."status" = 'FINISHED'::"TestStatus"
+         AND r."bandScore" > 0
+       ORDER BY t."testType", r."finishedAt" DESC
+    `;
 
     const skillMap: Record<string, { band: number | null; lastAssessed: string | null }> = {
       READING: { band: null, lastAssessed: null },
@@ -161,25 +166,19 @@ export class UserTestResultService {
       SPEAKING: { band: null, lastAssessed: null },
     };
 
-    for (const r of results) {
-      const skill = r.test.testType;
-      if (skillMap[skill] && skillMap[skill].band === null) {
-        skillMap[skill] = {
+    for (const r of rows) {
+      if (r.testType in skillMap) {
+        skillMap[r.testType] = {
           band: r.bandScore,
-          lastAssessed: r.finishedAt?.toISOString() || null,
+          lastAssessed: r.finishedAt?.toISOString() ?? null,
         };
       }
     }
 
+    await this.cache.set(cacheKey, skillMap, 60);
     return {
       message: 'Skill status retrieved successfully',
-      data: {
-        skills: skillMap,
-        assessedCount: Object.values(skillMap).filter(s => s.band !== null).length,
-        missingSkills: Object.entries(skillMap)
-          .filter(([_, s]) => s.band === null)
-          .map(([skill]) => skill),
-      },
+      data: skillMap,
       status: 200,
     };
   }
