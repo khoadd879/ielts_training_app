@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef, Scope } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { DatabaseService } from 'src/database/database.service';
@@ -207,8 +207,10 @@ interface FourStrandBalance {
   fluency: number;
 }
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class StudyPlannerService {
+  private readonly requestCache = new Map<string, { input: string[]; output: string[] }>();
+
   constructor(
     private readonly db: DatabaseService,
     @Inject(CACHE_MANAGER) private cache: Cache,
@@ -1409,18 +1411,42 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
   }
 
   private async getWeakSkills(userId: string, limit: number = 2): Promise<{ input: string[]; output: string[] }> {
+    // Layer 1: per-request memoize
+    const memoKey = `${userId}:${limit}`;
+    const memoized = this.requestCache.get(memoKey);
+    if (memoized) return memoized;
+
+    // Layer 2: Redis cache
+    const redisKey = `weak-skills:${memoKey}`;
+    const cached = await this.cache.get<{ input: string[]; output: string[] }>(redisKey);
+    if (cached) {
+      this.requestCache.set(memoKey, cached);
+      return cached;
+    }
+
+    // Compute
+    const result = await this.computeWeakSkills(userId, limit);
+
+    // Set both caches
+    this.requestCache.set(memoKey, result);
+    await this.cache.set(redisKey, result, 60);
+
+    return result;
+  }
+
+  private async computeWeakSkills(userId: string, limit: number): Promise<{ input: string[]; output: string[] }> {
     const results = await this.db.userTestResult.findMany({
       where: { idUser: userId, status: 'FINISHED' },
       orderBy: { finishedAt: 'desc' },
       take: 20,
-      include: { test: { select: { testType: true } } }
+      include: { test: { select: { testType: true } } },
     });
 
     const skillBands: Record<string, { sum: number; count: number }> = {
       LISTENING: { sum: 0, count: 0 },
       READING: { sum: 0, count: 0 },
       WRITING: { sum: 0, count: 0 },
-      SPEAKING: { sum: 0, count: 0 }
+      SPEAKING: { sum: 0, count: 0 },
     };
 
     for (const r of results) {
@@ -1432,17 +1458,22 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
     }
 
     const avgBands = Object.entries(skillBands)
-      .filter(([_, data]) => data.count > 0) // Only include skills with actual test history
+      .filter(([_, data]) => data.count > 0)
       .map(([skill, data]) => ({ skill, avg: data.sum / data.count }))
       .sort((a, b) => a.avg - b.avg);
 
-    // If no test history, return empty (user starts fresh in FOUNDATION)
     if (avgBands.length === 0) {
       return { input: [], output: [] };
     }
 
-    const input = avgBands.filter(s => s.skill === 'READING' || s.skill === 'LISTENING').slice(0, limit).map(s => s.skill);
-    const output = avgBands.filter(s => s.skill === 'WRITING' || s.skill === 'SPEAKING').slice(0, limit).map(s => s.skill);
+    const input = avgBands
+      .filter((s) => s.skill === 'READING' || s.skill === 'LISTENING')
+      .slice(0, limit)
+      .map((s) => s.skill);
+    const output = avgBands
+      .filter((s) => s.skill === 'WRITING' || s.skill === 'SPEAKING')
+      .slice(0, limit)
+      .map((s) => s.skill);
 
     return { input, output };
   }
