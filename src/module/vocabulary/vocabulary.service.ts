@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
@@ -11,11 +12,13 @@ import { SubmitReviewDto, GetDueReviewDto, GetTierRecommendationDto } from './dt
 import { CompleteDailyVocabDto, VocabAnswerDto, GetDailyVocabDto } from './dto/vocab-daily.dto';
 import { GetDailySessionDto } from './dto/get-daily-session.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
 import axios, { AxiosError } from 'axios';
 import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from '@nestjs/cache-manager';
 import { endOfDay, startOfDay } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
 
 interface VocabCacheEntry {
   word: string;
@@ -43,6 +46,7 @@ export class VocabularyService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly configService: ConfigService,
+    private readonly rabbitMQService: RabbitMQService,
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
@@ -530,6 +534,84 @@ Yêu cầu:
       meaning: result.meaning,
       example: result.example,
     };
+  }
+
+  /**
+   * Async vocab suggest: cache hit → 200, in-flight → 202 with existing jobId,
+   * else enqueue via RabbitMQ and return 202 with new jobId.
+   */
+  async suggestPost(
+    dto: { word: string },
+    req: any,
+  ): Promise<{ status: number; data?: VocabCacheEntry; jobId?: string; message?: string }> {
+    const lowerWord = (dto.word ?? '').toLowerCase().trim();
+    if (!lowerWord) {
+      throw new BadRequestException('word required');
+    }
+
+    // Layer 1: cache hit
+    const cacheKey = `${this.cachePrefix}${lowerWord}`;
+    const cached = await this.cache.get<VocabCacheEntry>(cacheKey);
+    if (cached) {
+      this.logger.debug(`Async suggest cache hit for "${lowerWord}"`);
+      return { status: 200, data: cached };
+    }
+
+    // Layer 2: in-flight job check
+    const existingJob = await this.cache.get<string>(
+      `vocab-job-active:${lowerWord}`,
+    );
+    if (existingJob) {
+      return {
+        status: 202,
+        jobId: existingJob,
+        message: 'Suggestion in progress',
+      };
+    }
+
+    // Layer 3: enqueue
+    const jobId = uuidv4();
+    await this.cache.set(`vocab-job-active:${lowerWord}`, jobId, 300);
+    const requestedByUserId = req?.user?.idUser ?? null;
+    await this.rabbitMQService.publishVocabSuggest({
+      jobId,
+      word: lowerWord,
+      requestedByUserId,
+      enqueuedAt: new Date().toISOString(),
+    });
+
+    return { status: 202, jobId, message: 'Suggestion queued' };
+  }
+
+  /**
+   * Poll for async vocab suggest result. Returns 200 with data when ready,
+   * 202 while still in-flight, 404 when expired or unknown.
+   */
+  async suggestResult(
+    jobId: string,
+    word: string,
+  ): Promise<{ status: number; data?: VocabCacheEntry; message?: string }> {
+    const lowerWord = (word ?? '').toLowerCase().trim();
+    if (!jobId || !lowerWord) {
+      throw new BadRequestException('jobId and word required');
+    }
+
+    const jobKey = `vocab-job:${lowerWord}:${jobId}`;
+
+    // 1. Final result
+    const result = await this.cache.get<VocabCacheEntry>(jobKey);
+    if (result) {
+      return { status: 200, data: result };
+    }
+
+    // 2. Still in-flight
+    const activeJob = await this.cache.get<string>(`vocab-job-active:${lowerWord}`);
+    if (activeJob === jobId) {
+      return { status: 202, message: 'Still processing' };
+    }
+
+    // 3. Expired
+    throw new NotFoundException('Job expired or not found');
   }
 
   /**

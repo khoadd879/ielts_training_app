@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Req,
   ValidationPipe,
   UsePipes,
 } from '@nestjs/common';
@@ -66,6 +67,19 @@ export class VocabularyController {
   @Get('suggest/:word')
   suggest(@Param('word') word: string) {
     return this.vocabularyService.suggest(word);
+  }
+
+  @Post('suggest')
+  async suggestPost(@Body() dto: { word: string }, @Req() req: any) {
+    return this.vocabularyService.suggestPost(dto, req);
+  }
+
+  @Get('suggest/result/:jobId')
+  async suggestResult(
+    @Param('jobId') jobId: string,
+    @Query('word') word: string,
+  ) {
+    return this.vocabularyService.suggestResult(jobId, word);
   }
 
   // SM-2 Spaced Repetition Endpoints
