@@ -643,7 +643,10 @@ export class StructureAnalyzerService {
         /(?<!\d)\d+(?:\.\s*,?|\s+,?)\s*[A-Z]/.test(line),
       );
       return (
-        hasQuestionLine || hasOptionLine || hasCompletionBlank || hasInlineMarker
+        hasQuestionLine ||
+        hasOptionLine ||
+        hasCompletionBlank ||
+        hasInlineMarker
       );
     });
     return result;
@@ -914,10 +917,8 @@ export class StructureAnalyzerService {
     // Extract numbered stems first so the option pool can't accidentally
     // consume markers like `23` or `24` (which would otherwise be lost when
     // running option extraction before question extraction).
-    const { blocks, consumedIndices } = this.extractNumberedQuestionBlocksWithIndices(
-      lines,
-      range,
-    );
+    const { blocks, consumedIndices } =
+      this.extractNumberedQuestionBlocksWithIndices(lines, range);
 
     const remainingAfterStems = lines.filter(
       (_line, index) => !consumedIndices.has(index),
@@ -931,10 +932,7 @@ export class StructureAnalyzerService {
 
     return blocks.map((block) => ({
       questionNumber: block.number,
-      content: this.stripMatchingFeaturesPreamble(
-        block.text,
-        instructions,
-      ),
+      content: this.stripMatchingFeaturesPreamble(block.text, instructions),
       questionType: QuestionType.MATCHING_FEATURES,
       metadata: {
         type: QuestionType.MATCHING_FEATURES,
@@ -1073,9 +1071,7 @@ export class StructureAnalyzerService {
     // also appears in the instructions. Conservative: only strip when the
     // preamble is at least 60 chars and the remaining body is still a
     // meaningful sentence.
-    const match = text.match(
-      /^([\s\S]{60,}?\?)\s*(.*)$/,
-    );
+    const match = text.match(/^([\s\S]{60,}?\?)\s*(.*)$/);
     if (!match) {
       return text;
     }
@@ -1085,9 +1081,7 @@ export class StructureAnalyzerService {
       return text;
     }
     // Only drop if the preamble content overlaps with the instructions.
-    const instructionsNorm = instructions
-      .toLowerCase()
-      .replace(/\s+/g, '');
+    const instructionsNorm = instructions.toLowerCase().replace(/\s+/g, '');
     const preambleNorm = preamble.toLowerCase().replace(/\s+/g, '');
     if (
       preambleNorm.length >= 40 &&
@@ -1261,7 +1255,8 @@ export class StructureAnalyzerService {
     // Cut the content into per-question snippets at each marker.
     return matches.map((match, i) => {
       const start = match.index + match.length;
-      const end = i + 1 < matches.length ? matches[i + 1].index : content.length;
+      const end =
+        i + 1 < matches.length ? matches[i + 1].index : content.length;
       const snippet = content.slice(start, end).trim();
       return { number: match.number, snippet };
     });
@@ -1320,18 +1315,7 @@ export class StructureAnalyzerService {
    */
   private resolveWordBankLabels(range: QuestionRange | null): string[] {
     void range;
-    return [
-      'A',
-      'B',
-      'C',
-      'D',
-      'E',
-      'F',
-      'G',
-      'H',
-      'I',
-      'J',
-    ];
+    return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
   }
 
   private parseShortAnswerQuestions(
@@ -1601,7 +1585,7 @@ export class StructureAnalyzerService {
       const patterns = this.QUESTION_PATTERNS[type];
       for (const pattern of patterns) {
         if (pattern.test(text)) {
-          return QuestionType[type as keyof typeof QuestionType];
+          return QuestionType[type];
         }
       }
     }
@@ -1881,7 +1865,9 @@ export class StructureAnalyzerService {
         break;
       }
 
-      const match = cleanedLine.match(/^[-*+]?\s*\(?([A-H])\)?[\.\):\-]?\s+(.*)$/i);
+      const match = cleanedLine.match(
+        /^[-*+]?\s*\(?([A-H])\)?[\.\):\-]?\s+(.*)$/i,
+      );
       if (match) {
         if (currentOption) {
           options.push({
@@ -1927,7 +1913,9 @@ export class StructureAnalyzerService {
         break;
       }
 
-      const match = cleanedLine.match(/^[-*+]?\s*\(?([A-H])\)?[\.\):\-]?\s+(.*)$/i);
+      const match = cleanedLine.match(
+        /^[-*+]?\s*\(?([A-H])\)?[\.\):\-]?\s+(.*)$/i,
+      );
       if (!match) {
         continue;
       }
@@ -2108,7 +2096,7 @@ export class StructureAnalyzerService {
     return `${this.capitalizeWord(match[2])} ${match[3].toUpperCase()}`;
   }
 
-private isQuestionRangeHeader(line: string): boolean {
+  private isQuestionRangeHeader(line: string): boolean {
     // Allow markdown heading prefixes (`#`, `##`, `###`) that Docling emits
     // for `## Questions 14-17` style headers, while keeping the unprefixed
     // form (`Questions 1-2`) recognized for plain-text inputs.
@@ -2331,7 +2319,9 @@ private isQuestionRangeHeader(line: string): boolean {
       return true;
     }
 
-    return !lines.some((line) => /^[-*+]?\s*\(?[A-H]\)?[\.\):\-]?\s+\S/i.test(line));
+    return !lines.some((line) =>
+      /^[-*+]?\s*\(?[A-H]\)?[\.\):\-]?\s+\S/i.test(line),
+    );
   }
 
   private applyReadingListeningQualityGate(

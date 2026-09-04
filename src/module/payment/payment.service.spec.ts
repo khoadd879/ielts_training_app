@@ -13,6 +13,7 @@ function makeDb() {
     paymentTransaction: {
       findUnique: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     $transaction: jest.fn(async (fn: any) =>
       fn({
@@ -24,22 +25,22 @@ function makeDb() {
   };
 }
 
-async function buildService(overrides: {
-  db?: any;
-  credits?: any;
-  subscription?: any;
-} = {}) {
+async function buildService(
+  overrides: {
+    db?: any;
+    credits?: any;
+    subscription?: any;
+  } = {},
+) {
   const db = overrides.db ?? makeDb();
-  const credits =
-    overrides.credits ?? {
-      creditFromPayment: jest.fn().mockResolvedValue({ idTransaction: 'ct-1' }),
-    };
-  const subscription =
-    overrides.subscription ?? {
-      activateFromPayment: jest
-        .fn()
-        .mockResolvedValue({ idSubscription: 'sub-1' }),
-    };
+  const credits = overrides.credits ?? {
+    creditFromPayment: jest.fn().mockResolvedValue({ idTransaction: 'ct-1' }),
+  };
+  const subscription = overrides.subscription ?? {
+    activateFromPayment: jest
+      .fn()
+      .mockResolvedValue({ idSubscription: 'sub-1' }),
+  };
 
   const moduleRef = await Test.createTestingModule({
     providers: [
@@ -274,6 +275,45 @@ describe('PaymentService', () => {
         }),
       );
       expect(r.RspCode).toBe('99');
+    });
+
+    it('atomic claim — second concurrent IPN returns RspCode 02 (PROCESSING)', async () => {
+      const { service, db, credits } = await buildService();
+      db.paymentTransaction.findUnique.mockResolvedValue({
+        idTransaction: 'p1',
+        amount: 100,
+        status: 'PENDING',
+        packageType: 'CREDIT',
+        idCreditPackage: 'pk1',
+        idUser: 'u1',
+      });
+      // First claim succeeds, second (concurrent) sees count=0
+      db.paymentTransaction.updateMany
+        .mockResolvedValueOnce({ count: 1 })
+        .mockResolvedValueOnce({ count: 0 });
+
+      const r1 = await service.handleVnpayIpn(
+        signed({
+          vnp_TxnRef: 'X',
+          vnp_Amount: '10000',
+          vnp_ResponseCode: '00',
+          vnp_TransactionStatus: '00',
+        }),
+      );
+      const r2 = await service.handleVnpayIpn(
+        signed({
+          vnp_TxnRef: 'X',
+          vnp_Amount: '10000',
+          vnp_ResponseCode: '00',
+          vnp_TransactionStatus: '00',
+        }),
+      );
+
+      expect(r1.RspCode).toBe('00');
+      expect(r2.RspCode).toBe('02');
+      expect(r2.Message).toMatch(/processing|confirmed/i);
+      // Second IPN should not have attempted provisioning
+      expect(credits.creditFromPayment).toHaveBeenCalledTimes(1);
     });
   });
 

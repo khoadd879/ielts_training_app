@@ -9,6 +9,7 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  HttpCode,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { ForumPostService } from './forum-post.service';
@@ -24,6 +25,7 @@ export class ForumPostController {
   constructor(private readonly forumPostService: ForumPostService) {}
 
   @Post('create-forum-post')
+  @HttpCode(202)
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: (req, file, callback) => {
@@ -70,10 +72,7 @@ export class ForumPostController {
   }
 
   @Get('posts-by-user/:idUser')
-  findPostsByUser(
-    @Param('idUser') idUser: string,
-    @Req() req: Request,
-  ) {
+  findPostsByUser(@Param('idUser') idUser: string, @Req() req: Request) {
     const viewerId = (req.user as { userId?: string } | undefined)?.userId;
     return this.forumPostService.findPostsByUser(idUser, viewerId ?? idUser);
   }
@@ -100,6 +99,7 @@ export class ForumPostController {
   }
 
   @Patch('update-forum-post/:idForumPost')
+  @HttpCode(202)
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: (req, file, callback) => {

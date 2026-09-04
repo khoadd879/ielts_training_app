@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { CreateForumCommentDto } from './dto/create-forum-comment.dto';
 import { UpdateForumCommentDto } from './dto/update-forum-comment.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -130,9 +134,12 @@ export class ForumCommentService {
     const existingComment = await this.databaseService.forumComment.findUnique({
       where: { idForumComment },
     });
-    if (!existingComment) throw new BadRequestException('Forum comment not found');
+    if (!existingComment)
+      throw new BadRequestException('Forum comment not found');
     if (existingComment.idUser !== idUser) {
-      throw new ForbiddenException('You are not authorized to update this comment');
+      throw new ForbiddenException(
+        'You are not authorized to update this comment',
+      );
     }
 
     const data = await this.databaseService.forumComment.update({
@@ -167,7 +174,9 @@ export class ForumCommentService {
     });
     if (!existing) throw new BadRequestException('Forum comment not found');
     if (existing.idUser !== idUser) {
-      throw new ForbiddenException('You are not authorized to delete this comment');
+      throw new ForbiddenException(
+        'You are not authorized to delete this comment',
+      );
     }
 
     await this.databaseService.forumComment.delete({

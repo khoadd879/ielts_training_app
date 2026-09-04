@@ -1,4 +1,11 @@
-import { IsString, IsNumber, IsBoolean, IsOptional, IsArray, Min } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+  IsArray,
+  Min,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSubscriptionPackageDto {
@@ -6,7 +13,10 @@ export class CreateSubscriptionPackageDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ example: 'Access to all AI grading features', required: false })
+  @ApiProperty({
+    example: 'Access to all AI grading features',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   description?: string;

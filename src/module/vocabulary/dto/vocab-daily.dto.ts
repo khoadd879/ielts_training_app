@@ -1,4 +1,11 @@
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class VocabAnswerDto {
@@ -16,7 +23,10 @@ export class CompleteDailyVocabDto {
   @IsString()
   idUser: string;
 
-  @ApiProperty({ description: 'Array of answers for each vocabulary', type: [VocabAnswerDto] })
+  @ApiProperty({
+    description: 'Array of answers for each vocabulary',
+    type: [VocabAnswerDto],
+  })
   @IsArray()
   answers: VocabAnswerDto[];
 }
@@ -26,7 +36,9 @@ export class GetDailyVocabDto {
   @IsString()
   idUser: string;
 
-  @ApiPropertyOptional({ description: 'Number of words to return (default 10)' })
+  @ApiPropertyOptional({
+    description: 'Number of words to return (default 10)',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)

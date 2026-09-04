@@ -38,45 +38,35 @@ Hệ quả:
 
 ### Writing
 `PATCH /user-test-result/finish-test-writing/:idTestResult/:idUser`
-- Tạo `userWritingSubmission` (status: `PENDING`), publish queue, return ngay.
-- `userTestResult.bandScore = 0` (BE hardcode — bug đã biết, xem bên dưới), `totalQuestions = submittedCount`.
-- ⚠️ **Bug:** `finishTestWriting` set `scoreTask1 = 0`, `scoreTask2 = 0` hardcode, `bandScore = 0`. Worker chấm xong cũng không ai update lại testResult → score cuối cùng = 0 mãi mãi.
-- Response hiện tại: `{ bandScore: 0, breakdown: { task1Score: 0, task2Score: 0 }, submissions: [{ score: null, ... }] }`.
+- Tạo `userWritingSubmission` (status: `PENDING`), publish queue.
+- **BE poll worker** (`waitForWritingGrading` — `user-test-result.service.ts`):
+  - Backoff 1s → 2s → 3s → 4s, timeout 60s.
+  - Khi tất cả submissions ở terminal state (`COMPLETED` / `FAILED`) → lấy `aiOverallScore` thật.
+  - Aggregate bandScore theo taskType: 0 task → 0; 1 task → điểm task đó; 2 task → `(t1 + t2*2)/3` rồi round half-band.
+- `userTestResult.bandScore = aggregate thật` (không còn hardcode 0), `totalQuestions = submittedCount`.
+- Cache `test-results:${idUser}` bị invalidate ngay sau update.
 
 ### Speaking
 `PATCH /user-test-result/finish-test-speaking/:idTestResult/:idUser` (multipart, 3 audio parts)
-- Tạo `userSpeakingSubmission` (status: `PENDING`) cho từng part có audio, publish queue, return ngay.
-- `userTestResult.bandScore = 0` (cùng bug), `totalQuestions = submittedPartsCount`.
-- ⚠️ **Bug:** `finishTestSpeaking` set `score = 0` cho mỗi part → `bandScore = 0`. Worker không update testResult.
-- Response hiện tại: `{ bandScore: 0, breakdown: { PART1: 0, PART2: 0, PART3: 0 }, submissions: [{ score: 0, ... }] }`.
+- Tạo `userSpeakingSubmission` (status: `PENDING`) cho từng part có audio, publish queue.
+- **BE poll worker** (`waitForSpeakingGrading` — `user-test-result.service.ts`):
+  - Cùng backoff + timeout 60s như Writing.
+  - Aggregate: average `aiOverallScore` của các parts đã submit, round half-band.
+  - User submit 1 part → bandScore = điểm part đó (không penalty chia cho 3).
+- `userTestResult.bandScore = aggregate thật` (không còn hardcode 0), `totalQuestions = submittedPartsCount`.
+- Cache `test-results:${idUser}` bị invalidate ngay sau update.
 
-## FE phải poll
+## FE poll (không còn cần)
 
-Score thật nằm ở `userWritingSubmission.aiOverallScore` / `userSpeakingSubmission.aiOverallScore`.
-Endpoint `GET /user-test-result/get-test-result-and-answers/:idTestResult` đã `include` relations
-này (`getAllAnswerInTestResult` trong `user-test-result.service.ts`).
+Đã fix: BE tự poll worker đến khi grading xong rồi aggregate `bandScore` trước khi response.
+FE không cần poll hay tự compute — điểm trả về trong response của `finishTestWriting` /
+`finishTestSpeaking` đã là giá trị thật.
 
-**Hiện tại BE không làm**, nên FE cần tự poll + tự compute bandScore từ submissions:
+Nếu sau này muốn xem feedback chi tiết từng submission, FE có thể gọi:
+- `GET /user-writing-submission/:id/status`
+- `GET /user-speaking-submission/:id/status`
 
-```js
-// Frontend pseudo-code
-async function pollUntilGraded(idTestResult) {
-  for (let i = 0; i < 30; i++) {
-    const res = await getTestResultAndAnswersAPI(idTestResult);
-    const submissions = res.data.writingSubmissions || res.data.speakingSubmissions || [];
-    if (submissions.length === 0) break;
-    const allDone = submissions.every(s => s.aiGradingStatus === 'COMPLETED' || s.aiGradingStatus === 'FAILED');
-    if (allDone) {
-      // ⚠️ userTestResult.bandScore vẫn = 0 do bug BE.
-      // Phải compute từ submissions:
-      return computeBandFromSubmissions(submissions);
-    }
-    await sleep(2000);
-  }
-  // Fallback: trả bandScore = 0 (giá trị BE set)
-  return 0;
-}
-```
+(đã có sẵn, xem `user-writing-submission.controller.ts:43` và `user-speaking-submission.controller.ts:52`).
 
 ## Nếu sau này muốn worker update `userTestResult`
 

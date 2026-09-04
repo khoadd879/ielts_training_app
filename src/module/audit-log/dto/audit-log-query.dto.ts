@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsDateString, IsInt, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsDateString,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -23,12 +30,18 @@ export class AuditLogQueryDto {
   @IsString()
   targetId?: string;
 
-  @ApiPropertyOptional({ description: 'Filter from date (ISO 8601)', example: '2024-01-01T00:00:00Z' })
+  @ApiPropertyOptional({
+    description: 'Filter from date (ISO 8601)',
+    example: '2024-01-01T00:00:00Z',
+  })
   @IsOptional()
   @IsDateString()
   fromDate?: string;
 
-  @ApiPropertyOptional({ description: 'Filter to date (ISO 8601)', example: '2024-12-31T23:59:59Z' })
+  @ApiPropertyOptional({
+    description: 'Filter to date (ISO 8601)',
+    example: '2024-12-31T23:59:59Z',
+  })
   @IsOptional()
   @IsDateString()
   toDate?: string;
@@ -40,7 +53,10 @@ export class AuditLogQueryDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page (default: 20, max: 100)', default: 20 })
+  @ApiPropertyOptional({
+    description: 'Items per page (default: 20, max: 100)',
+    default: 20,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

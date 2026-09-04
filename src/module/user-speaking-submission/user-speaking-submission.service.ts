@@ -47,7 +47,7 @@ export class UserSpeakingSubmissionService {
     // NOTE: Quota/credit check removed — submissions are free for educational use.
 
     let audioUrl = createUserSpeakingSubmissionDto.audioUrl;
-    let transcript = createUserSpeakingSubmissionDto.transcript || '';
+    const transcript = createUserSpeakingSubmissionDto.transcript || '';
 
     if (file) {
       const cloudinaryRes = await this.cloudinaryService.uploadFile(file);
@@ -68,16 +68,18 @@ export class UserSpeakingSubmissionService {
       })
       .join('\n\n');
 
-    const submission = await this.databaseService.userSpeakingSubmission.create({
-      data: {
-        idUser,
-        idSpeakingTask,
-        audioUrl: audioUrl,
-        idTestResult: idTestResult || null,
-        transcript: transcript || null,
-        aiGradingStatus: 'PENDING',
+    const submission = await this.databaseService.userSpeakingSubmission.create(
+      {
+        data: {
+          idUser,
+          idSpeakingTask,
+          audioUrl: audioUrl,
+          idTestResult: idTestResult || null,
+          transcript: transcript || null,
+          aiGradingStatus: 'PENDING',
+        },
       },
-    });
+    );
 
     // NOTE: Credit deduction removed — submissions are free for educational use.
 
@@ -99,10 +101,11 @@ export class UserSpeakingSubmissionService {
   }
 
   async findOne(idSpeakingSubmission: string) {
-    const submission = await this.databaseService.userSpeakingSubmission.findUnique({
-      where: { idSpeakingSubmission },
-      include: { speakingTask: { include: { questions: true } } },
-    });
+    const submission =
+      await this.databaseService.userSpeakingSubmission.findUnique({
+        where: { idSpeakingSubmission },
+        include: { speakingTask: { include: { questions: true } } },
+      });
 
     if (!submission) {
       throw new NotFoundException('Speaking submission not found');

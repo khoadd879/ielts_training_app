@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   UseInterceptors,
   UploadedFiles,
 } from '@nestjs/common';
@@ -20,6 +21,7 @@ import {
 import { ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Public } from 'src/decorator/customize';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
 @Controller('test')
 @ApiBearerAuth()
@@ -63,8 +65,8 @@ export class TestController {
   }
 
   @Get('get-all-by-id-user/:idUser')
-  findAll(@Param('idUser') idUser: string) {
-    return this.testService.findAllTestCreatedByIdUser(idUser);
+  findAll(@Param('idUser') idUser: string, @Query() pagination: PaginationDto) {
+    return this.testService.findAllTestCreatedByIdUser(idUser, pagination);
   }
 
   @Patch('update-test/:idTest')
@@ -106,14 +108,14 @@ export class TestController {
   }
 
   @Get('get-part-in-test/:idTest')
-  getPartInTest(@Param('idTest') idTest: string) {
-    return this.testService.getPartInTest(idTest);
+  getPartInTest(@Param('idTest') idTest: string, @Query() pagination: PaginationDto) {
+    return this.testService.getPartInTest(idTest, pagination);
   }
 
   @Get('get-all-test')
   @Public()
-  getAllTest() {
-    return this.testService.findAll();
+  getAllTest(@Query() pagination: PaginationDto) {
+    return this.testService.findAll(pagination);
   }
 
   @Get('get-detail-in-test/:idTest')

@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Level, TestType } from '@prisma/client';
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class CreateTestDto {
   @IsString()

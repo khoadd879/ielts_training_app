@@ -14,152 +14,90 @@ export class StatisticsService {
   ) {}
 
   async OverAllScore(idUser: string) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { idUser },
-    });
+    const cacheKey = `statistics:overall:${idUser}`;
+    const cached = await this.cache.get<{
+      READING: number; LISTENING: number; WRITING: number; SPEAKING: number; total: number;
+    }>(cacheKey);
+    if (cached) return cached;
 
-    if (!existingUser) throw new BadRequestException('User not found');
+    const rows = await this.prisma.$queryRaw<
+      Array<{ testType: string; avg: number | null }>
+    >`
+    SELECT t."testType" AS "testType", AVG(r."bandScore")::float AS "avg"
+      FROM "UserTestResult" r
+      JOIN "Test" t ON t."idTest" = r."idTest"
+     WHERE r."idUser" = ${idUser}::uuid
+       AND r."status" = 'FINISHED'::"TestStatus"
+       AND r."bandScore" > 0
+     GROUP BY t."testType"
+  `;
 
-    const testResult = await this.prisma.userTestResult.findMany({
-      where: { idUser, status: 'FINISHED' },
-      select: {
-        bandScore: true,
-        test: {
-          select: {
-            testType: true,
-          },
-        },
-      },
-    });
+    const roundToIeltsScore = (score: number): number =>
+      Math.round(score * 2) / 2;
 
-    const roundToIeltsScore = (score: number): number => {
-      return Math.round(score * 2) / 2;
+    const result = {
+      READING: 0,
+      LISTENING: 0,
+      WRITING: 0,
+      SPEAKING: 0,
+      total: 0,
     };
 
-    const groupTest = {
-      READING: testResult.filter((t) => t.test.testType === 'READING'),
-      LISTENING: testResult.filter((t) => t.test.testType === 'LISTENING'),
-      WRITING: testResult.filter((t) => t.test.testType === 'WRITING'),
-      SPEAKING: testResult.filter((t) => t.test.testType === 'SPEAKING'),
-    };
+    for (const row of rows) {
+      const score = row.avg ? roundToIeltsScore(row.avg) : 0;
+      if (row.testType in result) {
+        result[row.testType as keyof typeof result] = score;
+      }
+    }
 
-    const averages = Object.entries(groupTest).map(([type, tests]) => {
-      const scores = tests.map((t) => t.bandScore);
+    result.total =
+      roundToIeltsScore(result.READING + result.LISTENING + result.WRITING + result.SPEAKING);
 
-      const rawAvg = scores.length
-        ? scores.reduce((a, b) => a + b, 0) / scores.length
-        : 0;
-
-      return {
-        type,
-        avg: roundToIeltsScore(rawAvg),
-      };
-    });
-
-    const totalScore = averages.reduce((sum, item) => sum + item.avg, 0);
-
-    const rawOverall = averages.length > 0 ? totalScore / averages.length : 0;
-
-    return {
-      message: 'Overall score is retrieved successfully',
-      overall: roundToIeltsScore(rawOverall),
-      details: averages,
-      status: 200,
-    };
+    await this.cache.set(cacheKey, result, 60);
+    return result;
   }
 
   async statistic(idUser: string) {
-    // 1. Kiểm tra User tồn tại
-    const existingUser = await this.prisma.user.findUnique({
-      where: { idUser },
-    });
+    const cacheKey = `statistics:daily:${idUser}`;
+    const cached = await this.cache.get<any[]>(cacheKey);
+    if (cached) return cached;
 
-    if (!existingUser) throw new BadRequestException('User not found');
+    const rows = await this.prisma.$queryRaw<
+      Array<{ day: Date; testType: string; avg: number | null; count: bigint }>
+    >`
+    SELECT date_trunc('day', r."createdAt") AS day,
+           t."testType" AS "testType",
+           AVG(r."bandScore")::float AS "avg",
+           COUNT(r."idTestResult") AS "count"
+      FROM "UserTestResult" r
+      JOIN "Test" t ON t."idTest" = r."idTest"
+     WHERE r."idUser" = ${idUser}::uuid
+       AND r."status" = 'FINISHED'::"TestStatus"
+       AND r."bandScore" > 0
+     GROUP BY day, t."testType"
+     ORDER BY day ASC
+  `;
 
-    // 2. Lấy danh sách kết quả (chỉ lấy các trường cần thiết)
-    const testResults = await this.prisma.userTestResult.findMany({
-      where: {
-        idUser,
-        status: 'FINISHED',
-      },
-      select: {
-        bandScore: true,
-        createdAt: true,
-        test: {
-          select: {
-            testType: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    });
+    type DayRow = { date: string; READING: number; LISTENING: number; WRITING: number; SPEAKING: number };
+    const dayMap = new Map<string, DayRow>();
 
-    // 3. Định nghĩa kiểu dữ liệu cho việc nhóm
-    type SkillData = { totalScore: number; count: number };
-    type DayGroup = Record<string, SkillData>;
-
-    const groupedByDate: Record<string, DayGroup> = {};
-
-    // 4. Nhóm dữ liệu theo ngày và theo kỹ năng
-    testResults.forEach((result) => {
-      const dateKey = result.createdAt.toISOString().split('T')[0]; // Lấy định dạng YYYY-MM-DD
-      const type = result.test.testType;
-
-      if (!groupedByDate[dateKey]) {
-        groupedByDate[dateKey] = {};
+    for (const row of rows) {
+      const dateKey = row.day.toISOString().split('T')[0];
+      if (!dayMap.has(dateKey)) {
+        dayMap.set(dateKey, {
+          date: dateKey,
+          READING: 0, LISTENING: 0, WRITING: 0, SPEAKING: 0,
+        });
       }
-
-      if (!groupedByDate[dateKey][type]) {
-        groupedByDate[dateKey][type] = { totalScore: 0, count: 0 };
+      const day = dayMap.get(dateKey)!;
+      if (row.testType in day) {
+        (day as any)[row.testType] = row.avg ? Math.round(row.avg * 2) / 2 : 0;
       }
+    }
 
-      groupedByDate[dateKey][type].totalScore += result.bandScore;
-      groupedByDate[dateKey][type].count += 1;
-    });
-
-    // 5. Hàm làm tròn chuẩn IELTS (0.25 -> 0.5, 0.75 -> 1.0)
-    const roundToIelts = (score: number): number => {
-      return Math.round(score * 2) / 2;
-    };
-
-    // 6. Tính toán kết quả cuối cùng
-    const statistics = Object.entries(groupedByDate).map(([date, skills]) => {
-      // Tính trung bình từng kỹ năng trong ngày đó
-      const readingAvg = skills[TestType.READING]
-        ? skills[TestType.READING].totalScore / skills[TestType.READING].count
-        : 0;
-      const listeningAvg = skills[TestType.LISTENING]
-        ? skills[TestType.LISTENING].totalScore /
-          skills[TestType.LISTENING].count
-        : 0;
-      const writingAvg = skills[TestType.WRITING]
-        ? skills[TestType.WRITING].totalScore / skills[TestType.WRITING].count
-        : 0;
-      const speakingAvg = skills[TestType.SPEAKING]
-        ? skills[TestType.SPEAKING].totalScore / skills[TestType.SPEAKING].count
-        : 0;
-
-      // Tính Overall chuẩn: (Trung bình R + Trung bình L + Trung bình W + Trung bình S) / 4
-      const dailyOverall =
-        (readingAvg + listeningAvg + writingAvg + speakingAvg) / 4;
-
-      return {
-        date,
-        OVERALL: roundToIelts(dailyOverall),
-        READING: roundToIelts(readingAvg),
-        LISTENING: roundToIelts(listeningAvg),
-        WRITING: roundToIelts(writingAvg),
-        SPEAKING: roundToIelts(speakingAvg),
-      };
-    });
-
-    return {
-      message: 'Statistics retrieved successfully',
-      data: statistics,
-      status: 200,
-    };
+    const statistics = Array.from(dayMap.values());
+    await this.cache.set(cacheKey, statistics, 60);
+    return statistics;
   }
 
   async addTargetExam(idUser: string, createTargetExam: CreateTargetExam) {
@@ -224,7 +162,7 @@ export class StatisticsService {
   }
 
   async getSkillOverview(idUser: string) {
-    const cacheKey = `skill-overview:${idUser}`;
+    const cacheKey = `statistics:overview:${idUser}`;
     const cached = await this.cache.get<any>(cacheKey);
     if (cached) return cached;
 
@@ -232,20 +170,22 @@ export class StatisticsService {
       where: { idUser },
       select: { targetBandScore: true },
     });
-    if (!user) throw new BadRequestException('User not found');
+    const targetBand = user?.targetBandScore ?? null;
 
-    const finishedResults = await this.prisma.userTestResult.findMany({
-      where: { idUser, status: 'FINISHED' },
-      select: {
-        bandScore: true,
-        test: { select: { testType: true } },
-      },
-    });
+    const rows = await this.prisma.$queryRaw<
+      Array<{ testType: string; avg: number | null }>
+    >`
+    SELECT t."testType" AS "testType", AVG(r."bandScore")::float AS "avg"
+      FROM "UserTestResult" r
+      JOIN "Test" t ON t."idTest" = r."idTest"
+     WHERE r."idUser" = ${idUser}::uuid
+       AND r."status" = 'FINISHED'::"TestStatus"
+       AND r."bandScore" > 0
+     GROUP BY t."testType"
+  `;
 
     const roundToIeltsScore = (score: number): number =>
       Math.round(score * 2) / 2;
-
-    const targetBand = user.targetBandScore ?? null;
 
     const skills: Record<
       string,
@@ -257,27 +197,13 @@ export class StatisticsService {
       SPEAKING: { currentBand: null, targetBand },
     };
 
-    for (const type of Object.keys(skills)) {
-      const list = finishedResults.filter(
-        (r) => r.test.testType === type,
-      );
-      if (list.length === 0) continue;
-      const avg =
-        list.reduce((a, b) => a + b.bandScore, 0) / list.length;
-      skills[type].currentBand = roundToIeltsScore(avg);
+    for (const row of rows) {
+      if (row.testType in skills) {
+        skills[row.testType].currentBand = row.avg ? roundToIeltsScore(row.avg) : null;
+      }
     }
 
-    const result = {
-      message: 'Skill overview retrieved successfully',
-      data: {
-        reading: skills.READING,
-        listening: skills.LISTENING,
-        writing: skills.WRITING,
-        speaking: skills.SPEAKING,
-      },
-      status: 200,
-    };
-    await this.cache.set(cacheKey, result, 300);
-    return result;
+    await this.cache.set(cacheKey, skills, 300);
+    return skills;
   }
 }

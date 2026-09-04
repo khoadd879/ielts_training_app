@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Req,
   ValidationPipe,
   UsePipes,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { AddVocabularyToTopicDto } from './dto/add-vocabulary-to-topic.dto';
 import { SubmitReviewDto, GetDueReviewDto, GetTierRecommendationDto } from './dto/review.dto';
 import { GetDailyVocabDto, CompleteDailyVocabDto } from './dto/vocab-daily.dto';
 import { GetDailySessionDto } from './dto/get-daily-session.dto';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
 @ApiBearerAuth()
 @Controller('vocabulary')
@@ -30,8 +32,8 @@ export class VocabularyController {
   }
 
   @Get('get-all-vocabulary-by-id-user/:idUser')
-  findAll(@Param('idUser') idUser: string) {
-    return this.vocabularyService.findAllByIdUser(idUser);
+  findAll(@Param('idUser') idUser: string, @Query() pagination: PaginationDto) {
+    return this.vocabularyService.findAllByIdUser(idUser, pagination);
   }
 
   // @Get('get-by-name/:idUser')
@@ -65,6 +67,19 @@ export class VocabularyController {
   @Get('suggest/:word')
   suggest(@Param('word') word: string) {
     return this.vocabularyService.suggest(word);
+  }
+
+  @Post('suggest')
+  async suggestPost(@Body() dto: { word: string }, @Req() req: any) {
+    return this.vocabularyService.suggestPost(dto, req);
+  }
+
+  @Get('suggest/result/:jobId')
+  async suggestResult(
+    @Param('jobId') jobId: string,
+    @Query('word') word: string,
+  ) {
+    return this.vocabularyService.suggestResult(jobId, word);
   }
 
   // SM-2 Spaced Repetition Endpoints

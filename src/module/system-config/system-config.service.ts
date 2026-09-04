@@ -1,4 +1,9 @@
-import { Injectable, Inject, BadRequestException, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  forwardRef,
+} from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { DatabaseService } from 'src/database/database.service';
@@ -11,7 +16,15 @@ export class SystemConfigService {
   private readonly DEFAULT_MODERATION_POLICY = {
     autoApproveThreshold: 80,
     autoRejectThreshold: 20,
-    blockedWords: ['casino', 'đặt cược', 'kiếm tiền nhanh', 'free money', 'click link', 'airdrop', 'telegram'],
+    blockedWords: [
+      'casino',
+      'đặt cược',
+      'kiếm tiền nhanh',
+      'free money',
+      'click link',
+      'airdrop',
+      'telegram',
+    ],
     reviewSlaHours: 24,
   };
   private readonly CACHE_TTL = 300000; // 5 minutes in ms
@@ -19,7 +32,8 @@ export class SystemConfigService {
   constructor(
     private readonly databaseService: DatabaseService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-    @Inject(forwardRef(() => AuditLogService)) private readonly auditLogService?: AuditLogService,
+    @Inject(forwardRef(() => AuditLogService))
+    private readonly auditLogService?: AuditLogService,
   ) {}
 
   async getConfig(key: string): Promise<any> {
@@ -87,11 +101,11 @@ export class SystemConfigService {
     const config = await this.databaseService.systemConfig.findUnique({
       where: { idConfig: 'assign_mode' },
     });
-    
+
     if (!config || !config.assignMode) {
       return AssignMode.MANUAL;
     }
-    
+
     return config.assignMode;
   }
 
@@ -110,7 +124,7 @@ export class SystemConfigService {
       create: {
         idConfig: 'assign_mode',
         value: {},
-        assignMode: mode
+        assignMode: mode,
       },
     });
   }
@@ -138,13 +152,19 @@ export class SystemConfigService {
   ): Promise<void> {
     // Validation
     if (policy.autoRejectThreshold >= policy.autoApproveThreshold) {
-      throw new BadRequestException('autoRejectThreshold must be less than autoApproveThreshold');
+      throw new BadRequestException(
+        'autoRejectThreshold must be less than autoApproveThreshold',
+      );
     }
     if (policy.autoApproveThreshold < 0 || policy.autoApproveThreshold > 100) {
-      throw new BadRequestException('autoApproveThreshold must be between 0 and 100');
+      throw new BadRequestException(
+        'autoApproveThreshold must be between 0 and 100',
+      );
     }
     if (policy.autoRejectThreshold < 0 || policy.autoRejectThreshold > 100) {
-      throw new BadRequestException('autoRejectThreshold must be between 0 and 100');
+      throw new BadRequestException(
+        'autoRejectThreshold must be between 0 and 100',
+      );
     }
 
     const before = await this.getModerationPolicy();

@@ -403,6 +403,20 @@ model Vocabulary {
   // Relations
   topic Topic? @relation(fields: [idTopic], references: [idTopic], onDelete: Cascade)
   user  User   @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+
+  // SP-RR scheduling hotpath: WHERE idUser = ? AND status != ? AND nextReviewAt <= ?
+  @@index([idUser, status, nextReviewAt])
+  // Filter "user vs system vocab" + tier-based daily picks.
+  @@index([idUser, tier])
+  // Backs the `word NOT IN (SELECT word FROM Vocabulary WHERE idUser = ?)` subquery
+  // in getDailySessionWords — Postgres needs this to avoid full user-vocab scan.
+  @@index([idUser, word])
+  // Block exact-duplicate vocab rows per user. Homonyms across parts of
+  // speech (e.g. "bank" NOUN vs "bank" VERB) intentionally collapse — same
+  // (idUser, word) cannot exist twice, even with different VocabType.
+  // Pairs with createMany({ skipDuplicates: true }) for concurrent first-review
+  // race safety in completeDailyVocab.
+  @@unique([idUser, word])
 }
 
 model Topic {
@@ -762,6 +776,7 @@ model PaymentTransaction {
   errorMessage String?
   createdAt    DateTime  @default(now())
   paidAt       DateTime?
+  processedAt  DateTime? // set when IPN claims the transaction for processing
   updatedAt    DateTime  @updatedAt
 
   // Relations
@@ -778,6 +793,7 @@ model PaymentTransaction {
 
 enum PaymentStatus {
   PENDING // URL generated, waiting for callback
+  PROCESSING // IPN claimed the row, provisioning in flight
   SUCCESS // IPN verified, provisioning done
   FAILED // VNPay returned non-"00" or signature invalid
   EXPIRED // 15-min window passed without callback

@@ -81,7 +81,8 @@ export class RecommendTestService {
       if (test.testType === userProfile.weakestSkill) score += 50;
 
       const diff =
-        LevelWeight[test.level as Level] - LevelWeight[userProfile.currentLevel];
+        LevelWeight[test.level as Level] -
+        LevelWeight[userProfile.currentLevel];
       if (diff === 0) score += 30;
       else if (diff === 1) score += 15;
       else if (diff === -1) score += 5;

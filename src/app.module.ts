@@ -56,9 +56,12 @@ import { NotificationsModule } from './module/notifications/notifications.module
 
 import * as redisStore from 'cache-manager-redis-store';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    // BE-2: register scheduler so @Cron handlers in cronjob.ts actually run.
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         ttl: 60000,

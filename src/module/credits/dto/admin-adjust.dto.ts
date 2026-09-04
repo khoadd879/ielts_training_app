@@ -6,7 +6,9 @@ export class AdminAdjustDto {
   @IsUUID()
   idUser: string;
 
-  @ApiProperty({ description: 'Amount to adjust (positive for credit, negative for debit)' })
+  @ApiProperty({
+    description: 'Amount to adjust (positive for credit, negative for debit)',
+  })
   @IsString()
   amount: string;
 

@@ -35,8 +35,7 @@ export class PaymentService {
     this.vnpHashSecret = this.configService.get('VNPAY_HASH_SECRET') ?? '';
     this.vnpReturnUrl = this.configService.get('VNPAY_RETURN_URL') ?? '';
     this.vnpIpnUrl = this.configService.get('VNPAY_IPN_URL') ?? '';
-    this.isSandbox =
-      this.configService.get('VNPAY_SANDBOX', 'true') === 'true';
+    this.isSandbox = this.configService.get('VNPAY_SANDBOX', 'true') === 'true';
 
     if (!this.vnpTmnCode || !this.vnpHashSecret || !this.vnpReturnUrl) {
       this.logger.error(
@@ -163,9 +162,7 @@ export class PaymentService {
    * VNPay's IPN URL hasn't been registered for the merchant yet — handler is
    * idempotent against IPN, so no double-credit if both fire.
    */
-  async handleVnpayReturn(
-    query: Record<string, string>,
-  ): Promise<{
+  async handleVnpayReturn(query: Record<string, string>): Promise<{
     success: boolean;
     message: string;
     vnpTxnRef?: string;
@@ -251,6 +248,16 @@ export class PaymentService {
     // Idempotency: already SUCCESS → return 02 (already confirmed)
     if (payment.status === 'SUCCESS') {
       return { RspCode: '02', Message: 'Order already confirmed' };
+    }
+
+    // Atomic claim: only one IPN can transition PENDING → PROCESSING.
+    // If count === 0, another IPN already claimed or finished.
+    const { count: claimCount } = await this.db.paymentTransaction.updateMany({
+      where: { idTransaction: payment.idTransaction, status: 'PENDING' },
+      data: { status: 'PROCESSING', processedAt: new Date() },
+    });
+    if (claimCount === 0) {
+      return { RspCode: '02', Message: 'Order already confirmed or processing' };
     }
 
     // Failure path: persist + return 00 to stop VNPay retry

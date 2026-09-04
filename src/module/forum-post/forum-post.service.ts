@@ -11,7 +11,8 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { ConfigService } from '@nestjs/config';
 import { SystemConfigService } from 'src/module/system-config/system-config.service';
 import { GoogleGenAI } from '@google/genai';
-import { ForumModerationStatus, Role } from '@prisma/client';
+import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
+import { ForumModerationStatus, Prisma, Role } from '@prisma/client';
 import { ReviewForumPostDto } from './dto/review-forum-post.dto';
 
 type ForumModerationMeta = {
@@ -39,6 +40,7 @@ export class ForumPostService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly configService: ConfigService,
     private readonly systemConfigService: SystemConfigService,
+    private readonly rabbitMQService: RabbitMQService,
   ) {}
 
   async existingUser(idUser: string) {
@@ -233,7 +235,11 @@ ${content}
     };
   }
 
-  private resolveDecisionByScore(score: number, autoApproveThreshold: number, autoRejectThreshold: number) {
+  private resolveDecisionByScore(
+    score: number,
+    autoApproveThreshold: number,
+    autoRejectThreshold: number,
+  ) {
     if (score >= autoApproveThreshold) {
       return ForumModerationStatus.AUTO_APPROVED;
     }
@@ -305,7 +311,11 @@ ${content}
       const rawScore =
         typeof parsed.score === 'number' ? Math.round(parsed.score) : 50;
       const score = this.clamp(rawScore, 0, 100);
-      const status = this.resolveDecisionByScore(score, autoApproveThreshold, autoRejectThreshold);
+      const status = this.resolveDecisionByScore(
+        score,
+        autoApproveThreshold,
+        autoRejectThreshold,
+      );
 
       return {
         status,
@@ -464,22 +474,21 @@ ${content}
         idUser,
         content,
         file: fileUrl,
+        moderationStatus: ForumModerationStatus.PENDING,
+        moderationScore: null,
+        moderationMeta: Prisma.JsonNull,
       },
     });
 
-    const moderation = await this.scorePostWithGemini(
+    // Enqueue moderation (non-blocking). Worker will call scorePostWithGemini
+    // and update the row when the AI result lands.
+    await this.rabbitMQService.publishModerationForum({
+      postId: createdPost.idForumPost,
+      userId: idUser,
       content,
-      forumThread.title,
-      Boolean(fileUrl),
-    );
-
-    await this.databaseService.forumPost.update({
-      where: { idForumPost: createdPost.idForumPost },
-      data: {
-        moderationStatus: moderation.status,
-        moderationScore: moderation.score,
-        moderationMeta: moderation.meta,
-      },
+      threadTitle: forumThread.title,
+      hasAttachment: Boolean(fileUrl),
+      enqueuedAt: new Date().toISOString(),
     });
 
     const data = await this.getForumPostWithRelations(
@@ -489,9 +498,10 @@ ${content}
     if (!data) throw new BadRequestException('Forum post not found');
 
     return {
-      message: 'Forum Post created successfully',
+      message: 'Forum Post created, moderation pending',
       data: this.transformPost(data),
-      status: 200,
+      moderationStatus: 'pending',
+      status: 202,
     };
   }
 
@@ -683,11 +693,10 @@ ${content}
       where: { idForumPost },
     });
     if (!existingPost) throw new BadRequestException('Forum post not found');
-    if (
-      existingPost.idUser !== idUser &&
-      !this.isModeratorRole(editor.role)
-    ) {
-      throw new ForbiddenException('You are not authorized to update this post');
+    if (existingPost.idUser !== idUser && !this.isModeratorRole(editor.role)) {
+      throw new ForbiddenException(
+        'You are not authorized to update this post',
+      );
     }
 
     let fileUrl = updateForumPostDto.file;
@@ -697,12 +706,9 @@ ${content}
       fileUrl = uploadResult.secure_url;
     }
 
-    const moderation = await this.scorePostWithGemini(
-      content,
-      forumThread.title,
-      Boolean(fileUrl),
-    );
-
+    // Re-moderate: clear any prior AI/moderator decision and enqueue the
+    // new content for async scoring. Worker will call scorePostWithGemini
+    // and update the row when the AI result lands.
     await this.databaseService.forumPost.update({
       where: { idForumPost },
       data: {
@@ -710,21 +716,31 @@ ${content}
         idUser,
         content,
         file: fileUrl,
-        moderationStatus: moderation.status,
-        moderationScore: moderation.score,
-        moderationMeta: moderation.meta,
+        moderationStatus: ForumModerationStatus.PENDING,
+        moderationScore: null,
+        moderationMeta: Prisma.JsonNull,
         reviewedBy: null,
         reviewedAt: null,
       },
+    });
+
+    await this.rabbitMQService.publishModerationForum({
+      postId: idForumPost,
+      userId: idUser,
+      content,
+      threadTitle: forumThread.title,
+      hasAttachment: Boolean(fileUrl),
+      enqueuedAt: new Date().toISOString(),
     });
 
     const data = await this.getForumPostWithRelations(idForumPost, idUser);
     if (!data) throw new BadRequestException('Forum post not found');
 
     return {
-      message: 'Forum Post updated successfully',
+      message: 'Forum Post updated, moderation pending',
       data: this.transformPost(data),
-      status: 200,
+      moderationStatus: 'pending',
+      status: 202,
     };
   }
 
@@ -917,11 +933,10 @@ ${content}
       where: { idForumPost },
     });
     if (!existing) throw new BadRequestException('Forum post not found');
-    if (
-      existing.idUser !== idUser &&
-      !this.isModeratorRole(requester.role)
-    ) {
-      throw new ForbiddenException('You are not authorized to delete this post');
+    if (existing.idUser !== idUser && !this.isModeratorRole(requester.role)) {
+      throw new ForbiddenException(
+        'You are not authorized to delete this post',
+      );
     }
 
     await this.databaseService.forumPost.delete({
@@ -937,7 +952,11 @@ ${content}
   // Moderator-only delete: use to remove AI-approved posts that turned out to
   // be wrong (spam, abusive, off-topic). Records the action in moderationMeta
   // so there is an audit trail in the post record before deletion.
-  async moderatorRemoveForumPost(idForumPost: string, idUser: string, note?: string) {
+  async moderatorRemoveForumPost(
+    idForumPost: string,
+    idUser: string,
+    note?: string,
+  ) {
     const reviewer = await this.existingUser(idUser);
     if (!this.isModeratorRole(reviewer.role)) {
       throw new ForbiddenException('You are not allowed to delete forum posts');

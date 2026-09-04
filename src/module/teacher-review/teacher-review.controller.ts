@@ -218,12 +218,19 @@ export class TeacherReviewController {
   @Get('student/check/:idTestResult')
   @ApiOperation({
     summary: 'Check nếu học viên đã yêu cầu review cho bài này',
-    description: 'Kiểm tra xem đã có ticket pending/claimed cho bài test này chưa',
+    description:
+      'Kiểm tra xem đã có ticket pending/claimed cho bài test này chưa',
   })
   @ApiParam({ name: 'idTestResult', description: 'ID của test result' })
-  checkStudentTicket(@Param('idTestResult') idTestResult: string, @Req() req: { user?: { userId?: string } }) {
+  checkStudentTicket(
+    @Param('idTestResult') idTestResult: string,
+    @Req() req: { user?: { userId?: string } },
+  ) {
     const userId = this.getRequestUserId(req);
-    return this.teacherReviewService.checkExistingTicketForStudent(idTestResult, userId);
+    return this.teacherReviewService.checkExistingTicketForStudent(
+      idTestResult,
+      userId,
+    );
   }
 
   @Get('student/:idUser/tickets')
@@ -234,7 +241,8 @@ export class TeacherReviewController {
   @ApiParam({ name: 'idUser', description: 'ID của học viên' })
   getStudentTickets(
     @Param('idUser') idUser: string,
-    @Query('status') status: 'PENDING' | 'CLAIMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
+    @Query('status')
+    status: 'PENDING' | 'CLAIMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
     @Query('page') page: number,
     @Query('limit') limit: number,
     @Req() req: { user?: { userId?: string } },
@@ -258,7 +266,8 @@ export class TeacherReviewController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   getAllTickets(
-    @Query('status') status: 'PENDING' | 'CLAIMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
+    @Query('status')
+    status: 'PENDING' | 'CLAIMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
     @Query('type') type: 'WRITING' | 'SPEAKING',
     @Query('teacherId') teacherId: string,
     @Query('page') page: number,

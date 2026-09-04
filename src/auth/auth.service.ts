@@ -30,7 +30,9 @@ export class AuthService {
     email: string,
     pass: string,
   ): Promise<UserWithPassword | null> {
-    const user = (await this.usersService.findByEmail(email)) as UserWithPassword | null;
+    const user = (await this.usersService.findByEmail(
+      email,
+    )) as UserWithPassword | null;
 
     if (!user) return null;
 
@@ -216,7 +218,11 @@ export class AuthService {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
-      const payload = { email: decoded.email, sub: decoded.sub, role: decoded.role };
+      const payload = {
+        email: decoded.email,
+        sub: decoded.sub,
+        role: decoded.role,
+      };
 
       const newAccessToken = this.jwtService.sign(payload, {
         secret: this.configService.get<string>('JWT_SECRET'),

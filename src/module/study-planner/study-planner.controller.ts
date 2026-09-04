@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Patch, Body, Query, Param, Headers, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Query,
+  Param,
+  Headers,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from 'src/decorator/customize';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
@@ -16,7 +26,10 @@ export class StudyPlannerController {
   @Post('calculate')
   async calculatePlan(@Body() dto: CalculatePlanDto): Promise<any> {
     try {
-      console.log('[StudyPlanner] calculatePlan called with:', JSON.stringify(dto));
+      console.log(
+        '[StudyPlanner] calculatePlan called with:',
+        JSON.stringify(dto),
+      );
       return await this.studyPlannerService.calculatePlan(dto);
     } catch (error) {
       console.error('[StudyPlanner] calculatePlan error:', error);
@@ -27,10 +40,20 @@ export class StudyPlannerController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get('plan')
-  async getUserPlan(@Query() query: GetPlanDto & { historyMonths?: number }): Promise<any> {
+  async getUserPlan(
+    @Query() query: GetPlanDto & { historyMonths?: number },
+  ): Promise<any> {
     try {
-      console.log('[StudyPlanner] getUserPlan called with:', query.idUser, 'historyMonths:', query.historyMonths);
-      return await this.studyPlannerService.getUserStudyPlan(query.idUser, query.historyMonths);
+      console.log(
+        '[StudyPlanner] getUserPlan called with:',
+        query.idUser,
+        'historyMonths:',
+        query.historyMonths,
+      );
+      return await this.studyPlannerService.getUserStudyPlan(
+        query.idUser,
+        query.historyMonths,
+      );
     } catch (error) {
       console.error('[StudyPlanner] getUserPlan error:', error);
       throw error;
@@ -52,7 +75,10 @@ export class StudyPlannerController {
     @Body() dto: UpdatePreferenceDto,
     @Headers('x-user-id') idUser: string,
   ): Promise<any> {
-    return this.studyPlannerService.updateStudyPreference(idUser, dto.dailyMinutesAvailable);
+    return this.studyPlannerService.updateStudyPreference(
+      idUser,
+      dto.dailyMinutesAvailable,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -64,6 +90,11 @@ export class StudyPlannerController {
     @Headers('x-user-id') idUser: string = 'default-user',
   ): Promise<any> {
     const idStudyPlan = 'current-plan';
-    return this.studyPlannerService.completeTask(idUser, idStudyPlan, taskId, dto);
+    return this.studyPlannerService.completeTask(
+      idUser,
+      idStudyPlan,
+      taskId,
+      dto,
+    );
   }
 }

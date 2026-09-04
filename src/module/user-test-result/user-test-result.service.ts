@@ -103,33 +103,33 @@ export class UserTestResultService {
     });
     if (!existingUser) throw new BadRequestException('User not found');
 
-    const rows = await this.databaseService.userTestResult.findMany({
-      where: { idUser, status: TestStatus.FINISHED },
-      select: {
-        idTest: true,
-        bandScore: true,
-        finishedAt: true,
-      },
-    });
-
-    const stats: Record<
-      string,
-      { maxBand: number; lastFinishedAt: Date | null }
-    > = {};
-    for (const r of rows) {
-      const cur = stats[r.idTest];
-      const finishedAt = r.finishedAt;
-      if (!cur || r.bandScore > cur.maxBand) {
-        stats[r.idTest] = { maxBand: r.bandScore, lastFinishedAt: finishedAt };
-      } else if (
-        cur.lastFinishedAt &&
-        finishedAt &&
-        finishedAt > cur.lastFinishedAt
-      ) {
-        cur.lastFinishedAt = finishedAt;
-      }
+    const cacheKey = `best-band:${idUser}`;
+    const cached = await this.cache.get<Record<string, { maxBand: number; lastFinishedAt: Date | null }>>(cacheKey);
+    if (cached) {
+      return { message: 'Best band stats retrieved successfully', data: cached, status: 200 };
     }
 
+    const rows = await this.databaseService.$queryRaw<
+      Array<{ idTest: string; maxBand: number; lastFinishedAt: Date | null }>
+    >`
+      SELECT "idTest",
+             MAX("bandScore")::float AS "maxBand",
+             MAX("finishedAt") AS "lastFinishedAt"
+        FROM "UserTestResult"
+       WHERE "idUser" = ${idUser}::uuid
+         AND "status" = 'FINISHED'::"TestStatus"
+       GROUP BY "idTest"
+    `;
+
+    const stats: Record<string, { maxBand: number; lastFinishedAt: Date | null }> = {};
+    for (const row of rows) {
+      stats[row.idTest] = {
+        maxBand: row.maxBand,
+        lastFinishedAt: row.lastFinishedAt,
+      };
+    }
+
+    await this.cache.set(cacheKey, stats, 60);
     return {
       message: 'Best band stats retrieved successfully',
       data: stats,
@@ -138,21 +138,26 @@ export class UserTestResultService {
   }
 
   async getSkillStatus(idUser: string) {
-    const existingUser = await this.databaseService.user.findUnique({
-      where: { idUser },
-    });
+    const cacheKey = `skill-status:${idUser}`;
+    const cached = await this.cache.get<any>(cacheKey);
+    if (cached) {
+      return { message: 'Skill status retrieved', data: cached, status: 200 };
+    }
 
-    if (!existingUser) throw new BadRequestException('User not found');
-
-    const results = await this.databaseService.userTestResult.findMany({
-      where: { idUser, status: TestStatus.FINISHED, bandScore: { gt: 0 } },
-      select: {
-        bandScore: true,
-        finishedAt: true,
-        test: { select: { testType: true } },
-      },
-      orderBy: { finishedAt: 'desc' },
-    });
+    const rows = await this.databaseService.$queryRaw<
+      Array<{ testType: string; bandScore: number; finishedAt: Date | null }>
+    >`
+      SELECT DISTINCT ON (t."testType")
+             t."testType" AS "testType",
+             r."bandScore" AS "bandScore",
+             r."finishedAt" AS "finishedAt"
+        FROM "UserTestResult" r
+        JOIN "Test" t ON t."idTest" = r."idTest"
+       WHERE r."idUser" = ${idUser}::uuid
+         AND r."status" = 'FINISHED'::"TestStatus"
+         AND r."bandScore" > 0
+       ORDER BY t."testType", r."finishedAt" DESC
+    `;
 
     const skillMap: Record<string, { band: number | null; lastAssessed: string | null }> = {
       READING: { band: null, lastAssessed: null },
@@ -161,25 +166,19 @@ export class UserTestResultService {
       SPEAKING: { band: null, lastAssessed: null },
     };
 
-    for (const r of results) {
-      const skill = r.test.testType;
-      if (skillMap[skill] && skillMap[skill].band === null) {
-        skillMap[skill] = {
+    for (const r of rows) {
+      if (r.testType in skillMap) {
+        skillMap[r.testType] = {
           band: r.bandScore,
-          lastAssessed: r.finishedAt?.toISOString() || null,
+          lastAssessed: r.finishedAt?.toISOString() ?? null,
         };
       }
     }
 
+    await this.cache.set(cacheKey, skillMap, 60);
     return {
       message: 'Skill status retrieved successfully',
-      data: {
-        skills: skillMap,
-        assessedCount: Object.values(skillMap).filter(s => s.band !== null).length,
-        missingSkills: Object.entries(skillMap)
-          .filter(([_, s]) => s.band === null)
-          .map(([skill]) => skill),
-      },
+      data: skillMap,
       status: 200,
     };
   }
@@ -694,23 +693,35 @@ export class UserTestResultService {
     }
   }
 
-  async findAllTestResults() {
-    const data = await this.databaseService.userTestResult.findMany({
-      include: {
-        user: {
-          select: {
-            idUser: true,
-            nameUser: true,
-            avatar: true,
-          },
+  async findAllTestResults(pagination: { page: number; limit: number; skip: number }) {
+    const { page, limit, skip } = pagination;
+    const [data, total] = await this.databaseService.$transaction([
+      this.databaseService.userTestResult.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          idTestResult: true,
+          idUser: true,
+          idTest: true,
+          bandScore: true,
+          score: true,
+          status: true,
+          startedAt: true,
+          finishedAt: true,
+          createdAt: true,
+          user: { select: { idUser: true, nameUser: true, avatar: true } },
+          test: { select: { idTest: true, title: true, testType: true } },
         },
-        test: true,
-      },
-    });
+      }),
+      this.databaseService.userTestResult.count(),
+    ]);
+
     return {
       message: 'Test results retrieved successfully',
       data,
       status: 200,
+      meta: { page, limit, total },
     };
   }
 
@@ -1192,6 +1203,14 @@ export class UserTestResultService {
       await this.cache.del(`weekly:${idUser}:1`);
       await this.cache.del(`study-plan:${idUser}:6`);
       await this.cache.del(`study-plan:${idUser}:3`);
+      await this.cache.del(`statistics:overall:${idUser}`);
+      await this.cache.del(`statistics:daily:${idUser}`);
+      await this.cache.del(`statistics:overview:${idUser}`);
+      await this.cache.del(`best-band:${idUser}`);
+      await this.cache.del(`skill-status:${idUser}`);
+      // Invalidate study-planner weak-skills cache
+      await this.cache.del(`weak-skills:${idUser}:2`);
+      await this.cache.del(`weak-skills:${idUser}:3`);
       this.logger.log(`[markDailyTaskComplete] cache invalidated for ${idUser}`);
     } catch (err) {
       this.logger.warn(`Failed to mark daily task ${taskType} complete for ${idUser}`, err as any);

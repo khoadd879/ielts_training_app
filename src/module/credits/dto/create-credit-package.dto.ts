@@ -1,4 +1,10 @@
-import { IsString, IsNumber, IsBoolean, IsOptional, Min } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+  Min,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCreditPackageDto {
@@ -6,7 +12,10 @@ export class CreateCreditPackageDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ example: 'Perfect for trying out AI grading', required: false })
+  @ApiProperty({
+    example: 'Perfect for trying out AI grading',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   description?: string;

@@ -113,15 +113,21 @@ export class GrammarController {
   @Get('practice/random')
   async getPracticeRandom(
     @Query('idUser') idUser: string,
-    @Query('count') count: number = 10
+    @Query('count') count: number = 10,
   ) {
-    const exercises = await this.grammarService.getRandomExercises(idUser, count);
+    const exercises = await this.grammarService.getRandomExercises(
+      idUser,
+      count,
+    );
     return { data: exercises };
   }
 
   @Post('practice/submit')
   async submitPractice(@Body() body: SubmitGrammarPracticeDto) {
-    const result = await this.grammarService.submitPractice(body.idUser, body.answers);
+    const result = await this.grammarService.submitPractice(
+      body.idUser,
+      body.answers,
+    );
     return result;
   }
 
@@ -151,7 +157,7 @@ export class GrammarController {
   @Get(':idGrammar/practice')
   async getPracticeByTopic(
     @Param('idGrammar') idGrammar: string,
-    @Query('count') count: number = 10
+    @Query('count') count: number = 10,
   ) {
     return this.grammarService.getPracticeByTopic(idGrammar, count);
   }
@@ -159,19 +165,22 @@ export class GrammarController {
   @Get(':idGrammar/due-reviews')
   async getDueReviews(
     @Param('idGrammar') idGrammar: string,
-    @Query('idUser') idUser: string
+    @Query('idUser') idUser: string,
   ) {
     return this.grammarService.getDueReviews(idUser, idGrammar);
   }
 
   @Post('violation')
-  async saveViolation(@Body() body: {
-    idUser: string;
-    idGrammar: string;
-    source: string;
-    userSentence: string;
-    correctedSentence: string;
-  }) {
+  async saveViolation(
+    @Body()
+    body: {
+      idUser: string;
+      idGrammar: string;
+      source: string;
+      userSentence: string;
+      correctedSentence: string;
+    },
+  ) {
     return this.grammarService.saveViolation(body);
   }
 }

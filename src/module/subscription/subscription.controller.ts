@@ -62,7 +62,7 @@ export class SubscriptionController {
   @ApiOperation({
     summary: 'Subscribe (routes through VNPay)',
     description:
-      'Returns a VNPay payment URL — the actual subscription is activated only after VNPay\'s IPN callback confirms payment. Frontend should navigate via `window.location.href = paymentUrl`.',
+      "Returns a VNPay payment URL — the actual subscription is activated only after VNPay's IPN callback confirms payment. Frontend should navigate via `window.location.href = paymentUrl`.",
   })
   @ApiOkResponse({ type: CreatePaymentResponseDto })
   async subscribe(
@@ -74,8 +74,11 @@ export class SubscriptionController {
       ?.split(',')[0]
       ?.trim();
     const rawIp = forwarded || req.ip || '127.0.0.1';
-    const ipAddress =
-      rawIp.startsWith('::ffff:') ? rawIp.slice(7) : rawIp.includes(':') ? '127.0.0.1' : rawIp;
+    const ipAddress = rawIp.startsWith('::ffff:')
+      ? rawIp.slice(7)
+      : rawIp.includes(':')
+        ? '127.0.0.1'
+        : rawIp;
 
     return this.paymentService.createPaymentUrl({
       idUser: userId,

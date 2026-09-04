@@ -293,7 +293,16 @@ export class ExtractionResultDto {
   rawData!: ExtractedRawDataDto;
 
   @ApiProperty({
-    enum: ['PENDING', 'PROCESSING', 'READY_FOR_VERIFICATION', 'NEEDS_MANUAL_ENTRY', 'READY_FOR_REVIEW', 'REVIEWED', 'APPROVED', 'DISCARDED'],
+    enum: [
+      'PENDING',
+      'PROCESSING',
+      'READY_FOR_VERIFICATION',
+      'NEEDS_MANUAL_ENTRY',
+      'READY_FOR_REVIEW',
+      'REVIEWED',
+      'APPROVED',
+      'DISCARDED',
+    ],
   })
   @IsString()
   status!: string;
@@ -373,7 +382,17 @@ export class UpdateSessionDto {
   data?: ExtractedRawDataDto;
 
   @ApiPropertyOptional({
-    enum: ['PENDING', 'PROCESSING', 'READY_FOR_VERIFICATION', 'NEEDS_MANUAL_ENTRY', 'READY_FOR_REVIEW', 'REVIEWED', 'PARTIAL', 'APPROVED', 'DISCARDED'],
+    enum: [
+      'PENDING',
+      'PROCESSING',
+      'READY_FOR_VERIFICATION',
+      'NEEDS_MANUAL_ENTRY',
+      'READY_FOR_REVIEW',
+      'REVIEWED',
+      'PARTIAL',
+      'APPROVED',
+      'DISCARDED',
+    ],
   })
   @IsOptional()
   @IsString()

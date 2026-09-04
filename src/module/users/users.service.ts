@@ -129,11 +129,31 @@ export class UsersService {
     return user;
   }
 
-  async findAll() {
-    const users = await this.databaseService.user.findMany();
-    // Loại bỏ password khỏi từng user
-    const data = users.map(({ password, ...rest }) => rest);
-    return { message: 'Users retrieved successfully', data, status: 200 };
+  async findAll(pagination: { page: number; limit: number; skip: number }) {
+    const { page, limit, skip } = pagination;
+    const [data, total] = await this.databaseService.$transaction([
+      this.databaseService.user.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          idUser: true,
+          nameUser: true,
+          email: true,
+          role: true,
+          avatar: true,
+          isActive: true,
+          createdAt: true,
+        },
+      }),
+      this.databaseService.user.count(),
+    ]);
+    return {
+      message: 'Users retrieved',
+      data,
+      status: 200,
+      meta: { page, limit, total },
+    };
   }
 
   async findOne(id: string) {
@@ -271,7 +291,10 @@ export class UsersService {
         isActive: false,
       },
     });
-    const otp = await this.verificationService.generateOtp(user.idUser, OTPType.OTP);
+    const otp = await this.verificationService.generateOtp(
+      user.idUser,
+      OTPType.OTP,
+    );
 
     this.mailerService.sendMail({
       to: `${user.email}`,

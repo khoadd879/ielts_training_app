@@ -174,13 +174,25 @@ export class GrammarService {
     const accuracyPercent = Math.round(accuracy * 100);
 
     // ✨ HOÀN THÀNH
-    if (consecutiveCorrect >= 10 || (consecutiveCorrect >= 5 && accuracy >= 0.9)) {
-      return { level: 'hoàn thành', reason: `Streak ${consecutiveCorrect} đúng liên tiếp` };
+    if (
+      consecutiveCorrect >= 10 ||
+      (consecutiveCorrect >= 5 && accuracy >= 0.9)
+    ) {
+      return {
+        level: 'hoàn thành',
+        reason: `Streak ${consecutiveCorrect} đúng liên tiếp`,
+      };
     }
 
     // 🟢 TỐT
-    if (consecutiveCorrect >= 5 || (consecutiveCorrect >= 3 && accuracy >= 0.8)) {
-      return { level: 'tốt', reason: `Streak ${consecutiveCorrect} đúng, accuracy ${accuracyPercent}%` };
+    if (
+      consecutiveCorrect >= 5 ||
+      (consecutiveCorrect >= 3 && accuracy >= 0.8)
+    ) {
+      return {
+        level: 'tốt',
+        reason: `Streak ${consecutiveCorrect} đúng, accuracy ${accuracyPercent}%`,
+      };
     }
 
     // 🟡 TRUNG BÌNH
@@ -190,9 +202,15 @@ export class GrammarService {
 
     // 🔴 CẦN CẢI THIỆN
     if (violations > 0) {
-      return { level: 'cần cải thiện', reason: `Còn ${violations} violations chưa khắc phục` };
+      return {
+        level: 'cần cải thiện',
+        reason: `Còn ${violations} violations chưa khắc phục`,
+      };
     }
-    return { level: 'cần cải thiện', reason: `Sai nhiều (${accuracyPercent}%)` };
+    return {
+      level: 'cần cải thiện',
+      reason: `Sai nhiều (${accuracyPercent}%)`,
+    };
   }
 
   // Learning summary for the hero / dashboard card on the student Grammar
@@ -203,12 +221,10 @@ export class GrammarService {
 
     // 1. Total grammar topics visible to the learner = grammars in any
     //    category the user can see (system + own user-categories).
-    const userCategories = await this.databaseService.grammarCategory.findMany(
-      {
-        where: { OR: [{ idUser: null }, { idUser }] },
-        select: { idGrammarCategory: true },
-      },
-    );
+    const userCategories = await this.databaseService.grammarCategory.findMany({
+      where: { OR: [{ idUser: null }, { idUser }] },
+      select: { idGrammarCategory: true },
+    });
     const categoryIds = userCategories.map((c) => c.idGrammarCategory);
     const totalTopics = categoryIds.length
       ? await this.databaseService.grammarsOnCategories.count({
@@ -274,18 +290,15 @@ export class GrammarService {
     }
 
     // 5. Weak areas = top 3 grammars with proficiency "weak" OR (low
-      //    accuracy AND at least 1 attempt). We need their title + category
-      //    info for the dashboard card.
+    //    accuracy AND at least 1 attempt). We need their title + category
+    //    info for the dashboard card.
     // Note: `proficiency` is stored as the Vietnamese label returned by
     // calculateProficiency (e.g. "cần cải thiện", "trung bình") — match those.
     const weakRows = await this.databaseService.userGrammarProficiency.findMany(
       {
         where: {
           idUser,
-          OR: [
-            { proficiency: 'cần cải thiện' },
-            { proficiency: 'trung bình' },
-          ],
+          OR: [{ proficiency: 'cần cải thiện' }, { proficiency: 'trung bình' }],
         },
         take: 10,
       },
@@ -300,17 +313,22 @@ export class GrammarService {
     const titleById = new Map(weakGrammars.map((g) => [g.idGrammar, g.title]));
 
     // Per-grammar accuracy for the weak candidates
-    const accuracyByGrammar = new Map<string, { total: number; correct: number }>();
+    const accuracyByGrammar = new Map<
+      string,
+      { total: number; correct: number }
+    >();
     if (weakGrammarIds.length) {
-      const details = await this.databaseService.userGrammarExerciseResult.findMany(
-        {
+      const details =
+        await this.databaseService.userGrammarExerciseResult.findMany({
           where: {
             idUser,
             exercise: { is: { idGrammar: { in: weakGrammarIds } } },
           },
-          select: { isCorrect: true, exercise: { select: { idGrammar: true } } },
-        },
-      );
+          select: {
+            isCorrect: true,
+            exercise: { select: { idGrammar: true } },
+          },
+        });
       for (const d of details) {
         const gid = d.exercise.idGrammar;
         const cur = accuracyByGrammar.get(gid) || { total: 0, correct: 0 };
@@ -323,9 +341,10 @@ export class GrammarService {
     const weakAreas = weakRows
       .map((r) => {
         const acc = accuracyByGrammar.get(r.idGrammar);
-        const accuracy = acc && acc.total > 0
-          ? Math.round((acc.correct / acc.total) * 100)
-          : 0;
+        const accuracy =
+          acc && acc.total > 0
+            ? Math.round((acc.correct / acc.total) * 100)
+            : 0;
         return {
           idGrammar: r.idGrammar,
           title: titleById.get(r.idGrammar) || 'Grammar',
@@ -354,10 +373,7 @@ export class GrammarService {
   // Topics list for a specific category, enriched with proficiency + accuracy
   // for the requesting user. The frontend uses this to render the
   // categories/topics grid from the magicpath canvas.
-  async getLearningTopics(
-    idUser: string,
-    idGrammarCategory: string,
-  ) {
+  async getLearningTopics(idUser: string, idGrammarCategory: string) {
     await this.existingUser(idUser);
 
     const category = await this.databaseService.grammarCategory.findUnique({
@@ -399,8 +415,8 @@ export class GrammarService {
     // Accuracy per grammar
     const accuracyById = new Map<string, { total: number; correct: number }>();
     if (grammarIds.length) {
-      const details = await this.databaseService.userGrammarExerciseResult.findMany(
-        {
+      const details =
+        await this.databaseService.userGrammarExerciseResult.findMany({
           where: {
             idUser,
             exercise: { is: { idGrammar: { in: grammarIds } } },
@@ -409,8 +425,7 @@ export class GrammarService {
             isCorrect: true,
             exercise: { select: { idGrammar: true } },
           },
-        },
-      );
+        });
       for (const d of details) {
         const gid = d.exercise.idGrammar;
         const cur = accuracyById.get(gid) || { total: 0, correct: 0 };
@@ -423,14 +438,12 @@ export class GrammarService {
     const topics = grammars.map((g, idx) => {
       const prof = proficiencyById.get(g.idGrammar) || 'unknown';
       const acc = accuracyById.get(g.idGrammar) || { total: 0, correct: 0 };
-      const accuracy = acc.total > 0
-        ? Math.round((acc.correct / acc.total) * 100)
-        : 0;
+      const accuracy =
+        acc.total > 0 ? Math.round((acc.correct / acc.total) * 100) : 0;
       const total = g._count.exercises;
       const attempted = acc.total;
-      const progress = total > 0
-        ? Math.min(100, Math.round((attempted / total) * 100))
-        : 0;
+      const progress =
+        total > 0 ? Math.min(100, Math.round((attempted / total) * 100)) : 0;
       const cefr = this.levelToCefr(g.level as unknown as string);
 
       // Status logic (mirrors the magicpath canvas semantics):
@@ -442,10 +455,10 @@ export class GrammarService {
         progress >= 100 || prof === 'strong' || accuracy >= 85
           ? 'done'
           : prof === 'medium' || attempted > 0
-          ? 'current'
-          : idx === 0
-          ? 'available'
-          : 'available'; // simple gate — previous-topic check would need full ordering logic; UI can refine
+            ? 'current'
+            : idx === 0
+              ? 'available'
+              : 'available'; // simple gate — previous-topic check would need full ordering logic; UI can refine
 
       return {
         id: g.idGrammar,
@@ -488,15 +501,15 @@ export class GrammarService {
       where: { idUser: null },
       include: {
         grammars: {
-          include: { grammar: true }
-        }
+          include: { grammar: true },
+        },
       },
-      orderBy: { createdAt: 'asc' }
+      orderBy: { createdAt: 'asc' },
     });
     return {
       message: 'System categories retrieved successfully',
       data,
-      status: 200
+      status: 200,
     };
   }
 
@@ -510,34 +523,37 @@ export class GrammarService {
       select: {
         idGrammar: true,
         title: true,
-        level: true
-      }
+        level: true,
+      },
     });
 
     // Get proficiency data for user
-    const proficiencies = await this.databaseService.userGrammarProficiency.findMany({
-      where: { idUser }
-    });
+    const proficiencies =
+      await this.databaseService.userGrammarProficiency.findMany({
+        where: { idUser },
+      });
 
     // Get violations count for user
     const violations = await this.databaseService.userGrammarViolation.groupBy({
       by: ['idGrammar'],
       where: { idUser },
-      _count: { id: true }
+      _count: { id: true },
     });
 
-    const violationsMap = new Map(violations.map(v => [v.idGrammar, v._count.id]));
-    const profMap = new Map(proficiencies.map(p => [p.idGrammar, p]));
+    const violationsMap = new Map(
+      violations.map((v) => [v.idGrammar, v._count.id]),
+    );
+    const profMap = new Map(proficiencies.map((p) => [p.idGrammar, p]));
 
     // Build all topics with proficiency
-    const topicsWithProficiency = allTopics.map(topic => {
+    const topicsWithProficiency = allTopics.map((topic) => {
       const prof = profMap.get(topic.idGrammar);
       const violationCount = violationsMap.get(topic.idGrammar) || 0;
       const { level, reason } = this.calculateProficiency(
         violationCount,
         prof?.correctCount || 0,
         prof?.totalAttempts || 0,
-        prof?.consecutiveCorrect || 0
+        prof?.consecutiveCorrect || 0,
       );
       return {
         idGrammar: topic.idGrammar,
@@ -548,20 +564,30 @@ export class GrammarService {
         violations: violationCount,
         exercisesWrong: prof?.wrongCount || 0,
         exercisesCorrect: prof?.correctCount || 0,
-        accuracy: (prof?.totalAttempts ?? 0) > 0 ? Math.round(((prof?.correctCount ?? 0) / (prof?.totalAttempts ?? 1)) * 100) : 0,
-        streak: prof?.consecutiveCorrect || 0
+        accuracy:
+          (prof?.totalAttempts ?? 0) > 0
+            ? Math.round(
+                ((prof?.correctCount ?? 0) / (prof?.totalAttempts ?? 1)) * 100,
+              )
+            : 0,
+        streak: prof?.consecutiveCorrect || 0,
       };
     });
 
     // Weak areas = top 3 by violations
     const weakAreas = topicsWithProficiency
-      .filter(t => t.violations > 0 || t.exercisesWrong > 0)
-      .sort((a, b) => (b.violations + b.exercisesWrong) - (a.violations + a.exercisesWrong))
+      .filter((t) => t.violations > 0 || t.exercisesWrong > 0)
+      .sort(
+        (a, b) =>
+          b.violations + b.exercisesWrong - (a.violations + a.exercisesWrong),
+      )
       .slice(0, 3);
 
     // Calculate overall progress
     const total = allTopics.length;
-    const mastered = topicsWithProficiency.filter(t => t.proficiency === 'hoàn thành').length;
+    const mastered = topicsWithProficiency.filter(
+      (t) => t.proficiency === 'hoàn thành',
+    ).length;
     const percentage = total > 0 ? Math.round((mastered / total) * 100) : 0;
 
     const result = {
@@ -572,10 +598,10 @@ export class GrammarService {
         overallProgress: {
           percentage,
           mastered,
-          total
-        }
+          total,
+        },
       },
-      status: 200
+      status: 200,
     };
     await this.cache.set(cacheKey, result, 120);
     return result;
@@ -583,7 +609,7 @@ export class GrammarService {
 
   async getPracticeByTopic(idGrammar: string, count: number = 10) {
     const grammar = await this.databaseService.grammar.findUnique({
-      where: { idGrammar }
+      where: { idGrammar },
     });
 
     if (!grammar) {
@@ -593,17 +619,17 @@ export class GrammarService {
     const exercises = await this.databaseService.grammarExercise.findMany({
       where: { idGrammar },
       take: count,
-      orderBy: { order: 'asc' }
+      orderBy: { order: 'asc' },
     });
 
     return {
-      data: exercises.map(ex => ({
+      data: exercises.map((ex) => ({
         id: ex.id,
         idGrammar: ex.idGrammar,
         type: ex.type,
         content: ex.content,
-        title: grammar.title
-      }))
+        title: grammar.title,
+      })),
     };
   }
 
@@ -614,13 +640,15 @@ export class GrammarService {
     // current schema, so we over-fetch by user and narrow to the topic in app
     // code. For most users this is small; if it grows large, switch to a raw
     // SQL join on idExercise.
-    const srRecords = await this.databaseService.userGrammarExerciseSR.findMany({
-      where: {
-        idUser,
-        nextReviewAt: { lte: now },
+    const srRecords = await this.databaseService.userGrammarExerciseSR.findMany(
+      {
+        where: {
+          idUser,
+          nextReviewAt: { lte: now },
+        },
+        orderBy: { nextReviewAt: 'asc' },
       },
-      orderBy: { nextReviewAt: 'asc' },
-    });
+    );
 
     const exerciseIds = srRecords.map((r) => r.idExercise);
     const exercises = exerciseIds.length
@@ -657,8 +685,7 @@ export class GrammarService {
     else if (repetitions === 1) interval = 6;
     else interval = Math.round(interval * easiness);
     repetitions++;
-    easiness =
-      easiness + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    easiness = easiness + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
     return {
       repetitions,
       interval: Math.max(1, interval),
@@ -800,11 +827,12 @@ export class GrammarService {
     // backwards from the newest until the first `isCorrect=false` (or up to 7).
     // Note: the row we just inserted above is the "current" attempt, so we skip
     // it when measuring the prior streak.
-    const recent = await this.databaseService.userGrammarExerciseResult.findMany({
-      where: { idUser, idExercise },
-      orderBy: { attemptedAt: 'desc' },
-      take: 8, // 1 current + up to 7 prior
-    });
+    const recent =
+      await this.databaseService.userGrammarExerciseResult.findMany({
+        where: { idUser, idExercise },
+        orderBy: { attemptedAt: 'desc' },
+        take: 8, // 1 current + up to 7 prior
+      });
     let priorRepetitions = 0;
     for (let i = 1; i < recent.length; i++) {
       if (recent[i].isCorrect) priorRepetitions++;
@@ -871,14 +899,14 @@ export class GrammarService {
         source: data.source,
         userSentence: data.userSentence,
         correctedSentence: data.correctedSentence,
-        submissionId: 'manual'
-      }
+        submissionId: 'manual',
+      },
     });
 
     // Update proficiency violations count
     await this.databaseService.userGrammarProficiency.upsert({
       where: {
-        idUser_idGrammar: { idUser: data.idUser, idGrammar: data.idGrammar }
+        idUser_idGrammar: { idUser: data.idUser, idGrammar: data.idGrammar },
       },
       update: {
         violations: { increment: 1 },
@@ -889,25 +917,34 @@ export class GrammarService {
         idGrammar: data.idGrammar,
         violations: 1,
         consecutiveCorrect: 0,
-        proficiency: 'unknown'
-      }
+        proficiency: 'unknown',
+      },
     });
 
     return {
       message: 'Violation saved successfully',
       data: violation,
-      status: 201
+      status: 201,
     };
   }
 
   async submitExercise(idUser: string, idGrammar: string, isCorrect: boolean) {
     const data = isCorrect
-      ? { correctCount: { increment: 1 }, consecutiveCorrect: { increment: 1 }, totalAttempts: { increment: 1 } }
-      : { wrongCount: { increment: 1 }, violations: { increment: 1 }, consecutiveCorrect: 0, totalAttempts: { increment: 1 } };
+      ? {
+          correctCount: { increment: 1 },
+          consecutiveCorrect: { increment: 1 },
+          totalAttempts: { increment: 1 },
+        }
+      : {
+          wrongCount: { increment: 1 },
+          violations: { increment: 1 },
+          consecutiveCorrect: 0,
+          totalAttempts: { increment: 1 },
+        };
 
     await this.databaseService.userGrammarProficiency.update({
       where: { idUser_idGrammar: { idUser, idGrammar } },
-      data
+      data,
     });
 
     await this.recalculateProficiency(idUser, idGrammar);
@@ -915,7 +952,7 @@ export class GrammarService {
 
   async recalculateProficiency(idUser: string, idGrammar: string) {
     const prof = await this.databaseService.userGrammarProficiency.findUnique({
-      where: { idUser_idGrammar: { idUser, idGrammar } }
+      where: { idUser_idGrammar: { idUser, idGrammar } },
     });
     if (!prof) return;
 
@@ -923,12 +960,12 @@ export class GrammarService {
       prof.violations,
       prof.correctCount,
       prof.totalAttempts,
-      prof.consecutiveCorrect
+      prof.consecutiveCorrect,
     );
 
     await this.databaseService.userGrammarProficiency.update({
       where: { idUser_idGrammar: { idUser, idGrammar } },
-      data: { proficiency: level }
+      data: { proficiency: level },
     });
   }
 
@@ -936,39 +973,42 @@ export class GrammarService {
     const exercises = await this.databaseService.grammarExercise.findMany({
       take: count,
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'desc',
       },
       include: {
-        grammar: true
-      }
+        grammar: true,
+      },
     });
 
     // Shuffle and limit to count
-    return exercises.sort(() => Math.random() - 0.5).slice(0, count).map(ex => ({
-      id: ex.id,
-      idGrammar: ex.idGrammar,
-      type: ex.type,
-      content: ex.content,
-      title: ex.grammar.title
-    }));
+    return exercises
+      .sort(() => Math.random() - 0.5)
+      .slice(0, count)
+      .map((ex) => ({
+        id: ex.id,
+        idGrammar: ex.idGrammar,
+        type: ex.type,
+        content: ex.content,
+        title: ex.grammar.title,
+      }));
   }
 
   async submitPractice(idUser: string, answers: any[]) {
     // Update UserGrammarProficiency for each answer + recalculate proficiency level
     for (const answer of answers) {
       const exercise = await this.databaseService.grammarExercise.findUnique({
-        where: { id: answer.exerciseId }
+        where: { id: answer.exerciseId },
       });
 
       if (exercise) {
         await this.databaseService.userGrammarProficiency.upsert({
           where: {
-            idUser_idGrammar: { idUser, idGrammar: exercise.idGrammar }
+            idUser_idGrammar: { idUser, idGrammar: exercise.idGrammar },
           },
           update: {
             totalAttempts: { increment: 1 },
             correctCount: answer.isCorrect ? { increment: 1 } : undefined,
-            wrongCount: answer.isCorrect ? undefined : { increment: 1 }
+            wrongCount: answer.isCorrect ? undefined : { increment: 1 },
           },
           create: {
             idUser,
@@ -976,16 +1016,22 @@ export class GrammarService {
             totalAttempts: 1,
             correctCount: answer.isCorrect ? 1 : 0,
             wrongCount: answer.isCorrect ? 0 : 1,
-            proficiency: 'unknown'
-          }
+            proficiency: 'unknown',
+          },
         });
         // Recalc proficiency level so /grammar/dashboard hiển thị weak areas đúng
         await this.recalculateProficiency(idUser, exercise.idGrammar);
       }
     }
 
-    const correct = answers.filter(a => a.isCorrect).length;
-    return { summary: { correct, incorrect: answers.length - correct, total: answers.length } };
+    const correct = answers.filter((a) => a.isCorrect).length;
+    return {
+      summary: {
+        correct,
+        incorrect: answers.length - correct,
+        total: answers.length,
+      },
+    };
   }
 
   async findAllInUserCategory(idGrammarCategory: string, idUser: string) {

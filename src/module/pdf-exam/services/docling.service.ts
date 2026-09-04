@@ -1,4 +1,8 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
 import {
@@ -50,7 +54,9 @@ export class DoclingService {
         timeout: 5000,
       });
       this.isAvailable = response.status === 200;
-      this.logger.log(`Docling service is ${this.isAvailable ? 'available' : 'unavailable'}`);
+      this.logger.log(
+        `Docling service is ${this.isAvailable ? 'available' : 'unavailable'}`,
+      );
     } catch {
       this.isAvailable = false;
     }
@@ -63,7 +69,10 @@ export class DoclingService {
   /**
    * Convert PDF to structured text using Docling REST API
    */
-  async convertPdf(fileBuffer: Buffer, filename: string): Promise<{
+  async convertPdf(
+    fileBuffer: Buffer,
+    filename: string,
+  ): Promise<{
     text: string;
     markdown: string;
     confidence: number;

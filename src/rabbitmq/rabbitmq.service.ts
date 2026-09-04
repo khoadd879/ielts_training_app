@@ -1,7 +1,16 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqplib';
 import { EXCHANGES, QUEUES, ROUTING_KEYS } from './rabbitmq.constants';
+import type {
+  ModerationForumMessage,
+  VocabSuggestMessage,
+} from './types';
 
 interface ChatbotReplyMessage {
   sessionId: string;
@@ -89,6 +98,20 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     return this.publish(EXCHANGES.CHATBOT, ROUTING_KEYS.EMBED, message);
   }
 
+  async publishModerationForum(
+    payload: ModerationForumMessage,
+  ): Promise<boolean> {
+    return this.publish(
+      EXCHANGES.MODERATION,
+      ROUTING_KEYS.MODERATION_FORUM,
+      payload,
+    );
+  }
+
+  async publishVocabSuggest(payload: VocabSuggestMessage): Promise<boolean> {
+    return this.publish(EXCHANGES.VOCAB, ROUTING_KEYS.VOCAB_SUGGEST, payload);
+  }
+
   private async setupExchanges(): Promise<void> {
     if (!this.channel) {
       return;
@@ -113,7 +136,9 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     }
 
     if (this.chatbotReplyHandlers.size === 0) {
-      this.logger.debug('No chatbot reply handlers yet, skipping consumer setup');
+      this.logger.debug(
+        'No chatbot reply handlers yet, skipping consumer setup',
+      );
       return;
     }
 
@@ -136,7 +161,9 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
             msg.content.toString(),
           ) as ChatbotReplyMessage;
 
-          this.logger.debug(`Received chatbot reply for session: ${payload.sessionId}`);
+          this.logger.debug(
+            `Received chatbot reply for session: ${payload.sessionId}`,
+          );
 
           for (const handler of this.chatbotReplyHandlers) {
             await handler(payload);

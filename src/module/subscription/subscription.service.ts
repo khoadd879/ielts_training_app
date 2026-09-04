@@ -171,53 +171,61 @@ export class SubscriptionService {
 
   async useQuota(idUser: string, credits: number = 1): Promise<{ success: boolean; remaining: number }> {
     return this.db.$transaction(async (tx) => {
+      // Atomic claim: increment only if an active, non-expired subscription exists
+      const { count } = await tx.userSubscription.updateMany({
+        where: {
+          idUser,
+          status: 'ACTIVE',
+          expiresAt: { gt: new Date() },
+        },
+        data: { creditsUsedThisPeriod: { increment: credits } },
+      });
+      if (count === 0) {
+        throw new BadRequestException('No active subscription or expired');
+      }
+
+      // Verify we didn't over-quota under concurrent deduction
       const sub = await tx.userSubscription.findFirst({
         where: { idUser, status: 'ACTIVE' },
-        include: { package: true },
       });
-
       if (!sub) {
         throw new BadRequestException('No active subscription found');
       }
 
-      if (new Date() > sub.expiresAt) {
-        throw new BadRequestException('Subscription expired');
-      }
-
-      if (sub.creditsQuotaThisPeriod > 0) {
-        const remaining = sub.creditsQuotaThisPeriod - sub.creditsUsedThisPeriod;
-        if (remaining < credits) {
-          throw new BadRequestException(`Insufficient quota. Need ${credits}, have ${remaining}`);
-        }
-
+      if (
+        sub.creditsQuotaThisPeriod > 0 &&
+        sub.creditsUsedThisPeriod > sub.creditsQuotaThisPeriod
+      ) {
+        // Rollback
         await tx.userSubscription.update({
           where: { idSubscription: sub.idSubscription },
-          data: { creditsUsedThisPeriod: sub.creditsUsedThisPeriod + credits },
+          data: { creditsUsedThisPeriod: { decrement: credits } },
         });
-
-        return { success: true, remaining: remaining - credits };
+        throw new BadRequestException(`Insufficient quota. Need ${credits}`);
       }
 
-      return { success: true, remaining: -1 }; // Unlimited
+      return {
+        success: true,
+        remaining:
+          sub.creditsQuotaThisPeriod > 0
+            ? sub.creditsQuotaThisPeriod - sub.creditsUsedThisPeriod
+            : -1,
+      };
     });
   }
 
   // ===== Refund Quota (for grading failure) =====
 
   async refundQuota(idUser: string, credits: number = 1): Promise<{ success: boolean }> {
-    const sub = await this.db.userSubscription.findFirst({
-      where: { idUser, status: 'ACTIVE' },
+    // Idempotent decrement: only restore if enough used credits remain
+    await this.db.userSubscription.updateMany({
+      where: {
+        idUser,
+        status: 'ACTIVE',
+        creditsUsedThisPeriod: { gte: credits },
+      },
+      data: { creditsUsedThisPeriod: { decrement: credits } },
     });
-
-    if (sub && sub.creditsUsedThisPeriod > 0) {
-      await this.db.userSubscription.update({
-        where: { idSubscription: sub.idSubscription },
-        data: {
-          creditsUsedThisPeriod: Math.max(0, sub.creditsUsedThisPeriod - credits),
-        },
-      });
-    }
-
     return { success: true };
   }
 
@@ -240,7 +248,6 @@ export class SubscriptionService {
       throw new NotFoundException('Active subscription not found');
     }
 
-    const now = new Date();
     const nextExpires = new Date(sub.expiresAt);
     const nextBilling = new Date(sub.expiresAt);
 
@@ -252,14 +259,19 @@ export class SubscriptionService {
       nextBilling.setFullYear(nextBilling.getFullYear() + 1);
     }
 
-    return this.db.userSubscription.update({
-      where: { idSubscription },
+    // Atomic claim: only renew if still ACTIVE (race-safe vs cancel)
+    const { count } = await this.db.userSubscription.updateMany({
+      where: { idSubscription, status: 'ACTIVE' },
       data: {
         expiresAt: nextExpires,
         nextBillingAt: sub.autoRenew ? nextBilling : null,
-        creditsUsedThisPeriod: 0, // Reset quota
+        creditsUsedThisPeriod: 0,
       },
     });
+    if (count === 0) {
+      throw new NotFoundException('Subscription no longer active (race)');
+    }
+    return this.db.userSubscription.findUnique({ where: { idSubscription } });
   }
 
   // ===== Admin Operations =====
