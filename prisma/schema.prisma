@@ -792,8 +792,7 @@ model PaymentTransaction {
 }
 
 enum PaymentStatus {
-  PENDING // URL generated, waiting for callback
-  PROCESSING // IPN claimed the row, provisioning in flight
+  PENDING // URL generated, waiting for callback. processedAt != null means IPN claimed the row for processing.
   SUCCESS // IPN verified, provisioning done
   FAILED // VNPay returned non-"00" or signature invalid
   EXPIRED // 15-min window passed without callback

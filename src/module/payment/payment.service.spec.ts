@@ -277,7 +277,7 @@ describe('PaymentService', () => {
       expect(r.RspCode).toBe('99');
     });
 
-    it('atomic claim — second concurrent IPN returns RspCode 02 (PROCESSING)', async () => {
+    it('atomic claim — second concurrent IPN returns RspCode 02', async () => {
       const { service, db, credits } = await buildService();
       db.paymentTransaction.findUnique.mockResolvedValue({
         idTransaction: 'p1',
@@ -314,6 +314,21 @@ describe('PaymentService', () => {
       expect(r2.Message).toMatch(/processing|confirmed/i);
       // Second IPN should not have attempted provisioning
       expect(credits.creditFromPayment).toHaveBeenCalledTimes(1);
+      // Payload check: claim sets processedAt only; status stays PENDING
+      expect(db.paymentTransaction.updateMany).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          where: expect.objectContaining({
+            idTransaction: 'p1',
+            status: 'PENDING',
+            processedAt: null,
+          }),
+          data: { processedAt: expect.any(Date) },
+        }),
+      );
+      expect(db.paymentTransaction.updateMany.mock.calls[0][0].data).not.toHaveProperty(
+        'status',
+      );
     });
   });
 
