@@ -892,13 +892,11 @@ export class UserTestResultService {
       throw new BadRequestException('This endpoint is for Writing tests only.');
     }
 
-    let scoreTask1 = 0;
-    let scoreTask2 = 0;
     let submittedCount = 0;
     const submissionsDetails: SubmissionDetail[] = [];
 
     if (body?.writingSubmissions && body.writingSubmissions.length > 0) {
-      // ✅ OPTIMIZATION 1: Prefetch all writing tasks in one query (avoid N+1)
+      // Prefetch all writing tasks in one query (avoid N+1)
       const taskIds = body.writingSubmissions
         .filter((s) => s.submissionText?.trim())
         .map((s) => s.idWritingTask);
@@ -909,70 +907,50 @@ export class UserTestResultService {
       });
       const taskMap = new Map(tasks.map((t) => [t.idWritingTask, t]));
 
-      // ✅ OPTIMIZATION 2: Parallel AI grading (instead of sequential)
-      const gradingPromises = body.writingSubmissions
-        .filter((s) => s.submissionText?.trim())
-        .map(async (submission) => {
-          const taskInfo = taskMap.get(submission.idWritingTask);
-          if (!taskInfo) return null;
+      // Enqueue grading for each submission. AI grading is async — the worker
+      // (ai-grading-worker) consumes the queue and eventually updates
+      // UserWritingSubmission.aiOverallScore, then aggregates to update
+      // UserTestResult.bandScore via aggregateTestResultIfReady.
+      //
+      // We do NOT await Promise.all here in a way that tries to extract sync
+      // scores — that was the previous bug (scoreTask1/scoreTask2 hardcoded
+      // to 0). createUserWritingSubmission returns { status: 202, aiGradingStatus:
+      // 'PENDING' } immediately after publishing to the queue.
+      for (const submission of body.writingSubmissions) {
+        if (!submission.submissionText?.trim()) continue;
+        const taskInfo = taskMap.get(submission.idWritingTask);
+        if (!taskInfo) continue;
 
-          try {
-            // Gọi AI chấm điểm
-            const result =
-              await this.writingService.createUserWritingSubmission(
-                idTestResult,
-                {
-                  idUser: idUser,
-                  idWritingTask: submission.idWritingTask,
-                  submissionText: submission.submissionText,
-                },
-              );
+        try {
+          await this.writingService.createUserWritingSubmission(idTestResult, {
+            idUser: idUser,
+            idWritingTask: submission.idWritingTask,
+            submissionText: submission.submissionText,
+          });
 
-            return {
-              taskInfo,
-              result,
-              submissionText: submission.submissionText,
-            };
-          } catch (error) {
-            console.error(
-              `Failed to grade task ${submission.idWritingTask}:`,
-              error,
-            );
-            throw error; // Re-throw to fail the entire submission if one task fails
-          }
-        });
-
-      // Wait for all AI grading to complete in parallel
-      const gradedResults = await Promise.all(gradingPromises);
-
-      // ✅ OPTIMIZATION 3: Process results efficiently
-      for (const item of gradedResults) {
-        if (!item) continue;
-        const { taskInfo, result, submissionText } = item;
-
-        submittedCount++;
-
-        submissionsDetails.push({
-          idWritingTask: taskInfo.idWritingTask,
-          taskType: taskInfo.taskType,
-          submissionText: submissionText,
-          aiDetailedFeedback: null,
-          score: null,
-        });
-
-        if (taskInfo.taskType === WritingTaskType.TASK1) {
-          scoreTask1 = 0;
-        } else if (taskInfo.taskType === WritingTaskType.TASK2) {
-          scoreTask2 = 0;
-        } else {
-          scoreTask1 += 0;
+          submittedCount++;
+          submissionsDetails.push({
+            idWritingTask: taskInfo.idWritingTask,
+            taskType: taskInfo.taskType,
+            submissionText: submission.submissionText,
+            aiDetailedFeedback: null,
+            score: null,
+          });
+        } catch (error) {
+          // Surface the error per-task but don't fail the whole submission —
+          // already-created submissions should still count.
+          this.logger.error(
+            `Failed to enqueue grading for task ${submission.idWritingTask}:`,
+            error,
+          );
         }
       }
     }
 
-    const rawScore = (scoreTask1 + scoreTask2 * 2) / 3;
-
-    const bandScore = Math.round(rawScore * 2) / 2;
+    // bandScore starts at 0; grading worker will update it asynchronously once
+    // all submissions for this testResult reach a terminal state
+    // (COMPLETED / FAILED).
+    const bandScore = 0;
 
     const xpGained = await this.calculateXpGained(
       idUser,
@@ -998,14 +976,15 @@ export class UserTestResultService {
     await this.markDailyTaskComplete(idUser, TestType.WRITING);
 
     return {
-      message: 'Writing test finished and graded successfully!',
+      message:
+        'Writing test submitted. AI grading in progress; bandScore will update shortly.',
       data: {
         idTestResult,
         xpGained,
         bandScore,
         breakdown: {
-          task1Score: scoreTask1,
-          task2Score: scoreTask2,
+          task1Score: 0,
+          task2Score: 0,
         },
         submissions: submissionsDetails,
         finishedAt: updatedResult.finishedAt,
