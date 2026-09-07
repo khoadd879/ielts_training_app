@@ -21,7 +21,7 @@ import type { Cache } from '@nestjs/cache-manager';
 import { endOfDay, startOfDay } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-interface VocabCacheEntry {
+export interface VocabCacheEntry {
   word: string;
   phonetic: string | null;
   meaning: string | null;

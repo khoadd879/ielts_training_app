@@ -12,7 +12,7 @@ import { DatabaseService } from 'src/database/database.service';
 
 type SkillType = 'LISTENING' | 'READING' | 'WRITING' | 'SPEAKING';
 
-interface SkillAccumulator {
+export interface SkillAccumulator {
   total: number;
   count: number;
 }
