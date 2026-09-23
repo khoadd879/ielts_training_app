@@ -103,6 +103,10 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     return this.publish(EXCHANGES.GRADING, ROUTING_KEYS.SPEAK, message);
   }
 
+  async publishGradingTrackPerf(message: object): Promise<boolean> {
+    return this.publish(EXCHANGES.GRADING, ROUTING_KEYS.TRACK_PERF, message);
+  }
+
   async publishChatbotAsk(message: object): Promise<boolean> {
     return this.publish(EXCHANGES.CHATBOT, ROUTING_KEYS.ASK, message);
   }

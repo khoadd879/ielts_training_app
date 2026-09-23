@@ -350,6 +350,50 @@ export class TestService {
   }
 
   /**
+   * Test structure preview: count questions per type per part.
+   * Used by FE to render "Xem trước đề" card before starting a test.
+   */
+  async getTestPreview(idTest: string) {
+    const test = await this.databaseService.test.findUnique({
+      where: { idTest },
+      include: {
+        parts: {
+          orderBy: { order: 'asc' },
+          include: {
+            questions: { select: { questionType: true } },
+            passage: { select: { content: true } },
+          },
+        },
+      },
+    });
+    if (!test) throw new NotFoundException('Test not found');
+
+    const parts = test.parts.map((part) => {
+      const grouped = new Map<string, number>();
+      for (const q of part.questions) {
+        grouped.set(q.questionType, (grouped.get(q.questionType) ?? 0) + 1);
+      }
+      return {
+        partNumber: part.order,
+        totalQuestions: part.questions.length,
+        questionTypes: Array.from(grouped.entries()).map(([type, count]) => ({ type, count })),
+        hasPassage: !!part.passage,
+      };
+    });
+
+    const totalQuestions = parts.reduce((sum, p) => sum + p.totalQuestions, 0);
+    return {
+      idTest: test.idTest,
+      title: test.title,
+      testType: test.testType,
+      level: test.level,
+      duration: test.duration,
+      totalQuestions,
+      parts,
+    };
+  }
+
+  /**
    * Strip correct answers from metadata before sending to students
    */
   private sanitizeMetadataForUser(metadata: any): any {

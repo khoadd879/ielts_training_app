@@ -8,6 +8,7 @@ export const EXCHANGES = {
 export const QUEUES = {
   GRADING_WRITE: 'grading.write',
   GRADING_SPEAK: 'grading.speak',
+  GRADING_TRACK_PERF: 'grading.track_perf',
   CHATBOT_ASK: 'chatbot.ask',
   CHATBOT_EMBED: 'chatbot.embed',
   CHATBOT_REPLY: 'chatbot.reply',
@@ -18,6 +19,7 @@ export const QUEUES = {
 export const ROUTING_KEYS = {
   WRITE: 'grading.write',
   SPEAK: 'grading.speak',
+  TRACK_PERF: 'grading.track_perf',
   ASK: 'chatbot.ask',
   EMBED: 'chatbot.embed',
   REPLY: 'chatbot.reply',

@@ -5,6 +5,8 @@ import { DatabaseModule } from 'src/database/database.module';
 import { StreakServiceModule } from '../streak-service/streak-service.module';
 import { UserWritingSubmissionModule } from '../user-writing-submission/user-writing-submission.module';
 import { UserSpeakingSubmissionModule } from '../user-speaking-submission/user-speaking-submission.module';
+import { QuestionTypePerformanceModule } from '../question-type-performance/question-type-performance.module';
+import { RabbitMQModule } from '../../rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -12,6 +14,8 @@ import { UserSpeakingSubmissionModule } from '../user-speaking-submission/user-s
     StreakServiceModule,
     UserWritingSubmissionModule,
     UserSpeakingSubmissionModule,
+    QuestionTypePerformanceModule,
+    RabbitMQModule,
   ],
   controllers: [UserTestResultController],
   providers: [UserTestResultService],

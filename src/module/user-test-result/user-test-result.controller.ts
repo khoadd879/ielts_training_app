@@ -112,6 +112,19 @@ export class UserTestResultController {
     return this.userTestResultService.findOne(idTestResult);
   }
 
+  @Get('breakdown/:idTestResult')
+  @ApiOperation({
+    summary: 'Lấy breakdown kết quả theo sub-skill (questionType / taskType / part)',
+    description: 'R/L: correct/total per questionType. W: avg score per taskType. S: avg score per part.',
+  })
+  getResultBreakdown(
+    @Param('idTestResult') idTestResult: string,
+    @Req() req: any,
+  ) {
+    const idUser = req?.user?.idUser;
+    return this.userTestResultService.getResultBreakdown(idTestResult, idUser);
+  }
+
   @Get('get-all-test-results')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
