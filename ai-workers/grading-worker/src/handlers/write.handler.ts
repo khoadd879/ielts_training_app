@@ -59,6 +59,10 @@ export async function processWriteGrading(
         gradedAt: new Date(),
       });
 
+      // Aggregate to UserTestResult.bandScore when all sibling submissions
+      // are terminal (see neon.service.ts.aggregateTestResultIfReady).
+      await neon.aggregateTestResultIfReady(msg.submissionId);
+
       // Save grammar violations for tracking
       if (result.grammarViolations && result.grammarViolations.length > 0) {
         await neon.saveGrammarViolations(
@@ -92,10 +96,15 @@ export async function processWriteGrading(
     aiGradingStatus: 'FAILED',
     aiOverallScore: 0,
     aiDetailedFeedback: {
-      error: lastError instanceof Error ? lastError.message : String(lastError),
+      error:
+        lastError instanceof Error ? lastError.message : String(lastError),
     },
     gradedAt: new Date(),
   });
+
+  // Aggregate on FAILED too so partially-graded testResults can still resolve
+  // a bandScore (FAILED contributes 0).
+  await neon.aggregateTestResultIfReady(msg.submissionId);
 
   // Refund credits or subscription quota for failed grading
   try {

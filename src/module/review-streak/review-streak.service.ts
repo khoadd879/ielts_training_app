@@ -28,22 +28,22 @@ export class ReviewStreakService {
       await this.databaseService.$transaction(async (prisma) => {
         // Xử lý từng câu trả lời trong mảng
         for (const answer of answers) {
-          // Lấy thông tin hiện tại của từ vựng
+          // Lấy thông tin hiện tại của từ vựng + mastery
           const tuVung = await prisma.vocabulary.findUnique({
-            where: { idVocab: answer.idVocab, idUser: idUser }, // Đảm bảo từ vựng thuộc về user
+            where: { idVocab: answer.idVocab, idUser: idUser },
+            include: { mastery: true },
           });
 
           if (!tuVung) {
-            // Nếu từ vựng không tồn tại hoặc không phải của user, bỏ qua hoặc báo lỗi
             this.logger.warn(
               `TuVung with id ${answer.idVocab} not found for user ${idUser}`,
             );
-            continue; // Bỏ qua và xử lý từ tiếp theo
+            continue;
           }
 
           // ====== CHỐNG SPAM: Kiểm tra xem từ vựng đã được ôn tập hôm nay chưa ======
           const today = new Date();
-          today.setHours(0, 0, 0, 0); // Đầu ngày hôm nay
+          today.setHours(0, 0, 0, 0);
 
           const lastReviewedDate = tuVung.lastReviewed
             ? new Date(tuVung.lastReviewed)
@@ -56,25 +56,27 @@ export class ReviewStreakService {
               lastReviewedDate.getTime() === today.getTime();
           }
 
-          // Cập nhật chuỗi trả lời đúng
-          const newCorrectStreak = answer.isCorrect
-            ? tuVung.correctStreak + 1
-            : 0;
+          // Update streak in VocabMastery (correctStreak moved from Vocabulary in R1.07)
+          const currentStreak = tuVung.mastery?.streak ?? 0;
+          const newCorrectStreak = answer.isCorrect ? currentStreak + 1 : 0;
 
           // Chỉ được nhận XP nếu CHƯA ôn tập từ này hôm nay
           const xpGained =
             answer.isCorrect && !alreadyReviewedToday ? xpPerCorrectAnswer : 0;
 
-          // Cập nhật lại từ vựng trong database
+          // Cập nhật lại mastery + lastReviewed
+          await prisma.vocabMastery.upsert({
+            where: { idVocab: answer.idVocab },
+            update: { streak: newCorrectStreak },
+            create: {
+              idVocab: answer.idVocab,
+              streak: newCorrectStreak,
+              status: 'UNKNOWN',
+            },
+          });
           await prisma.vocabulary.update({
             where: { idVocab: answer.idVocab },
-            data: {
-              lastReviewed: new Date(),
-              correctStreak: newCorrectStreak,
-              xp: {
-                increment: xpGained, // Chỉ cộng XP nếu chưa ôn hôm nay
-              },
-            },
+            data: { lastReviewed: new Date() },
           });
 
           // Chỉ cộng XP cho user nếu trả lời đúng VÀ chưa ôn từ này hôm nay

@@ -20,6 +20,8 @@ import {
 import { updateXpToNext } from 'src/core/utils/xp.util';
 import { UserWritingSubmissionService } from '../user-writing-submission/user-writing-submission.service';
 import { UserSpeakingSubmissionService } from '../user-speaking-submission/user-speaking-submission.service';
+import { QuestionTypePerformanceService } from '../question-type-performance/question-type-performance.service';
+import { RabbitMQService } from '../../rabbitmq/rabbitmq.service';
 import { FinishTestWritingDto } from './dto/finish-test-writing.dto';
 import { FinishTestSpeakingDto } from './dto/finish-test-speaking.dto';
 import { SubmitTestDto } from './dto/submit-test.dto';
@@ -41,6 +43,8 @@ export class UserTestResultService {
     private readonly streakService: StreakService,
     private readonly writingService: UserWritingSubmissionService,
     private readonly speakingService: UserSpeakingSubmissionService,
+    private readonly questionTypePerformanceService: QuestionTypePerformanceService,
+    private readonly rabbitMQService: RabbitMQService,
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {}
 
@@ -440,6 +444,17 @@ export class UserTestResultService {
       await this.streakService.updateStreak(idUser);
     } catch (error) {
       this.logger.error(`Failed to update streak for user ${idUser}`, error);
+    }
+
+    // 7.5 Hook A: track per-questionType performance for R/L (sync, best-effort)
+    try {
+      await this.questionTypePerformanceService.trackQuestionTypePerformance(
+        idUser,
+        dto.idTestResult,
+        testResult.test.testType as 'READING' | 'LISTENING',
+      );
+    } catch (error) {
+      this.logger.error(`Failed to track question type performance for user ${idUser}`, error);
     }
 
     // 8. Mark daily study-planner task complete (best-effort)
@@ -892,13 +907,11 @@ export class UserTestResultService {
       throw new BadRequestException('This endpoint is for Writing tests only.');
     }
 
-    let scoreTask1 = 0;
-    let scoreTask2 = 0;
     let submittedCount = 0;
     const submissionsDetails: SubmissionDetail[] = [];
 
     if (body?.writingSubmissions && body.writingSubmissions.length > 0) {
-      // ✅ OPTIMIZATION 1: Prefetch all writing tasks in one query (avoid N+1)
+      // Prefetch all writing tasks in one query (avoid N+1)
       const taskIds = body.writingSubmissions
         .filter((s) => s.submissionText?.trim())
         .map((s) => s.idWritingTask);
@@ -909,70 +922,50 @@ export class UserTestResultService {
       });
       const taskMap = new Map(tasks.map((t) => [t.idWritingTask, t]));
 
-      // ✅ OPTIMIZATION 2: Parallel AI grading (instead of sequential)
-      const gradingPromises = body.writingSubmissions
-        .filter((s) => s.submissionText?.trim())
-        .map(async (submission) => {
-          const taskInfo = taskMap.get(submission.idWritingTask);
-          if (!taskInfo) return null;
+      // Enqueue grading for each submission. AI grading is async — the worker
+      // (ai-grading-worker) consumes the queue and eventually updates
+      // UserWritingSubmission.aiOverallScore, then aggregates to update
+      // UserTestResult.bandScore via aggregateTestResultIfReady.
+      //
+      // We do NOT await Promise.all here in a way that tries to extract sync
+      // scores — that was the previous bug (scoreTask1/scoreTask2 hardcoded
+      // to 0). createUserWritingSubmission returns { status: 202, aiGradingStatus:
+      // 'PENDING' } immediately after publishing to the queue.
+      for (const submission of body.writingSubmissions) {
+        if (!submission.submissionText?.trim()) continue;
+        const taskInfo = taskMap.get(submission.idWritingTask);
+        if (!taskInfo) continue;
 
-          try {
-            // Gọi AI chấm điểm
-            const result =
-              await this.writingService.createUserWritingSubmission(
-                idTestResult,
-                {
-                  idUser: idUser,
-                  idWritingTask: submission.idWritingTask,
-                  submissionText: submission.submissionText,
-                },
-              );
+        try {
+          await this.writingService.createUserWritingSubmission(idTestResult, {
+            idUser: idUser,
+            idWritingTask: submission.idWritingTask,
+            submissionText: submission.submissionText,
+          });
 
-            return {
-              taskInfo,
-              result,
-              submissionText: submission.submissionText,
-            };
-          } catch (error) {
-            console.error(
-              `Failed to grade task ${submission.idWritingTask}:`,
-              error,
-            );
-            throw error; // Re-throw to fail the entire submission if one task fails
-          }
-        });
-
-      // Wait for all AI grading to complete in parallel
-      const gradedResults = await Promise.all(gradingPromises);
-
-      // ✅ OPTIMIZATION 3: Process results efficiently
-      for (const item of gradedResults) {
-        if (!item) continue;
-        const { taskInfo, result, submissionText } = item;
-
-        submittedCount++;
-
-        submissionsDetails.push({
-          idWritingTask: taskInfo.idWritingTask,
-          taskType: taskInfo.taskType,
-          submissionText: submissionText,
-          aiDetailedFeedback: null,
-          score: null,
-        });
-
-        if (taskInfo.taskType === WritingTaskType.TASK1) {
-          scoreTask1 = 0;
-        } else if (taskInfo.taskType === WritingTaskType.TASK2) {
-          scoreTask2 = 0;
-        } else {
-          scoreTask1 += 0;
+          submittedCount++;
+          submissionsDetails.push({
+            idWritingTask: taskInfo.idWritingTask,
+            taskType: taskInfo.taskType,
+            submissionText: submission.submissionText,
+            aiDetailedFeedback: null,
+            score: null,
+          });
+        } catch (error) {
+          // Surface the error per-task but don't fail the whole submission —
+          // already-created submissions should still count.
+          this.logger.error(
+            `Failed to enqueue grading for task ${submission.idWritingTask}:`,
+            error,
+          );
         }
       }
     }
 
-    const rawScore = (scoreTask1 + scoreTask2 * 2) / 3;
-
-    const bandScore = Math.round(rawScore * 2) / 2;
+    // bandScore starts at 0; grading worker will update it asynchronously once
+    // all submissions for this testResult reach a terminal state
+    // (COMPLETED / FAILED).
+    const bandScore = 0;
 
     const xpGained = await this.calculateXpGained(
       idUser,
@@ -997,15 +990,29 @@ export class UserTestResultService {
     // Mark daily study-planner task complete (best-effort)
     await this.markDailyTaskComplete(idUser, TestType.WRITING);
 
+    // Hook B: enqueue per-taskType (TASK1/TASK2) tracking. Worker picks up after grading ready.
+    try {
+      await this.rabbitMQService.publishGradingTrackPerf({
+        type: 'track_question_type_performance',
+        idUser,
+        idTestResult,
+        skillType: 'WRITING',
+        enqueuedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      this.logger.error(`Failed to enqueue track_perf for writing user ${idUser}`, error);
+    }
+
     return {
-      message: 'Writing test finished and graded successfully!',
+      message:
+        'Writing test submitted. AI grading in progress; bandScore will update shortly.',
       data: {
         idTestResult,
         xpGained,
         bandScore,
         breakdown: {
-          task1Score: scoreTask1,
-          task2Score: scoreTask2,
+          task1Score: 0,
+          task2Score: 0,
         },
         submissions: submissionsDetails,
         finishedAt: updatedResult.finishedAt,
@@ -1149,6 +1156,19 @@ export class UserTestResultService {
     // Mark daily study-planner task complete (best-effort)
     await this.markDailyTaskComplete(idUser, TestType.SPEAKING);
 
+    // Hook C: enqueue per-part (PART1/PART2/PART3) tracking. Worker picks up after grading ready.
+    try {
+      await this.rabbitMQService.publishGradingTrackPerf({
+        type: 'track_question_type_performance',
+        idUser,
+        idTestResult,
+        skillType: 'SPEAKING',
+        enqueuedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      this.logger.error(`Failed to enqueue track_perf for speaking user ${idUser}`, error);
+    }
+
     return {
       message: 'Speaking test finished and graded successfully!',
       data: {
@@ -1168,6 +1188,89 @@ export class UserTestResultService {
       },
       status: 200,
     };
+  }
+
+  /**
+   * Per-result breakdown: for R/L, group user answers by questionType (correct/total).
+   * For W, group submissions by writingTask.taskType (avg score).
+   * For S, group submissions by speakingTask.part (avg score).
+   * Used by FE result page + Weakness card.
+   */
+  async getResultBreakdown(idTestResult: string, idUser: string) {
+    const testResult = await this.databaseService.userTestResult.findFirst({
+      where: { idTestResult, idUser },
+      include: { test: { select: { testType: true } } },
+    });
+    if (!testResult) {
+      throw new NotFoundException('Test result not found');
+    }
+
+    const testType = testResult.test.testType;
+
+    if (testType === TestType.READING || testType === TestType.LISTENING) {
+      const answers = await this.databaseService.userAnswer.findMany({
+        where: { idTestResult, idUser },
+        select: { answerType: true, isCorrect: true },
+      });
+      const grouped = new Map<string, { total: number; correct: number }>();
+      for (const a of answers) {
+        const cur = grouped.get(a.answerType) ?? { total: 0, correct: 0 };
+        cur.total++;
+        if (a.isCorrect) cur.correct++;
+        grouped.set(a.answerType, cur);
+      }
+      const breakdown = Array.from(grouped.entries()).map(([questionType, s]) => ({
+        questionType,
+        total: s.total,
+        correct: s.correct,
+        accuracy: s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0,
+      }));
+      return { skillType: testType, kind: 'per_question_type', breakdown };
+    }
+
+    if (testType === TestType.WRITING) {
+      const submissions = await this.databaseService.userWritingSubmission.findMany({
+        where: { idTestResult, idUser },
+        include: { writingTask: { select: { taskType: true } } },
+      });
+      const grouped = new Map<string, { total: number; scoreSum: number }>();
+      for (const s of submissions) {
+        const key = s.writingTask.taskType;
+        const cur = grouped.get(key) ?? { total: 0, scoreSum: 0 };
+        cur.total++;
+        if (s.aiOverallScore != null) cur.scoreSum += s.aiOverallScore;
+        grouped.set(key, cur);
+      }
+      const breakdown = Array.from(grouped.entries()).map(([taskType, s]) => ({
+        questionType: taskType,
+        total: s.total,
+        avgScore: s.total > 0 ? Math.round((s.scoreSum / s.total) * 10) / 10 : 0,
+      }));
+      return { skillType: testType, kind: 'per_task_type', breakdown };
+    }
+
+    if (testType === TestType.SPEAKING) {
+      const submissions = await this.databaseService.userSpeakingSubmission.findMany({
+        where: { idTestResult, idUser },
+        include: { speakingTask: { select: { part: true } } },
+      });
+      const grouped = new Map<string, { total: number; scoreSum: number }>();
+      for (const s of submissions) {
+        const key = s.speakingTask.part;
+        const cur = grouped.get(key) ?? { total: 0, scoreSum: 0 };
+        cur.total++;
+        if (s.aiOverallScore != null) cur.scoreSum += s.aiOverallScore;
+        grouped.set(key, cur);
+      }
+      const breakdown = Array.from(grouped.entries()).map(([part, s]) => ({
+        questionType: part,
+        total: s.total,
+        avgScore: s.total > 0 ? Math.round((s.scoreSum / s.total) * 10) / 10 : 0,
+      }));
+      return { skillType: testType, kind: 'per_part', breakdown };
+    }
+
+    throw new BadRequestException(`Unknown test type: ${testType}`);
   }
 
   /**

@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { TopicService } from './topic.service';
 import { CreateTopicDto } from './dto/create-topic.dto';
@@ -28,7 +29,10 @@ export class TopicController {
   }
 
   @Get('get-all-by-name/:idUser')
-  findOne(@Param('idUser') idUser: string, nameTopic) {
+  findOne(
+    @Param('idUser') idUser: string,
+    @Query('nameTopic') nameTopic: string,
+  ) {
     return this.topicService.findByName(nameTopic, idUser);
   }
 

@@ -120,6 +120,10 @@ export async function processWriteGradingWithPool(
         gradedAt: new Date(),
       });
 
+      // Aggregate to UserTestResult.bandScore once all submissions for the
+      // parent testResult have reached a terminal state.
+      await neon.aggregateTestResultIfReady(msg.submissionId);
+
       pool.recordSuccess(activeKey.name);
       await neon.disconnect();
       return;
@@ -152,6 +156,10 @@ export async function processWriteGradingWithPool(
     },
     gradedAt: new Date(),
   });
+
+  // Aggregate on FAILED too — sibling submissions may still be COMPLETED, and
+  // FAILED submissions count as 0 toward the bandScore (mirrors prior behavior).
+  await neon.aggregateTestResultIfReady(msg.submissionId);
 
   await refundOnFailure(msg.submissionId, msg.userId, msg.usedSubscriptionQuota, neon);
   await neon.disconnect();
@@ -293,6 +301,10 @@ export async function processSpeakGradingWithPool(
         gradedAt: new Date(),
       });
 
+      // Aggregate to UserTestResult.bandScore when all sibling submissions
+      // are terminal (see neon.service.ts.aggregateSpeakingTestResultIfReady).
+      await neon.aggregateSpeakingTestResultIfReady(msg.submissionId);
+
       pool.recordSuccess(activeKey.name);
       await neon.disconnect();
       return;
@@ -326,6 +338,10 @@ export async function processSpeakGradingWithPool(
     },
     gradedAt: new Date(),
   });
+
+  // Aggregate on FAILED too so partially-graded testResults can still resolve
+  // a bandScore (FAILED contributes 0).
+  await neon.aggregateSpeakingTestResultIfReady(msg.submissionId);
 
   await refundOnFailure(msg.submissionId, msg.userId, msg.usedSubscriptionQuota, neon);
   await neon.disconnect();

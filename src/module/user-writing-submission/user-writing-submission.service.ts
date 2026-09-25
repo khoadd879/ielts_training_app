@@ -4,6 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { CreateUserWritingSubmissionDto } from './dto/create-user-writing-submission.dto';
 import { UpdateUserWritingSubmissionDto } from './dto/update-user-writing-submission.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -58,16 +59,37 @@ export class UserWritingSubmissionService {
       }
     }
 
-    // ✅ Create submission with PENDING status
-    const submission = await this.databaseService.userWritingSubmission.create({
-      data: {
-        idUser,
-        idWritingTask,
-        idTestResult: idTestResult,
-        submissionText,
-        aiGradingStatus: 'PENDING',
-      },
+    // ✅ UPSERT submission by (idTestResult, idWritingTask) — autosave can fire
+    // multiple times for the same task; finishTestWriting also calls this. Without
+    // UPSERT we'd accumulate 1+ rows per task. We don't add a @@unique constraint
+    // (user wants no DB migrations) so we do findFirst + conditional create/update.
+    // Race: 2 concurrent calls can both find null and create — acceptable since FE
+    // debounces autosave 2s and there's only 1 call site in this app.
+    const existing = await this.databaseService.userWritingSubmission.findFirst({
+      where: { idTestResult, idWritingTask },
+      select: { idWritingSubmission: true },
     });
+
+    const submission = existing
+      ? await this.databaseService.userWritingSubmission.update({
+          where: { idWritingSubmission: existing.idWritingSubmission },
+          data: {
+            submissionText,
+            aiGradingStatus: 'PENDING',
+            aiOverallScore: null,
+            aiDetailedFeedback: Prisma.DbNull,
+            gradedAt: null,
+          },
+        })
+      : await this.databaseService.userWritingSubmission.create({
+          data: {
+            idUser,
+            idWritingTask,
+            idTestResult: idTestResult,
+            submissionText,
+            aiGradingStatus: 'PENDING',
+          },
+        });
 
     // NOTE: Credit deduction removed — submissions are free for educational use.
 

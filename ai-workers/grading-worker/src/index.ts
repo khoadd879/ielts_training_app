@@ -1,4 +1,6 @@
 import http from 'http';
+import axios from 'axios';
+import type { ConsumeMessage } from 'amqplib';
 import { setupRabbitMQ, publishMessage } from '@ai-workers/shared';
 import { EXCHANGES, QUEUES, ROUTING_KEYS } from '@ai-workers/shared/types/messages';
 import { processWriteGrading } from './handlers/write.handler';
@@ -194,6 +196,48 @@ async function main() {
       console.log(`✅ Speak grading completed: ${content.submissionId}`);
     } catch (error) {
       console.error('❌ Speak grading failed:', error);
+      channel.nack(msg, false, false);
+    }
+  });
+
+  // track_perf queue: caller asks worker to call back to main app's
+  // /question-type-performance/track-from-worker endpoint after grading is ready.
+  // Worker just relays the message — the main app does the actual polling + DB write.
+  channel.consume('grading.track_perf', async (msg: ConsumeMessage | null) => {
+    if (!msg || isShuttingDown) return;
+    try {
+      const content = JSON.parse(msg.content.toString()) as {
+        type: string;
+        idUser: string;
+        idTestResult: string;
+        skillType: 'WRITING' | 'SPEAKING';
+        enqueuedAt: string;
+      };
+      console.log(`📊 Relaying track_perf for ${content.skillType} ${content.idTestResult}`);
+
+      const mainAppUrl = process.env.MAIN_APP_URL || 'http://localhost:3000';
+      const internalSecret = process.env.INTERNAL_API_SECRET || '';
+      try {
+        await axios.post(
+          `${mainAppUrl}/question-type-performance/track-from-worker`,
+          {
+            idUser: content.idUser,
+            idTestResult: content.idTestResult,
+            skillType: content.skillType,
+          },
+          {
+            headers: internalSecret ? { 'x-internal-secret': internalSecret } : {},
+            timeout: 90_000,
+          },
+        );
+        console.log(`✅ track_perf relayed for ${content.idTestResult}`);
+      } catch (relayErr) {
+        console.error(`❌ track_perf relay failed for ${content.idTestResult}`, relayErr);
+        // Don't nack — caller already moved on; log and ack to drop.
+      }
+      channel.ack(msg);
+    } catch (error) {
+      console.error('❌ track_perf handler error:', error);
       channel.nack(msg, false, false);
     }
   });

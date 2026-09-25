@@ -7,6 +7,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { ProficiencyLevel } from '@prisma/client';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { CreateGrammarDto } from './dto/create-grammar.dto';
@@ -165,9 +166,9 @@ export class GrammarService {
     correctCount: number,
     totalAttempts: number,
     consecutiveCorrect: number,
-  ): { level: string; reason: string } {
+  ): { level: ProficiencyLevel; reason: string } {
     if (totalAttempts < 3 && violations === 0 && consecutiveCorrect < 3) {
-      return { level: 'unknown', reason: 'Chưa đủ data' };
+      return { level: ProficiencyLevel.UNKNOWN, reason: 'Chưa đủ data' };
     }
 
     const accuracy = totalAttempts > 0 ? correctCount / totalAttempts : 0;
@@ -179,7 +180,7 @@ export class GrammarService {
       (consecutiveCorrect >= 5 && accuracy >= 0.9)
     ) {
       return {
-        level: 'hoàn thành',
+        level: ProficiencyLevel.MASTERED,
         reason: `Streak ${consecutiveCorrect} đúng liên tiếp`,
       };
     }
@@ -190,25 +191,25 @@ export class GrammarService {
       (consecutiveCorrect >= 3 && accuracy >= 0.8)
     ) {
       return {
-        level: 'tốt',
+        level: ProficiencyLevel.STRONG,
         reason: `Streak ${consecutiveCorrect} đúng, accuracy ${accuracyPercent}%`,
       };
     }
 
     // 🟡 TRUNG BÌNH
     if (accuracy >= 0.5 || consecutiveCorrect >= 3) {
-      return { level: 'trung bình', reason: `Accuracy ${accuracyPercent}%` };
+      return { level: ProficiencyLevel.MEDIUM, reason: `Accuracy ${accuracyPercent}%` };
     }
 
     // 🔴 CẦN CẢI THIỆN
     if (violations > 0) {
       return {
-        level: 'cần cải thiện',
+        level: ProficiencyLevel.WEAK,
         reason: `Còn ${violations} violations chưa khắc phục`,
       };
     }
     return {
-      level: 'cần cải thiện',
+      level: ProficiencyLevel.WEAK,
       reason: `Sai nhiều (${accuracyPercent}%)`,
     };
   }
@@ -246,7 +247,7 @@ export class GrammarService {
         ? await this.databaseService.userGrammarProficiency.count({
             where: {
               idUser,
-              proficiency: 'strong',
+              proficiency: ProficiencyLevel.STRONG,
               idGrammar: { in: visibleGrammarIds },
             },
           })
@@ -298,7 +299,7 @@ export class GrammarService {
       {
         where: {
           idUser,
-          OR: [{ proficiency: 'cần cải thiện' }, { proficiency: 'trung bình' }],
+          OR: [{ proficiency: ProficiencyLevel.WEAK }, { proficiency: ProficiencyLevel.MEDIUM }],
         },
         take: 10,
       },
@@ -353,7 +354,7 @@ export class GrammarService {
           attempts: acc?.total || 0,
         };
       })
-      .filter((w) => w.proficiency === 'cần cải thiện' || w.accuracy < 70)
+      .filter((w) => w.proficiency === ProficiencyLevel.WEAK || w.accuracy < 70)
       .sort((a, b) => a.accuracy - b.accuracy)
       .slice(0, 3);
 
@@ -436,7 +437,7 @@ export class GrammarService {
     }
 
     const topics = grammars.map((g, idx) => {
-      const prof = proficiencyById.get(g.idGrammar) || 'unknown';
+      const prof = proficiencyById.get(g.idGrammar) || ProficiencyLevel.UNKNOWN;
       const acc = accuracyById.get(g.idGrammar) || { total: 0, correct: 0 };
       const accuracy =
         acc.total > 0 ? Math.round((acc.correct / acc.total) * 100) : 0;
@@ -452,9 +453,9 @@ export class GrammarService {
       //   available  = never attempted (or only 1-2) AND previous topic done
       //   locked     = not attempted AND previous topic not done
       const status =
-        progress >= 100 || prof === 'strong' || accuracy >= 85
+        progress >= 100 || prof === ProficiencyLevel.STRONG || accuracy >= 85
           ? 'done'
-          : prof === 'medium' || attempted > 0
+          : prof === ProficiencyLevel.MEDIUM || attempted > 0
             ? 'current'
             : idx === 0
               ? 'available'
@@ -586,7 +587,7 @@ export class GrammarService {
     // Calculate overall progress
     const total = allTopics.length;
     const mastered = topicsWithProficiency.filter(
-      (t) => t.proficiency === 'hoàn thành',
+      (t) => t.proficiency === ProficiencyLevel.MASTERED,
     ).length;
     const percentage = total > 0 ? Math.round((mastered / total) * 100) : 0;
 
@@ -805,7 +806,7 @@ export class GrammarService {
       create: {
         idUser,
         idGrammar: exercise.idGrammar,
-        proficiency: 'unknown',
+        proficiency: ProficiencyLevel.UNKNOWN,
         totalAttempts: 1,
         correctCount: grade.isCorrect ? 1 : 0,
         wrongCount: grade.isCorrect ? 0 : 1,
@@ -917,7 +918,7 @@ export class GrammarService {
         idGrammar: data.idGrammar,
         violations: 1,
         consecutiveCorrect: 0,
-        proficiency: 'unknown',
+        proficiency: ProficiencyLevel.UNKNOWN,
       },
     });
 
@@ -1016,7 +1017,7 @@ export class GrammarService {
             totalAttempts: 1,
             correctCount: answer.isCorrect ? 1 : 0,
             wrongCount: answer.isCorrect ? 0 : 1,
-            proficiency: 'unknown',
+            proficiency: ProficiencyLevel.UNKNOWN,
           },
         });
         // Recalc proficiency level so /grammar/dashboard hiển thị weak areas đúng

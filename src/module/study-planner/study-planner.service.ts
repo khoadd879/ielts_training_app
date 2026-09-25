@@ -908,7 +908,12 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
 }
 
   async completeTask(idUser: string, idStudyPlan: string, taskId: string, dto: CompleteTaskDto): Promise<{ success: boolean; completed: boolean; completedAt: Date | null }> {
-    const taskType = taskId.split('-')[0].toUpperCase();
+    // taskType comes from FE (DailyTask.type) — validated by CompleteTaskDto.
+    // Previously parsed `taskId.split('-')[0]` which wrote wrong enum
+    // ("INPUT"/"OUTPUT"/"VOCAB"/"FLUENCY") that did not match DailyTask.type,
+    // causing calculatePlan overlay `todayCompletedTypes.has(t.type)` to always
+    // be false → checkbox tick never persisted across reload.
+    const taskType = dto.taskType.toUpperCase();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const completedAt = dto.completed ? (dto.completedAt ? new Date(dto.completedAt) : new Date()) : null;
@@ -1175,18 +1180,20 @@ private createFallbackTask(stage: Stage, minutes: number): DailyTask {
   }
 
   private async calculateVocabMastery(userId: string): Promise<VocabStats> {
-    const vocabs = await this.db.vocabulary.groupBy({
+    // Group by VocabMastery.status (ProficiencyLevel enum — status moved off Vocabulary in R1.07)
+    const vocabs = await this.db.vocabMastery.groupBy({
       by: ['status'],
-      where: { idUser: userId },
-      _count: true
+      where: { userVocab: { idUser: userId } },
+      _count: true,
     });
 
     const stats: VocabStats = { totalWords: 0, mastered: 0, learning: 0, new: 0 };
     for (const v of vocabs) {
-      stats.totalWords += v._count;
-      if (v.status === 'mastered') stats.mastered = v._count;
-      else if (v.status === 'learning') stats.learning = v._count;
-      else stats.new += v._count; // 'new' or 'review'
+      const cnt = v._count;
+      stats.totalWords += cnt;
+      if (v.status === 'MASTERED') stats.mastered = cnt;
+      else if (v.status === 'MEDIUM' || v.status === 'STRONG') stats.learning += cnt;
+      else stats.new += cnt; // UNKNOWN / WEAK / missing
     }
 
     return stats;

@@ -6,14 +6,14 @@ import {
   Body,
   Query,
   Param,
-  Headers,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from 'src/decorator/customize';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 import { StudyPlannerService } from './study-planner.service';
-import { CalculatePlanDto, GetPlanDto } from './dto/calculate-plan.dto';
+import { CalculatePlanDto } from './dto/calculate-plan.dto';
 import { CompleteTaskDto } from './dto/complete-task.dto';
 import { UpdatePreferenceDto } from './dto/update-preference.dto';
 
@@ -41,18 +41,20 @@ export class StudyPlannerController {
   @ApiBearerAuth()
   @Get('plan')
   async getUserPlan(
-    @Query() query: GetPlanDto & { historyMonths?: number },
+    @Query('historyMonths') historyMonths: number | undefined,
+    @Request() req: any,
   ): Promise<any> {
+    const idUser = req.user.userId;
     try {
       console.log(
         '[StudyPlanner] getUserPlan called with:',
-        query.idUser,
+        idUser,
         'historyMonths:',
-        query.historyMonths,
+        historyMonths,
       );
       return await this.studyPlannerService.getUserStudyPlan(
-        query.idUser,
-        query.historyMonths,
+        idUser,
+        historyMonths,
       );
     } catch (error) {
       console.error('[StudyPlanner] getUserPlan error:', error);
@@ -60,11 +62,14 @@ export class StudyPlannerController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get('daily-completion')
   async getDailyCompletion(
-    @Query('idUser') idUser: string,
-    @Query('date') date?: string,
+    @Query('date') date: string | undefined,
+    @Request() req: any,
   ): Promise<any> {
+    const idUser = req.user.userId;
     return this.studyPlannerService.getDailyCompletion(idUser, date);
   }
 
@@ -73,8 +78,9 @@ export class StudyPlannerController {
   @Patch('preference')
   async updatePreference(
     @Body() dto: UpdatePreferenceDto,
-    @Headers('x-user-id') idUser: string,
+    @Request() req: any,
   ): Promise<any> {
+    const idUser = req.user.userId;
     return this.studyPlannerService.updateStudyPreference(
       idUser,
       dto.dailyMinutesAvailable,
@@ -87,8 +93,9 @@ export class StudyPlannerController {
   async completeTask(
     @Param('taskId') taskId: string,
     @Body() dto: CompleteTaskDto,
-    @Headers('x-user-id') idUser: string = 'default-user',
+    @Request() req: any,
   ): Promise<any> {
+    const idUser = req.user.userId;
     const idStudyPlan = 'current-plan';
     return this.studyPlannerService.completeTask(
       idUser,

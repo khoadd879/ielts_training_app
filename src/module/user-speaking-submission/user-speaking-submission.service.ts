@@ -4,6 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { CreateUserSpeakingSubmissionDto } from './dto/create-user-speaking-submission.dto';
 import { UpdateUserSpeakingSubmissionDto } from './dto/update-user-speaking-submission.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -68,18 +69,51 @@ export class UserSpeakingSubmissionService {
       })
       .join('\n\n');
 
-    const submission = await this.databaseService.userSpeakingSubmission.create(
-      {
+    // ✅ UPSERT submission by (idTestResult, idSpeakingTask) — autosave or
+    // finishTestSpeaking retry should not create duplicate rows. Mirror of
+    // writing's pattern (user-writing-submission.service.ts:68-92). Race
+    // window between findFirst and create is acceptable since FE debounces
+    // autosave 2s and finishTestSpeaking is single-call per part.
+    let submission;
+    if (idTestResult) {
+      const existing = await this.databaseService.userSpeakingSubmission.findFirst({
+        where: { idTestResult, idSpeakingTask },
+        select: { idSpeakingSubmission: true },
+      });
+      submission = existing
+        ? await this.databaseService.userSpeakingSubmission.update({
+            where: { idSpeakingSubmission: existing.idSpeakingSubmission },
+            data: {
+              audioUrl,
+              transcript: transcript || null,
+              aiGradingStatus: 'PENDING',
+              aiOverallScore: null,
+              aiDetailedFeedback: Prisma.DbNull,
+              gradedAt: null,
+            },
+          })
+        : await this.databaseService.userSpeakingSubmission.create({
+            data: {
+              idUser,
+              idSpeakingTask,
+              idTestResult,
+              audioUrl,
+              transcript: transcript || null,
+              aiGradingStatus: 'PENDING',
+            },
+          });
+    } else {
+      submission = await this.databaseService.userSpeakingSubmission.create({
         data: {
           idUser,
           idSpeakingTask,
-          audioUrl: audioUrl,
-          idTestResult: idTestResult || null,
+          idTestResult: null,
+          audioUrl,
           transcript: transcript || null,
           aiGradingStatus: 'PENDING',
         },
-      },
-    );
+      });
+    }
 
     // NOTE: Credit deduction removed — submissions are free for educational use.
 

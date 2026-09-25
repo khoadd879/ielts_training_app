@@ -250,11 +250,17 @@ export class PaymentService {
       return { RspCode: '02', Message: 'Order already confirmed' };
     }
 
-    // Atomic claim: only one IPN can transition PENDING → PROCESSING.
-    // If count === 0, another IPN already claimed or finished.
+    // Atomic claim: mark the row as in-flight via processedAt.
+    // status stays PENDING throughout claim→success/fail; processedAt IS NULL
+    // is the only thing that distinguishes "unclaimed" from "claimed".
+    // If count === 0, another IPN already claimed (or status moved off PENDING).
     const { count: claimCount } = await this.db.paymentTransaction.updateMany({
-      where: { idTransaction: payment.idTransaction, status: 'PENDING' },
-      data: { status: 'PROCESSING', processedAt: new Date() },
+      where: {
+        idTransaction: payment.idTransaction,
+        status: 'PENDING',
+        processedAt: null,
+      },
+      data: { processedAt: new Date() },
     });
     if (claimCount === 0) {
       return { RspCode: '02', Message: 'Order already confirmed or processing' };

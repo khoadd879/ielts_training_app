@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ProficiencyLevel } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 
 const GRAMMAR_TOPIC_IDS: Record<string, string> = {
@@ -67,7 +68,7 @@ export class GrammarTrackingService {
           create: {
             idUser: userId,
             idGrammar: grammar.idGrammar,
-            proficiency: 'unknown',
+            proficiency: ProficiencyLevel.UNKNOWN,
             violations: 1,
             wrongCount: 1,
             consecutiveCorrect: 0,
@@ -107,7 +108,7 @@ export class GrammarTrackingService {
           create: {
             idUser: userId,
             idGrammar: grammar.idGrammar,
-            proficiency: 'unknown',
+            proficiency: ProficiencyLevel.UNKNOWN,
             correctUsages: 1,
             consecutiveCorrect: 1,
             totalAttempts: 1,
@@ -139,7 +140,7 @@ export class GrammarTrackingService {
 
   async getWeakAreas(userId: string) {
     const proficiencies = await this.db.userGrammarProficiency.findMany({
-      where: { idUser: userId, proficiency: 'weak' },
+      where: { idUser: userId, proficiency: ProficiencyLevel.WEAK },
       include: { grammar: true },
     });
 

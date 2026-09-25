@@ -8,6 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ProficiencyLevel } from '@prisma/client';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
 import { SubmitReviewDto, GetDueReviewDto, GetTierRecommendationDto } from './dto/review.dto';
@@ -18,10 +19,10 @@ import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
 import { GoogleGenAI } from '@google/genai';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from '@nestjs/cache-manager';
-import { endOfDay, startOfDay } from 'date-fns';
+import { endOfDay } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-interface VocabCacheEntry {
+export interface VocabCacheEntry {
   word: string;
   phonetic: string | null;
   meaning: string | null;
@@ -36,6 +37,15 @@ interface SM2Result {
   repetitions: number;
   interval: number;
   easiness: number;
+}
+
+/** Fisher-Yates shuffle (in-place, returns same array). */
+function shuffle<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 @Injectable()
@@ -61,7 +71,6 @@ export class VocabularyService {
    * Based on Woźniak (1987)
    */
   sm2(quality: number, repetitions: number, easiness: number, interval: number): SM2Result {
-    // quality: 0-5 (0=wrong, 3=correct with difficulty, 5=perfect)
     if (quality < 3) {
       return { repetitions: 0, interval: 1, easiness };
     }
@@ -76,39 +85,137 @@ export class VocabularyService {
   }
 
   /**
-   * Get vocabulary due for review today
+   * Apply SM-2 for a VocabSeed → user mastery upsert.
+   * Used by completeDailyVocab + cloze passage submission (per-blank).
    */
-  async getDueReview(getDueReviewDto: GetDueReviewDto) {
-    const { idUser, limit = 20 } = getDueReviewDto;
-    const now = new Date();
-    const startOfToday = startOfDay(now);
-    const endOfToday = endOfDay(now);
-
-    return this.databaseService.vocabulary.findMany({
-      where: {
-        idUser,
-        OR: [
-          { nextReviewAt: null }, // New words
-          { nextReviewAt: { lte: endOfToday } }, // Due today or overdue
-        ],
-        status: { not: 'mastered' },
-      },
-      take: limit,
-      orderBy: [
-        { nextReviewAt: 'asc' }, // Most overdue first
-        { createdAt: 'asc' }, // Then by creation date (newest first)
-      ],
+  async applySm2ForSeed(idUser: string, idVocabSeed: string, quality: number) {
+    const seed = await this.databaseService.vocabSeed.findUnique({
+      where: { idSeed: idVocabSeed },
     });
+    if (!seed) {
+      throw new BadRequestException('Vocab seed not found');
+    }
+
+    // Find-or-create user copy (clone from seed)
+    let userVocab = await this.databaseService.vocabulary.findFirst({
+      where: { idUser, word: seed.word },
+    });
+    if (!userVocab) {
+      userVocab = await this.databaseService.vocabulary.create({
+        data: {
+          idUser,
+          word: seed.word,
+          meaning: seed.meaning,
+          phonetic: seed.phonetic,
+          VocabType: seed.VocabType,
+          sourceSeedId: seed.idSeed,
+        },
+      });
+    }
+
+    // Find-or-create mastery
+    let mastery = await this.databaseService.vocabMastery.findUnique({
+      where: { idVocab: userVocab.idVocab },
+    });
+    const repetitions = mastery?.timesReviewed ?? 0;
+    const easiness = mastery?.easinessFactor ?? 2.5;
+    const interval = mastery?.interval ?? 1;
+
+    const result = this.sm2(quality, repetitions, easiness, interval);
+    const nextReviewAt = new Date();
+    nextReviewAt.setDate(nextReviewAt.getDate() + result.interval);
+
+    // Proficiency map (independent of SM-2 scheduling)
+    let status: ProficiencyLevel = mastery?.status ?? ProficiencyLevel.UNKNOWN;
+    if (quality < 3) {
+      status = ProficiencyLevel.WEAK;
+    } else if (result.repetitions >= 5 && result.easiness >= 2.5) {
+      status = ProficiencyLevel.MASTERED;
+    } else if (result.repetitions >= 2) {
+      status = ProficiencyLevel.STRONG;
+    } else {
+      status = ProficiencyLevel.MEDIUM;
+    }
+
+    const updated = await this.databaseService.vocabMastery.upsert({
+      where: { idVocab: userVocab.idVocab },
+      update: {
+        timesReviewed: result.repetitions,
+        easinessFactor: result.easiness,
+        interval: result.interval,
+        nextReviewAt,
+        status,
+      },
+      create: {
+        idVocab: userVocab.idVocab,
+        timesReviewed: result.repetitions,
+        easinessFactor: result.easiness,
+        interval: result.interval,
+        nextReviewAt,
+        status,
+      },
+    });
+
+    await this.databaseService.vocabulary.update({
+      where: { idVocab: userVocab.idVocab },
+      data: { lastReviewed: new Date() },
+    });
+
+    return {
+      idVocab: userVocab.idVocab,
+      idSeed: seed.idSeed,
+      word: userVocab.word,
+      status: updated.status,
+      timesReviewed: updated.timesReviewed,
+      interval: updated.interval,
+      nextReviewAt: updated.nextReviewAt,
+      easinessFactor: updated.easinessFactor,
+    };
   }
 
   /**
-   * Submit a review with quality rating
+   * Get vocabulary due for review today.
+   * Filters by VocabMastery.nextReviewAt (scheduling) — proficiency (status) is independent.
+   */
+  async getDueReview(getDueReviewDto: GetDueReviewDto) {
+    const { idUser, limit = 20 } = getDueReviewDto;
+    const endOfToday = endOfDay(new Date());
+
+    const list = await this.databaseService.vocabulary.findMany({
+      where: {
+        idUser,
+        mastery: {
+          OR: [
+            { nextReviewAt: null }, // New words
+            { nextReviewAt: { lte: endOfToday } }, // Due today or overdue
+          ],
+        },
+      },
+      include: { mastery: true },
+      take: limit,
+    });
+
+    // Sort in-app by mastery.nextReviewAt, then createdAt
+    list.sort((a, b) => {
+      const aTime = a.mastery?.nextReviewAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      const bTime = b.mastery?.nextReviewAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      if (aTime !== bTime) return aTime - bTime;
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
+
+    return list;
+  }
+
+  /**
+   * Submit a review with quality rating.
+   * Ownership check still needed (vocab is per-user); system vocab is gone post-R1.08.
    */
   async submitReview(submitReviewDto: SubmitReviewDto) {
     const { idVocab, idUser, quality } = submitReviewDto;
 
     const vocabulary = await this.databaseService.vocabulary.findUnique({
       where: { idVocab },
+      include: { mastery: true },
     });
 
     if (!vocabulary) {
@@ -119,45 +226,52 @@ export class VocabularyService {
       throw new BadRequestException('Vocabulary does not belong to user');
     }
 
-    // Get current SM-2 values
-    const repetitions = vocabulary.timesReviewed || 0;
-    const easiness = vocabulary.easinessFactor || 2.5;
-    const interval = vocabulary.interval || 1;
+    const repetitions = vocabulary.mastery?.timesReviewed ?? 0;
+    const easiness = vocabulary.mastery?.easinessFactor ?? 2.5;
+    const interval = vocabulary.mastery?.interval ?? 1;
 
-    // Calculate new SM-2 values
     const result = this.sm2(quality, repetitions, easiness, interval);
-
-    // Calculate next review date
     const nextReviewAt = new Date();
     nextReviewAt.setDate(nextReviewAt.getDate() + result.interval);
 
-    // Determine new status based on repetitions and quality
-    let status = vocabulary.status || 'new';
+    let status: ProficiencyLevel = vocabulary.mastery?.status ?? ProficiencyLevel.UNKNOWN;
     if (quality < 3) {
-      status = 'learning';
+      status = ProficiencyLevel.WEAK;
     } else if (result.repetitions >= 5 && result.easiness >= 2.5) {
-      status = 'mastered';
+      status = ProficiencyLevel.MASTERED;
     } else if (result.repetitions >= 2) {
-      status = 'review';
+      status = ProficiencyLevel.STRONG;
     } else {
-      status = 'learning';
+      status = ProficiencyLevel.MEDIUM;
     }
 
-    const updated = await this.databaseService.vocabulary.update({
+    const updated = await this.databaseService.vocabMastery.upsert({
       where: { idVocab },
-      data: {
+      update: {
         timesReviewed: result.repetitions,
         easinessFactor: result.easiness,
         interval: result.interval,
         nextReviewAt,
         status,
-        lastReviewed: new Date(),
+      },
+      create: {
+        idVocab,
+        timesReviewed: result.repetitions,
+        easinessFactor: result.easiness,
+        interval: result.interval,
+        nextReviewAt,
+        status,
       },
     });
 
+    await this.databaseService.vocabulary.update({
+      where: { idVocab },
+      data: { lastReviewed: new Date() },
+    });
+
     return {
-      idVocab: updated.idVocab,
-      word: updated.word,
+      idVocab,
+      word: vocabulary.word,
       status: updated.status,
       timesReviewed: updated.timesReviewed,
       interval: updated.interval,
@@ -167,58 +281,50 @@ export class VocabularyService {
   }
 
   /**
-   * Get tier recommendation based on user's target band
+   * Get tier recommendation based on user's target band.
+   * Tier totals come from VocabSeed (shared pool); mastered counts via Vocabulary.sourceSeed.
    */
   async getTierRecommendation(getTierRecommendationDto: GetTierRecommendationDto) {
     const { idUser } = getTierRecommendationDto;
 
-    const user = await this.databaseService.user.findUnique({
-      where: { idUser },
-    });
-
+    const user = await this.databaseService.user.findUnique({ where: { idUser } });
     if (!user) {
       throw new BadRequestException('User not found');
     }
 
-    // Get user's vocabulary stats
-    const vocabCount = await this.databaseService.vocabulary.count({
-      where: { idUser },
-    });
-
-    // Get user's target band (return null if not set — caller decides whether to recommend a tier)
+    const vocabCount = await this.databaseService.vocabulary.count({ where: { idUser } });
     const targetBand = user.targetBandScore ?? null;
 
-    // Determine tier based on band target. No target → null tier; FE prompts user to set target.
     let recommendedTier: number | null;
-    if (targetBand === null) {
-      recommendedTier = null;
-    } else if (targetBand < 5.5) {
-      recommendedTier = 1; // High frequency words (3k = 90% coverage)
-    } else if (targetBand < 6.5) {
-      recommendedTier = 2; // Academic Word List (570 words)
-    } else {
-      recommendedTier = 3; // Specialized/technical vocabulary
+    if (targetBand === null) recommendedTier = null;
+    else if (targetBand < 5.5) recommendedTier = 1;
+    else if (targetBand < 6.5) recommendedTier = 2;
+    else recommendedTier = 3;
+
+    if (recommendedTier === null) {
+      return {
+        recommendedTier: null,
+        vocabCount,
+        masteredCount: 0,
+        totalInTier: 0,
+        masteryPercentage: 0,
+        shouldProgress: false,
+        targetBand,
+      };
     }
 
-    // Count mastered words per tier
-    const masteredByTier = await this.databaseService.vocabulary.groupBy({
-      by: ['tier'],
-      where: { idUser, status: 'mastered' },
-      _count: true,
+    const totalInTier = await this.databaseService.vocabSeed.count({
+      where: { tier: recommendedTier },
     });
 
-    const masteredCount = recommendedTier !== null
-      ? masteredByTier.find(t => t.tier === recommendedTier)?._count || 0
-      : 0;
+    const masteredCount = await this.databaseService.vocabulary.count({
+      where: {
+        idUser,
+        mastery: { status: ProficiencyLevel.MASTERED },
+        sourceSeed: { tier: recommendedTier },
+      },
+    });
 
-    // Get total in recommended tier
-    const totalInTier = recommendedTier !== null
-      ? await this.databaseService.vocabulary.count({
-          where: { idUser, tier: recommendedTier },
-        })
-      : 0;
-
-    // Check if should progress to next tier (80% mastery)
     const masteryPercentage = totalInTier > 0 ? (masteredCount / totalInTier) * 100 : 0;
     const shouldProgress = totalInTier > 0 && masteryPercentage >= 80;
 
@@ -233,58 +339,47 @@ export class VocabularyService {
     };
   }
 
+  /**
+   * Create a user-owned custom vocab (no source seed).
+   * Transaction: create Vocabulary + VocabMastery.
+   */
   async createVocabulary(createVocabularyDto: CreateVocabularyDto) {
-    const {
-      idUser,
-      idTopic,
-      word,
-      meaning,
-      phonetic,
-      example,
-      VocabType,
-      level,
-    } = createVocabularyDto;
+    const { idUser, idTopic, word, meaning, phonetic, example, VocabType, level } = createVocabularyDto;
 
-    const existingUser = await this.databaseService.user.findUnique({
-      where: { idUser },
-    });
-
+    const existingUser = await this.databaseService.user.findUnique({ where: { idUser } });
     if (!existingUser) {
       throw new BadRequestException('User not found');
     }
 
-    // Determine tier based on user's target band. No target → tier 1 (high-frequency, safe default for new learners).
-    const targetBand = existingUser.targetBandScore ?? null;
-    let tier = 1;
-    if (targetBand !== null && targetBand >= 6.5) {
-      tier = 2; // AWL for academic users
-    } else if (targetBand !== null && targetBand >= 5.5) {
-      tier = 1; // High frequency words
-    }
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Set next review to tomorrow (new words)
-    const nextReviewAt = new Date();
-    nextReviewAt.setDate(nextReviewAt.getDate() + 1);
-
-    const data = await this.databaseService.vocabulary.create({
-      data: {
-        idUser,
-        idTopic: idTopic ? idTopic : null,
-        VocabType,
-        word,
-        meaning,
-        phonetic,
-        example,
-        level,
-        tier,
-        nextReviewAt,
-        status: 'new',
-      },
+    const data = await this.databaseService.$transaction(async (tx) => {
+      const vocab = await tx.vocabulary.create({
+        data: {
+          idUser,
+          idTopic: idTopic ?? null,
+          word,
+          meaning,
+          phonetic,
+          example,
+          VocabType,
+          level,
+        },
+      });
+      await tx.vocabMastery.create({
+        data: {
+          idVocab: vocab.idVocab,
+          nextReviewAt: tomorrow,
+          status: ProficiencyLevel.UNKNOWN,
+        },
+      });
+      return vocab;
     });
 
     return {
       message: 'Vocabulary created successfully',
-      data: data,
+      data,
       status: 200,
     };
   }
@@ -312,112 +407,46 @@ export class VocabularyService {
   }
 
   async update(idVocab: string, updateVocabularyDto: UpdateVocabularyDto) {
-    const {
-      idUser,
-      idTopic,
-      word,
-      meaning,
-      phonetic,
-      example,
-      VocabType,
-      level,
-    } = updateVocabularyDto;
+    const { idUser, idTopic, word, meaning, phonetic, example, VocabType, level } = updateVocabularyDto;
 
-    const existingVocabulary = await this.databaseService.vocabulary.findUnique(
-      {
-        where: { idVocab },
-      },
-    );
+    const existingVocabulary = await this.databaseService.vocabulary.findUnique({ where: { idVocab } });
+    if (!existingVocabulary) throw new BadRequestException('Vocabulary not found');
 
-    if (!existingVocabulary) {
-      throw new BadRequestException('Vocabulary not found');
-    }
-
-    const existingUser = await this.databaseService.user.findUnique({
-      where: { idUser },
-    });
-
-    if (!existingUser) {
-      throw new BadRequestException('User not found');
-    }
+    const existingUser = await this.databaseService.user.findUnique({ where: { idUser } });
+    if (!existingUser) throw new BadRequestException('User not found');
 
     const data = await this.databaseService.vocabulary.update({
       where: { idVocab },
-      data: {
-        idTopic,
-        word,
-        meaning,
-        phonetic,
-        example,
-        VocabType,
-        level,
-      },
+      data: { idTopic, word, meaning, phonetic, example, VocabType, level },
     });
 
-    return {
-      message: 'Vocabulary updated successfully',
-      data: data,
-      status: 200,
-    };
+    return { message: 'Vocabulary updated successfully', data, status: 200 };
   }
 
   async remove(idVocab: string, idUser: string) {
-    const existingVocabulary = await this.databaseService.vocabulary.findUnique(
-      {
-        where: { idVocab },
-      },
-    );
+    const existingVocabulary = await this.databaseService.vocabulary.findUnique({ where: { idVocab } });
+    if (!existingVocabulary) throw new BadRequestException('Vocabulary not found');
 
-    if (!existingVocabulary) {
-      throw new BadRequestException('Vocabulary not found');
-    }
+    const existingUser = await this.databaseService.user.findUnique({ where: { idUser } });
+    if (!existingUser) throw new BadRequestException('User not found');
 
-    const existingUser = await this.databaseService.user.findUnique({
-      where: { idUser },
-    });
-
-    if (!existingUser) {
-      throw new BadRequestException('User not found');
-    }
-
-    const data = await this.databaseService.vocabulary.delete({
-      where: { idVocab },
-    });
-
-    return {
-      message: 'Vocabulary deleted successfully',
-      data: data,
-      status: 200,
-    };
+    const data = await this.databaseService.vocabulary.delete({ where: { idVocab } });
+    return { message: 'Vocabulary deleted successfully', data, status: 200 };
   }
 
   async addVocabularyToTopic(idVocab: string, idTopic: string) {
-    const existingVocabulary = await this.databaseService.vocabulary.findUnique(
-      {
-        where: { idVocab },
-      },
-    );
-    if (!existingVocabulary) {
-      throw new BadRequestException('Vocabulary not found');
-    }
+    const existingVocabulary = await this.databaseService.vocabulary.findUnique({ where: { idVocab } });
+    if (!existingVocabulary) throw new BadRequestException('Vocabulary not found');
 
-    const existingTopic = await this.databaseService.topic.findUnique({
-      where: { idTopic },
-    });
-    if (!existingTopic) {
-      throw new BadRequestException('Topic not found');
-    }
+    const existingTopic = await this.databaseService.topic.findUnique({ where: { idTopic } });
+    if (!existingTopic) throw new BadRequestException('Topic not found');
 
     const data = await this.databaseService.vocabulary.update({
       where: { idVocab },
       data: { idTopic },
     });
 
-    return {
-      message: 'Vocabulary added to topic successfully',
-      data: data,
-      status: 200,
-    };
+    return { message: 'Vocabulary added to topic successfully', data, status: 200 };
   }
 
   async suggest(word: string): Promise<{
@@ -428,8 +457,6 @@ export class VocabularyService {
   }> {
     const lowerWord = word.toLowerCase().trim();
     const cacheKey = `${this.cachePrefix}${lowerWord}`;
-
-    // Check cache first
     const cached = await this.cache.get<VocabCacheEntry>(cacheKey);
     if (cached) {
       this.logger.debug(`Cache hit for "${lowerWord}"`);
@@ -440,28 +467,19 @@ export class VocabularyService {
         example: cached.example,
       };
     }
-
-    // Sync fallback removed. Clients should use POST /vocabulary/suggest for fresh lookups.
     throw new HttpException(
       { message: 'Use POST /vocabulary/suggest for fresh lookups', status: 410 },
       HttpStatus.GONE,
     );
   }
 
-  /**
-   * Async vocab suggest: cache hit → 200, in-flight → 202 with existing jobId,
-   * else enqueue via RabbitMQ and return 202 with new jobId.
-   */
   async suggestPost(
     dto: { word: string },
     req: any,
   ): Promise<{ status: number; data?: VocabCacheEntry; jobId?: string; message?: string }> {
     const lowerWord = (dto.word ?? '').toLowerCase().trim();
-    if (!lowerWord) {
-      throw new BadRequestException('word required');
-    }
+    if (!lowerWord) throw new BadRequestException('word required');
 
-    // Layer 1: cache hit
     const cacheKey = `${this.cachePrefix}${lowerWord}`;
     const cached = await this.cache.get<VocabCacheEntry>(cacheKey);
     if (cached) {
@@ -469,19 +487,11 @@ export class VocabularyService {
       return { status: 200, data: cached };
     }
 
-    // Layer 2: in-flight job check
-    const existingJob = await this.cache.get<string>(
-      `vocab-job-active:${lowerWord}`,
-    );
+    const existingJob = await this.cache.get<string>(`vocab-job-active:${lowerWord}`);
     if (existingJob) {
-      return {
-        status: 202,
-        jobId: existingJob,
-        message: 'Suggestion in progress',
-      };
+      return { status: 202, jobId: existingJob, message: 'Suggestion in progress' };
     }
 
-    // Layer 3: enqueue
     const jobId = uuidv4();
     await this.cache.set(`vocab-job-active:${lowerWord}`, jobId, 300);
     const requestedByUserId = req?.user?.idUser ?? null;
@@ -495,150 +505,122 @@ export class VocabularyService {
     return { status: 202, jobId, message: 'Suggestion queued' };
   }
 
-  /**
-   * Poll for async vocab suggest result. Returns 200 with data when ready,
-   * 202 while still in-flight, 404 when expired or unknown.
-   */
   async suggestResult(
     jobId: string,
     word: string,
   ): Promise<{ status: number; data?: VocabCacheEntry; message?: string }> {
     const lowerWord = (word ?? '').toLowerCase().trim();
-    if (!jobId || !lowerWord) {
-      throw new BadRequestException('jobId and word required');
-    }
+    if (!jobId || !lowerWord) throw new BadRequestException('jobId and word required');
 
     const jobKey = `vocab-job:${lowerWord}:${jobId}`;
-
-    // 1. Final result
     const result = await this.cache.get<VocabCacheEntry>(jobKey);
-    if (result) {
-      return { status: 200, data: result };
-    }
+    if (result) return { status: 200, data: result };
 
-    // 2. Still in-flight
     const activeJob = await this.cache.get<string>(`vocab-job-active:${lowerWord}`);
-    if (activeJob === jobId) {
-      return { status: 202, message: 'Still processing' };
-    }
+    if (activeJob === jobId) return { status: 202, message: 'Still processing' };
 
-    // 3. Expired
     throw new NotFoundException('Job expired or not found');
   }
 
   /**
-   * Get daily vocabulary for exercise
-   * Filter: tier 1 or 2, status != 'mastered', idUser IS NULL (system vocab)
-   * Priority: lower frequencyRank + not reviewed recently
+   * Get daily vocab from shared VocabSeed pool.
+   * Excludes words user already has. Tier from VocabSeed (not Vocabulary).
    */
   async getDailyVocab(getDailyVocabDto: GetDailyVocabDto) {
     const { idUser, limit = 10 } = getDailyVocabDto;
 
-    // Get user's target band to determine preferred tier
-    const user = await this.databaseService.user.findUnique({
-      where: { idUser },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
+    const user = await this.databaseService.user.findUnique({ where: { idUser } });
+    if (!user) throw new BadRequestException('User not found');
 
     const targetBand = user.targetBandScore ?? null;
-    // No target → both tiers; target ≥ 6.5 prioritizes AWL (tier 2).
     const preferredTiers = targetBand !== null && targetBand >= 6.5 ? [2, 1] : [1, 2];
 
-    // Get random vocab from preferred tiers (NOT filtered by idUser - shared pool)
-    let vocabList = await this.databaseService.vocabulary.findMany({
+    const userWordTexts = await this.databaseService.vocabulary.findMany({
+      where: { idUser },
+      select: { word: true },
+    });
+    const existingWords = new Set(userWordTexts.map(w => w.word.toLowerCase()));
+
+    let seedList = await this.databaseService.vocabSeed.findMany({
       where: {
         tier: { in: preferredTiers },
+        word: { notIn: Array.from(existingWords) },
       },
-      take: limit * 3, // Get more to randomize
+      take: limit * 3,
     });
+    seedList = shuffle(seedList).slice(0, limit);
 
-    // Shuffle and pick 'limit' items
-    vocabList.sort(() => Math.random() - 0.5);
-    vocabList = vocabList.slice(0, limit);
-
-    // If not enough, get from any tier
-    if (vocabList.length < limit) {
-      const existingIds = vocabList.map(v => v.idVocab);
-      const moreVocab = await this.databaseService.vocabulary.findMany({
+    if (seedList.length < limit) {
+      const existingIds = seedList.map(s => s.idSeed);
+      const more = await this.databaseService.vocabSeed.findMany({
         where: {
-          idVocab: { notIn: existingIds },
+          idSeed: { notIn: existingIds },
+          word: { notIn: Array.from(existingWords) },
         },
-        take: limit - vocabList.length,
+        take: limit - seedList.length,
       });
-      vocabList.push(...moreVocab);
+      seedList.push(...more);
     }
 
-    // Shuffle for randomness
-    vocabList.sort(() => Math.random() - 0.5);
-
-    return vocabList.map(v => ({
-      idVocab: v.idVocab,
-      word: v.word,
-      phonetic: v.phonetic,
-      meaning: v.meaning,
-      VocabType: v.VocabType,
+    return seedList.map(s => ({
+      idSeed: s.idSeed, // expose idSeed for FE compat (treat as idVocab when calling complete)
+      idVocab: s.idSeed,
+      word: s.word,
+      phonetic: s.phonetic,
+      meaning: s.meaning,
+      VocabType: s.VocabType,
     }));
   }
 
   /**
-   * Complete daily vocabulary exercise
-   * Update SM-2 fields based on correct/incorrect answers
+   * Complete daily vocab exercise.
+   * vocabId from FE is VocabSeed.idSeed (per getDailyVocab).
+   * For each answer: find-or-create user copy + upsert mastery with simplified SM-2.
    */
   async completeDailyVocab(completeDailyVocabDto: CompleteDailyVocabDto) {
     const { idUser, answers } = completeDailyVocabDto;
 
-    const results: Array<{ vocabId: string; word: string; status: string; isCorrect: boolean }> = [];
+    const results: Array<{ vocabId: string; word: string; status: ProficiencyLevel; isCorrect: boolean }> = [];
     let correctCount = 0;
     let incorrectCount = 0;
 
     for (const answer of answers) {
       const { vocabId, isCorrect } = answer;
 
-      // Get vocabulary to find corresponding user vocab or create one
-      const systemVocab = await this.databaseService.vocabulary.findUnique({
-        where: { idVocab: vocabId },
-      });
+      // vocabId is VocabSeed.idSeed
+      const seed = await this.databaseService.vocabSeed.findUnique({ where: { idSeed: vocabId } });
+      if (!seed) continue;
 
-      if (!systemVocab) {
-        continue;
-      }
-
-      // Find or create user vocabulary record
+      // Find-or-create user copy
       let userVocab = await this.databaseService.vocabulary.findFirst({
-        where: {
-          idUser,
-          word: systemVocab.word,
-        },
+        where: { idUser, word: seed.word },
       });
-
       if (!userVocab) {
-        // Create user vocabulary based on system vocab
         userVocab = await this.databaseService.vocabulary.create({
           data: {
             idUser,
-            word: systemVocab.word,
-            meaning: systemVocab.meaning,
-            phonetic: systemVocab.phonetic,
-            VocabType: systemVocab.VocabType,
-            tier: systemVocab.tier,
-            frequencyRank: systemVocab.frequencyRank,
-            status: 'new',
-            timesReviewed: 0,
-            easinessFactor: 2.5,
-            interval: 1,
+            word: seed.word,
+            meaning: seed.meaning,
+            phonetic: seed.phonetic,
+            VocabType: seed.VocabType,
+            sourceSeedId: seed.idSeed,
           },
         });
       }
 
-      // Apply SM-2 algorithm
-      let easinessFactor = userVocab.easinessFactor;
-      let interval = userVocab.interval;
-      let timesReviewed = userVocab.timesReviewed || 0;
-      let status = userVocab.status;
+      // Find-or-create mastery
+      let mastery = await this.databaseService.vocabMastery.findUnique({
+        where: { idVocab: userVocab.idVocab },
+      });
+      if (!mastery) {
+        mastery = await this.databaseService.vocabMastery.create({
+          data: { idVocab: userVocab.idVocab, status: ProficiencyLevel.UNKNOWN },
+        });
+      }
 
+      // Simplified SM-2 for binary isCorrect
+      let easinessFactor = mastery.easinessFactor;
+      let interval = mastery.interval;
       if (isCorrect) {
         easinessFactor = Math.min(2.5, easinessFactor + 0.1);
         interval = Math.round(interval * easinessFactor);
@@ -649,82 +631,65 @@ export class VocabularyService {
         incorrectCount++;
       }
 
-      // Update status based on interval
-      if (interval >= 21) {
-        status = 'mastered';
-      } else if (interval >= 7) {
-        status = 'review';
-      } else if (interval >= 1) {
-        status = 'learning';
-      }
+      let status: ProficiencyLevel = mastery.status;
+      if (interval >= 21) status = ProficiencyLevel.MASTERED;
+      else if (interval >= 7) status = ProficiencyLevel.STRONG;
+      else if (interval >= 1) status = ProficiencyLevel.MEDIUM;
+      else status = ProficiencyLevel.WEAK;
 
-      // Calculate next review date
       const nextReviewAt = new Date();
       nextReviewAt.setDate(nextReviewAt.getDate() + interval);
 
-      const updated = await this.databaseService.vocabulary.update({
+      mastery = await this.databaseService.vocabMastery.update({
         where: { idVocab: userVocab.idVocab },
         data: {
-          timesReviewed: timesReviewed + 1,
+          timesReviewed: mastery.timesReviewed + 1,
           easinessFactor,
           interval,
           nextReviewAt,
           status,
-          lastReviewed: new Date(),
         },
       });
 
+      await this.databaseService.vocabulary.update({
+        where: { idVocab: userVocab.idVocab },
+        data: { lastReviewed: new Date() },
+      });
+
       results.push({
-        vocabId: updated.idVocab,
-        word: updated.word,
-        status: updated.status,
+        vocabId: userVocab.idVocab,
+        word: userVocab.word,
+        status: mastery.status,
         isCorrect,
       });
     }
 
     return {
-      summary: {
-        total: answers.length,
-        correct: correctCount,
-        incorrect: incorrectCount,
-      },
+      summary: { total: answers.length, correct: correctCount, incorrect: incorrectCount },
       results,
     };
   }
 
   /**
-   * Get vocabulary statistics for a user
+   * Get vocab stats: tier totals from VocabSeed, mastered count from mastery join.
+   * Response shape preserved for FE (vocabulary.jsx:693-694 reads tier1Progress.mastered).
    */
   async getVocabStats(idUser: string) {
-    // Tier 1: High frequency 3k words
-    const tier1Total = await this.databaseService.vocabulary.count({
-      where: {
-        idUser: '',
-        tier: 1,
-      },
-    });
-
+    const tier1Total = await this.databaseService.vocabSeed.count({ where: { tier: 1 } });
     const tier1Mastered = await this.databaseService.vocabulary.count({
       where: {
         idUser,
-        tier: 1,
-        status: 'mastered',
+        mastery: { status: ProficiencyLevel.MASTERED },
+        sourceSeed: { tier: 1 },
       },
     });
 
-    // Tier 2: AWL 570 words
-    const tier2Total = await this.databaseService.vocabulary.count({
-      where: {
-        idUser: '',
-        tier: 2,
-      },
-    });
-
+    const tier2Total = await this.databaseService.vocabSeed.count({ where: { tier: 2 } });
     const tier2Mastered = await this.databaseService.vocabulary.count({
       where: {
         idUser,
-        tier: 2,
-        status: 'mastered',
+        mastery: { status: ProficiencyLevel.MASTERED },
+        sourceSeed: { tier: 2 },
       },
     });
 
@@ -742,29 +707,34 @@ export class VocabularyService {
     };
   }
 
+  /**
+   * Get random words for practice, excluding mastered.
+   */
   async getRandomWords(idUser: string, count: number, mode: string) {
-    // Get vocabulary words with status != 'mastered' for user
+    const masteredIds = (
+      await this.databaseService.vocabMastery.findMany({
+        where: {
+          status: ProficiencyLevel.MASTERED,
+          userVocab: { idUser },
+        },
+        select: { idVocab: true },
+      })
+    ).map(m => m.idVocab);
+
     const words = await this.databaseService.vocabulary.findMany({
-      where: {
-        idUser,
-        status: { not: 'mastered' }
-      },
-      take: count,
-      orderBy: {
-        createdAt: 'desc'
-      }
+      where: { idUser, idVocab: { notIn: masteredIds } },
+      take: count * 2,
+      orderBy: { createdAt: 'desc' },
     });
 
-    // Shuffle the results
-    const shuffled = words.sort(() => Math.random() - 0.5).slice(0, count);
+    const shuffled = shuffle(words).slice(0, count);
 
-    // For multiple mode: add wrong options
     if (mode === 'multiple') {
       for (const word of shuffled) {
         const wrongOptions = await this.databaseService.vocabulary.findMany({
           where: { idVocab: { not: word.idVocab } },
           take: 3,
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         });
         (word as any).options = [word.word, ...wrongOptions.map(w => w.word)].sort(() => Math.random() - 0.5);
       }
@@ -773,19 +743,20 @@ export class VocabularyService {
     return shuffled;
   }
 
+  /**
+   * Submit practice results. Update mastery (simplified SM-2 for binary input).
+   */
   async submitPractice(idUser: string, mode: string, answers: any[]) {
-    // Update SM-2 for each word based on isCorrect
     for (const answer of answers) {
       const vocab = await this.databaseService.vocabulary.findUnique({
-        where: { idVocab: answer.idVocab }
+        where: { idVocab: answer.idVocab },
+        include: { mastery: true },
       });
 
-      if (vocab) {
-        let easinessFactor = vocab.easinessFactor || 2.5;
-        let interval = vocab.interval || 1;
-        let timesReviewed = vocab.timesReviewed || 0;
+      if (vocab && vocab.mastery) {
+        let easinessFactor = vocab.mastery.easinessFactor || 2.5;
+        let interval = vocab.mastery.interval || 1;
 
-        // SM-2 algorithm
         if (answer.isCorrect) {
           if (interval === 1) interval = 6;
           else if (interval < 30) interval = Math.round(interval * easinessFactor);
@@ -796,14 +767,19 @@ export class VocabularyService {
           easinessFactor = Math.max(1.3, easinessFactor - 0.2);
         }
 
-        await this.databaseService.vocabulary.update({
-          where: { idVocab: answer.idVocab },
+        let status: ProficiencyLevel = ProficiencyLevel.MEDIUM;
+        if (interval > 21) status = ProficiencyLevel.MASTERED;
+        else if (interval > 1) status = ProficiencyLevel.STRONG;
+        else status = ProficiencyLevel.WEAK;
+
+        await this.databaseService.vocabMastery.update({
+          where: { idVocab: vocab.idVocab },
           data: {
             easinessFactor,
             interval,
-            timesReviewed: timesReviewed + 1,
-            status: interval > 21 ? 'mastered' : interval > 1 ? 'review' : 'learning'
-          }
+            timesReviewed: vocab.mastery.timesReviewed + 1,
+            status,
+          },
         });
       }
     }
@@ -813,33 +789,37 @@ export class VocabularyService {
   }
 
   /**
-   * Get daily session words: due review + new words to fill quota
+   * Get daily session words: due review (user's vocab with mastery.nextReviewAt due) +
+   * fill quota with new VocabSeed entries.
    */
   async getDailySessionWords(getDailySessionDto: GetDailySessionDto) {
     const { idUser, quota = 15 } = getDailySessionDto;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 1. Get due words (overdue first, then new words with null nextReviewAt)
     const dueWords = await this.databaseService.vocabulary.findMany({
       where: {
         idUser,
-        status: { not: 'mastered' },
-        OR: [
-          { nextReviewAt: { lte: today } },
-          { nextReviewAt: null },
-        ],
+        mastery: {
+          OR: [
+            { nextReviewAt: { lte: today } },
+            { nextReviewAt: null },
+          ],
+        },
       },
-      orderBy: [
-        { nextReviewAt: 'asc' },
-        { createdAt: 'asc' },
-      ],
+      include: { mastery: true },
       take: quota,
+    });
+
+    dueWords.sort((a, b) => {
+      const aTime = a.mastery?.nextReviewAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      const bTime = b.mastery?.nextReviewAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      if (aTime !== bTime) return aTime - bTime;
+      return a.createdAt.getTime() - b.createdAt.getTime();
     });
 
     const dueCount = dueWords.length;
 
-    // 2. If need more words, fill with new system words
     let newCount = 0;
     let newWords: any[] = [];
 
@@ -852,30 +832,31 @@ export class VocabularyService {
       });
       const existingWords = new Set(userWordTexts.map(w => w.word.toLowerCase()));
 
-      newWords = await this.databaseService.vocabulary.findMany({
+      newWords = await this.databaseService.vocabSeed.findMany({
         where: {
-          idUser: '',
           word: { notIn: Array.from(existingWords) },
           tier: { in: [1, 2] },
         },
         take: slotsNeeded * 3,
-        orderBy: { idVocab: 'desc' },
       });
 
-      newWords.sort(() => Math.random() - 0.5);
-      newWords = newWords.slice(0, slotsNeeded).map(v => ({
-        ...v,
+      newWords = shuffle(newWords).slice(0, slotsNeeded).map(v => ({
+        idVocab: v.idSeed,
+        word: v.word,
+        phonetic: v.phonetic,
+        meaning: v.meaning,
+        VocabType: v.VocabType,
+        example: v.example,
         isNew: true,
       }));
       newCount = newWords.length;
     }
 
     const allWords = [...dueWords.map(w => ({ ...w, isNew: false })), ...newWords];
-
-    const result: any[] = [];
     const dueOnly = allWords.filter(w => !w.isNew);
     const newOnly = allWords.filter(w => w.isNew);
 
+    const result: any[] = [];
     for (let i = 0; i < Math.max(dueOnly.length, newOnly.length); i++) {
       if (i < dueOnly.length) result.push(dueOnly[i]);
       if (i < newOnly.length) result.push(newOnly[i]);
@@ -890,7 +871,6 @@ export class VocabularyService {
         VocabType: v.VocabType,
         example: v.example,
         isNew: v.isNew,
-        status: v.status,
       })),
       dueCount,
       newCount,
@@ -899,22 +879,15 @@ export class VocabularyService {
   }
 
   /**
-   * Save a word to user's collection
+   * Save a VocabSeed word to user's collection (clone + mastery).
    */
   async saveToCollection(idUser: string, vocabId: string, topicId?: string) {
-    const sourceVocab = await this.databaseService.vocabulary.findUnique({
-      where: { idVocab: vocabId },
-    });
-
-    if (!sourceVocab) {
-      throw new BadRequestException('Word not found');
-    }
+    // vocabId is VocabSeed.idSeed
+    const seed = await this.databaseService.vocabSeed.findUnique({ where: { idSeed: vocabId } });
+    if (!seed) throw new BadRequestException('Word not found');
 
     const existing = await this.databaseService.vocabulary.findFirst({
-      where: {
-        idUser,
-        word: { equals: sourceVocab.word, mode: 'insensitive' },
-      },
+      where: { idUser, word: { equals: seed.word, mode: 'insensitive' } },
     });
 
     if (existing) {
@@ -930,23 +903,27 @@ export class VocabularyService {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const newVocab = await this.databaseService.vocabulary.create({
-      data: {
-        idUser,
-        word: sourceVocab.word,
-        meaning: sourceVocab.meaning,
-        phonetic: sourceVocab.phonetic,
-        VocabType: sourceVocab.VocabType,
-        example: sourceVocab.example,
-        tier: sourceVocab.tier,
-        frequencyRank: sourceVocab.frequencyRank,
-        idTopic: topicId || null,
-        status: 'new',
-        nextReviewAt: tomorrow,
-        timesReviewed: 0,
-        easinessFactor: 2.5,
-        interval: 1,
-      },
+    const newVocab = await this.databaseService.$transaction(async (tx) => {
+      const vocab = await tx.vocabulary.create({
+        data: {
+          idUser,
+          word: seed.word,
+          meaning: seed.meaning,
+          phonetic: seed.phonetic,
+          VocabType: seed.VocabType,
+          example: seed.example,
+          sourceSeedId: seed.idSeed,
+          idTopic: topicId || null,
+        },
+      });
+      await tx.vocabMastery.create({
+        data: {
+          idVocab: vocab.idVocab,
+          nextReviewAt: tomorrow,
+          status: ProficiencyLevel.UNKNOWN,
+        },
+      });
+      return vocab;
     });
 
     return { message: 'Word saved to collection', idVocab: newVocab.idVocab };

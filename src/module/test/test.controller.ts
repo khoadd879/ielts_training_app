@@ -112,6 +112,11 @@ export class TestController {
     return this.testService.getPartInTest(idTest, pagination);
   }
 
+  @Get('preview/:idTest')
+  getTestPreview(@Param('idTest') idTest: string) {
+    return this.testService.getTestPreview(idTest);
+  }
+
   @Get('get-all-test')
   @Public()
   getAllTest(@Query() pagination: PaginationDto) {

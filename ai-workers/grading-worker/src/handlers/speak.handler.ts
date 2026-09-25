@@ -127,6 +127,10 @@ export async function processSpeakGrading(
         gradedAt: new Date(),
       });
 
+      // Aggregate to UserTestResult.bandScore when all sibling submissions
+      // are terminal (see neon.service.ts.aggregateSpeakingTestResultIfReady).
+      await neon.aggregateSpeakingTestResultIfReady(msg.submissionId);
+
       // Save grammar violations for tracking
       if (result.grammarViolations && result.grammarViolations.length > 0) {
         await neon.saveGrammarViolations(
@@ -161,6 +165,10 @@ export async function processSpeakGrading(
     },
     gradedAt: new Date(),
   });
+
+  // Aggregate on FAILED too so partially-graded testResults can still resolve
+  // a bandScore (FAILED contributes 0).
+  await neon.aggregateSpeakingTestResultIfReady(msg.submissionId);
 
   // Refund credits or subscription quota for failed grading
   try {
